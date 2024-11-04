@@ -1,39 +1,25 @@
 <template lang="pug">
-nav#nav
+nav#mainNav
     ul
-        //- li.prof
-        //-     router-link(to="/profile")
+        li.prof
+            router-link(to="/profile")
         li.menu
             router-link(to="/") Home
         li.menu
             router-link(to="/admin") Admin
-div(:style="{ marginLeft: `${navWidth}px` }")
-    router-view
+nav#subNav
+    ul
+        li
+            button 직원등록
+        li
+            button 부서(회사) 등록
 </template>
 
 <script setup lang="ts">
-// import Nav from "@/components/Nav.vue"
-
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, ref, computed, watch } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
-
-let navWidth = ref(0);
-
-onMounted(() => {
-    let navEl = document.getElementById('nav');
-    
-    if (navEl) {
-        navWidth.value = navEl.offsetWidth;
-
-        // Adjust width on window resize
-        window.addEventListener('resize', () => {
-            navWidth.value = navEl.offsetWidth;
-        });
-    }
-});
 </script>
 
 <style scoped lang="less">
@@ -41,7 +27,15 @@ nav {
     position: fixed;
     top: 0;
     height: 100%;
-    padding: 1.3rem;
+    padding: 1.2rem;
+    background-color: #EFF0F6;
+
+    &#mainNav {
+        left: 0;
+    }
+    &#subNav {
+        right: 0;
+    }
 
     ul {
         padding: 0;
