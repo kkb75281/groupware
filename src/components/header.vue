@@ -1,16 +1,19 @@
 <template lang="pug">
 header#header
-	button.mo-navbar
+	.btn 버튼입니다.
+	button.btn-mo-navbar
+		i.icon-menu
 
 	button.btn-noti(type="button" data-count="9999")
-		i.icon
+		i.icon-bell
 	.notification
 
 	button.btn-profile(type="button")
 		span.user-name 사용자
 		span.hello 님, 안녕하세요!
 		.thumbnail
-			img(scr="https://placeimg.com/100/100/people" alt="img-profile")
+			i.icon-user
+			img(src="https://picsum.photos/250/250" alt="img-profile")
 </template>
 
 <script setup lang="ts">
@@ -32,6 +35,11 @@ header#header
 	align-items: center;
 	padding: 0 3rem 0 var(--navbar-width);
 	transition: padding 0.15s linear;
+
+	.btn-mo-navbar {
+		display: none;
+		margin-right: auto;
+	}
 
 	.btn-noti {
 		width: 2.875rem;
@@ -56,6 +64,10 @@ header#header
 			background-color: var(--primary-color-400);
 			padding: 0 .3125rem;
 			border-radius: .75rem;
+		}
+
+		.icon-bell {
+			color: var(--primary-color-400);
 		}
 	}
 
@@ -84,27 +96,34 @@ header#header
 		background: var(--primary-color-100) url(../images/header/thumb_profile_default.png) center/cover no-repeat;
 		overflow: hidden;
 
+		.icon-user {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			color: var(--gray-color-400);
+		}
+
 		img {
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
+			z-index: 1;
+			position: relative;
 		}
+	}
+
+	i {
+		font-size: 1.5rem;
+		font-weight: 500;
 	}
 }
 
-/*
-* responsive
-*/
-
-@media (max-width: 1399.98px) {
+@media (max-width: 1200px) {
+	#header {
+		.btn-mo-navbar {
+			display: block;
+		}
+	}
 }
-@media (max-width: 1199.98px) {
-}
-@media (max-width: 991.98px) {
-}
-@media (max-width: 767.98px) {
-}
-@media (max-width: 575.98px) {
-}
-
 </style>

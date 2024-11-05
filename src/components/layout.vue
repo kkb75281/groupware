@@ -15,6 +15,20 @@ const route = useRoute();
 </script>
 
 <style scoped lang="less">
+.fold {
+    #navbar {
+      width: var(--navbar-fold-width);
+    }
+
+    #main {
+      padding-left: var(--navbar-fold-width);
+    }
+
+    #header {
+      padding-left: var(--navbar-fold-width);
+    }
+}
+
 @media (max-width: 1200px) {
 	#header {
 		padding: 0 1.5rem;
@@ -26,6 +40,20 @@ const route = useRoute();
 
 	#main {
 		padding-left: 0;
+	}
+
+	.fold {
+		#header {
+			padding: 0 1.5rem;
+		}
+
+		#navbar {
+			width: 0;
+		}
+
+		#main {
+			padding-left: 0;
+		}
 	}
 }
 @media (max-width: 768px) {

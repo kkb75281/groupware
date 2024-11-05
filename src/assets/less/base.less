@@ -7,6 +7,9 @@
 //  import font
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap'); // Noto Sans
 
+// import icon
+// @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('../icon/icon-fonts.less'); // 해당 경로 파일 내 아이콘명을 i 태그와 작성하여 적용. (ex. i.icon-hand)
 * {
   padding: 0;
   margin: 0;
@@ -36,7 +39,7 @@
   // --font-secondary: 'NanumSquareNeo', 'sans-serif';
 
   //color
-  --primary-color-100: #E9F0FF;
+  --primary-color-100: #E9F0FF; // light base color
   --primary-color-200: #9db5e9;
   --primary-color-400: #487FF2; // base color
 
@@ -173,6 +176,10 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+i {
+  color: var(--gray-color-900);
 }
 
 /*
