@@ -1,6 +1,5 @@
 <template lang="pug">
 header#header
-	.btn 버튼입니다.
 	button.btn-mo-navbar
 		i.icon-menu
 
@@ -35,6 +34,7 @@ header#header
 	align-items: center;
 	padding: 0 3rem 0 var(--navbar-width);
 	transition: padding 0.15s linear;
+	z-index: 100;
 
 	.btn-mo-navbar {
 		display: none;
@@ -75,7 +75,7 @@ header#header
 		flex: none;
 		height: 3.375rem;
 		border-radius: 0.5rem;
-		background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-200) 98%);
+		background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
 		color: #fff;
 		font-size: 1rem;
 		font-weight: 600;

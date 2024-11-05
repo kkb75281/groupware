@@ -10,7 +10,7 @@
 nav#navbar
     .navbar-wrap
         .logo
-            img.img-logo(src="@/assets/img/logo-white.svg" alt="img-logo")
+            img.img-logo(src="@/assets/img/img_logo_white.svg" alt="img-logo")
             button.btn-menu(@click="toggleNavbarFold")
                 i.icon-menu
             button.btn-close(@click="!toggleNavbarFold")

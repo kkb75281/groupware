@@ -16,17 +16,17 @@ const route = useRoute();
 
 <style scoped lang="less">
 .fold {
-    #navbar {
-      width: var(--navbar-fold-width);
-    }
+	#navbar {
+		width: var(--navbar-fold-width);
+	}
 
-    #main {
-      padding-left: var(--navbar-fold-width);
-    }
+	#main {
+		padding-left: var(--navbar-fold-width);
+	}
 
-    #header {
-      padding-left: var(--navbar-fold-width);
-    }
+	#header {
+		padding-left: var(--navbar-fold-width);
+	}
 }
 
 @media (max-width: 1200px) {
