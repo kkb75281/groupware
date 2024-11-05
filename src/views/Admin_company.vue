@@ -1,5 +1,5 @@
 <template lang="pug">
-h1 관리자 페이지 입니다.
+h1 부서(회사) 등록
 </template>
 
 <script setup lang="ts">

@@ -1,27 +1,36 @@
 <template lang="pug">
 Header
 Navbar
-Main
+//- Main
+main#main
+    router-view
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import Header from '@/components/header.vue';
 import Navbar from '@/components/navbar.vue';
-import Main from '@/views/Main.vue';
+// import Main from '@/views/Main.vue';
 
 const router = useRouter();
 const route = useRoute();
 </script>
 
 <style scoped lang="less">
+#main {
+    padding-top: calc(20px + var(--header-height));
+    padding-left: calc(20px + var(--navbar-width));
+    padding-right: 20px;
+    transition: padding-left 0.15s linear;
+}
+
 .fold {
 	#navbar {
 		width: var(--navbar-fold-width);
 	}
 
 	#main {
-		padding-left: var(--navbar-fold-width);
+		padding-left: calc(20px + var(--navbar-fold-width));
 	}
 
 	#header {
