@@ -1,0 +1,403 @@
+/**
+ * File: main.less
+ * 
+ * Description: Components style css
+ */
+
+@import "@/assets/less/base.less";
+
+// button
+.btn {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background-color: var(--primary-color-400);
+  border: 1px solid var(--primary-color-400);
+  border-radius: 0.5rem;
+  height: 2.625rem;
+  padding: 0 0.75rem;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+
+  &:hover,
+  &:active,
+  &:focus {
+    background-color: var(--primary-color-400-dark);
+    border: 1px solid var(--primary-color-400-dark);
+  }
+
+  &:disabled {
+    background-color: var(--primary-color-200);
+    border: 1px solid var(--primary-color-200);
+    cursor: default;
+  }
+
+  i {
+    color: #fff;
+  }
+
+  &.lg {
+    font-size: 1.125rem;
+    font-weight: 700;
+    height: 2.875rem;
+    padding: 0 1.25rem;
+  }
+
+  &.sm {
+    height: 2.25rem;
+    font-size: .875rem;
+  }
+
+  &.xs {
+    height: 1.8125rem;
+    font-size: .75rem;
+    padding: 0 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  &.outline {
+    background-color: #fff;
+    color: var(--primary-color-400);
+
+    &:hover,
+    &:active,
+    &:focus {
+      background-color: var(--primary-color-50);
+      border: 1px solid var(--primary-color-400-dark);
+    }
+
+    &:disabled {
+      background-color: var(--primary-color-100);
+      border: 1px solid var(--primary-color-200);
+      color: var(--primary-color-200);
+
+      i {
+        color: var(--primary-color-200);
+      }
+    }
+
+    i {
+      color: var(--primary-color-400);
+    }
+  }
+
+  &.bg-gray {
+    background-color: var(--gray-color-200);
+    border: 1px solid var(--gray-color-200);
+    color: var(--gray-color-500);
+
+    &:hover,
+    &:active,
+    &:focus {
+      background-color: var(--gray-color-400);
+      border: 1px solid var(--gray-color-400);
+      color: var(--gray-color-700);
+
+      i {
+        color: var(--gray-color-700);
+      }
+    }
+
+    i {
+      color: var(--gray-color-500);
+    }
+
+    &:disabled {
+      background-color: var(--gray-color-100);
+      border: 1px solid var(--gray-color-100);
+      color: var(--gray-color-300);
+
+      i {
+        color: var(--gray-color-300);
+      }
+    }
+
+    &.outline {
+      background-color: #fff;
+      border: 1px solid var(--gray-color-400);
+
+      &:hover,
+      &:active,
+      &:focus {
+        background-color: var(--gray-color-300);
+        border: 1px solid var(--gray-color-500);
+      }
+
+      i {
+        color: var(--gray-color-700);
+      }
+
+      &:disabled {
+        background-color: var(--gray-color-100);
+        border: 1px solid var(--gray-color-300);
+        color: var(--gray-color-300);
+
+        i {
+          color: var(--gray-color-300);
+        }
+      }
+    }
+  }
+}
+
+// input
+.input-wrap {
+  position: relative;
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    border: 1px solid var(--gray-color-200);
+    border-radius: 0.5rem;
+    padding: 0 1rem;
+    font-size: 1rem;
+    color: var(--gray-color-900);
+    background-color: #fff;
+
+    &::placeholder {
+      opacity: 1;
+      color: var(--gray-color-300);
+    }
+
+    &:disabled {
+      background-color: var(--gray-color-100);
+      color: var(--gray-color-400);
+    }
+  }
+
+  textarea {
+    display: block;
+    padding: 1rem;
+    resize: none;
+    line-height: 1.4;
+    min-height: 7.5rem;
+  }
+
+  input,
+  select {
+    height: 2.875rem;
+  }
+
+  input[type='password'] {
+    padding-right: 3rem;
+
+    + .btn-eye-off {
+      display: none;
+    }
+  }
+
+  select {
+    padding-right: 2.25rem;
+    vertical-align: middle;
+    background-repeat: no-repeat;
+    background-size: 1.25rem 1.25rem;
+    background-position: center right 0.5rem;
+    background-image: url('../images/components/bg_select_arrow.svg');
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.05rem;
+
+    option[disabled] {
+      display: none;
+    }
+  }
+
+  .label {
+    margin-bottom: 0.5rem;
+
+    &.essential {
+      &::after {
+        content: '*';
+        display: inline-block;
+        width: 0.5rem;
+        height: 0.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        // color: #FBA104;
+        color: #fb9804;
+        margin-left: 0.25rem;
+      }
+    }
+  }
+
+  &.warning {
+    input {
+      border-color: var(--warning-color-500);
+    }
+  }
+}
+
+// checkbox, radio button
+.checkbox,
+.radio-button {
+  cursor: pointer;
+  position: relative;
+  display: inline-block;
+
+  input {
+    position: absolute;
+    display: none;
+
+    // checkbox
+    &[type='checkbox'] {
+      &:checked {
+        & ~ .label-checkbox {
+          &::before {
+            border-color: var(--primary-color-400);
+            background: var(--primary-color-400) url('@/assets/img/icon_checked.svg') center/cover no-repeat;
+          }
+        }
+      }
+    }
+
+    // radio button
+    &[type='radio'] {
+      &:checked {
+        & ~ .label-radio {
+          &::after {
+            background-color: var(--primary-color-400);
+          }
+        }
+      }
+    }
+
+    &:disabled {
+      & ~ .label-radio {
+        cursor: default;
+        border: 1px solid var(--primary-color-400);
+      }
+    }
+  }
+
+  .label-checkbox {
+    display: flex;
+    align-items: flex-start;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.2;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      height: 1rem;
+      width: 1rem;
+      border: 1px solid var(--gray-color-300);
+      background: var(--gray-color-300) url('@/assets/img/icon_checked.svg') center/cover no-repeat;
+      border-radius: 0.25rem;
+      margin-right: 0.375rem;
+      flex: none;
+    }
+  }
+
+  .label-radio {
+    display: flex;
+    align-items: center;
+    position: relative;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.2;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      height: 1rem;
+      width: 1rem;
+      border-radius: 50%;
+      border: 1px solid var(--gray-color-300);
+      background-color: #fff;
+      margin-right: 0.375rem;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0.1875rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0.625rem;
+      height: 0.625rem;
+      border-radius: 50%;
+    }
+  }
+
+  &.circle {
+    input {
+      &[type='checkbox'] {
+        &:checked {
+          & ~ .label-checkbox {
+            &::before {
+              border-color: var(--primary-color-400);
+              background: var(--primary-color-400) url('@/assets/img/icon_checked.svg') center/cover no-repeat;
+            }
+          }
+        }
+      }
+    }
+
+    .label-checkbox {
+      display: flex;
+      align-items: center;
+
+      &::before {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        border: none;
+        background: var(--gray-color-300) url('@/assets/img/icon_checked.svg') center/cover no-repeat;
+      }
+    }
+  }
+}
+
+// toggle switch btn
+.switch-wrap {
+  display: block;
+  position: relative;
+  width: 3.25rem;
+  height: 2rem;
+
+  input {
+    display: none;
+
+    &:checked {
+      & + .label-switch {
+        background-color: var(--primary-color-400);
+
+        &::before {
+          left: calc(100% - 1.8125rem);
+          box-shadow: -1px 1px 4px 0 rgba(0, 0, 0, 0.11);
+        }
+      }
+    }
+  }
+
+  .label-switch {
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--gray-color-300);
+    border-radius: 1.5rem;
+    transition: 0.4s;
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 1.625rem;
+      height: 1.625rem;
+      left: 0.1875rem;
+      bottom: 0.1875rem;
+      background-color: #fff;
+      border-radius: 50%;
+      transition: 0.4s;
+      box-shadow: 1px 1px 4px 0 rgba(0, 0, 0, 0.11);
+    }
+  }
+}

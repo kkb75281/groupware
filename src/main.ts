@@ -1,16 +1,21 @@
-import './assets/main.less'
+import './assets/less/main.less';
 
-import { createApp } from 'vue'
-import { Skapi } from "skapi-js"
-import App from './App.vue'
-import router from './router'
+import { createApp } from 'vue';
+import { Skapi } from 'skapi-js';
+import App from './App.vue';
+import router from './router';
 
-const app = createApp(App)
+const app = createApp(App);
 
-const skapi = new Skapi("ap21T7fhHOcU2HgaCmGr", "5750ee2c-f7f7-43ff-b6a5-cce599d30101", { autoLogin: true }, {"hostDomain": "skapi.app","target_cdn": "d1wrj5ymxrt2ir"});
+const skapi = new Skapi(
+  'ap21T837jUF8IFyfR98Z',
+  'f498d188-1fa5-43e5-a32d-904d3e125983',
+  { autoLogin: true },
+  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
+);
 
-app.use(router)
+app.use(router);
 
-app.mount('#app')
+app.mount('#app');
 
-export { skapi }
+export { skapi };
