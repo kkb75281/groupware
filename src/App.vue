@@ -7,7 +7,7 @@ template(v-else) login page
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, ref, computed, watch } from 'vue';
-import { loginState } from 'main'
+import { loginState } from '@/main'
 import Layout from '@/components/layout.vue';
 
 const router = useRouter();
