@@ -27,8 +27,8 @@ header#header
 	top: 0;
 	left: 0;
 	right: 0;
-	background-color: #fff;
-	background-color: #b59595;
+	// background-color: #fff;
+	// background-color: #b59595;
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
