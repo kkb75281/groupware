@@ -1,10 +1,11 @@
 <template lang="pug">
 template(v-if="loginState")
     Layout
-template(v-else) login page
+template(v-else)
+    Login
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, ref, computed, watch } from 'vue';
 import { loginState } from '@/main'
