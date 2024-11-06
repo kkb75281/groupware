@@ -4,6 +4,8 @@
 		//- img(src="@/assets/img/img_logo_symbol.png")
 		p 로고영역
 
+	h2.title Login
+
 	form(@submit.prevent="login")
 		.input-wrap
 			p.label Email
@@ -15,6 +17,15 @@
 				button.icon(type="button")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
+
+		.check-wrap
+			label.checkbox
+				input(type="checkbox" name="checkbox" checked)
+				span.label-checkbox Remember me
+
+			router-link.forgot(to="/forget") Forgot Password?
+
+		button.btn.btn-login Login
 </template>
 
 <script setup lang="ts">
@@ -53,8 +64,15 @@ watch(loginState, (n) => {
 		margin-bottom: 1.5rem;
 	}
 
+	.title {
+		    font-size: 1.5rem;
+			margin-bottom: 1.5rem;
+			padding-bottom: 1.5rem;
+			border-bottom: 1px solid var(--gray-color-400);
+	}
+
 	.input-wrap {
-		margin-top: 1.2rem;
+		margin-bottom: 1.2rem;
 
 		.label {
 			font-weight: 600;
@@ -70,6 +88,26 @@ watch(loginState, (n) => {
 			right: 0;
 			transform: translateY(-50%);
 		}
+	}
+
+	.check-wrap {
+		display: flex;
+		justify-content: space-between;
+		align-content: center;
+		margin-bottom: 3rem;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.forgot {
+		font-size: 0.9rem;
+		font-weight: 500;
+		color: var(--primary-color-400);
+	}
+
+	.btn-login {
+		margin-left: auto;
+		min-width: 100px;
 	}
 }
 </style>
