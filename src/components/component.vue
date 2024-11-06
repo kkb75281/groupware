@@ -109,7 +109,7 @@ section.componet-wrap
   }
 
   h2 {
-    font-size: 1.25rem;
+    // font-size: 1.25rem;
     font-weight: 600;
     margin-bottom: 1rem;
   }
