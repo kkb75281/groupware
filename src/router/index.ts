@@ -7,6 +7,7 @@ import Admin_member from '@/views/Admin_member.vue';
 import Admin_company from '@/views/Admin_company.vue';
 import Admin_list from '@/views/Admin_list.vue';
 import Login from '@/views/Login.vue';
+import Forgot_password from '@/views/Forgot_password.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,6 +16,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login,
+    },
+    {
+      path: '/forgot',
+      name: 'forgot',
+      component: Forgot_password,
     },
     {
       path: '/',
