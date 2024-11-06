@@ -5,15 +5,17 @@ nav#navbar
             //- img.img-logo(src="@/assets/img/img_logo_white.svg" alt="img-logo" style="max-width: 150px; filter: brightness(0.3);")
             router-link.img-logo(to="/") 로고 부분
             button.btn-menu(@click="toggleNavbarFold")
-                i.icon-menu
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
             button.btn-close(@click="!toggleNavbarFold")
-                i.icon-close
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 
         ul.menu-item
             li.item(:class="{'active': route.name === 'home'}")
                 router-link(to="/")
-                    //- i.icon
-                    //- span.text Admin
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
@@ -21,8 +23,6 @@ nav#navbar
                         span 대시보드
             li.item(:class="{'active': route.path.startsWith('/admin')}")
                 router-link(to="admin/member")
-                    //- i.icon
-                    //- span.text Admin
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
@@ -109,11 +109,6 @@ onUnmounted(() => {
         align-items: center;
         justify-content: space-between;
         padding: 0 20px;
-
-        .icon-menu {
-            font-size: 1.5rem;
-            font-weight: 500;
-        }
     }
 
     .btn-close {
@@ -150,18 +145,6 @@ onUnmounted(() => {
             align-items: center;
             justify-content: center;
 
-            .icon {
-                padding: 0 16px;
-
-                svg {
-                    width: 24px;
-                    height: 24px;
-                    fill: var(--gray-color-600);
-                }
-            }
-            span {
-                font-size: 1.5rem;
-            }
             .text {
                 display: block;
                 padding-right: 1rem;

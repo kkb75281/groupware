@@ -1,18 +1,24 @@
 <template lang="pug">
 header#header
 	button.btn-mo-navbar
-		i.icon-menu
+		.icon
+			svg
+				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
 	button.btn-noti(type="button" data-count="9999")
-		i.icon-bell
+		.icon
+			svg
+				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
 	.notification
 
 	button.btn-profile(type="button")
 		span.user-name 사용자
 		span.hello 님, 안녕하세요!
 		.thumbnail
-			i.icon-user
-			img(src="https://picsum.photos/250/250" alt="img-profile")
+			.icon
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+			//- img(src="https://picsum.photos/250/250" alt="img-profile")
 </template>
 
 <script setup lang="ts">
@@ -65,10 +71,6 @@ header#header
 			padding: 0 .3125rem;
 			border-radius: .75rem;
 		}
-
-		.icon-bell {
-			color: var(--primary-color-400);
-		}
 	}
 
 	.btn-profile {
@@ -90,19 +92,14 @@ header#header
 		height: 3.375rem;
 		border: 0.1875rem solid #fff;
 		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		position: absolute;
 		top: 0;
 		right: -1.5rem;
 		background: var(--primary-color-100) url(../images/header/thumb_profile_default.png) center/cover no-repeat;
 		overflow: hidden;
-
-		.icon-user {
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			color: var(--gray-color-400);
-		}
 
 		img {
 			width: 100%;
