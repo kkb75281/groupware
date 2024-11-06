@@ -13,30 +13,36 @@
 		.input-wrap
 			p.label Password
 			.input
-				input(type="password" name="password" placeholder="password" required)
-				button.icon(type="button")
-					svg
-						use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
+				input(:type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" required)
+				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
+					template(v-if="showPassword")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-fill")
+					template(v-else)
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
+
+		.check-wrap
+			label.checkbox
+				input#input_autoLogin(v-model="autoLogin" type="checkbox" name="checkbox" checked)
+				span.label-checkbox Remember me
+
+			router-link.forgot(to="/forgot") Forgot Password?
+
 		button.btn.btn-login(type="submit") Login
 
-//- .check-wrap
-	//- label.checkbox
-	//- 	input(id='input_autoLogin' type="checkbox" name="checkbox" checked)
-	//- 	span.label-checkbox Remember me
-	input#input_autoLogin(type="checkbox" @change="window.localStorage.setItem('autoLogin', this.checked.toString())")
-
-	router-link.forgot(to="/forget") Forgot Password?
-
+		router-view
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { user, updateUser, loginState } from '@/user';
 import { skapi } from "@/main";
-import { watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
+let showPassword = ref(false);
 
 watch(loginState, (n) => {
 	if(n) {
@@ -58,21 +64,34 @@ let login = (e) => {
         //     router.push({ path: '/confirmation', query: { email: form.email } });
         // }
         if (err.code === "USER_IS_DISABLED") {
-			throw("This account is disabled.");
+			alert("This account is disabled.");
         }
         else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
-            throw("Incorrect email or password.");
+            alert("Incorrect email or password.");
         }
         else if (err.code === "NOT_EXISTS") {
-            throw("Incorrect email or password.");
+            alert("Incorrect email or password.");
         }
         else {
-            throw(err.message);
+            alert(err.message);
         }
     }).finally(() => {
         // promiseRunning.value = false;
     })
-}
+};
+
+// 로컬 스토리지에 저장된 값 불러오기 (문자열 'true'인 경우에만 체크 상태로 설정)
+const autoLogin = ref(localStorage.getItem('autoLogin') === 'true');
+
+// autoLogin 값이 변경될 때 로컬 스토리지에 저장
+watch(autoLogin, (newValue) => {
+  localStorage.setItem('autoLogin', newValue.toString());
+});
+
+// 페이지 로드 시 체크박스 상태 초기화
+onMounted(() => {
+  autoLogin.value = localStorage.getItem('autoLogin') === 'true';
+});
 </script>
 
 <style scoped lang="less">
@@ -124,7 +143,6 @@ let login = (e) => {
 		display: flex;
 		justify-content: space-between;
 		align-content: center;
-		margin-bottom: 3rem;
 		flex-wrap: wrap;
 		gap: 0.4rem;
 	}
@@ -135,8 +153,9 @@ let login = (e) => {
 		color: var(--primary-color-400);
 	}
 
-	.btn-login {
+	.btn {
 		margin-left: auto;
+		margin-top: 3rem;
 		min-width: 100px;
 	}
 }
