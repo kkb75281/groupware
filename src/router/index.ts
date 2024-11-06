@@ -26,8 +26,9 @@ const router = createRouter({
           component: Dashboard
         },
         {
-          path: '/admin',
+          path: 'admin',
           name: 'admin',
+          component: Admin,
           children: [
             {
               path: 'member',
