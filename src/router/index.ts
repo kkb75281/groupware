@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Main from '@/views/Main.vue'
 import Admin from '@/views/Admin.vue'
 import Profile from '@/views/Profile.vue'
+import Admin_member from '@/views/Admin_member.vue'
+import Admin_company from '@/views/Admin_company.vue'
+import Admin_list from '@/views/Admin_list.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,15 +15,41 @@ const router = createRouter({
       component: Main
     },
     {
-      path: '/admin',
-      name: 'admin',
-      component: Admin
+        path: '/admin',
+        name: 'admin',
+        children: [
+            {
+                path: 'member',
+                name: 'member',
+                component: Admin_member
+            },
+            {
+                path: 'company',
+                name: 'company',
+                component: Admin_company
+            },
+            {
+                path: 'list',
+                name: 'list',
+                component: Admin_list
+            }
+        ]
     },
+    // {
+    //     path: '/admin/member',
+    //     name: 'member',
+    //     component: Admin_resi_member
+    // },
     {
       path: '/profile',
       name: 'profile',
       component: Profile
     },
+    {
+        path: '/component',
+        name: 'component',
+        component: () => import('../components/component.vue')
+      },
     // {
     //   path: '/about',
     //   name: 'about',

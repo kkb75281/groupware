@@ -1,26 +1,50 @@
 <template lang="pug">
-//- nav#navbar
-//-     ul
-//-         li.prof
-//-             router-link(to="/profile")
-//-         li.menu
-//-             router-link(to="/") Home
-//-         li.menu
-//-             router-link(to="/admin") Admin
 nav#navbar
     .navbar-wrap
         .logo
-            img.img-logo(src="@/assets/img/img_logo_white.svg" alt="img-logo")
+            //- img.img-logo(src="@/assets/img/img_logo_white.svg" alt="img-logo" style="max-width: 150px; filter: brightness(0.3);")
+            router-link.img-logo(to="/") 로고 부분
             button.btn-menu(@click="toggleNavbarFold")
                 i.icon-menu
             button.btn-close(@click="!toggleNavbarFold")
                 i.icon-close
 
         ul.menu-item
-            li
-                a.item
-                    i.icon
-                    span.text Admin
+            li.item(:class="{'active': route.name === 'home'}")
+                router-link(to="/")
+                    //- i.icon
+                    //- span.text Admin
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
+                    .text 
+                        span 대시보드
+            li.item(:class="{'active': route.path.startsWith('/admin')}")
+                router-link(to="admin/member")
+                    //- i.icon
+                    //- span.text Admin
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
+                    .text 
+                        span 관리자 페이지
+                        svg.arrow(:class="{'down': route.path.startsWith('/admin')}")
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+            ul.sub-menu-item(:class="{'show': route.path.startsWith('/admin')}")
+                li(:class="{'active': route.name === 'member'}")
+                    router-link(to="/admin/member") 직원 등록
+                li(:class="{'active': route.name === 'company'}")
+                    router-link(to="/admin/company") 부서(회사) 등록
+                li(:class="{'active': route.name === 'list'}")
+                    router-link(to="/admin/list") 부서(회사) 목록
+            li.item(:class="{'active': route.name === 'component'}")
+                router-link(to="/component") 
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-component")
+                    .text
+                        span component
+
 </template>
 
 <script setup lang="ts">
@@ -67,7 +91,8 @@ onUnmounted(() => {
     top: 0;
     left: 0;
     overflow-y: overlay;
-    background-color: rgb(193, 225, 193);
+    // background-color: rgb(193, 225, 193);
+    box-shadow: 5px 1px 30px rgba(0,0,0,0.05);
     z-index: 100;
     transition: width 0.15s linear;
 
@@ -76,38 +101,163 @@ onUnmounted(() => {
         color: var(--gray-color-600);
     }
 
+    .logo {
+        height: var(--header-height);
+        box-shadow: 1px 1px 10px rgba(0,0,0,0.03);
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+
+        .icon-menu {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+    }
+
     .btn-close {
         display: none;
     }
-}
 
-.fold {
-    .nav-bar-wrap {
-        .logo-cont {
+    .menu-item {
+        padding: 0 20px;
+
+        .item {
+            padding: 1.2rem 0;
+            border-radius: 8px;
+
+            &.active {
+                background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
+
+                a {
+                    color: #fff;
+
+                    svg {
+                        fill: #fff;
+                    }
+                    .arrow {
+                        fill: #fff;
+                        opacity: 0.7;
+                    }
+                }
+            }
+        }
+
+        a {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
             justify-content: center;
 
-            .logo {
+            .icon {
+                padding: 0 16px;
+
+                svg {
+                    width: 24px;
+                    height: 24px;
+                    fill: var(--gray-color-600);
+                }
+            }
+            span {
+                font-size: 1.5rem;
+            }
+            .text {
+                display: block;
+                padding-right: 1rem;
+                flex-grow: 1;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .arrow {
+                width: max(1.2rem, 16px);
+                height: max(1.2rem, 16px);
+                fill: #b7b7b7;
+                transition: all .3s;
+
+                &.down {
+                    transform: rotate(90deg);
+                }
+            }
+        }
+    }
+
+    .sub-menu-item {
+        display: none;
+        padding-top: 1.5rem;
+        padding-left: 4.5rem;
+
+        &.show {
+            display: block;
+        }
+
+        li {
+            margin-bottom: 1.2rem;
+
+            &.active {
+                color: var(--primary-color-400);
+                font-weight: bold;
+            }
+        }
+
+        a {
+            display: block;
+        }
+    }
+}
+
+// .fold {
+//     .nav-bar-wrap {
+//         .logo-cont {
+//             justify-content: center;
+
+//             .logo {
+//                 display: none;
+//             }
+//         }
+
+//         .link-items {
+//             li {
+//                 .item {
+//                     span {
+//                         opacity: 0;
+//                     }
+
+//                     &.active {
+//                         background-image: none;
+//                         background-color: var(--primary-color-400);
+//                     }
+//                 }
+
+//                 .sub-nav {
+//                     display: none;
+//                 }
+//             }
+//         }
+//     }
+// }
+
+.fold {
+    .navbar-wrap {
+        .logo {
+            justify-content: center !important;
+
+            .img-logo {
                 display: none;
             }
         }
 
-        .link-items {
-            li {
-                .item {
-                    span {
-                        opacity: 0;
-                    }
-
-                    &.active {
-                        background-image: none;
-                        background-color: var(--primary-color-400);
-                    }
-                }
-
-                .sub-nav {
-                    display: none;
+        .menu-item {
+            a {
+                .text {
+                    display: none !important;
                 }
             }
+        }
+
+        .sub-menu-item {
+            display: none !important;
         }
     }
 }
