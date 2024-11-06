@@ -1,5 +1,5 @@
 <template lang="pug">
-header#header
+header#header(ref="header" :class="{'hide':scroll}")
 	button.btn-mo-navbar
 		.icon
 			svg
@@ -21,8 +21,43 @@ header#header
 			//- img(src="https://picsum.photos/250/250" alt="img-profile")
 </template>
 
-<script setup lang="ts">
+<script setup>
+import { useRoute, useRouter } from 'vue-router';
+import { onMounted, ref, nextTick } from 'vue';
+import { compileScript } from 'vue/compiler-sfc';
 
+const router = useRouter();
+const route = useRoute();
+
+let scroll = ref(false);
+let previousScrollY = window.scrollY;
+let header = ref(null);
+let headerHeight = 0;
+
+window.addEventListener('scroll', (e) => {
+    // const currentScrollY = window.scrollY;
+
+    // currentScrollY > previousScrollY ? scroll.value = true : scroll.value = false;
+    // previousScrollY = currentScrollY;
+
+	let currentScrollY = window.scrollY;
+
+	if (currentScrollY > headerHeight && currentScrollY > previousScrollY) {
+		scroll.value = true;
+	} else if (currentScrollY < previousScrollY) {
+		scroll.value = false;
+	}
+
+	previousScrollY = currentScrollY;
+})
+
+onMounted(() => {
+	nextTick(() => {
+		if (header.value) {
+			headerHeight = header.value.offsetHeight / 4;
+		}
+	});
+});
 </script>
 
 <style scoped lang="less">
@@ -33,14 +68,20 @@ header#header
 	top: 0;
 	left: 0;
 	right: 0;
-	// background-color: #fff;
+	background-color: #fff;
 	// background-color: #b59595;
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
 	padding: 0 20px 0 var(--navbar-width);
 	transition: padding 0.15s linear;
+	transition: top 0.3s;
 	z-index: 100;
+	// box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.03);
+
+	&.hide {
+        top: calc(-1 * var(--header-height));
+    }
 
 	.btn-mo-navbar {
 		display: none;
