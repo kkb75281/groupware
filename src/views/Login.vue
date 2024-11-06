@@ -19,10 +19,19 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
+import { updateUser, loginState } from '@/user'
+import { watch } from 'vue';
+
 // import Component from '@/components/component.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+watch(loginState, (n) => {
+	if(n) {
+		router.push('/');
+	}
+}, { immediate: true });
 </script>
 
 <style scoped lang="less">
