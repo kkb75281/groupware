@@ -22,7 +22,7 @@ nav#navbar
                     .text 
                         span 대시보드
             li.item(:class="{'active': route.path.startsWith('/admin')}")
-                router-link(to="admin/member")
+                router-link(to="/admin/member")
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")

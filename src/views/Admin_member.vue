@@ -1,23 +1,58 @@
 <template lang="pug">
-.wrap
-    .title
-        h1 직원 등록
-        span 직원을 등록하면 초대 이메일이 발송됩니다.
+.title
+    h1 직원 등록
+    span 직원을 등록하면 초대 이메일이 발송됩니다.
 
+br
+
+form#profPic
+    .image
+        img#profile-img(:src="uploadProfileSrc" alt="profile image")
+        label(for="_el_file_input")
+            .icon.white
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
+        input(type="file" name="init_profile_pic" id="_el_file_input" @change="changeProfileImg" style="display:none")
+
+form#_el_emp_form(@submit="resigterEmp")
+    select(name="division" required disabled)
+        option(disabled selected) 부서(회사) 선택
+    
     br
 
-    form#profPic
-        .image
-            img#profile-img(:src="uploadProfileSrc" alt="profile image")
-            label(for="_el_file_input")
-                .icon.white
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-            input(type="file" name="init_profile_pic" id="_el_file_input" @change="changeProfileImg" style="display:none")
+    input(type="text" name="picture" id='_el_picture_input' hidden)
 
-    form#_el_emp_form(@submit="resigterEmp")
-        select(name="division" required disabled)
-            option(disabled selected) 부서(회사) 선택
+    .input-wrap
+        span 이름
+        input(type="text" name="name" required)
+
+    .input-wrap
+        span 이메일
+        input(type="email" name="email" required)
+
+    .input-wrap
+        span 생년월일
+        input(type="date" name="birthdate" required)
+
+    .input-wrap
+        span 전화번호
+        input(type="tel" name="phone_number" required)
+
+    .input-wrap
+        span 주소
+        input(type="text" name="address" required)
+
+    select(name="access_group" required)
+        option(disabled selected) 권한선택
+        option(value="1") 직원
+        option(value="98") 관리자
+        option(value="99") 마스터
+
+    .input-wrap
+        span 직책(직급)
+        input#_el_position(type="text" name="position" required)
+
+    
 </template>
 
 <script setup>
