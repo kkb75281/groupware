@@ -9,31 +9,31 @@
 	form(@submit.prevent="login")
 		.input-wrap
 			p.label Email
-			input(type="email" placeholder="your@email.com" required)
+			input(type="email" name="email" placeholder="your@email.com" required)
 		.input-wrap
 			p.label Password
 			.input
-				input(type="password" placeholder="password" required)
+				input(type="password" name="password" placeholder="password" required)
 				button.icon(type="button")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
+		button.btn.btn-login(type="submit") Login
 
-		.check-wrap
-			label.checkbox
-				input(type="checkbox" name="checkbox" checked)
-				span.label-checkbox Remember me
+//- .check-wrap
+	//- label.checkbox
+	//- 	input(id='input_autoLogin' type="checkbox" name="checkbox" checked)
+	//- 	span.label-checkbox Remember me
+	input#input_autoLogin(type="checkbox" @change="window.localStorage.setItem('autoLogin', this.checked.toString())")
 
-			router-link.forgot(to="/forget") Forgot Password?
+	router-link.forgot(to="/forget") Forgot Password?
 
-		button.btn.btn-login Login
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { updateUser, loginState } from '@/user'
+import { user, updateUser, loginState } from '@/user';
+import { skapi } from "@/main";
 import { watch } from 'vue';
-
-// import Component from '@/components/component.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -43,6 +43,36 @@ watch(loginState, (n) => {
 		router.push('/');
 	}
 }, { immediate: true });
+
+let login = (e) => {
+    // promiseRunning.value = true;
+
+    skapi.login(e).then(async (u) => {
+        await updateUser();
+        router.push('/');
+    }).catch(err => {
+        for (let k in user) {
+            delete user[k];
+        }
+        // if (err.code === "SIGNUP_CONFIRMATION_NEEDED") {
+        //     router.push({ path: '/confirmation', query: { email: form.email } });
+        // }
+        if (err.code === "USER_IS_DISABLED") {
+			throw("This account is disabled.");
+        }
+        else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
+            throw("Incorrect email or password.");
+        }
+        else if (err.code === "NOT_EXISTS") {
+            throw("Incorrect email or password.");
+        }
+        else {
+            throw(err.message);
+        }
+    }).finally(() => {
+        // promiseRunning.value = false;
+    })
+}
 </script>
 
 <style scoped lang="less">
