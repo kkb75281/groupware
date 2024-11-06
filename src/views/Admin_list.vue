@@ -1,6 +1,5 @@
 <template lang="pug">
-.wrap
-    h1 부서(회사) 목록
+h1 부서(회사) 목록
 </template>
 
 <script setup lang="ts">

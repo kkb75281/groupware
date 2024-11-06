@@ -1,10 +1,13 @@
 <template lang="pug">
 .wrap
-    h1 관리자 페이지 입니다.
+    router-view
 </template>
 
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router';
 
+const router = useRouter();
+const route = useRoute();
 </script>
 
 <style scoped lang="less">

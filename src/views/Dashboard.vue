@@ -1,5 +1,6 @@
 <template lang="pug">
-h1 안녕하세요. 메인입니다.
+.wrap
+    h1 안녕하세요. 메인입니다.
 </template>
 
 <script setup lang="ts">
