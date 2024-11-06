@@ -169,7 +169,7 @@ onUnmounted(() => {
     .sub-menu-item {
         display: none;
         padding-top: 1.5rem;
-        padding-left: 4.5rem;
+        padding-left: 3rem;
 
         &.show {
             display: block;
