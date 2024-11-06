@@ -6,7 +6,7 @@ header#header(ref="header" :class="{'hide':scroll}")
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
 	button.btn-noti(type="button" data-count="9999")
-		.icon
+		.icon.icon-bel
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
 	.notification
@@ -73,7 +73,7 @@ onMounted(() => {
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
-	padding: 0 20px 0 var(--navbar-width);
+	padding: 0 2.4rem 0 var(--navbar-width);
 	transition: padding 0.15s linear;
 	transition: top 0.3s;
 	z-index: 100;
@@ -109,7 +109,7 @@ onMounted(() => {
 			min-width: 1.625rem;
 			height: 1.625rem;
 			line-height: 1.625rem;
-			font-size: 0.875rem;
+			font-size: 0.75rem;
 			font-weight: 700;
 			color: #fff;
 			background-color: var(--primary-color-400);
@@ -118,9 +118,15 @@ onMounted(() => {
 		}
 	}
 
+	.icon-bel {
+		svg {
+			fill: var(--primary-color-400);
+		}
+	}
+
 	.btn-profile {
 		flex: none;
-		height: 3.375rem;
+		height: 3rem;
 		border-radius: 0.5rem;
 		background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
 		color: #fff;
@@ -129,7 +135,7 @@ onMounted(() => {
 		padding-left: 1.25rem;
 		padding-right: 2.75rem;
 		position: relative;
-		margin-right: 1.3125rem;
+		margin-right: 1rem;
 	}
 
 	.thumbnail {
@@ -153,12 +159,6 @@ onMounted(() => {
 			z-index: 1;
 			position: relative;
 		}
-	}
-
-	.icon {
-		font-size: 1.5rem;
-		font-weight: 500;
-		fill: var(--primary-color-400);
 	}
 }
 
