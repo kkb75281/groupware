@@ -23,7 +23,7 @@ const router = createRouter({
         {
           path: '/',
           name: 'home',
-          component: Dashboard
+          component: Dashboard,
         },
         {
           path: 'admin',
@@ -57,9 +57,9 @@ const router = createRouter({
           name: 'component',
           component: () => import('../components/component.vue'),
         },
-      ]
+      ],
     },
-    
+
     // {
     //   path: '/about',
     //   name: 'about',
