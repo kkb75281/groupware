@@ -1,5 +1,6 @@
 <template lang="pug">
-h1 관리자 페이지 입니다.
+.wrap
+    h1 관리자 페이지 입니다.
 </template>
 
 <script setup lang="ts">
