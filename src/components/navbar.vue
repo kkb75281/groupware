@@ -22,7 +22,7 @@ nav#navbar
                     .text 
                         span 대시보드
             li.item(:class="{'active': route.path.startsWith('/admin')}")
-                router-link(to="/admin/member")
+                router-link(to="/admin/list")
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
@@ -31,12 +31,12 @@ nav#navbar
                         svg.arrow(:class="{'down': route.path.startsWith('/admin')}")
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
             ul.sub-menu-item(:class="{'show': route.path.startsWith('/admin')}")
-                li(:class="{'active': route.name === 'member'}")
-                    router-link(to="/admin/member") 직원 등록
-                li(:class="{'active': route.name === 'company'}")
-                    router-link(to="/admin/company") 부서(회사) 등록
                 li(:class="{'active': route.name === 'list'}")
                     router-link(to="/admin/list") 부서(회사) 목록
+                li(:class="{'active': route.name === 'company'}")
+                    router-link(to="/admin/company") 부서(회사) 등록
+                li(:class="{'active': route.name === 'member'}")
+                    router-link(to="/admin/member") 직원 등록
             li.item(:class="{'active': route.name === 'component'}")
                 router-link(to="/component") 
                     .icon
