@@ -91,7 +91,7 @@ onUnmounted(() => {
     top: 0;
     left: 0;
     overflow-y: overlay;
-    // background-color: rgb(193, 225, 193);
+    background-color: #fff;
     box-shadow: 5px 1px 30px rgba(0,0,0,0.05);
     z-index: 100;
     transition: width 0.15s linear;
@@ -103,12 +103,13 @@ onUnmounted(() => {
 
     .logo {
         height: var(--header-height);
-        box-shadow: 1px 1px 10px rgba(0,0,0,0.03);
+        // box-shadow: 1px 1px 10px rgba(0,0,0,0.03);
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
         justify-content: space-between;
         padding: 0 20px;
+        margin-bottom: 30px;
     }
 
     .btn-close {
@@ -123,7 +124,8 @@ onUnmounted(() => {
             border-radius: 8px;
 
             &.active {
-                background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
+                // background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
+                background-color: var(--primary-color-400);
 
                 a {
                     color: #fff;

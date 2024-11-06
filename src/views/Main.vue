@@ -21,7 +21,7 @@ const route = useRoute();
     transition: padding-left 0.15s linear;
 
     .wrap {
-        padding: 20px 20px 0;
+        padding: 2.4rem;
     }
 }
 
@@ -32,10 +32,6 @@ const route = useRoute();
 
     #main {
         padding-left: calc(var(--navbar-fold-width));
-
-        .wrap {
-            padding: 20px 20px 0;
-        }
     }
 
     #header {
@@ -45,7 +41,7 @@ const route = useRoute();
 
 @media (max-width: 1200px) {
     #header {
-        padding: 0 20px;
+        padding: 0 16px;
     }
 
     #navbar {
@@ -54,11 +50,15 @@ const route = useRoute();
 
     #main {
         padding-left: 0;
+
+        .wrap {
+            padding: 40px 16px;
+        }
     }
 
     .fold {
         #header {
-            padding: 0 20px;
+            padding: 0 16px;
         }
 
         #navbar {
@@ -71,6 +71,5 @@ const route = useRoute();
     }
 }
 @media (max-width: 768px) {
-    
 }
 </style>
