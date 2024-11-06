@@ -9,11 +9,11 @@
 	form(@submit.prevent="login")
 		.input-wrap
 			p.label Email
-			input(type="email" name="email" placeholder="your@email.com" required)
+			input(v-model="email" type="email" name="email" placeholder="your@email.com" required)
 		.input-wrap
 			p.label Password
 			.input
-				input(:type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" required)
+				input(v-model="password" :type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" required)
 				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
 					template(v-if="showPassword")
 						svg
@@ -24,10 +24,10 @@
 
 		.check-wrap
 			label.checkbox
-				input#input_autoLogin(v-model="autoLogin" type="checkbox" name="checkbox" checked)
+				input#input_autoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" checked)
 				span.label-checkbox Remember me
 
-			router-link.forgot(to="/forgot") Forgot Password?
+			router-link.btn-forgot(to="/forgot") Forgot Password?
 
 		button.btn.btn-login(type="submit") Login
 
@@ -42,13 +42,34 @@ import { ref, watch, onMounted } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
+
 let showPassword = ref(false);
+let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위함
+let promiseRunning = ref(false);
+let error = ref(null);
+let enableAccount = ref(false);
+let email = ref('');
+let password = ref('');
 
 watch(loginState, (n) => {
 	if(n) {
 		router.push('/');
 	}
 }, { immediate: true });
+
+skapi.logout();
+
+onMounted(() => {
+    if (window.localStorage.getItem('remember') === 'true') {
+        remVal.value = true;
+    } else {
+        remVal.value = false;
+    }
+});
+
+let setLocalStorage = (e) => {
+    localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
+};
 
 let login = (e) => {
     // promiseRunning.value = true;
@@ -57,12 +78,12 @@ let login = (e) => {
         await updateUser();
         router.push('/');
     }).catch(err => {
+		email.value = '';
+		password.value = '';
+
         for (let k in user) {
             delete user[k];
         }
-        // if (err.code === "SIGNUP_CONFIRMATION_NEEDED") {
-        //     router.push({ path: '/confirmation', query: { email: form.email } });
-        // }
         if (err.code === "USER_IS_DISABLED") {
 			alert("This account is disabled.");
         }
@@ -79,19 +100,6 @@ let login = (e) => {
         // promiseRunning.value = false;
     })
 };
-
-// 로컬 스토리지에 저장된 값 불러오기 (문자열 'true'인 경우에만 체크 상태로 설정)
-const autoLogin = ref(localStorage.getItem('autoLogin') === 'true');
-
-// autoLogin 값이 변경될 때 로컬 스토리지에 저장
-watch(autoLogin, (newValue) => {
-  localStorage.setItem('autoLogin', newValue.toString());
-});
-
-// 페이지 로드 시 체크박스 상태 초기화
-onMounted(() => {
-  autoLogin.value = localStorage.getItem('autoLogin') === 'true';
-});
 </script>
 
 <style scoped lang="less">
@@ -147,10 +155,15 @@ onMounted(() => {
 		gap: 0.4rem;
 	}
 
-	.forgot {
+	.btn-forgot {
 		font-size: 0.9rem;
 		font-weight: 500;
 		color: var(--primary-color-400);
+
+		&:hover {
+			color: var(--primary-color-400-dark);
+			text-decoration: underline;
+		}
 	}
 
 	.btn {

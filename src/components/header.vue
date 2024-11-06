@@ -77,7 +77,7 @@ onMounted(() => {
 	transition: padding 0.15s linear;
 	transition: top 0.3s;
 	z-index: 100;
-	// box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.03);
+	box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.03);
 
 	&.hide {
         top: calc(-1 * var(--header-height));
@@ -93,8 +93,8 @@ onMounted(() => {
 	}
 
 	.btn-noti {
-		width: 2.875rem;
-		height: 2.875rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		background-color: var(--primary-color-100);
 		position: relative;
 		margin-right: 2rem;
@@ -133,8 +133,8 @@ onMounted(() => {
 	}
 
 	.thumbnail {
-		width: 3.375rem;
-		height: 3.375rem;
+		width: 3rem;
+		height: 3rem;
 		border: 0.1875rem solid #fff;
 		border-radius: 50%;
 		display: flex;
@@ -142,7 +142,7 @@ onMounted(() => {
 		justify-content: center;
 		position: absolute;
 		top: 0;
-		right: -1.5rem;
+		right: -1rem;
 		background: var(--primary-color-100) url(../images/header/thumb_profile_default.png) center/cover no-repeat;
 		overflow: hidden;
 
@@ -155,9 +155,10 @@ onMounted(() => {
 		}
 	}
 
-	i {
+	.icon {
 		font-size: 1.5rem;
 		font-weight: 500;
+		fill: var(--primary-color-400);
 	}
 }
 
