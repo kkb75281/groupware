@@ -1,7 +1,6 @@
 <template lang="pug">
 Header
 Navbar
-//- Main
 main#main
     router-view
 </template>
@@ -10,7 +9,6 @@ main#main
 import { useRoute, useRouter } from 'vue-router';
 import Header from '@/components/header.vue';
 import Navbar from '@/components/navbar.vue';
-// import Main from '@/views/Main.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -18,10 +16,13 @@ const route = useRoute();
 
 <style scoped lang="less">
 #main {
-    padding-top: calc(20px + var(--header-height));
-    padding-left: calc(20px + var(--navbar-width));
-    padding-right: 20px;
+    padding-top: calc(var(--header-height));
+    padding-left: calc(var(--navbar-width));
     transition: padding-left 0.15s linear;
+
+	.wrap {
+		padding: 20px 20px 0;
+	}
 }
 
 .fold {
@@ -30,7 +31,11 @@ const route = useRoute();
 	}
 
 	#main {
-		padding-left: calc(20px + var(--navbar-fold-width));
+		padding-left: calc(var(--navbar-fold-width));
+
+		.wrap {
+			padding: 20px 20px 0;
+		}
 	}
 
 	#header {
@@ -40,7 +45,7 @@ const route = useRoute();
 
 @media (max-width: 1200px) {
 	#header {
-		padding: 0 1.5rem;
+		padding: 0 20px;
 	}
 
 	#navbar {
@@ -53,7 +58,7 @@ const route = useRoute();
 
 	.fold {
 		#header {
-			padding: 0 1.5rem;
+			padding: 0 20px;
 		}
 
 		#navbar {
@@ -66,8 +71,6 @@ const route = useRoute();
 	}
 }
 @media (max-width: 768px) {
-	#header {
-		padding: 0 1rem;
-	}
+	
 }
 </style>

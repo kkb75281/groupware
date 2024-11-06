@@ -38,13 +38,17 @@ header#header
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
-	padding: 0 3rem 0 var(--navbar-width);
+	padding: 0 20px 0 var(--navbar-width);
 	transition: padding 0.15s linear;
 	z-index: 100;
 
 	.btn-mo-navbar {
 		display: none;
 		margin-right: auto;
+		
+		.icon {
+			padding: 0;
+		}
 	}
 
 	.btn-noti {
@@ -120,6 +124,16 @@ header#header
 	#header {
 		.btn-mo-navbar {
 			display: block;
+		}
+	}
+}
+
+@media (max-width: 576px) {
+	#header {
+		.btn-profile {
+			.hello {
+				display: none;
+			}
 		}
 	}
 }
