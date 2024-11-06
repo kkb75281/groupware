@@ -14,6 +14,12 @@ const router = useRouter();
 const route = useRoute();
 
 updateUser();
+
+watch(loginState, (n) => {
+	if(!n) {
+		router.push('/login');
+	}
+}, { immediate: true });
 </script>
 
 <style scoped lang="less">
