@@ -107,23 +107,37 @@ onUnmounted(() => {
         padding: 20px 20px 0;
 
         .item {
-            padding: 1.2rem 0;
-            border-radius: 8px;
+            margin-top: 0.8rem;
+
+            &:first-child {
+                margin-top: 0;
+            }
 
             &.active {
-                // background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
-                background-color: var(--primary-color-400);
-
                 a {
+                    background-color: var(--primary-color-400);
                     color: #fff;
 
                     svg {
                         fill: #fff;
                     }
+
                     .arrow {
                         fill: #fff;
                         opacity: 0.7;
                     }
+                }
+
+                &:hover {
+                    a {
+                        background-color: var(--primary-color-400);
+                    }
+                }
+            }
+
+            &:hover {
+                a {
+                    background-color: var(--primary-color-100);
                 }
             }
         }
@@ -133,6 +147,8 @@ onUnmounted(() => {
             flex-wrap: nowrap;
             align-items: center;
             justify-content: center;
+            padding: 1.2rem 0;
+            border-radius: 8px;
 
             .text {
                 display: block;
