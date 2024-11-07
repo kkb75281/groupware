@@ -20,22 +20,25 @@ nav#navbar
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
                     .text 
                         span 대시보드
-            li.item(:class="{'active': route.path.startsWith('/admin')}")
-                router-link(to="/admin/list")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
-                    .text 
-                        span 관리자 페이지
-                        svg.arrow(:class="{'down': route.path.startsWith('/admin')}")
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-            ul.sub-menu-item(:class="{'show': route.path.startsWith('/admin')}")
-                li(:class="{'active': route.name === 'list'}")
-                    router-link(to="/admin/list") 부서(회사) 목록
-                li(:class="{'active': route.name === 'company'}")
-                    router-link(to="/admin/company") 부서(회사) 등록
-                li(:class="{'active': route.name === 'member'}")
-                    router-link(to="/admin/member") 직원 등록
+            template(v-if="user.access_group > 97")
+                li.item(:class="{'active': route.path.startsWith('/admin')}")
+                    router-link(to="/admin/list-divisions")
+                        .icon
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
+                        .text 
+                            span 관리자 페이지
+                            svg.arrow(:class="{'down': route.path.startsWith('/admin')}")
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+                ul.sub-menu-item(:class="{'show': route.path.startsWith('/admin')}")
+                    li(:class="{'active': route.name === 'list-divisions'}")
+                        router-link(to="/admin/list-divisions") 부서(회사) 목록
+                    //- li(:class="{'active': route.name === 'edit-divisions'}")
+                        router-link(to="/admin/edit-divisions") 부서(회사) 수정
+                    li(:class="{'active': route.name === 'add-divisions'}")
+                        router-link(to="/admin/add-divisions") 부서(회사) 등록
+                    li(:class="{'active': route.name === 'add-employee'}")
+                        router-link(to="/admin/add-employee") 직원 등록
             li.item(:class="{'active': route.name === 'component'}")
                 router-link(to="/component") 
                     .icon
@@ -50,6 +53,7 @@ nav#navbar
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted } from 'vue'
 import { checkScreenWidth, toggleNavbarFold } from '@/components/navbar'
+import { user } from '@/user'
 
 const router = useRouter();
 const route = useRoute();
