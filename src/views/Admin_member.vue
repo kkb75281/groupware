@@ -3,9 +3,7 @@
     h1 직원 등록
     span 직원을 등록하면 초대 이메일이 발송됩니다.
 
-br
 hr
-br
 
 .form-wrap
     form#profPic
