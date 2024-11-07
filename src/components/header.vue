@@ -1,5 +1,5 @@
 <template lang="pug">
-header#header(ref="header" :class="{'hide':scroll}")
+header#header
 	button.btn-mo-navbar(@click="toggleOpen")
 		.icon
 			svg
@@ -34,24 +34,25 @@ header#header(ref="header" :class="{'hide':scroll}")
 	.popup-main
 		ul
 			li
-				router-link(to="/")
+				router-link.router(to="/")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 					p 마이페이지
 			
 			li
-				router-link(to="/")
+				router-link.router(to="/")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-business-center")
 					p 회사 정보
 
 			li(@click="logout")
-				.icon
-					svg
-						use(xlink:href="@/assets/icon/material-icon.svg#icon-logout")
-				p 로그아웃
+				.router
+					.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-logout")
+					p 로그아웃
 </template>
 
 <script setup>
@@ -65,10 +66,6 @@ const router = useRouter();
 const route = useRoute();
 
 let showProfile = ref(false);
-let scroll = ref(false);
-let previousScrollY = window.scrollY;
-let header = ref(null);
-let headerHeight = 0;
 
 let logout = () => {
 	skapi.logout().then(() => {
@@ -76,31 +73,6 @@ let logout = () => {
         router.push({ path: "/login" });
     });
 }
-
-window.addEventListener('scroll', (e) => {
-	// const currentScrollY = window.scrollY;
-
-	// currentScrollY > previousScrollY ? scroll.value = true : scroll.value = false;
-	// previousScrollY = currentScrollY;
-
-	let currentScrollY = window.scrollY;
-
-	if (currentScrollY > headerHeight && currentScrollY > previousScrollY) {
-		scroll.value = true;
-	} else if (currentScrollY < previousScrollY) {
-		scroll.value = false;
-	}
-
-	previousScrollY = currentScrollY;
-})
-
-onMounted(() => {
-	nextTick(() => {
-		if (header.value) {
-			headerHeight = header.value.offsetHeight / 4;
-		}
-	});
-});
 </script>
 
 <style scoped lang="less">
@@ -122,10 +94,6 @@ onMounted(() => {
 	transition: top 0.3s;
 	z-index: 999;
 	box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.05);
-
-	&.hide {
-		// top: calc(-1 * var(--header-height));
-	}
 
 	.btn-mo-navbar {
 		display: none;
@@ -180,6 +148,8 @@ onMounted(() => {
 		padding-right: 2.75rem;
 		position: relative;
 		margin-right: 1rem;
+		user-select: none;
+		cursor: pointer;
 	}
 
 	.thumbnail {
@@ -257,11 +227,13 @@ onMounted(() => {
 		ul {
 			li {
 				border-top: 1px solid var(--gray-color-200);
-				a {
+
+				.router {
 					display: flex;
 					align-items: center;
 					padding: 0.8rem;
 					font-size: 0.9rem;
+					cursor: pointer;
 	
 					&:hover {
 						background-color: var(--primary-color-100);
