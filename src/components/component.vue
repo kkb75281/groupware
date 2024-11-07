@@ -64,6 +64,21 @@ section.componet-wrap
 //- selectbox
 section.componet-wrap
   h2 selectbox
+  .input-wrap
+    p.label.essential 권한
+    select(name="selectbox1" required)
+        option(disabled selected) 권한선택
+        option(value="1") 직원
+        option(value="98") 관리자
+        option(value="99") 마스터
+
+  .input-wrap
+    p.label.essential 권한
+    select(name="selectbox2" disabled required)
+        option(disabled selected) 권한선택
+        option(value="1") 직원
+        option(value="98") 관리자
+        option(value="99") 마스터
 
 //- Form
 section.componet-wrap
@@ -86,7 +101,7 @@ section.componet-wrap
     span.label-radio TEST2
 
   //- toggle switch btn
-  label.switch-wrap
+  label.switch-button
     input(type="checkbox")
     span.label-switch
 </template>
