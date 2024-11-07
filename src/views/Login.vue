@@ -9,40 +9,67 @@
 	form(@submit.prevent="login")
 		.input-wrap
 			p.label Email
-			input(type="email" name="email" placeholder="your@email.com" required)
+			input(v-model="email" type="email" name="email" placeholder="your@email.com" required)
 		.input-wrap
 			p.label Password
 			.input
-				input(type="password" name="password" placeholder="password" required)
-				button.icon(type="button")
-					svg
-						use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
+				input(v-model="password" :type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" required)
+				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
+					template(v-if="showPassword")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-fill")
+					template(v-else)
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
+
+		.check-wrap
+			label.checkbox
+				input#input_autoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" checked)
+				span.label-checkbox Remember me
+
+			router-link.btn-forgot(to="/forgot") Forgot Password?
+
 		button.btn.btn-login(type="submit") Login
 
-//- .check-wrap
-	//- label.checkbox
-	//- 	input(id='input_autoLogin' type="checkbox" name="checkbox" checked)
-	//- 	span.label-checkbox Remember me
-	input#input_autoLogin(type="checkbox" @change="window.localStorage.setItem('autoLogin', this.checked.toString())")
-
-	router-link.forgot(to="/forget") Forgot Password?
-
+		router-view
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { user, updateUser, loginState } from '@/user';
 import { skapi } from "@/main";
-import { watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
+
+let showPassword = ref(false);
+let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위함
+let promiseRunning = ref(false);
+let error = ref(null);
+let enableAccount = ref(false);
+let email = ref('');
+let password = ref('');
 
 watch(loginState, (n) => {
 	if(n) {
 		router.push('/');
 	}
 }, { immediate: true });
+
+skapi.logout();
+
+onMounted(() => {
+    if (window.localStorage.getItem('remember') === 'true') {
+        remVal.value = true;
+    } else {
+        remVal.value = false;
+    }
+});
+
+let setLocalStorage = (e) => {
+    localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
+};
 
 let login = (e) => {
     // promiseRunning.value = true;
@@ -51,28 +78,28 @@ let login = (e) => {
         await updateUser();
         router.push('/');
     }).catch(err => {
+		email.value = '';
+		password.value = '';
+
         for (let k in user) {
             delete user[k];
         }
-        // if (err.code === "SIGNUP_CONFIRMATION_NEEDED") {
-        //     router.push({ path: '/confirmation', query: { email: form.email } });
-        // }
         if (err.code === "USER_IS_DISABLED") {
-			throw("This account is disabled.");
+			alert("This account is disabled.");
         }
         else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
-            throw("Incorrect email or password.");
+            alert("Incorrect email or password.");
         }
         else if (err.code === "NOT_EXISTS") {
-            throw("Incorrect email or password.");
+            alert("Incorrect email or password.");
         }
         else {
-            throw(err.message);
+            alert(err.message);
         }
     }).finally(() => {
         // promiseRunning.value = false;
     })
-}
+};
 </script>
 
 <style scoped lang="less">
@@ -124,19 +151,24 @@ let login = (e) => {
 		display: flex;
 		justify-content: space-between;
 		align-content: center;
-		margin-bottom: 3rem;
 		flex-wrap: wrap;
 		gap: 0.4rem;
 	}
 
-	.forgot {
+	.btn-forgot {
 		font-size: 0.9rem;
 		font-weight: 500;
 		color: var(--primary-color-400);
+
+		&:hover {
+			color: var(--primary-color-400-dark);
+			text-decoration: underline;
+		}
 	}
 
-	.btn-login {
+	.btn {
 		margin-left: auto;
+		margin-top: 3rem;
 		min-width: 100px;
 	}
 }
