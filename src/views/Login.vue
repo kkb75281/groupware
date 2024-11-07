@@ -62,6 +62,7 @@ onMounted(() => {
 
 let setLocalStorage = (e) => {
     localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
+	console.log(window.localStorage.getItem('remember'))
 };
 
 let login = (e) => {

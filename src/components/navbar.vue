@@ -2,13 +2,12 @@
 nav#navbar
     .navbar-wrap
         .logo
-            //- img.img-logo(src="@/assets/img/img_logo_white.svg" alt="img-logo" style="max-width: 150px; filter: brightness(0.3);")
             router-link.img-logo(to="/") 로고 부분
             button.btn-menu(@click="toggleNavbarFold")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
-            button.btn-close(@click="!toggleNavbarFold")
+            button.btn-close(@click="toggleNavbarFold")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
@@ -50,28 +49,10 @@ nav#navbar
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted } from 'vue'
+import { checkScreenWidth, toggleNavbarFold } from '@/components/navbar'
 
 const router = useRouter();
 const route = useRoute();
-
-const isFolded = ref(false); // 메뉴 접힘 상태
-const isOpen = ref(false);   // 메뉴 열림 상태
-
-function toggleNavbarFold() {
-  isFolded.value = !isFolded.value;
-  document.body.classList.toggle('fold', isFolded.value);
-}
-
-function toggleOpen() {
-  isOpen.value = !isOpen.value
-  document.body.classList.toggle('open', isOpen.value)
-}
-
-function checkScreenWidth() {
-  if (window.innerWidth <= 1200) {
-    document.body.classList.remove('fold', isFolded.value);
-  }
-}
 
 onMounted(() => {
   checkScreenWidth(); // 컴포넌트가 마운트될 때 한 번 실행
@@ -94,7 +75,8 @@ onUnmounted(() => {
     background-color: #fff;
     box-shadow: 5px 1px 30px rgba(0,0,0,0.05);
     z-index: 9999;
-    transition: width 0.15s linear;
+    // transition: width 0.15s linear;
+    transition: left 0.15s linear;
 
     .navbar-wrap {
         overflow: hidden;
@@ -193,37 +175,6 @@ onUnmounted(() => {
     }
 }
 
-// .fold {
-//     .nav-bar-wrap {
-//         .logo-cont {
-//             justify-content: center;
-
-//             .logo {
-//                 display: none;
-//             }
-//         }
-
-//         .link-items {
-//             li {
-//                 .item {
-//                     span {
-//                         opacity: 0;
-//                     }
-
-//                     &.active {
-//                         background-image: none;
-//                         background-color: var(--primary-color-400);
-//                     }
-//                 }
-
-//                 .sub-nav {
-//                     display: none;
-//                 }
-//             }
-//         }
-//     }
-// }
-
 .fold {
     .navbar-wrap {
         .logo {
@@ -244,6 +195,30 @@ onUnmounted(() => {
 
         .sub-menu-item {
             display: none !important;
+        }
+    }
+}
+
+@media (max-width: 1200px)  {
+    .open {
+        #navbar {
+            left: 0;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .open {
+        #navbar {
+            width: 100% !important;
+
+            .btn-menu {
+                display: none;
+            }
+            
+            .btn-close {
+                display: block;
+            }
         }
     }
 }
