@@ -1,24 +1,26 @@
 <template lang="pug">
-router-view
+router-view(v-if="loaded")
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, ref, computed, watch } from 'vue';
-import { updateUser, loginState } from '@/user'
+import { ref } from 'vue';
+import { user, updateUser } from '@/user'
 
 import Login from '@/views/Login.vue';
 
 const router = useRouter();
 const route = useRoute();
 
-updateUser();
+let loaded = ref(false);
 
-watch(loginState, (n) => {
-	if(!n) {
+updateUser().then(r => {
+	if (!Object.keys(user).length) {
 		router.push('/login');
 	}
-}, { immediate: true });
+}).finally(() => {
+    loaded.value = true;
+});
 </script>
 
 <style scoped lang="less">
