@@ -11,12 +11,12 @@
 	form(@submit.prevent="login")
 		.input-wrap
 			p.label Email
-			input(type="email" name="email" placeholder="your@email.com" required)
+			input(type="email" name="email" placeholder="your@email.com" :disabled="promiseRunning" required)
 
 		.input-wrap
 			p.label Password
 			.input
-				input(:type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" required)
+				input(:type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" :disabled="promiseRunning" required)
 				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
 					template(v-if="showPassword")
 						svg

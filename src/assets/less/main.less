@@ -167,6 +167,12 @@
         &:disabled {
             background-color: var(--gray-color-100);
             color: var(--gray-color-400);
+
+            &:hover,
+            &:active,
+            &:focus {
+                border-color: var(--gray-color-200);
+            }
         }
     }
 
@@ -180,7 +186,15 @@
 
     input,
     select {
-        height: 2.5rem;
+        height: 2.3rem;
+    }
+
+    input {
+        &:hover,
+        &:active,
+        &:focus {
+            border-color: var(--primary-color-400);
+        }
     }
 
     input[type='password'] {
@@ -230,12 +244,6 @@
         input {
             border-color: var(--warning-color-500);
         }
-    }
-
-    &:hover,
-    &:active,
-    &:focus {
-        border-color: var(--primary-color-400);
     }
 }
 
@@ -294,7 +302,7 @@
             height: 1rem;
             width: 1rem;
             border: 1px solid var(--gray-color-300);
-            background: var(--gray-color-300) url('@/assets/img/icon_checked.svg') center/cover no-repeat;
+            background: #fff url('@/assets/img/icon_checked.svg') center/cover no-repeat;
             border-radius: 0.25rem;
             margin-right: 0.375rem;
             flex: none;
@@ -354,8 +362,8 @@
                 width: 1.5rem;
                 height: 1.5rem;
                 border-radius: 50%;
-                border: none;
-                background: var(--gray-color-300) url('@/assets/img/icon_checked.svg') center/cover no-repeat;
+                border: 1px solid var(--gray-color-300);
+                background: #fff url('@/assets/img/icon_checked.svg') center/cover no-repeat;
             }
         }
     }
