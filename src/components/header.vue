@@ -11,7 +11,7 @@ header#header
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
 	.notification
 
-	button.btn-profile(type="button" @click="showProfile = !showProfile")
+	button.btn-profile(type="button" @click="toggleProfile")
 		span.user-name {{ user.name }}
 		span.hello 님, 안녕하세요!
 		.thumbnail
@@ -20,7 +20,7 @@ header#header
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 			//- img(src="https://picsum.photos/250/250" alt="img-profile")
 
-#popup.profile(v-if="showProfile")
+#popup.profile(v-if="showProfile" @click.self="closeProfile")
 	.popup-header
 		.image
 			.icon
@@ -66,6 +66,26 @@ const router = useRouter();
 const route = useRoute();
 
 let showProfile = ref(false);
+
+
+function toggleProfile() {
+  showProfile.value = !showProfile.value;
+}
+
+function handleClickOutside(event) {
+  const profilePopup = document.querySelector('#popup');
+  if (showProfile.value && profilePopup && !profilePopup.contains(event.target)) {
+    showProfile.value = false;
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleClickOutside);
+});
 
 let logout = () => {
 	skapi.logout().then(() => {
