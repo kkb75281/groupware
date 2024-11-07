@@ -6,7 +6,7 @@ header#header(ref="header" :class="{'hide':scroll}")
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
 	button.btn-noti(type="button" data-count="9999")
-		.icon
+		.icon.icon-bel
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
 	.notification
@@ -137,8 +137,8 @@ onMounted(() => {
 	}
 
 	.btn-noti {
-		width: 2.875rem;
-		height: 2.875rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		background-color: var(--primary-color-100);
 		position: relative;
 		margin-right: 2rem;
@@ -153,7 +153,7 @@ onMounted(() => {
 			min-width: 1.625rem;
 			height: 1.625rem;
 			line-height: 1.625rem;
-			font-size: 0.875rem;
+			font-size: 0.75rem;
 			font-weight: 700;
 			color: #fff;
 			background-color: var(--primary-color-400);
@@ -162,9 +162,15 @@ onMounted(() => {
 		}
 	}
 
+	.icon-bel {
+		svg {
+			fill: var(--primary-color-400);
+		}
+	}
+
 	.btn-profile {
 		flex: none;
-		height: 3.375rem;
+		height: 3rem;
 		border-radius: 0.5rem;
 		background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
 		color: #fff;
@@ -173,12 +179,12 @@ onMounted(() => {
 		padding-left: 1.25rem;
 		padding-right: 2.75rem;
 		position: relative;
-		margin-right: 1.3125rem;
+		margin-right: 1rem;
 	}
 
 	.thumbnail {
-		width: 3.375rem;
-		height: 3.375rem;
+		width: 3rem;
+		height: 3rem;
 		border: 0.1875rem solid #fff;
 		border-radius: 50%;
 		display: flex;
@@ -186,7 +192,7 @@ onMounted(() => {
 		justify-content: center;
 		position: absolute;
 		top: 0;
-		right: -1.5rem;
+		right: -1rem;
 		background: var(--primary-color-100) url(../images/header/thumb_profile_default.png) center/cover no-repeat;
 		overflow: hidden;
 
