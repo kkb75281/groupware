@@ -49,7 +49,7 @@ const route = useRoute();
     }
 
     #navbar {
-        width: 0;
+        left: calc(-1 * var(--navbar-width));
     }
 
     #main {
@@ -66,14 +66,12 @@ const route = useRoute();
         }
 
         #navbar {
-            width: 0;
+            left: calc(-1 * var(--navbar-width));
         }
 
         #main {
             padding-left: 0;
         }
     }
-}
-@media (max-width: 768px) {
 }
 </style>

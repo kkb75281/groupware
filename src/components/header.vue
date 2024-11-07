@@ -1,6 +1,6 @@
 <template lang="pug">
 header#header(ref="header" :class="{'hide':scroll}")
-	button.btn-mo-navbar
+	button.btn-mo-navbar(@click="toggleOpen")
 		.icon
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
@@ -56,9 +56,10 @@ header#header(ref="header" :class="{'hide':scroll}")
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, ref, nextTick, watch } from 'vue';
+import { onUnmounted, onMounted, ref, nextTick, watch } from 'vue';
 import { user, updateUser } from '@/user'
 import { skapi } from '@/main'
+import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/navbar'
 
 const router = useRouter();
 const route = useRoute();
@@ -100,14 +101,6 @@ onMounted(() => {
 		}
 	});
 });
-
-// watch(showProfile, (n) => {
-// 	if(n) {
-// 		document.addEventListener('click', hideProfile);
-// 	} else {
-// 		document.removeEventListener('click', hideProfile);
-// 	}
-// })
 </script>
 
 <style scoped lang="less">
@@ -296,4 +289,14 @@ onMounted(() => {
 		}
 	}
 }
+
+// @media (max-width: 400px) {
+// 	#header {
+// 		.btn-profile {
+// 			.user-name {
+// 				display: none;
+// 			}
+// 		}
+// 	}
+// }
 </style>
