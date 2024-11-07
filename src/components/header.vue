@@ -47,18 +47,18 @@ header#header(ref="header" :class="{'hide':scroll}")
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-business-center")
 					p 회사 정보
 
-			li
-				router-link(to="/")
-					.icon
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-logout")
-					p 로그아웃
+			li(@click="logout")
+				.icon
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-logout")
+				p 로그아웃
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, ref, nextTick, watch } from 'vue';
-import { user } from '@/user'
+import { user, updateUser } from '@/user'
+import { skapi } from '@/main'
 
 const router = useRouter();
 const route = useRoute();
@@ -68,6 +68,13 @@ let scroll = ref(false);
 let previousScrollY = window.scrollY;
 let header = ref(null);
 let headerHeight = 0;
+
+let logout = () => {
+	skapi.logout().then(() => {
+        updateUser();
+        router.push({ path: "/login" });
+    });
+}
 
 window.addEventListener('scroll', (e) => {
 	// const currentScrollY = window.scrollY;

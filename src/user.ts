@@ -1,8 +1,9 @@
-import { computed, reactive } from "vue";
+import { useRouter } from 'vue-router';
+import { computed, reactive, watch } from "vue";
 import { skapi } from "@/main";
 
 export let user: { [key: string]: any } = reactive({});
-export let loginState = computed(() => !!user?.user_id);
+// export let loginState = computed(() => !!user?.user_id);
 
 export let updateUser = () => {
     return skapi.getProfile().then((u: any) => {
@@ -14,6 +15,8 @@ export let updateUser = () => {
             for (let k in u) {
                 user[k] = u[k];
             }
+        } else {
+            user = {};
         }
     })
 }
