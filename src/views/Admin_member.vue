@@ -15,61 +15,63 @@ br
                 .icon.white
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-            input(type="file" name="init_profile_pic" id="_el_file_input" @change="changeProfileImg" style="display:none")
+            input#_el_file_input(type="file" name="init_profile_pic" @change="changeProfileImg" style="display:none")
 
     br
 
     form#_el_emp_form(@submit.prevent="resigterEmp")
-        select(name="division" required disabled)
-            option(disabled selected) 부서(회사) 선택
+        .input-wrap
+            p.label.essential 부서(회사)
+            select(name="division" required disabled)
+                option(disabled selected) 부서(회사) 선택
         
         br
+        
+        .input-wrap
+            p.label.essential 권한
+            select(name="access_group" required)
+                option(disabled selected) 권한선택
+                option(value="1") 직원
+                option(value="98") 관리자
+                option(value="99") 마스터
+
+        br
+
+        .input-wrap
+            p.label.essential 직책(직급)
+            input#_el_position(type="text" name="position" required)
+
         br
 
         input(type="text" name="picture" id='_el_picture_input' hidden)
 
         .input-wrap
-            p.label 이름
+            p.label.essential 이름
             input(type="text" name="name" required)
         
         br
 
         .input-wrap
-            p.label 이메일
+            p.label.essential 이메일
             input(type="email" name="email" required)
 
         br
 
         .input-wrap
             p.label 생년월일
-            input(type="date" name="birthdate" required)
+            input(type="date" name="birthdate")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(type="tel" name="phone_number" required)
+            input(type="tel" name="phone_number")
 
         br
 
         .input-wrap
             p.label 주소
-            input(type="text" name="address" required)
-
-        br
-
-        select(name="access_group" required)
-            option(disabled selected) 권한선택
-            option(value="1") 직원
-            option(value="98") 관리자
-            option(value="99") 마스터
-
-        br
-        br
-
-        .input-wrap
-            p.label 직책(직급)
-            input#_el_position(type="text" name="position" required)
+            input(type="text" name="address")
 
         br
 
@@ -83,8 +85,12 @@ br
 </template>
 
 <script setup>
+import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { skapi } from '@/main';
+
+const router = useRouter();
+const route = useRoute();
 
 let divisions = skapi.getRecords({
         table: {
@@ -223,6 +229,10 @@ let resigterEmp = (e) => {
 </script>
 
 <style scoped lang="less">
+select {
+
+}
+
 .title {
     display: flex;
     flex-wrap: wrap;

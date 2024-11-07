@@ -93,7 +93,7 @@ onUnmounted(() => {
     overflow-y: overlay;
     background-color: #fff;
     box-shadow: 5px 1px 30px rgba(0,0,0,0.05);
-    z-index: 100;
+    z-index: 9999;
     transition: width 0.15s linear;
 
     .navbar-wrap {
@@ -117,7 +117,8 @@ onUnmounted(() => {
     }
 
     .menu-item {
-        padding: 0 20px;
+        // padding: 0 20px;
+        padding: 20px 20px 0;
 
         .item {
             padding: 1.2rem 0;
