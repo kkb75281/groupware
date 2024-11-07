@@ -3,9 +3,7 @@
     h1 부서(회사) 등록
     //- span 직원을 등록하면 초대 이메일이 발송됩니다.
 
-br
 hr
-br
 
 .form-wrap
     form#_el_comp_form(@submit.prevent="resigterComp")

@@ -10,6 +10,9 @@
 
 	template(v-if="step === 1")
 		h2.title Forgot Password
+
+		hr
+
 		p.desc Request verification code to reset password.<br>Enter login email and click Request Code.
 
 		form(@submit.prevent="forgotPassword")
@@ -21,6 +24,9 @@
 
 	template(v-if="step === 2")
 		h2.title Reset Password
+
+		hr
+		
 		p.desc Enter the verification code sent to #[b {{email}}]<br>Enter the new password and click Reset Password.
 
 		form(@submit.prevent="changePassword" action="")
@@ -137,9 +143,9 @@ let changePassword = async () => {
 
 	.title {
 		font-size: 1.5rem;
-		margin-bottom: 1.5rem;
-		padding-bottom: 1.5rem;
-		border-bottom: 1px solid var(--gray-color-400);
+		// margin-bottom: 1.5rem;
+		// padding-bottom: 1.5rem;
+		// border-bottom: 1px solid var(--gray-color-400);
 	}
 
 	.desc {

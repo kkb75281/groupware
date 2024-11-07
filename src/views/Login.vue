@@ -6,14 +6,17 @@
 
 	h2.title Login
 
+	hr
+
 	form(@submit.prevent="login")
 		.input-wrap
 			p.label Email
-			input(v-model="email" type="email" name="email" placeholder="your@email.com" required)
+			input(type="email" name="email" placeholder="your@email.com" required)
+
 		.input-wrap
 			p.label Password
 			.input
-				input(v-model="password" :type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" required)
+				input(:type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" required)
 				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
 					template(v-if="showPassword")
 						svg
@@ -30,13 +33,11 @@
 			router-link.btn-forgot(to="/forgot") Forgot Password?
 
 		button.btn.btn-login(type="submit") Login
-
-		router-view
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { user, updateUser, loginState } from '@/user';
+import { user, updateUser } from '@/user';
 import { skapi } from "@/main";
 import { ref, watch, onMounted } from 'vue';
 
@@ -48,14 +49,6 @@ let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위�
 let promiseRunning = ref(false);
 let error = ref(null);
 let enableAccount = ref(false);
-let email = ref('');
-let password = ref('');
-
-watch(loginState, (n) => {
-	if(n) {
-		router.push('/');
-	}
-}, { immediate: true });
 
 skapi.logout();
 
@@ -123,9 +116,9 @@ let login = (e) => {
 
 	.title {
 		    font-size: 1.5rem;
-			margin-bottom: 1.5rem;
-			padding-bottom: 1.5rem;
-			border-bottom: 1px solid var(--gray-color-400);
+			// margin-bottom: 1.5rem;
+			// padding-bottom: 1.5rem;
+			// border-bottom: 1px solid var(--gray-color-400);
 	}
 
 	.input-wrap {
