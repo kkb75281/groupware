@@ -5,9 +5,10 @@ import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
 import Admin from '@/views/Admin.vue';
 import Profile from '@/views/Profile.vue';
-import Admin_member from '@/views/Admin_member.vue';
-import Admin_company from '@/views/Admin_company.vue';
-import Admin_list from '@/views/Admin_list.vue';
+import Admin_add_employee from '@/views/Admin_add_employee.vue';
+import Admin_add_divisions from '@/views/Admin_add_divisions.vue';
+import Admin_edit_divisions from '@/views/Admin_edit_divisions.vue';
+import Admin_list_divisions from '@/views/Admin_list_divisions.vue';
 import Login from '@/views/Login.vue';
 import Forgot_password from '@/views/Forgot_password.vue';
 
@@ -46,19 +47,24 @@ const router = createRouter({
           component: Admin,
           children: [
             {
-              path: 'member',
-              name: 'member',
-              component: Admin_member,
+              path: 'add-employee',
+              name: 'add-employee',
+              component: Admin_add_employee,
             },
             {
-              path: 'company',
-              name: 'company',
-              component: Admin_company,
+              path: 'add-divisions',
+              name: 'add-divisions',
+              component: Admin_add_divisions,
             },
             {
-              path: 'list',
-              name: 'list',
-              component: Admin_list,
+              path: 'edit-divisions',
+              name: 'edit-divisions',
+              component: Admin_edit_divisions,
+            },
+            {
+              path: 'list-divisions',
+              name: 'list-divisions',
+              component: Admin_list_divisions,
             },
           ],
         },

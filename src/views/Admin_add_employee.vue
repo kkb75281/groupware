@@ -74,7 +74,7 @@ hr
         br
 
         .button-wrap
-            button.btn.bg-gray(type="button" @click="$router.push('/admin/list')") 취소
+            button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
 
 br  
@@ -172,7 +172,7 @@ let resigterEmp = (e) => {
                 _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
             }
 
-            let added = await skapi.inviteUser(event);
+            let added = await skapi.inviteUser(e);
             // added = SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
             // extract user id
             let user_id = added.split(' ').pop().slice(0, -1).replaceAll('-', '_'); // tag는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
@@ -219,7 +219,7 @@ let resigterEmp = (e) => {
             throw error;
         }
 
-        window.location.href = 'admin.html'; // main.html로 이동
+        router.push('/admin/list-divisions');
     }
 
     post();

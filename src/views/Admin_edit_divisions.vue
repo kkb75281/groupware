@@ -1,12 +1,11 @@
 <template lang="pug">
 .title
-    h1 부서(회사) 등록
-    //- span 직원을 등록하면 초대 이메일이 발송됩니다.
+    h1 부서(회사) 수정
 
 hr
 
-.form-wrap
-    form#_el_comp_form(@submit.prevent="resigterComp")
+.form-wrap(v-if="!loading")
+    form#_el_comp_form(@submit.prevent="editDivision")
         div(style="text-align:center;")
             .image
                 img#profile-img(:src="uploadSrc._el_profile_img" alt="Company Logo")
@@ -20,19 +19,19 @@ hr
 
         .input-wrap
             p.label.essential 부서(회사)명
-            input(type="text" name="division_name" required)
+            input(v-model="division.data.division_name" type="text" name="division_name" required)
         
         br
 
         .input-wrap
             p.label 설명
-            input(type="text" name="division_description")
+            input(v-model="division.data.division_description" type="text" name="division_description")
 
         br
 
         .input-wrap
             p.label 대표자명
-            input(type="text" name="division_ceo_name")
+            input(v-model="division.data.division_ceo_name" type="text" name="division_ceo_name")
 
         br
 
@@ -117,7 +116,7 @@ hr
         br
 
         .button-wrap
-            button.btn.bg-gray(type="button" @click="$router.push('/admin/list')") 취소
+            button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
 
 br  
@@ -132,6 +131,9 @@ import { skapi } from '@/main';
 
 const router = useRouter();
 const route = useRoute();
+
+let division = ref({});
+let loading = ref(true);
 
 let uploadSrc = ref({
     _el_profile_img: '',
@@ -150,17 +152,63 @@ let uploadImgSrc = (e) => {
         };
         reader.readAsDataURL(file);
     }
+
+    // 이미지 변경시 예전 이미지 모두 삭제
+    if(targetInput === '_el_profile_img' && record.bin.division_logo) {
+        record.bin.division_logo.forEach(element => {
+            post_params.remove_bin.push(element);    
+        });
+    }
+    if(targetInput === '_el_used_seal_img' && record.bin.division_used_seal) {
+        record.bin.division_used_seal.forEach(element => {
+            post_params.remove_bin.push(element);    
+        });
+    }
+    if(targetInput === '_el_official_seal_img' && record.bin.division_official_seal) {
+        record.bin.division_official_seal.forEach(element => {
+            post_params.remove_bin.push(element);    
+        });
+    }
 }
 
-let resigterComp = (e) => {
-    skapi.postRecord(e, {
-        table: {
-            name: 'divisions',
-            access_group: 99
-        }
-    }).then(() => {
+// get record_id value from url parameter
+let urlParams = new URLSearchParams(window.location.search);
+let record_id = urlParams.get('record_id');
+
+if (!record_id) {
+    // go back to the list if record_id is not found
+    router.push('/admin/list-divisions');
+} else {
+    skapi.getRecords({record_id: record_id}).then(r => {
+        division.value = r.list[0];
+        console.log(division.value)
+        loading.value = false;
+    })
+}
+
+let record = JSON.parse(sessionStorage.getItem(record_id));
+
+if (!record) {
+    // go back to the list if record is not found
+    router.push('/admin/list-divisions');
+}
+
+let post_params = {
+    table: {
+        name: 'divisions',
+        access_group: 99
+    }
+    ,
+    record_id: record_id,
+    remove_bin: []
+}
+
+let editDivision = (e) => {
+    document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    
+    skapi.postRecord(e, post_params).then(() => {
         window.alert('등록되었습니다.');
-        router.push('/admin/list');
+        router.push('/admin/list-divisions');
     });
 }
 </script>
