@@ -6,6 +6,8 @@
 
 	h2.title Login
 
+	hr
+
 	form(@submit.prevent="login")
 		.input-wrap
 			p.label Email
@@ -114,9 +116,9 @@ let login = (e) => {
 
 	.title {
 		    font-size: 1.5rem;
-			margin-bottom: 1.5rem;
-			padding-bottom: 1.5rem;
-			border-bottom: 1px solid var(--gray-color-400);
+			// margin-bottom: 1.5rem;
+			// padding-bottom: 1.5rem;
+			// border-bottom: 1px solid var(--gray-color-400);
 	}
 
 	.input-wrap {

@@ -1,9 +1,7 @@
 <template lang="pug">
 h1 부서(회사) 목록
 
-br
 hr
-br
 
 
 </template>
