@@ -30,7 +30,7 @@
 					input(type="text" name="code" ref="codeField" :value="code" @input="e => {code = e.target.value; e.target.setCustomValidity('');}" @change="validateCode" placeholder="######" required)
 					button.btn.btn-resend(@click="resend") Resend Code
 
-			.btn-wrap
+			.button-wrap
 				a.btn.bg-gray.btn-back(@click="back") Back
 				button.btn.btn-next(type="submit") Next
 
@@ -67,7 +67,7 @@
 							svg
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
 			
-			.btn-wrap
+			.button-wrap
 				a.btn.bg-gray.btn-back(@click="back") Back
 				button.btn.btn-reset-password(type="submit" value="Reset Password") Reset Password
 </template>
@@ -235,7 +235,7 @@ let changePassword = async () => {
 		color: var(--primary-color-400);
 	}
 
-	.btn-wrap {
+	.button-wrap {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;

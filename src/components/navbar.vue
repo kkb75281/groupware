@@ -46,6 +46,13 @@ nav#navbar
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-component")
                     .text
                         span component
+            li.item(:class="{'active': route.name === 'mailing'}")
+                router-link(to="/mailing") 
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+                    .text
+                        span mailing
 
 </template>
 
@@ -191,6 +198,7 @@ onUnmounted(() => {
 
         a {
             display: block;
+            padding: 0.4rem 0;
         }
     }
 }
