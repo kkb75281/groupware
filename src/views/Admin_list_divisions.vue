@@ -4,6 +4,10 @@ h1 부서(회사) 목록
 hr
 
 ul#divisions_list
+    li(v-for="(division, i) in divisions")
+        router-link(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
+            img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
+            span {{ division.data.division_name }}
 </template>
 
 <script setup>
@@ -14,33 +18,33 @@ import { skapi } from '@/main';
 const router = useRouter();
 const route = useRoute();
 
-skapi.getRecords({
-    table: {
-        name: 'divisions',
-        access_group: 99
-    }
-},
-).then(response => displayDivisions(response.list));
+let divisions = ref(null);
+
+let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+
+if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
+    skapi.getRecords({
+        table: {
+            name: 'divisions',
+            access_group: 99
+        }
+    },
+    ).then(response => {
+        divisions.value = response.list;
+        displayDivisions(response.list)
+    });
+} else {
+    divisions.value = sessionDivisions;
+}
 
 function displayDivisions(divisions) {
-    const container = document.getElementById('divisions_list');
-    divisions.forEach(division => {
-        window.sessionStorage.setItem(division.record_id, JSON.stringify(division));
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.style = 'text-underline-offset: .5rem;'
-        a.href = `edit-divisions?record_id=${division.record_id}`;
-        a.innerHTML = /*html*/ `
-                <span>${division.data.division_name}</span>
-            `;
-        // a.innerHTML = /*html*/ `
-        //         <img src="${division.bin.division_logo[0].url}" alt="Company Logo" class="division-logo">
-        //         <span>${division.data.division_name}</span>
-        //     `;
+    let saveSession = {};
 
-            li.appendChild(a);
-        container.appendChild(li);
+    divisions.forEach(division => {
+        saveSession[division.record_id] = division;
     });
+
+    window.sessionStorage.setItem('divisions', JSON.stringify(saveSession));
 }
 </script>
 
