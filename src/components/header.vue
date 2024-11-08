@@ -5,11 +5,10 @@ header#header
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
-	button.btn-noti(type="button" data-count="9999")
-		.icon.icon-bel
+	button.btn-noti(type="button" data-count="9999" @click="showNotification = !showNotification")
+		.icon.icon-bell
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
-	.notification
 
 	button.btn-profile(type="button" @click="showProfile = !showProfile")
 		span.user-name {{ user.name }}
@@ -19,6 +18,39 @@ header#header
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 			//- img(src="https://picsum.photos/250/250" alt="img-profile")
+
+#popup.notification(v-if="showNotification")
+	.popup-header
+		h3.title 알림 목록
+	.popup-main
+		ul
+			li
+				router-link.router(to="/")
+					h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
+					span.upload-time {{time}}시간전
+					button.icon(type="button")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+			li
+				router-link.router(to="/")
+					h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
+					span.upload-time {{time}}시간전
+					button.icon(type="button")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+			li
+				router-link.router(to="/")
+					h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
+					span.upload-time {{time}}시간전
+					button.icon(type="button")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+	.popup-bottom
+		router-link.router.view-all(to="/")
+			p 전체보기
+			.icon
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
 #popup.profile(v-if="showProfile")
 	.popup-header
@@ -65,7 +97,13 @@ import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/nav
 const router = useRouter();
 const route = useRoute();
 
+let showNotification = ref(false);
 let showProfile = ref(false);
+let time = ref(1);
+
+function closeProfile() {
+  showProfile.value = false;
+}
 
 let logout = () => {
 	skapi.logout().then(() => {
@@ -84,12 +122,10 @@ let logout = () => {
 	left: 0;
 	right: 0;
 	background-color: #fff;
-	// background-color: #b59595;
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
-	// padding: 0 20px 0 var(--navbar-width);
-	padding: 0 20px;
+	padding: 0 2.4rem 0 1rem;
 	transition: padding 0.15s linear;
 	transition: top 0.3s;
 	z-index: 999;
@@ -130,7 +166,7 @@ let logout = () => {
 		}
 	}
 
-	.icon-bel {
+	.icon-bell {
 		svg {
 			fill: var(--primary-color-400);
 		}
@@ -173,17 +209,21 @@ let logout = () => {
 			z-index: 1;
 			position: relative;
 		}
+
+		svg {
+			fill: var(--gray-color-400);
+		}
 	}
 }
 
 #popup {
 	position: fixed;
-	right: 20px;
-	top: calc(8px + var(--header-height));
+	right: 52px;
+	top: calc(-4px + var(--header-height));
 	background-color: #fff;
 	border-radius: 16px;
 	border: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 1px 1px 20px 0px rgba(0, 0, 0, 0.1);
+	box-shadow: 1px 1px 20px 0px rgba(0, 0, 0, 0.1);
 	overflow: hidden;
 	z-index: 99999;
 
@@ -202,6 +242,7 @@ let logout = () => {
 			background-color: var(--gray-color-100);
 			border-radius: 50%;
 		}
+
 		.content {
 			.user {
 				display: flex;
@@ -212,32 +253,140 @@ let logout = () => {
 				h4 {
 					color: var(--primary-color-400);
 				}
+
 				span {
 					color: var(--gray-color-400);
 					font-size: 0.8rem;
 				}
 			}
+
 			p {
 				margin-top: 0.5rem;
 				font-size: 0.8rem;
 			}
 		}
 	}
+	
 	.popup-main {
 		ul {
 			li {
 				border-top: 1px solid var(--gray-color-200);
+			}
+		}
 
-				.router {
-					display: flex;
-					align-items: center;
-					padding: 0.8rem;
-					font-size: 0.9rem;
-					cursor: pointer;
-	
-					&:hover {
-						background-color: var(--primary-color-100);
+		.router {
+			display: flex;
+			align-items: center;
+			padding: 0.8rem;
+			font-size: 0.9rem;
+			font-weight: 700;
+			cursor: pointer;
+
+			&:hover {
+				background-color: var(--primary-color-100);
+			}
+		}
+	}
+
+	&.notification {
+		right: 124px;
+		max-width: 480px;
+		width: calc(100% - 16px);
+
+		.popup-header {
+			padding: 34px 30px 24px;
+
+			.title {
+				font-size: 24px;
+			}
+		}
+
+		.popup-main {
+			ul {
+				li {
+					border-top: none;
+				}
+			}
+
+			a,
+			button {
+				transition: none;
+
+				&:hover,
+				&:active,
+				&:focus {
+					transition: none;
+				}
+			}
+
+			.router {
+				padding-left: 30px;
+				padding-right: 30px;
+				gap: 0.8rem;
+
+				&:hover {
+					background-color: var(--primary-color-100);
+
+					.icon {
+						svg {
+							fill: var(--gray-color-400);
+						}
 					}
+				}
+			}
+
+			.noti-title {
+				font-size: 16px;
+				font-weight: 500;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				width: 330px;
+			}
+
+			.upload-time {
+				font-size: 0.7rem;
+				font-weight: 500;
+				color: var(--gray-color-600);
+				flex: none;
+			}
+
+			.icon {
+				flex: none;
+
+				svg {
+					fill: #fff;
+				}
+			}
+		}
+
+		.icon {
+			padding: 0;
+
+			svg {
+				width: 16px;
+				height: 16px;
+			}
+		}
+
+		.view-all {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 8px;
+			padding: 24px 0;
+			margin: 0 30px;
+			border-top: 1px solid var(--gray-color-200);
+
+			p {
+				font-size: 14px;
+			}
+
+			.icon {
+				svg {
+					width: 12px;
+					height: 12px;
+					fill: var(--gray-color-400);
 				}
 			}
 		}
@@ -246,14 +395,52 @@ let logout = () => {
 
 @media (max-width: 1200px) {
 	#header {
+		padding-left: 2.4rem;
+
 		.btn-mo-navbar {
 			display: block;
 		}
 	}
 }
 
+@media (max-width: 768px) {
+	#header {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+	
+	#popup {
+		right: 16px;
+		
+		&.notification {
+			right: 50%;
+			transform: translateX(50%);
+
+			.popup-header {
+				padding: 30px 20px 18px;
+			}
+
+			.popup-main {
+				.router {
+					padding-left: 20px;
+					padding-right: 20px;
+				}
+			}
+
+			.view-all {
+				padding: 24px 0;
+				margin: 0 24px;
+			}
+		}
+	}
+}
+
 @media (max-width: 576px) {
 	#header {
+		.btn-noti {
+			margin-right: 1.5rem;
+		}
+
 		.btn-profile {
 			.hello {
 				display: none;

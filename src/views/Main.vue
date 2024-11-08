@@ -21,7 +21,8 @@ const route = useRoute();
     transition: padding-left 0.15s linear;
 
     .wrap {
-        padding: 40px 20px 0;
+        // padding: 40px 20px 0;
+        padding: 3rem 2.4rem 0;
     }
 }
 
@@ -34,7 +35,7 @@ const route = useRoute();
         padding-left: calc(var(--navbar-fold-width));
 
         .wrap {
-            padding: 40px 20px 0;
+            padding: 3rem 2.4rem 0;
         }
     }
 
@@ -45,11 +46,21 @@ const route = useRoute();
 
 @media (max-width: 1200px) {
     #header {
-        padding: 0 16px;
+        padding-left: 2.4rem;
     }
 
     #navbar {
         left: calc(-1 * var(--navbar-width));
+    }
+
+    #main {
+        padding-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    #header {
+        padding: 0 16px;
     }
 
     #main {
