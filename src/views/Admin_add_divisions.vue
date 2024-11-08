@@ -160,7 +160,16 @@ let resigterComp = (e) => {
             name: 'divisions',
             access_group: 99
         }
-    }).then(() => {
+    }).then((r) => {
+        let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+
+        if(!sessionDivisions) {
+            sessionDivisions = {};
+        }
+        
+        sessionDivisions[r.record_id] = r;
+        window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
+
         window.alert('등록되었습니다.');
         router.push('/admin/list-divisions');
     });
