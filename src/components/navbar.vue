@@ -20,21 +20,19 @@ nav#navbar
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
                     .text 
                         span 대시보드
-            template(v-if="user.access_group > 97")
+            template(v-if="user.access_group > 98")
                 li.item(:class="{'active': route.path.startsWith('/admin')}")
                     router-link(to="/admin/list-divisions")
                         .icon
                             svg
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
                         .text 
-                            span 관리자 페이지
+                            span 마스터 페이지
                             svg.arrow(:class="{'down': route.path.startsWith('/admin')}")
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
                 ul.sub-menu-item(:class="{'show': route.path.startsWith('/admin')}")
                     li(:class="{'active': route.name === 'list-divisions'}")
                         router-link(to="/admin/list-divisions") 부서(회사) 목록
-                    //- li(:class="{'active': route.name === 'edit-divisions'}")
-                        router-link(to="/admin/edit-divisions") 부서(회사) 수정
                     li(:class="{'active': route.name === 'add-divisions'}")
                         router-link(to="/admin/add-divisions") 부서(회사) 등록
                     li(:class="{'active': route.name === 'add-employee'}")

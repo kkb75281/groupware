@@ -14,7 +14,8 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#_el_profile_img(type="file" name="division_logo" @change="uploadImgSrc" style="display:none")
+                //- input#_el_profile_img(type="file" name="division_logo" @change="uploadImgSrc" style="display:none")
+                input#_el_profile_img(type="file" name="division_logo" @change="openCropImageDialog" style="display:none")
 
         br
 
@@ -120,6 +121,8 @@ hr
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
 
+CropImage(:open="openModal" :imageSrc="uploadSrc._el_profile_img" @cropped="setCroppedImage" @close="openModal = false")
+
 br  
 br  
 br  
@@ -130,14 +133,30 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { skapi } from '@/main';
 
+import CropImage from '@/components/crop_image.vue';
+
 const router = useRouter();
 const route = useRoute();
 
+let openModal = ref(false);
 let uploadSrc = ref({
     _el_profile_img: '',
     _el_used_seal_img: '',
     _el_official_seal_img: ''
 });
+
+let openCropImageDialog = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+        uploadSrc.value._el_profile_img = URL.createObjectURL(file)
+        openModal.value = true;
+    }
+}
+
+let setCroppedImage = (croppedImage) => {
+  uploadSrc.value._el_profile_img = croppedImage;
+  openModal.value = false;
+}
 
 let uploadImgSrc = (e) => {
     let targetInput = e.target.id;
@@ -154,7 +173,7 @@ let uploadImgSrc = (e) => {
 
 let resigterComp = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
-    
+    //form data에 이미지 파일 추가
     skapi.postRecord(e, {
         table: {
             name: 'divisions',
