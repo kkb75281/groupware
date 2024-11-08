@@ -51,8 +51,8 @@ nav#navbar
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted } from 'vue'
-import { checkScreenWidth, toggleNavbarFold } from '@/components/navbar'
+import { watch, onMounted, onUnmounted } from 'vue'
+import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar'
 import { user } from '@/user'
 
 const router = useRouter();
@@ -66,6 +66,15 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreenWidth); // 컴포넌트가 언마운트될 때 이벤트 해제
 });
+
+watch(() => route.path, (newPath, oldPath) => {
+    if(newPath) {
+        if (isOpen.value) {
+            isOpen.value = !isOpen.value;
+            document.body.classList.toggle('open', isOpen.value);
+        }
+    }
+})
 </script>
 
 <style scoped lang="less">
