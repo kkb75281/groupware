@@ -66,32 +66,29 @@ let setLocalStorage = (e) => {
 };
 
 let login = (e) => {
-    // promiseRunning.value = true;
+    promiseRunning.value = true;
 
     skapi.login(e).then(async (u) => {
         await updateUser();
         router.push('/');
     }).catch(err => {
-		email.value = '';
-		password.value = '';
-
-        for (let k in user) {
-            delete user[k];
-        }
-        if (err.code === "USER_IS_DISABLED") {
-			alert("This account is disabled.");
-        }
-        else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
-            alert("Incorrect email or password.");
-        }
-        else if (err.code === "NOT_EXISTS") {
-            alert("Incorrect email or password.");
-        }
-        else {
-            alert(err.message);
-        }
+		for (let k in user) {
+				delete user[k];
+		}
+		if (err.code === "USER_IS_DISABLED") {
+				alert("This account is disabled.");
+		}
+		else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
+				alert("Incorrect email or password.");
+		}
+		else if (err.code === "NOT_EXISTS") {
+				alert("Incorrect email or password.");
+		}
+		else {
+				alert(err.message);
+		}
     }).finally(() => {
-        // promiseRunning.value = false;
+        promiseRunning.value = false;
     })
 };
 </script>

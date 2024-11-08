@@ -218,7 +218,7 @@ let logout = () => {
 
 #popup {
 	position: fixed;
-	right: 24px;
+	right: 52px;
 	top: calc(-4px + var(--header-height));
 	background-color: #fff;
 	border-radius: 16px;
@@ -410,6 +410,8 @@ let logout = () => {
 	}
 	
 	#popup {
+		right: 16px;
+		
 		&.notification {
 			right: 50%;
 			transform: translateX(50%);
