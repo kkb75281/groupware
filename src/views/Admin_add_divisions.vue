@@ -228,6 +228,18 @@ let resigterComp = (e) => {
 
             .icon {
                 padding: 4px;
+                width: 32px;
+                height: 32px;
+                position: relative;
+
+                svg {
+                    width: 18px;
+                    height: 18px;
+                    transform: translate(-50%, -50%);
+                    top: 50%;
+                    left: 50%;
+                    position: absolute;
+                }
             }
         }
     }
@@ -298,6 +310,6 @@ let resigterComp = (e) => {
     display: flex;
     align-items: center;
     justify-content: end;
-    gap: 1rem;
+    gap: 8px;
 }
 </style>

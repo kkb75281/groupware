@@ -67,7 +67,8 @@ const route = useRoute();
         padding-left: 0;
 
         .wrap {
-            padding: 40px 16px;
+            padding-left: 16px;
+            padding-right: 16px;
         }
     }
 
