@@ -188,7 +188,7 @@ onUnmounted(() => {
         }
 
         li {
-            margin-bottom: 1.2rem;
+            margin-bottom: 1rem;
 
             &.active {
                 color: var(--primary-color-400);
