@@ -5,7 +5,7 @@ header#header
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
-	button.btn-noti(type="button" data-count="9999" @click="showNotification = !showNotification")
+	button.btn-noti(type="button" :data-count="notiCount" @click="showNotification = !showNotification")
 		.icon.icon-bell
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
@@ -22,29 +22,40 @@ header#header
 #popup.notification(v-if="showNotification")
 	.popup-header
 		h3.title 알림 목록
-	.popup-main
-		ul
-			li
-				router-link.router(to="/")
-					h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
-					span.upload-time {{time}}시간전
-					button.icon(type="button")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-			li
-				router-link.router(to="/")
-					h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
-					span.upload-time {{time}}시간전
-					button.icon(type="button")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-			li
-				router-link.router(to="/")
-					h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
-					span.upload-time {{time}}시간전
-					button.icon(type="button")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+
+	template(v-if="newNoti")
+		.popup-main
+			ul
+				li
+					router-link.router(to="/")
+						h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요. 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
+						span.upload-time {{time}}시간전
+						button.icon(type="button")
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+				li
+					router-link.router(to="/")
+						h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요. 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
+						span.upload-time {{time}}시간전
+						button.icon(type="button")
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+				li
+					router-link.router(to="/")
+						h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
+						span.upload-time {{time}}시간전
+						button.icon(type="button")
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+
+	template(v-else)
+		.popup-main.no-noti
+			h4.title
+				.icon
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+				| 새로운 알림이 없습니다.
+
 	.popup-bottom
 		router-link.router.view-all(to="/")
 			p 전체보기
@@ -100,10 +111,8 @@ const route = useRoute();
 let showNotification = ref(false);
 let showProfile = ref(false);
 let time = ref(1);
-
-function closeProfile() {
-  showProfile.value = false;
-}
+let notiCount = ref(9999);
+let newNoti = ref(false);
 
 let logout = () => {
 	skapi.logout().then(() => {
@@ -303,6 +312,9 @@ let logout = () => {
 
 		.popup-main {
 			ul {
+					max-height: 240px;
+					overflow-y: scroll;
+
 				li {
 					border-top: none;
 				}
@@ -380,13 +392,36 @@ let logout = () => {
 
 			p {
 				font-size: 14px;
+				font-weight: 600;
 			}
 
 			.icon {
 				svg {
 					width: 12px;
 					height: 12px;
-					fill: var(--gray-color-400);
+					fill: var(--gray-color-900);
+				}
+			}
+		}
+
+		.no-noti {
+			padding: 0 30px 24px;
+			min-height: 200px;
+
+			.title {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				gap: 4px;
+				font-size: 0.8rem;
+				font-weight: 600;
+    		color: var(--gray-color-500);
+				line-height: 200px;
+			}
+
+			.icon {
+				svg {
+					fill: var(--gray-color-500);
 				}
 			}
 		}
@@ -411,7 +446,7 @@ let logout = () => {
 	
 	#popup {
 		right: 16px;
-		
+
 		&.notification {
 			right: 50%;
 			transform: translateX(50%);
