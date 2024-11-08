@@ -8,7 +8,8 @@ hr
     form#_el_comp_form(@submit.prevent="editDivision")
         div(style="text-align:center;")
             .image
-                img#profile-img(:src="uploadSrc._el_profile_img" alt="Company Logo")
+                img#profile-img(v-if="bin.hasOwnProperty('division_logo')" :src="bin['division_logo'][0].url" alt="Company Logo")
+                img#profile-img(v-else :src="uploadSrc._el_profile_img" alt="Company Logo")
                 label(for="_el_profile_img")
                     .icon.white
                         svg
@@ -19,86 +20,87 @@ hr
 
         .input-wrap
             p.label.essential 부서(회사)명
-            input(v-model="division.data.division_name" type="text" name="division_name" required)
+            input(v-model="record.data.division_name" type="text" name="division_name" required)
         
         br
 
         .input-wrap
             p.label 설명
-            input(v-model="division.data.division_description" type="text" name="division_description")
+            input(v-model="record.data.division_description" type="text" name="division_description")
 
         br
 
         .input-wrap
             p.label 대표자명
-            input(v-model="division.data.division_ceo_name" type="text" name="division_ceo_name")
+            input(v-model="record.data.division_ceo_name" type="text" name="division_ceo_name")
 
         br
 
         .input-wrap
             p.label 주소
-            input(type="text" name="division_address")
+            input(v-model="record.data.division_address" type="text" name="division_address")
 
         br
 
         .input-wrap
             p.label 사업자번호
-            input(type="text" name="division_business_code")
+            input(v-model="record.data.division_business_code" type="text" name="division_business_code")
 
         br
 
         .input-wrap
             p.label 법인번호
-            input(type="text" name="division_corporate_number")
+            input(v-model="record.data.division_corporate_number" type="text" name="division_corporate_number")
 
         br
 
         .input-wrap
             p.label 업태
-            input(type="text" name="division_business_type")
+            input(v-model="record.data.division_business_type" type="text" name="division_business_type")
 
         br
 
         .input-wrap
             p.label 종목
-            input(type="text" name="division_business_item")
+            input(v-model="record.data.division_business_item" type="text" name="division_business_item")
 
         br
 
         .input-wrap
             p.label 설립일
-            input(type="text" name="division_establishment_date")
+            input(v-model="record.data.division_establishment_date" type="text" name="division_establishment_date")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(type="text" name="division_phone_number")
+            input(v-model="record.data.division_phone_number" type="text" name="division_phone_number")
 
         br
 
         .input-wrap
             p.label 이메일
-            input(type="text" name="division_email")
+            input(v-model="record.data.division_email" type="text" name="division_email")
 
         br
 
         .input-wrap
             p.label 팩스번호
-            input(type="text" name="division_fax")
+            input(v-model="record.data.division_fax" type="text" name="division_fax")
 
         br
 
         .input-wrap
             p.label 홈페이지
-            input(type="text" name="division_homepage")
+            input(v-model="record.data.division_homepage" type="text" name="division_homepage")
 
         br
 
         p(style="margin-bottom: 0.5rem") 도장
         .image-wrap(style="text-align:center;")
             .image.seal
-                img#used-img(:src="uploadSrc._el_used_seal_img" alt="Company Used Seal")
+                img#used-img(v-if="bin.hasOwnProperty('division_used_seal')" :src="bin['division_used_seal'][0].url" alt="Company Used Seal")
+                img#used-img(v-else :src="uploadSrc._el_used_seal_img" alt="Company Used Seal")
                 label(for="_el_used_seal_img")
                     .icon.white
                         svg
@@ -106,7 +108,8 @@ hr
                 input#_el_used_seal_img(type="file" name="division_used_seal" @change="uploadImgSrc" style="display:none")
 
             .image.seal
-                img#official-img(:src="uploadSrc._el_official_seal_img" alt="Company Used Seal")
+                img#official-img(v-if="bin.hasOwnProperty('division_official_seal')" :src="bin['division_official_seal'][0].url" alt="Company Used Seal")
+                img#official-img(v-else :src="uploadSrc._el_official_seal_img" alt="Company Used Seal")
                 label(for="_el_official_seal_img")
                     .icon.white
                         svg
@@ -132,13 +135,36 @@ import { skapi } from '@/main';
 const router = useRouter();
 const route = useRoute();
 
-let division = ref({});
+// get record_id value from url parameter
+let urlParams = new URLSearchParams(window.location.search);
+let record_id = urlParams.get('record_id');
+
+if (!record_id) {
+    // go back to the list if record_id is not found
+    router.push('/admin/list-divisions');
+}
+
+let record = JSON.parse(sessionStorage.getItem(record_id));
 let loading = ref(true);
+let bin = {};
+
+if (!record) {
+    // go back to the list if record is not found
+    router.push('/admin/list-divisions');
+} else {
+    if (record?.bin) {
+        bin = {};
+        for (let k in record?.bin) {
+            bin[k] = record?.bin[k];
+        }
+    }
+    loading.value = false;
+}
 
 let uploadSrc = ref({
-    _el_profile_img: '',
-    _el_used_seal_img: '',
-    _el_official_seal_img: ''
+    _el_profile_img: record?.bin?.division_logo || '',
+    _el_used_seal_img: record?.bin?.division_used_seal || '',
+    _el_official_seal_img: record?.bin?.division_official_seal || ''
 });
 
 let uploadImgSrc = (e) => {
@@ -169,28 +195,6 @@ let uploadImgSrc = (e) => {
             post_params.remove_bin.push(element);    
         });
     }
-}
-
-// get record_id value from url parameter
-let urlParams = new URLSearchParams(window.location.search);
-let record_id = urlParams.get('record_id');
-
-if (!record_id) {
-    // go back to the list if record_id is not found
-    router.push('/admin/list-divisions');
-} else {
-    skapi.getRecords({record_id: record_id}).then(r => {
-        division.value = r.list[0];
-        console.log(division.value)
-        loading.value = false;
-    })
-}
-
-let record = JSON.parse(sessionStorage.getItem(record_id));
-
-if (!record) {
-    // go back to the list if record is not found
-    router.push('/admin/list-divisions');
 }
 
 let post_params = {
