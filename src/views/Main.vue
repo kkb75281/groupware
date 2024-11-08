@@ -22,7 +22,7 @@ const route = useRoute();
 
     .wrap {
         // padding: 40px 20px 0;
-        padding: 7rem 2.4rem 0;
+        padding: 3rem 2.4rem 0;
     }
 }
 
@@ -35,7 +35,7 @@ const route = useRoute();
         padding-left: calc(var(--navbar-fold-width));
 
         .wrap {
-            padding: 7rem 2.4rem 0;
+            padding: 3rem 2.4rem 0;
         }
     }
 
@@ -55,10 +55,6 @@ const route = useRoute();
 
     #main {
         padding-left: 0;
-
-        .wrap {
-            padding-top: 3rem;
-        }
     }
 }
 
@@ -71,7 +67,8 @@ const route = useRoute();
         padding-left: 0;
 
         .wrap {
-            padding: 3rem 16px;
+            padding-left: 16px;
+            padding-right: 16px;
         }
     }
 
