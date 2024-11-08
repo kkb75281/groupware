@@ -506,7 +506,8 @@
       th,
       td {
         position: relative;
-        padding: 0.5rem 1rem;
+        // padding: 0.5rem 1rem;
+        padding: 0.5rem;
 
 		&.left {
 			text-align: left;
@@ -595,6 +596,12 @@
   
     tbody {
       border-color: var(--gray-color-300);
+
+	  tr {
+		&:hover {
+			background-color: var(--primary-color-100);
+		}
+	  }
   
       td {
         height: 2.75rem;
@@ -602,7 +609,9 @@
         border-bottom: 1px solid var(--gray-color-300);
   
         a {
-          text-decoration: underline;
+			&:hover {
+				text-decoration: underline;
+			}
         }
   
         .edit-data {
@@ -757,7 +766,7 @@
 	  height: 1.75rem;
 	  background-color: inherit;
 	  border: none;
-	  font-size: 1rem;
+	  font-size: 0.8rem;
 	  font-weight: 400;
 	  color: var(--gray-color-500);
   
@@ -765,21 +774,23 @@
 		background-color: var(--primary-color-100);
 		border-radius: 0.5rem;
 	  }
-  
-	  i {
-		position: relative;
-		top: 0.125rem;
-		font-size: 1.125rem;
-	  }
-  
-	  &.btn-prev,
-	  &.btn-next {
-		background: url('@/assets/img/icon_arrow_bottom.svg') center/24px no-repeat;
-		transform: rotate(90deg);
-	  }
-  
-	  &.btn-next {
-		transform: rotate(-90deg);
-	  }
+
+		&.btn-prev,
+		&.btn-next {
+			width: initial;
+			height: initial;
+
+			&.icon {
+				padding: 0;
+
+				svg {
+					width: 16px;
+					height: 16px;
+					fill: var(--gray-color-400);
+					position: relative;
+					top: 1px;
+				}
+			}
+		}
 	}
   }

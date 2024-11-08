@@ -127,8 +127,8 @@ section.componet-wrap
 		.tb-overflow
 			table.table
 				colgroup
-					col(style="width: 3.75rem")
-					col(style="width: 5rem")
+					col(style="width: 2.4rem")
+					col(style="width: 3rem")
 					col
 					col(style="width: 10%")
 				thead
