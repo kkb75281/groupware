@@ -11,12 +11,12 @@
 	form(@submit.prevent="login")
 		.input-wrap
 			p.label Email
-			input(type="email" name="email" placeholder="your@email.com" required)
+			input(type="email" name="email" placeholder="your@email.com" :disabled="promiseRunning" required)
 
 		.input-wrap
 			p.label Password
 			.input
-				input(:type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" required)
+				input(:type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" :disabled="promiseRunning" required)
 				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
 					template(v-if="showPassword")
 						svg
@@ -66,32 +66,29 @@ let setLocalStorage = (e) => {
 };
 
 let login = (e) => {
-    // promiseRunning.value = true;
+    promiseRunning.value = true;
 
     skapi.login(e).then(async (u) => {
         await updateUser();
         router.push('/');
     }).catch(err => {
-		email.value = '';
-		password.value = '';
-
-        for (let k in user) {
-            delete user[k];
-        }
-        if (err.code === "USER_IS_DISABLED") {
-			alert("This account is disabled.");
-        }
-        else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
-            alert("Incorrect email or password.");
-        }
-        else if (err.code === "NOT_EXISTS") {
-            alert("Incorrect email or password.");
-        }
-        else {
-            alert(err.message);
-        }
+		for (let k in user) {
+				delete user[k];
+		}
+		if (err.code === "USER_IS_DISABLED") {
+				alert("This account is disabled.");
+		}
+		else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
+				alert("Incorrect email or password.");
+		}
+		else if (err.code === "NOT_EXISTS") {
+				alert("Incorrect email or password.");
+		}
+		else {
+				alert(err.message);
+		}
     }).finally(() => {
-        // promiseRunning.value = false;
+        promiseRunning.value = false;
     })
 };
 </script>
