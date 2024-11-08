@@ -9,10 +9,14 @@ hr
             colgroup
                 col(style="width: 5rem")
                 col
+                col(style="width: 10%")
+                col(style="width: 10%")
             thead
                 tr
                     th(scope="col") NO
                     th.left(scope="col") 회사명
+                    th(scope="col") 미결
+                    th(scope="col") 수신참조
 
             tbody
                 tr(v-for="(division, key, index) in divisions")
@@ -22,17 +26,15 @@ hr
                             .img-wrap
                                 img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
                             span {{ division.data.division_name }}
+                    td.pending
+                    td.received
 
     .pagination
-        button.btn-prev.icon(type="button")
+        button.btn-prev.icon(type="button") 
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
-        button.active(type="button") 1
-        button(type="button") 2
-        button(type="button") 3
-        button(type="button") 4
-        button(type="button") 5
-        button.btn-next.icon(type="button")
+            | Prev
+        button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
@@ -47,6 +49,7 @@ const route = useRoute();
 
 let divisions = ref(null);
 let listNum = ref(1);
+let currentPage = ref(1);
 
 let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 

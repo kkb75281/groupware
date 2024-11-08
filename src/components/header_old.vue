@@ -73,7 +73,6 @@ header#header
 			.user
 				h4 {{ user.name }}
 				span {{ user.access_group === 99 ? '마스터' : user.access_group === 98 ? '관리자' : '직원' }}
-			//- p.ip 현재 접속 IP : {{ user.email }}
 			p {{ user.email }}
 	.popup-main
 		ul
@@ -273,10 +272,6 @@ let logout = () => {
 			p {
 				margin-top: 0.5rem;
 				font-size: 0.8rem;
-			}
-
-			.ip {
-				color: var(--gray-color-400);
 			}
 		}
 	}
