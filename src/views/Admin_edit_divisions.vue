@@ -144,7 +144,8 @@ if (!record_id) {
     router.push('/admin/list-divisions');
 }
 
-let record = JSON.parse(sessionStorage.getItem(record_id));
+let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+let record = sessionDivisions[record_id];
 let loading = ref(true);
 let bin = {};
 

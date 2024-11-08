@@ -5,7 +5,7 @@ hr
 
 ul#divisions_list
     li(v-for="(division, i) in divisions")
-        router-link(:to="`edit-divisions?record_id=${division.record_id}`")
+        router-link(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
             img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
             span {{ division.data.division_name }}
 </template>
