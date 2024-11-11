@@ -46,7 +46,7 @@ nav#navbar
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-component")
                     .text
                         span component
-            li.item(:class="{'active': route.name === 'mailing'}")
+            //- li.item(:class="{'active': route.name === 'mailing'}")
                 router-link(to="/mailing") 
                     .icon
                         svg
