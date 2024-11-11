@@ -20,6 +20,13 @@ nav#navbar
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
                     .text 
                         span 대시보드
+            li.item(:class="{'active': route.name === 'mypage'}")
+                router-link(to="/mypage")
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
+                    .text 
+                        span 마이페이지
             template(v-if="user.access_group > 98")
                 li.item(:class="{'active': route.path.startsWith('/admin')}")
                     router-link(to="/admin/list-divisions")
