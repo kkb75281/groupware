@@ -4,15 +4,29 @@ h1 부서(회사) 목록
 hr
 
 .table-wrap
+    .tb-head-wrap
+        .input-wrap.search
+            input(type="text" placeholder="검색어를 입력하세요")
+            button.btn-search
+
+        .tb-toolbar
+            .btn-wrap
+                button.btn.bg-gray.outline(:disabled="!selectedList.length" @click="removeDivision") 삭제
+                button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
         table.table#divisions_list
             colgroup
-                col(style="width: 5rem")
+                col(style="width: 3rem")
+                col(style="width: 3rem")
                 col
                 col(style="width: 10%")
                 col(style="width: 10%")
             thead
                 tr
+                    th(scope="col")
+                        label.checkbox
+                            input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
+                            span.label-checkbox
                     th(scope="col") NO
                     th.left(scope="col") 회사명
                     th(scope="col") 미결
@@ -20,6 +34,10 @@ hr
 
             tbody
                 tr(v-for="(division, key, index) in divisions")
+                    td 
+                        label.checkbox
+                            input(type="checkbox" name="checkbox" :checked="selectedList.includes(division.record_id)" @click="toggleSelect(division.record_id)")
+                            span.label-checkbox
                     td.list-num {{ index + 1 }}
                     td.left 
                         router-link.go-detail(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
@@ -29,7 +47,7 @@ hr
                     td.pending
                     td.received
 
-    .pagination
+    //- .pagination
         button.btn-prev.icon(type="button") 
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
@@ -37,11 +55,15 @@ hr
         button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+br
+br
+br
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { skapi } from '@/main';
 
 const router = useRouter();
@@ -50,6 +72,8 @@ const route = useRoute();
 let divisions = ref(null);
 let listNum = ref(1);
 let currentPage = ref(1);
+let selectedList = ref([]);
+let isAllSelected = computed(() => Object.keys(divisions.value).length > 0 && Object.keys(divisions.value).every(key => selectedList.value.includes(key)));
 
 let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 
@@ -77,6 +101,22 @@ function displayDivisions(divisions) {
 
     window.sessionStorage.setItem('divisions', JSON.stringify(saveSession));
 }
+
+let toggleSelectAll = () => {
+    if (isAllSelected.value) {
+        selectedList.value = [];
+    } else {
+        selectedList.value = Object.keys(divisions.value);
+    }
+}
+
+let toggleSelect = (id) => {
+    if (selectedList.value.includes(id)) {
+        selectedList.value = selectedList.value.filter(itemId => itemId !== id);
+    } else {
+        selectedList.value.push(id);
+    }
+}
 </script>
 
 <style scoped lang="less">
@@ -96,8 +136,13 @@ function displayDivisions(divisions) {
 
 .go-detail {
     display: flex;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 16px;
+
+    span {
+        white-space: nowrap;
+    }
 }
 
 .img-wrap {
@@ -111,7 +156,7 @@ function displayDivisions(divisions) {
     img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
     }
 }
 </style>

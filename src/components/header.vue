@@ -84,8 +84,8 @@ header#header
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 					p 마이페이지
 			
-			li
-				router-link.router(to="/")
+			li(v-if="user.access_group > 98")
+				router-link.router(to="/admin/list-divisions")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-business-center")
@@ -121,6 +121,14 @@ let logout = () => {
         router.push({ path: "/login" });
     });
 }
+
+watch(() => route.path, (newPath, oldPath) => {
+    if(newPath) {
+        if (showProfile.value) {
+            showProfile.value = !showProfile.value;
+        }
+    }
+})
 </script>
 
 <style scoped lang="less">
