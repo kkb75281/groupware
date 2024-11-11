@@ -24,10 +24,11 @@ const route = useRoute();
 
 .maling-cont {
 	max-width: 800px;
-    background-color: var(--primary-color-100);
-    border-radius: 16px;
-    padding: 3rem 2.4rem;
-    margin: 0 auto;
+	background-color: #fff;
+	border-radius: 16px;
+	padding: 3rem 2.4rem;
+	margin: 0 auto;
+	box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
 
 	.title {
 		font-size: 1.5rem;
