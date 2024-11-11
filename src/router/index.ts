@@ -12,7 +12,7 @@ import Admin_list_divisions from '@/views/Admin_list_divisions.vue';
 import Login from '@/views/Login.vue';
 import Forgot_password from '@/views/Forgot_password.vue';
 
-let checkUser = async (t, f, n) => {
+let checkUser = async (t: any, f: any, n: any) => {
   let u = await skapi.getProfile();
   if (u) return n();
   n('/login');
@@ -30,6 +30,11 @@ const router = createRouter({
       path: '/forgot',
       name: 'forgot',
       component: Forgot_password,
+    },
+    {
+      path: '/mailing',
+      name: 'mailing',
+      component: () => import('@/views/Mailing.vue'),
     },
     {
       path: '/',
@@ -77,11 +82,6 @@ const router = createRouter({
           path: '/component',
           name: 'component',
           component: () => import('../components/component.vue'),
-        },
-        {
-          path: '/mailing',
-          name: 'mailing',
-          component: () => import('../views/Mailing.vue'),
         },
       ],
     },
