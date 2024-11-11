@@ -5,15 +5,25 @@
     "vitest.config.*",
     "cypress.config.*",
     "nightwatch.conf.*",
-    "playwright.config.*"
+    "playwright.config.*",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src/shims-vue.d.ts"
   ],
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
-
+    "strictNullChecks": false,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": ["node"]
+    "types": ["node"],
+
+    "outDir": "./dist", // 컴파일된 JavaScript 파일의 출력 디렉토리
+    "rootDir": "./src", // TypeScript 소스 파일의 루트 디렉토리
+    "strict": true,
+    "target": "es6",
+    "esModuleInterop": true,
+    "sourceMap": true
   }
 }

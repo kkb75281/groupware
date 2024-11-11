@@ -54,7 +54,7 @@ nav#navbar
 
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { watch, onMounted, onUnmounted } from 'vue'
 import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar'
