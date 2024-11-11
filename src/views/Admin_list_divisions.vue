@@ -71,7 +71,7 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
 function displayDivisions(divisions) {
     let saveSession = {};
 
-    divisions.forEach(division, index => {
+    divisions.forEach((division, index) => {
         saveSession[division.record_id] = division;
     });
 
