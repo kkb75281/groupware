@@ -14,8 +14,8 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                //- input#_el_profile_img(type="file" name="division_logo" @change="uploadImgSrc" style="display:none")
-                input#_el_profile_img(type="file" name="division_logo" @change="openCropImageDialog" style="display:none")
+                input#_el_profile_img(type="file" name="division_logo" @change="uploadImgSrc" style="display:none")
+                //- input#_el_profile_img(type="file" name="division_logo" @change="openCropImageDialog" style="display:none")
 
         br
 
@@ -121,7 +121,7 @@ hr
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
 
-CropImage(:open="openModal" :imageSrc="uploadSrc._el_profile_img" @cropped="setCroppedImage" @close="openModal = false")
+//- CropImage(:open="openModal" :imageSrc="uploadSrc._el_profile_img" @cropped="setCroppedImage" @close="openModal = false")
 
 br  
 br  

@@ -40,9 +40,11 @@ nav#navbar
                 ul.sub-menu-item(:class="{'show': route.path.startsWith('/admin')}")
                     li(:class="{'active': route.name === 'list-divisions'}")
                         router-link(to="/admin/list-divisions") 부서(회사) 목록
-                    li(:class="{'active': route.name === 'add-divisions'}")
+                    //- li(:class="{'active': route.name === 'add-divisions'}")
                         router-link(to="/admin/add-divisions") 부서(회사) 등록
-                    li(:class="{'active': route.name === 'add-employee'}")
+                    li(:class="{'active': route.name === 'list-employee'}")
+                        router-link(to="/admin/list-employee") 직원 목록
+                    //- li(:class="{'active': route.name === 'add-employee'}")
                         router-link(to="/admin/add-employee") 직원 등록
             li.item(:class="{'active': route.name === 'component'}")
                 router-link(to="/component") 
