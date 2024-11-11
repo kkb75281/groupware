@@ -4,19 +4,19 @@
 		//- img(src="@/assets/img/img_logo_symbol.png")
 		p 로고영역
 
-	h2.title Login
+	h2.title 로그인
 
 	hr
 
 	form(@submit.prevent="login")
 		.input-wrap
-			p.label Email
-			input(type="email" name="email" placeholder="your@email.com" :disabled="promiseRunning" required)
+			p.label 이메일
+			input(type="email" name="email" placeholder="이메일" :disabled="promiseRunning" required)
 
 		.input-wrap
-			p.label Password
+			p.label 비밀번호
 			.input
-				input(:type='showPassword ? "text" : "password"' name="password" placeholder="Enter password" :disabled="promiseRunning" required)
+				input(:type='showPassword ? "text" : "password"' name="password" placeholder="비밀번호" :disabled="promiseRunning" required)
 				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
 					template(v-if="showPassword")
 						svg
@@ -28,11 +28,11 @@
 		.check-wrap
 			label.checkbox
 				input#input_autoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" checked)
-				span.label-checkbox Remember me
+				span.label-checkbox 로그인 상태 유지
 
-			router-link.btn-forgot(to="/forgot") Forgot Password?
+			router-link.btn-forgot(to="/forgot") 비밀번호 찾기
 
-		button.btn.btn-login(type="submit") Login
+		button.btn.btn-login(type="submit") 로그인
 </template>
 
 <script setup>
