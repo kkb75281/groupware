@@ -6,45 +6,56 @@
 			p 로고영역
 
 	template(v-else)
-		h2.success Success!
+		h2.title 비밀번호 변경 완료
+		p.desc 
+			| 비밀번호가 성공적으로 변경되었습니다.
+			br
+			| 로그인 페이지로 이동하여 로그인해주세요.
+		
+		br
+		br
+		br
+		br
+
+		button.btn.btn-go-login(@click="router.push('/login')") 로그인 화면으로
 
 	template(v-if="step === 1")
-		h2.title Forgot Password
-		p.desc Request verification code to reset password.<br>Enter login email and click Request Code.
+		h2.title 비밀번호 찾기
+		p.desc 비밀번호를 찾을 이메일을 입력해 주세요.
 
 		form(@submit.prevent="forgotPassword")
 			.input-wrap
-				p.label Login Email
-				input#_el_email(type="email" name="email" placeholder="login@email.com" :value="email" @input="(e) => {email = e.target.value; error = '';}" required)
+				p.label 이메일
+				input#_el_email(type="email" name="email" placeholder="이메일" :value="email" @input="(e) => {email = e.target.value; error = '';}" required)
 
-			button.btn.btn-request-code(type="submit") Request Code
+			button.btn.btn-request-code(type="submit") 다음
 
 	template(v-if="step === 2")
-		h2.title Forgot Password
-		p.desc Enter the verification code sent to #[b {{email}}]
+		h2.title 인증 코드 확인
+		p.desc 입력하신 이메일 #[b {{email}}] 로 전송된 6자리 인증 코드를 입력해 주세요.
 
 		form(@submit.prevent="step++")
 			.input-wrap
-				p.label 6 Letter Verification Code
+				p.label 6자리 인증 코드
 				.input
 					input(type="text" name="code" ref="codeField" :value="code" @input="e => {code = e.target.value; e.target.setCustomValidity('');}" @change="validateCode" placeholder="######" required)
-					button.btn.btn-resend(@click="resend") Resend Code
+					button.btn.btn-resend(@click="resend") 코드 다시 받기
 
 			.button-wrap
-				a.btn.bg-gray.btn-back(@click="back") Back
-				button.btn.btn-next(type="submit") Next
+				a.btn.bg-gray.btn-back(@click="back") 이전
+				button.btn.btn-next(type="submit") 다음
 
 	template(v-if="step === 3")
-		h2.title Reset Password
-		p.desc Enter the new password and click Reset Password.
+		h2.title 비밀번호 재설정
+		p.desc 최소 6자리 이상의 새로운 비밀번호를 입력해주세요.
 
 		form(@submit.prevent="changePassword" action="")
 			.input-wrap
-				p.label New Password
+				p.label 새 비밀번호
 				.input
 					input(:type='showPassword ? "text" : "password"' name="new_password" ref="newPasswordField" :value="newPassword"
 					@input="e => {newPassword = e.target.value; e.target.setCustomValidity('');}" 
-					@change="validateNewPassword" placeholder="At least 6 char" required)
+					@change="validateNewPassword" placeholder="새로운 비밀번호를 입력해주세요." required)
 					button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
 						template(v-if="showPassword")
 							svg
@@ -54,11 +65,11 @@
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
 
 			.input-wrap
-				p.label Confirm new password
+				p.label 새 비밀번호 확인
 				.input
 					input(:type='showPassword ? "text" : "password"' name="confirm_new_password" ref="confirmNewPasswordField" :value="newPasswordConfirm"
 					@input="e => {newPasswordConfirm = e.target.value; e.target.setCustomValidity('');}" 
-					@change="validateNewPassword" placeholder="Confirm the new password" required)
+					@change="validateNewPassword" placeholder="입력하신 비밀번호를 확인해주세요." required)
 					button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
 						template(v-if="showPassword")
 							svg
@@ -68,8 +79,8 @@
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
 			
 			.button-wrap
-				a.btn.bg-gray.btn-back(@click="back") Back
-				button.btn.btn-reset-password(type="submit" value="Reset Password") Reset Password
+				a.btn.bg-gray.btn-back(@click="back") 이전
+				button.btn.btn-reset-password(type="submit" value="Reset Password") 변경
 </template>
 
 <script setup lang="ts">
@@ -155,8 +166,9 @@ let changePassword = async () => {
     error.value = '';
 
 	await skapi.resetPassword({ email: email.value, code: code.value, new_password: newPassword }).then(res => {
-		alert('New password has been set.');
-		router.push('/login');
+		// alert('New password has been set.');
+		// router.push('/login');
+		step.value++;
 	}).catch(err => {
 		step.value--;
         nextTick(() => {
@@ -186,7 +198,7 @@ let changePassword = async () => {
 	}
 
 	.title {
-		font-size: 1.5rem;
+		// font-size: 1.5rem;
 		margin-bottom: 1.5rem;
 		padding-bottom: 1.5rem;
 		border-bottom: 1px solid var(--gray-color-400);
