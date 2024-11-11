@@ -8,8 +8,9 @@ hr
     form#_el_comp_form(@submit.prevent="editDivision")
         div(style="text-align:center;")
             .image
-                img#profile-img(v-if="bin.hasOwnProperty('division_logo')" :src="bin['division_logo'][0].url" alt="Company Logo")
-                img#profile-img(v-else :src="uploadSrc._el_profile_img" alt="Company Logo")
+                //- img#profile-img(v-if="bin.hasOwnProperty('division_logo')" :src="bin['division_logo'][0].url" alt="Company Logo")
+                //- img#profile-img(v-else :src="uploadSrc._el_profile_img" alt="Company Logo")
+                img#profile-img(:src="uploadSrc._el_profile_img" alt="Company Logo")
                 label(for="_el_profile_img")
                     .icon.white
                         svg
@@ -99,8 +100,9 @@ hr
         p(style="margin-bottom: 0.5rem") 도장
         .image-wrap(style="text-align:center;")
             .image.seal
-                img#used-img(v-if="bin.hasOwnProperty('division_used_seal')" :src="bin['division_used_seal'][0].url" alt="Company Used Seal")
-                img#used-img(v-else :src="uploadSrc._el_used_seal_img" alt="Company Used Seal")
+                //- img#used-img(v-if="bin.hasOwnProperty('division_used_seal')" :src="bin['division_used_seal'][0].url" alt="Company Used Seal")
+                //- img#used-img(v-else :src="uploadSrc._el_used_seal_img" alt="Company Used Seal")
+                img#used-img(:src="uploadSrc._el_used_seal_img" alt="Company Used Seal")
                 label(for="_el_used_seal_img")
                     .icon.white
                         svg
@@ -108,8 +110,9 @@ hr
                 input#_el_used_seal_img(type="file" name="division_used_seal" @change="uploadImgSrc" style="display:none")
 
             .image.seal
-                img#official-img(v-if="bin.hasOwnProperty('division_official_seal')" :src="bin['division_official_seal'][0].url" alt="Company Used Seal")
-                img#official-img(v-else :src="uploadSrc._el_official_seal_img" alt="Company Used Seal")
+                //- img#official-img(v-if="bin.hasOwnProperty('division_official_seal')" :src="bin['division_official_seal'][0].url" alt="Company Used Seal")
+                //- img#official-img(v-else :src="uploadSrc._el_official_seal_img" alt="Company Used Seal")
+                img#official-img(:src="uploadSrc._el_official_seal_img" alt="Company Used Seal")
                 label(for="_el_official_seal_img")
                     .icon.white
                         svg
@@ -163,9 +166,9 @@ if (!record) {
 }
 
 let uploadSrc = ref({
-    _el_profile_img: record?.bin?.division_logo || '',
-    _el_used_seal_img: record?.bin?.division_used_seal || '',
-    _el_official_seal_img: record?.bin?.division_official_seal || ''
+    _el_profile_img: bin?.division_logo?.[0]?.url || '',
+    _el_used_seal_img: bin?.division_used_seal?.[0]?.url || '',
+    _el_official_seal_img: bin?.division_official_seal?.[0]?.url || ''
 });
 
 let uploadImgSrc = (e) => {
@@ -211,7 +214,12 @@ let post_params = {
 let editDivision = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     
-    skapi.postRecord(e, post_params).then(() => {
+    skapi.postRecord(e, post_params).then((r) => {
+        let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+
+        sessionDivisions[r.record_id] = r;
+        window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
+
         window.alert('등록되었습니다.');
         router.push('/admin/list-divisions');
     });
@@ -272,7 +280,7 @@ let editDivision = (e) => {
         height: 100px;
         border-radius: 30%;
         display: block;
-        object-fit: cover;
+        object-fit: contain;
         position: relative;
         background-color: var(--gray-color-100);
 
