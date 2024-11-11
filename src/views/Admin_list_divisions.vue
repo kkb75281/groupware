@@ -29,7 +29,7 @@ hr
                     td.pending
                     td.received
 
-    .pagination
+    //- .pagination
         button.btn-prev.icon(type="button") 
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
@@ -111,7 +111,7 @@ function displayDivisions(divisions) {
     img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
     }
 }
 </style>
