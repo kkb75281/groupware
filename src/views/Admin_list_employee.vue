@@ -4,22 +4,39 @@ h1 직원 목록
 hr
 
 .table-wrap
+    .tb-head-wrap
+        .input-wrap.search
+            input(type="text" placeholder="검색어를 입력하세요")
+            button.btn-search
+
+        .tb-toolbar
+            .btn-wrap
+                button.btn.bg-gray.outline(:disabled="!selectedList.length" @click="removeDivision") 삭제
+                button.btn.outline(@click="router.push('/admin/add-employee')") 등록
     .tb-overflow
-        table.table#divisions_list
-            //- colgroup
-                col(style="width: 5rem")
+        table.table#employee_list
+            colgroup
+                col(style="width: 3rem")
+                col(style="width: 3rem")
+                col(style="width: 10%")
+                col(style="width: 10%")
                 col
                 col(style="width: 10%")
                 col(style="width: 10%")
+                col
             thead
                 tr
+                    th(scope="col")
+                        label.checkbox
+                            input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
+                            span.label-checkbox
                     th(scope="col") NO
-                    th.left(scope="col") 직책(직급)
-                    th.left(scope="col") 이름
-                    th.left(scope="col") 이메일
-                    th.left(scope="col") 생년월일
-                    th.left(scope="col") 전화번호
-                    th.left(scope="col") 주소
+                    th(scope="col") 직책(직급)
+                    th(scope="col") 이름
+                    th(scope="col") 이메일
+                    th(scope="col") 생년월일
+                    th(scope="col") 전화번호
+                    th(scope="col") 주소
 
             tbody
                 //- tr(v-for="(division, key, index) in divisions")
@@ -44,17 +61,20 @@ hr
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { skapi } from '@/main';
 
 const router = useRouter();
 const route = useRoute();
 
 let emp_division = ref(null);
+let divisions = ref(null);
 let listNum = ref(1);
 let currentPage = ref(1);
+let selectedList = ref([]);
+let isAllSelected = computed(() => Object.keys(divisions.value).length > 0 && Object.keys(divisions.value).every(key => selectedList.value.includes(key)));
 
-// let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 
 // if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
 //     skapi.getRecords({
@@ -80,10 +100,26 @@ let currentPage = ref(1);
 
 //     window.sessionStorage.setItem('divisions', JSON.stringify(saveSession));
 // }
+
+let toggleSelectAll = () => {
+    if (isAllSelected.value) {
+        selectedList.value = [];
+    } else {
+        selectedList.value = Object.keys(divisions.value);
+    }
+}
+
+let toggleSelect = (id) => {
+    if (selectedList.value.includes(id)) {
+        selectedList.value = selectedList.value.filter(itemId => itemId !== id);
+    } else {
+        selectedList.value.push(id);
+    }
+}
 </script>
 
 <style scoped lang="less">
-#divisions_list>a>* {
+#employee_list>a>* {
     vertical-align: middle;
 }
 
