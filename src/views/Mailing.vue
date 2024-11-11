@@ -1,13 +1,16 @@
 <template lang="pug">
 .mailing
 	.maling-cont
-		h3.title 귀하의 초대가 성공적으로 확인되었습니다.
+		h2.title 회원 인증 완료
 
-			hr
+		hr(style="margin-bottom: 1.5rem")
 
-			p.desc 안녕하세요.<br>그룹웨어에 가입해주셔서 감사합니다.
+		p.desc 
+			| 회원 인증이 완료되었습니다.
+			br
+			| 로그인 페이지로 이동하여 로그인해주세요.
 
-			router-link.btn.btn-go-login(to="/login") Login
+		router-link.btn.btn-go-login(to="/login") 로그인 화면으로
 </template>
 
 <script setup>
@@ -23,27 +26,25 @@ const route = useRoute();
 }
 
 .maling-cont {
-	max-width: 800px;
+	max-width: 500px;
     background-color: var(--primary-color-100);
     border-radius: 16px;
-    padding: 3rem 2.4rem;
+    padding: 2.5rem 2rem;
     margin: 0 auto;
 
 	.title {
-		font-size: 1.5rem;
 		font-weight: 700;
 		color: var(--primary-color-400);
 		line-height: 1.3;
 	}
 
 	.desc {
-		font-size: 1rem;
 		color: var(--gray-color-700);
 		line-height: 1.6;
 	}
 
 	.btn-go-login {
-		max-width: 100px;
+		// max-width: 100px;
 		margin: 4rem auto 0;
 	}
 }
