@@ -14,6 +14,8 @@ hr
                 button.btn.bg-gray.outline(:disabled="!selectedList.length" @click="removeDivision") 삭제
                 button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
+        template(v-if="loading")
+            Loading#loading
         table.table#divisions_list
             colgroup
                 col(style="width: 3rem")
@@ -33,19 +35,25 @@ hr
                     th(scope="col") 수신참조
 
             tbody
-                tr(v-for="(division, key, index) in divisions")
-                    td 
-                        label.checkbox
-                            input(type="checkbox" name="checkbox" :checked="selectedList.includes(division.record_id)" @click="toggleSelect(division.record_id)")
-                            span.label-checkbox
-                    td.list-num {{ index + 1 }}
-                    td.left 
-                        router-link.go-detail(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
-                            .img-wrap
-                                img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
-                            span {{ division.data.division_name }}
-                    td.pending
-                    td.received
+                template(v-if="loading")
+                    tr(v-for="i in 4")
+                template(v-else-if="!divisions || Object.keys(divisions).length === 0")
+                    tr
+                        td(colspan="5") 데이터가 없습니다.
+                template(v-else)
+                    tr(v-for="(division, key, index) in divisions")
+                        td 
+                            label.checkbox
+                                input(type="checkbox" name="checkbox" :checked="selectedList.includes(division.record_id)" @click="toggleSelect(division.record_id)")
+                                span.label-checkbox
+                        td.list-num {{ index + 1 }}
+                        td.left 
+                            router-link.go-detail(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
+                                .img-wrap
+                                    img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
+                                span {{ division.data.division_name }}
+                        td.pending
+                        td.received
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -66,18 +74,25 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, computed } from 'vue';
 import { skapi } from '@/main';
 
+import Loading from '@/components/loading.vue';
+
 const router = useRouter();
 const route = useRoute();
 
+let loading = ref(false);
 let divisions = ref(null);
-let listNum = ref(1);
 let currentPage = ref(1);
 let selectedList = ref([]);
-let isAllSelected = computed(() => Object.keys(divisions.value).length > 0 && Object.keys(divisions.value).every(key => selectedList.value.includes(key)));
+let isAllSelected = computed(() => {
+    let keys = selectedList.value ? Object.keys(selectedList.value) : [];
+    return keys.length > 0 && keys.every(key => selectedList.value.includes(key));
+});
 
 let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 
 if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
+    loading.value = true;
+
     skapi.getRecords({
         table: {
             name: 'divisions',
@@ -86,7 +101,8 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
     },
     ).then(response => {
         divisions.value = response.list;
-        displayDivisions(response.list)
+        displayDivisions(response.list);
+        loading.value = false;
     });
 } else {
     divisions.value = sessionDivisions;
@@ -131,7 +147,15 @@ let toggleSelect = (id) => {
 }
 
 .table-wrap {
+    position: relative;
     margin-top: 3rem;
+
+    #loading {
+        position: absolute;
+        top: 126px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
 }
 
 .go-detail {
