@@ -5,12 +5,12 @@ header#header
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
-	button.btn-noti(type="button" :data-count="notiCount" @click="showNotification = !showNotification")
+	button.btn-noti(type="button" :data-count="notiCount" ref="btnNoti" @click="openNotification")
 		.icon.icon-bell
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
 
-	button.btn-profile(type="button" @click="showProfile = !showProfile")
+	button.btn-profile(type="button" ref="btnProfile" @click="openProfile")
 		span.user-name {{ user.name }}
 		span.hello 님, 안녕하세요!
 		.thumbnail
@@ -19,7 +19,7 @@ header#header
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 			//- img(src="https://picsum.photos/250/250" alt="img-profile")
 
-#popup.notification(v-if="showNotification")
+#popup.notification(v-show="isNotiOpen" @click.stop)
 	.popup-header
 		h3.title 알림 목록
 
@@ -63,7 +63,7 @@ header#header
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
-#popup.profile(v-if="showProfile")
+#popup.profile(v-show="isProfileOpen" @click.stop)
 	.popup-header
 		.image
 			.icon
@@ -78,7 +78,7 @@ header#header
 	.popup-main
 		ul
 			li
-				router-link.router(to="/")
+				router-link.router(to="/mypage")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
@@ -109,11 +109,56 @@ import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/nav
 const router = useRouter();
 const route = useRoute();
 
-let showNotification = ref(false);
-let showProfile = ref(false);
 let time = ref(1);
 let notiCount = ref(9999);
 let newNoti = ref(false);
+let isNotiOpen = ref(false);
+let btnNoti = ref(null);
+let isProfileOpen = ref(false);
+let btnProfile = ref(null);
+
+let openNotification = () => {
+	isNotiOpen.value = !isNotiOpen.value;
+};
+
+let closeNotification = (event) => {
+	if (isNotiOpen.value && !btnNoti.value.contains(event.target)) {
+		isNotiOpen.value = false;
+	}
+};
+
+let closeNotificatiRouter = () => {
+	isNotiOpen.value = false;
+};
+
+let openProfile = () => {
+	isProfileOpen.value = !isProfileOpen.value;
+};
+
+let closeProfile = (event) => {
+	if (isProfileOpen.value && !btnProfile.value.contains(event.target)) {
+		isProfileOpen.value = false;
+	}
+};
+
+let closeProfileRouter = () => {
+	isProfileOpen.value = false;
+};
+
+onMounted(() => {
+	document.addEventListener('click', closeNotification);
+	document.addEventListener('click', closeProfile);
+	router.beforeEach((to, from, next) => {
+		closeNotificatiRouter();
+		closeProfileRouter();
+		next();
+	});
+});
+
+onUnmounted(() => {
+	document.removeEventListener('click', closeNotification);
+	document.removeEventListener('click', closeProfile);
+});
 
 let logout = () => {
 	skapi.logout().then(() => {
@@ -124,8 +169,8 @@ let logout = () => {
 
 watch(() => route.path, (newPath, oldPath) => {
     if(newPath) {
-        if (showProfile.value) {
-            showProfile.value = !showProfile.value;
+        if (isProfileOpen.value) {
+            isProfileOpen.value = !isProfileOpen.value;
         }
     }
 })
