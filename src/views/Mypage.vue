@@ -76,6 +76,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, watch } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
+import { profileImage } from '@/components/navbar'
 
 const router = useRouter();
 const route = useRoute();
@@ -122,6 +123,8 @@ async function main() {
 			dataType: 'endpoint',
 		}).then(res=>{
 			document.getElementById('profile-img').src = res;
+			profileImage.value = res;
+			// console.log('=== getFile === profileImage.value : ', profileImage.value);
 		}).catch(err=>{
 			window.alert('프로필 사진을 불러오는데 실패했습니다.');
 			throw err;	// 의도적으로 에러 전달
