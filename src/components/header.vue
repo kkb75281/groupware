@@ -14,10 +14,13 @@ header#header
 		span.user-name {{ user.name }}
 		span.hello 님, 안녕하세요!
 		.thumbnail
-			.icon
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
-			//- img(src="https://picsum.photos/250/250" alt="img-profile")
+			template(v-if="profileImage")
+				img(:src="profileImage" alt="img-profile")
+			template(v-else)
+				.icon
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+				//- img(src="https://picsum.photos/250/250" alt="img-profile")
 
 #popup.notification(v-show="isNotiOpen" @click.stop)
 	.popup-header
@@ -101,8 +104,9 @@ header#header
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onUnmounted, onMounted, ref, nextTick, watch } from 'vue';
+import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
 import { user, updateUser } from '@/user'
+import { profileImage } from '@/components/navbar'
 import { skapi } from '@/main'
 import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/navbar'
 
@@ -116,6 +120,14 @@ let isNotiOpen = ref(false);
 let btnNoti = ref(null);
 let isProfileOpen = ref(false);
 let btnProfile = ref(null);
+
+skapi.getProfile().then(res => {
+	profileImage.value = res.picture;
+	// console.log('=== updateProfile === res.picture : ', res.picture);
+
+}).catch(err => {
+	// console.log('=== updateProfile === err : ', err);
+})
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
