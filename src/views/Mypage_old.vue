@@ -104,6 +104,8 @@ let profile_pic_postParams = {
     },
 };
 
+let previous_profile_pic = [];
+
 async function main() {
 	// 프로필 정보를 가져와서 입력창에 넣어준다.
 	let profile = await skapi.getProfile();
@@ -124,18 +126,43 @@ async function main() {
 			document.getElementById('profile-img').src = res;
 		}).catch(err=>{
 			window.alert('프로필 사진을 불러오는데 실패했습니다.');
-			throw err;	// 의도적으로 에러 전달
+			throw err;
 		})
 
-		// 사용자가 올린 프로필 사진 레코드를 가져온다.
-		// skapi.getFile(profile.picture, {
+		// let fileInfo = await skapi.getFile(profile.picture, {
 		// 	dataType: 'info',
-		// }).then(res => {
-		// 	console.log('== getFile == res : ', res)
-		// 	// previous_profile_pic = res.record_id;
-		// }).catch(err => {
-		// 	console.log('== getFile == err : ', err)
 		// });
+
+		// console.log({fileInfo});
+
+		skapi.getFile(profile.picture, {
+			dataType: 'info',
+		}).then(res => {
+			// console.log('== getFile == res : ', res)
+			previous_profile_pic = res.record_id;
+		}).catch(err => {
+			// console.log('== getFile == err : ', err)
+		});
+
+		// 사용자가 올린 프로필 사진 레코드를 가져온다.
+		// skapi.getRecords({
+		// 	table: {
+		// 		name: 'profile_picture',
+		// 		access_group: 'authorized',
+		// 	},
+		// 	reference: user.user_id,
+		// }).then(profile_pic_rec=>{
+		// 	// 프로필 사진 레코드가 있으면... (없는 경우는 사용자가 프로필 사진을 업로드한적이 없는 경우)
+		// 	if (profile_pic_rec.list?.[0]) {
+		// 	// 프로필 사진 레코드 업로드 파라미터에 record_id를 넣어준다 (업데이트가 되도록)
+		// 		profile_pic_postParams.record_id = profile_pic_rec.list?.[0].record_id;
+
+		// 		if (profile_pic_rec.list?.[0].bin?.profile_pic?.[0]?.url) {
+		// 			// 이전 프로필 사진을 변수에 저장해둔다.
+		// 			previous_profile_pic = profile_pic_rec.list?.[0].bin.profile_pic;
+		// 		}
+		// 	}
+		// })
 	}
 
 	// 프로필 정보를 가져왔으므로 입력창을 활성화한다.
@@ -157,9 +184,12 @@ async function main() {
 
 	document.querySelector('input[name="position"]').value = division.list[0].data.position;
 	document.querySelector('input[name="authority"]').value = access_group[profile.access_group];
+
 	// document.getElementById('position').innerText = '직책 : ' + division.list[0].data.position + ' , 권한 : ' + access_group[profile.access_group];
 }
+
 main();
+
 
 let registerMypage = (e) => {
 	e.preventDefault();
