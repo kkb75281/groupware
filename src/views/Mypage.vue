@@ -46,19 +46,19 @@
 
 			.input-wrap
 				p.label 생년월일
-				input(type="date" name="birthdate" required)
+				input(type="date" name="birthdate")
 
 			br
 
 			.input-wrap
 				p.label 전화번호
-				input(type="tel" name="phone_number" placeholder="+82123456789" required)
+				input(type="tel" name="phone_number" placeholder="+82123456789")
 
 			br
 
 			.input-wrap
 				p.label 주소
-				input(type="text" name="address" placeholder="주소를 입력해주세요." required)
+				input(type="text" name="address" placeholder="주소를 입력해주세요.")
 
 			br
 
