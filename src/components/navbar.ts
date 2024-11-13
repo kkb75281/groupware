@@ -2,7 +2,6 @@ import { ref, watch } from 'vue';
 
 export const isFolded = ref(false); // 메뉴 접힘 상태
 export const isOpen = ref(false); // 메뉴 열림 상태
-export const profileImage = ref('');
 
 export function toggleNavbarFold() {
   if (isOpen.value) {
