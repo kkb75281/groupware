@@ -75,8 +75,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, watch } from 'vue';
 import { skapi } from '@/main';
-import { user } from '@/user';
-import { profileImage } from '@/components/navbar'
+import { user, updateUser, profileImage } from '@/user';
 
 const router = useRouter();
 const route = useRoute();
@@ -181,6 +180,7 @@ let registerMypage = (e) => {
 
 		// 프로필 정보를 업데이트한다.
 		await skapi.updateProfile(e);
+		updateUser(e);
 		window.alert('등록완료');
 		router.push('/');
 	}
@@ -244,7 +244,7 @@ let registerMypage = (e) => {
         height: 100px;
         border-radius: 50%;
         display: block;
-        object-fit: cover;
+        object-fit: contain;
         position: relative;
         background-color: var(--gray-color-100);
 
