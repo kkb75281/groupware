@@ -147,7 +147,6 @@ let resigterEmp = (e) => {
                 // 초정기록을 데이터베이스에 업로드/업데이트
                 let invHistory = await skapi.postRecord(event, invHisParams);
 
-
                 // 사진을 데이터베이스에 업로드하고 보안키를 제외한 이미지 url주소를 userprofile의 picture에 넣어준다.
 
                 let initPicParams = {
@@ -190,9 +189,6 @@ let resigterEmp = (e) => {
                 tag: user_id
             });
 
-            console.log('== previous_emp ==', previous_emp);
-
-            
             let emp_pos = {
                 table: {
                     name: 'emp_division',
@@ -212,6 +208,11 @@ let resigterEmp = (e) => {
                 },
                 emp_pos
             );
+
+            await skapi.getInvitations().then(res => {
+                let list = res.list;
+                window.sessionStorage.setItem('employees', JSON.stringify(list));
+            });
 
             window.alert('등록완료');
         }

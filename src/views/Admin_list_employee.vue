@@ -11,18 +11,19 @@ hr
 
         .tb-toolbar
             .btn-wrap
-                button.btn.bg-gray.outline(:disabled="!selectedList.length" @click="removeDivision") 삭제
+                button.btn.outline.warning(:disabled="!selectedList.length" @click="removeDivision") 삭제
                 button.btn.outline(@click="router.push('/admin/add-employee')") 등록
     .tb-overflow
         template(v-if="loading")
             Loading#loading
         table.table#employee_list
             colgroup
-                col(style="width: 3rem")
-                col(style="width: 3rem")
-                col(style="width: 5rem")
-                col(style="width: 10%")
-                col(style="width: 25%")
+                col(style="width: 3rem;")
+                col(style="width: 3rem;")
+                col(style="width: 5rem;")
+                col(style="width: 10%;")
+                col(style="width: 25%;")
+                col(style="width: 11%;")
                 col(style="width: 10%; min-width: 6rem;")
                 col(style="width: 10%; min-width: 6rem;")
                 col(style="min-width: 15rem;")
@@ -36,6 +37,7 @@ hr
                     th(scope="col") 직책(직급)
                     th(scope="col") 이름
                     th(scope="col") 이메일
+                    th(scope="col") 초청여부
                     th(scope="col") 생년월일
                     th(scope="col") 전화번호
                     th(scope="col") 주소
@@ -56,6 +58,10 @@ hr
                         td {{ employee.access_group }}
                         td {{ employee.name }}
                         td {{ employee.email }}
+                        td
+                            .btn-wrap
+                                button.btn.bg-gray.sm 재전송
+                                button.btn.bg-gray.sm 초청취소
                         td {{ employee.birthdate }}
                         td {{ employee.phone_number }}
                         td {{ employee.address }}
@@ -94,10 +100,16 @@ let isAllSelected = computed(() => {
 let sessionEmployee = JSON.parse(window.sessionStorage.getItem('employees'));
 let employee = ref(sessionEmployee || []);
 
+skapi.getInvitations().then(res => {
+        console.log('=== getInvitations === res : ', res);
+        
+    });
+
 if (!employee.value.length) {
     loading.value = true;
 
     skapi.getInvitations().then(res => {
+        console.log('=== getInvitations === res : ', res);
         employee.value = res.list;
         displayEmployee(res.list);
         loading.value = false;
