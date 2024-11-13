@@ -11,21 +11,22 @@ hr
 
         .tb-toolbar
             .btn-wrap
-                button.btn.bg-gray.outline(:disabled="!selectedList.length" @click="removeDivision") 삭제
+                button.btn.outline.warning(:disabled="!selectedList.length" @click="removeDivision") 삭제
                 button.btn.outline(@click="router.push('/admin/add-employee')") 등록
     .tb-overflow
         template(v-if="loading")
             Loading#loading
         table.table#employee_list
             colgroup
-                col(style="width: 3rem")
-                col(style="width: 3rem")
-                col(style="width: 10%")
-                col(style="width: 10%")
-                col
-                col(style="width: 10%")
-                col(style="width: 10%")
-                col
+                col(style="width: 3rem;")
+                col(style="width: 3rem;")
+                col(style="width: 5rem;")
+                col(style="width: 10%;")
+                col(style="width: 25%;")
+                col(style="width: 11%;")
+                col(style="width: 10%; min-width: 6rem;")
+                col(style="width: 10%; min-width: 6rem;")
+                col(style="min-width: 15rem;")
             thead
                 tr
                     th(scope="col")
@@ -36,6 +37,7 @@ hr
                     th(scope="col") 직책(직급)
                     th(scope="col") 이름
                     th(scope="col") 이메일
+                    th(scope="col") 초청여부
                     th(scope="col") 생년월일
                     th(scope="col") 전화번호
                     th(scope="col") 주소
@@ -43,24 +45,26 @@ hr
             tbody
                 template(v-if="loading")
                     tr(v-for="i in 4")
-                template(v-else-if="!employee_divisions || Object.keys(employee_divisions).length === 0")
+                template(v-else-if="!employee")
                     tr
                         td(colspan="8") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(division, key, index) in employee_divisions")
-                        td 
+                    tr(v-for="(employee, index) in employee")
+                        td
                             label.checkbox
-                                input(type="checkbox" name="checkbox" :checked="selectedList.includes(division.record_id)" @click="toggleSelect(division.record_id)")
+                                input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
                                 span.label-checkbox
                         td.list-num {{ index + 1 }}
-                        td 
+                        td {{ employee.access_group }}
+                        td {{ employee.name }}
+                        td {{ employee.email }}
                         td
-                            router-link.go-detail(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
-                                span {{ division.data.division_name }}
-                        td
-                        td
-                        td
-                        td
+                            .btn-wrap
+                                button.btn.bg-gray.sm 재전송
+                                button.btn.bg-gray.sm 초청취소
+                        td {{ employee.birthdate }}
+                        td {{ employee.phone_number }}
+                        td {{ employee.address }}
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -87,91 +91,50 @@ const router = useRouter();
 const route = useRoute();
 
 let loading = ref(false);
-let employee = ref(null);
 let currentPage = ref(1);
 let selectedList = ref([]);
 let isAllSelected = computed(() => {
-    let keys = selectedList.value ? Object.keys(selectedList.value) : [];
-    return keys.length > 0 && keys.every(key => selectedList.value.includes(key));
+    return selectedList.value.length > 0 && employee.value.every(emp => selectedList.value.includes(emp.user_id));
 });
 
-let sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
-console.log('== sessionEmployee ==', sessionEmployee);
+let sessionEmployee = JSON.parse(window.sessionStorage.getItem('employees'));
+let employee = ref(sessionEmployee || []);
 
 skapi.getInvitations().then(res => {
-    console.log('=== getInvitations === res.list : ', res.list);
-});
+        console.log('=== getInvitations === res : ', res);
+        
+    });
 
-skapi.inviteUser().then(res => {
-    console.log('=== inviteUser === res : ', res);
-}).catch(err => {
-    console.log('=== inviteUser === err : ', err);
-})
+if (!employee.value.length) {
+    loading.value = true;
 
-skapi.getRecords().then(res => {
-    console.log('=== getRecords === res : ', res);
-}).catch(err => {
-    console.log('=== getRecords === err : ', err);
-})
-
-let getInvitations = () => {
-	console.log('click')
-	// _el_prevInv.innerHTML = '';
-
-	skapi.getInvitations().then(response => {
-		console.log('과거인비테이션', response.list);
-
-		// response.list.forEach(inv => {
-		// 	const li = document.createElement('li');
-		// 	li.innerHTML = /*html*/ `
-		// 		<p>이메일: ${inv.email} 권한: ${inv.access_group} 이름: ${inv.name}</p>
-		// 		<button onclick="skapi.resendInvitation({email: '${inv.email}' }).then(m=>alert(m))">재전송</button>
-		// 		<button onclick="skapi.cancelInvitation({email: '${inv.email}' }).then(m=>{alert(m); getInvitations()})">초청취소</button>
-		// 	`
-		// 	_el_prevInv.appendChild(li);
-		// });
-	});
+    skapi.getInvitations().then(res => {
+        console.log('=== getInvitations === res : ', res);
+        employee.value = res.list;
+        displayEmployee(res.list);
+        loading.value = false;
+    });
+} else {
+    loading.value = false;
 }
-// getInvitations();
 
-// skapi.getRecords({
-//     table: {
-//         name: 'invitations', // 관리자가 직원의 초청기록 등록할 때 사용하는 테이블
-//         access_group: 99,
-//     },
-//     tag: email_tag
-// },
-// ).then(response => {
-//     console.log('== response ==', response);
-//     // divisions.value = response.list;
-//     // displayDivisions(response.list);
-//     loading.value = false;
-// });
-
-
-// function displayDivisions(divisions) {
-//     let saveSession = {};
-
-//     divisions.forEach((division, index) => {
-//         saveSession[division.record_id] = division;
-//     });
-
-//     window.sessionStorage.setItem('employee', JSON.stringify(saveSession));
-// }
+function displayEmployee(employee) {
+    window.sessionStorage.setItem('employees', JSON.stringify(employee));
+}
 
 let toggleSelectAll = () => {
     if (isAllSelected.value) {
         selectedList.value = [];
     } else {
-        selectedList.value = Object.keys(divisions.value);
+        selectedList.value = employee.value.map(item => item.user_id);
     }
 }
 
-let toggleSelect = (id) => {
-    if (selectedList.value.includes(id)) {
-        selectedList.value = selectedList.value.filter(itemId => itemId !== id);
+let toggleSelect = (el) => {
+    if (selectedList.value.includes(el)) {
+        selectedList.value = selectedList.value.filter(itemId => itemId !== el);
     } else {
-        selectedList.value.push(id);
+        selectedList.value.push(el);
     }
 }
 </script>

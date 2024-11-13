@@ -11,7 +11,7 @@ hr
 
         .tb-toolbar
             .btn-wrap
-                button.btn.bg-gray.outline(:disabled="!selectedList.length" @click="removeDivision") 삭제
+                button.btn.outline.warning(:disabled="!selectedList.length" @click="removeDivision") 삭제
                 button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
         template(v-if="loading")
