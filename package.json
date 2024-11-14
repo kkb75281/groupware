@@ -11,6 +11,7 @@
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {
+    "cropperjs": "^1.6.2",
     "less": "^4.2.0",
     "pug": "^3.0.3",
     "skapi-js": "^1.0.178",

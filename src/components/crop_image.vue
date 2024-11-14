@@ -1,260 +1,146 @@
 <template lang="pug">
-dialog(ref="dialog" @keydown.esc.prevent="emit('close')")
-    .canvas-wrap
-        canvas#canvas(ref="canvas")
+dialog(ref="dialog" @keydown.esc.prevent="closeDialog")
+    .container
+        h3 Image
+        .img-container
+            img(ref="image" :src="imageSrc" alt="Source Image")
 
-    br
+        h3 Preview
+        .img-container
+            canvas(ref="canvas")
 
-    .button-wrap
-        button.btn.outline(@click="emit('close')") Close
-        button.btn(@click="cropImage") Crop & Upload
+        .button-wrap
+            button.btn.outline(@click="emit('close')") Close
+            button.btn(@click="cropImage") Crop & Submit
 </template>
 
 <script setup>
 import { onMounted, onUnmounted, ref, watch, defineProps, defineEmits } from 'vue';
+import Cropper from 'cropperjs';
+import 'cropperjs/dist/cropper.css';
 
 const props = defineProps({
-  open: Boolean,
-  imageSrc: String
+    open: Boolean,
+    imageSrc: String,
 });
 
 const emit = defineEmits(['cropped', 'close']);
 
-let dialog = ref(null);
-let canvas = ref(null);
-let ctx = ref(null);
+const dialog = ref(null);
+const image = ref(null);
+const canvas = ref(null);
+let cropper = null;
 
-let image = new Image();
-let isResizing = false;
-let isDragging = false;
-let cropStartX = 50;
-let cropStartY = 50;
-let cropWidth = 100;
-let cropHeight = 100;
-
-let activeHandle = null;
-let handleSize = 10;
-
-let loadImage = (src) => {
-    image.src = src;
-    image.onload = drawImageOnCanvas;
-}
-
-let drawImageOnCanvas = () => {
-    canvas.value.width = image.width;
-    canvas.value.height = image.height;
-    drawImage();
-}
-
-let drawImage = () => {
-    ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height);
-    ctx.value.drawImage(image, 0, 0);
-
-    ctx.value.strokeStyle = 'red';
-    ctx.value.lineWidth = 2;
-    ctx.value.strokeRect(cropStartX, cropStartY, cropWidth, cropHeight);
-    drawHandles();
-}
-
-let drawHandles = () => {
-    ctx.value.fillStyle = 'blue';
-    ctx.value.fillRect(cropStartX - handleSize / 2, cropStartY - handleSize / 2, handleSize, handleSize);
-    ctx.value.fillRect(cropStartX + cropWidth - handleSize / 2, cropStartY - handleSize / 2, handleSize, handleSize);
-    ctx.value.fillRect(cropStartX + cropWidth - handleSize / 2, cropStartY + cropHeight - handleSize / 2, handleSize, handleSize);
-    ctx.value.fillRect(cropStartX - handleSize / 2, cropStartY + cropHeight - handleSize / 2, handleSize, handleSize);
-}
-
-function startAction(e) {
-    const rect = canvas.value.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    console.log(x, y)
-
-    if (isInHandle(x, y, cropStartX, cropStartY)) {
-        activeHandle = 'top-left';
-        isResizing = true;
-    } else if (isInHandle(x, y, cropStartX + cropWidth, cropStartY)) {
-        activeHandle = 'top-right';
-        isResizing = true;
-    } else if (isInHandle(x, y, cropStartX, cropStartY + cropHeight)) {
-        activeHandle = 'bottom-left';
-        isResizing = true;
-    } else if (isInHandle(x, y, cropStartX + cropWidth, cropStartY + cropHeight)) {
-        activeHandle = 'bottom-right';
-        isResizing = true;
-    } else if (isInCropArea(x, y)) {
-        isDragging = true;
+// Cropper 초기화 함수
+const startCropper = () => {
+    if (cropper) {
+        cropper.destroy();
     }
-}
+    cropper = new Cropper(image.value, {
+        viewMode: 1,
+        autoCrop: true,
+        scalable: true,
+        zoomable: true,
+        movable: true,
+        background: false,
+    });
+    console.log(cropper)
+};
 
-function performAction(e) {
-    const rect = canvas.value.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+// 이미지 자르기 함수
+const cropImage = () => {
+    if (cropper) {
+        const croppedCanvas = cropper.getCroppedCanvas();
+        const ctx = canvas.value.getContext('2d');
 
-    console.log(x, y)
+        // 캔버스 크기 설정
+        canvas.value.width = croppedCanvas.width;
+        canvas.value.height = croppedCanvas.height;
 
-    if (isResizing) {
-        switch (activeHandle) {
-            case 'top-left':
-                cropWidth += cropStartX - x;
-                cropHeight += cropStartY - y;
-                cropStartX = x;
-                cropStartY = y;
-                break;
-            case 'top-right':
-                cropWidth = x - cropStartX;
-                cropHeight += cropStartY - y;
-                cropStartY = y;
-                break;
-            case 'bottom-left':
-                cropWidth += cropStartX - x;
-                cropHeight = y - cropStartY;
-                cropStartX = x;
-                break;
-            case 'bottom-right':
-                cropWidth = x - cropStartX;
-                cropHeight = y - cropStartY;
-                break;
-        }
-        drawImage();
-    } else if (isDragging) {
-        cropStartX = x - cropWidth;
-        cropStartY = y - cropHeight;
-        drawImage();
+        // 캔버스에 크롭된 이미지 그리기
+        ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
+        ctx.drawImage(croppedCanvas, 0, 0);
+
+        // Blob 형태로 변환하여 부모 컴포넌트로 전달
+        croppedCanvas.toBlob((blob) => {
+            emit('cropped', blob);
+        }, 'image/jpeg');
     }
-}
+};
 
-function endAction() {
-    isResizing = false;
-    isDragging = false;
-    activeHandle = null;
-}
-
-function isInHandle(x, y, handleX, handleY) {
-    return x >= handleX - handleSize / 2 && x <= handleX + handleSize / 2 && y >= handleY - handleSize / 2 && y <= handleY + handleSize / 2;
-}
-
-function isInCropArea(x, y) {
-    return x >= cropStartX && x <= cropStartX + cropWidth && y >= cropStartY && y <= cropStartY + cropHeight;
-}
-
-let cropImage = () => {
-    if (canvas.value && ctx.value) {
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-
-        tempCanvas.width = cropWidth;
-        tempCanvas.height = cropHeight;
-
-        tempCtx.drawImage(
-            image,
-            cropStartX, cropStartY, cropWidth, cropHeight,
-            0, 0, cropWidth, cropHeight
-        );
-
-        tempCanvas.toBlob((blob) => {
-            const croppedFile = new File([blob], 'cropped_image.png', { type: 'image/png' });
-            console.log(croppedFile); // 업로드 등 필요 시 사용 가능
-
-            canvas.value.width = cropWidth;
-            canvas.value.height = cropHeight;
-            ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height);
-            ctx.value.drawImage(tempCanvas, 0, 0);
-
-            canvas.value.removeEventListener("mousedown", startAction);
-            canvas.value.removeEventListener("mousemove", performAction);
-            canvas.value.removeEventListener("mouseup", endAction);
-        });
-    }
-
-    const croppedData = canvas.value.toDataURL('image/png');
-    emit('cropped', croppedData);
-    emit('close');
-}
-
-watch(() => props.open, (nv) => {
-    if (nv) {
+// 다이얼로그 열고 닫힘 및 imageSrc 변경 감지
+watch(() => props.open, (isOpen) => {
+    if (isOpen) {
         dialog.value.showModal();
+
+        if (image.value.complete) {
+            startCropper();
+        } else {
+            image.value.onload = startCropper;
+        }
     } else {
         dialog.value.close();
-    }
-
-    if (nv && props.imageSrc) {
-        loadImage(props.imageSrc);
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
     }
 });
 
-onMounted(() => {
-    ctx.value = canvas.value.getContext('2d');
-    if (props.imageSrc) {
-        loadImage(props.imageSrc);
-    }
+// imageSrc 변경 시 Cropper 초기화
+// watch(() => props.imageSrc,(newSrc) => {
+//     if (cropper) {
+//         cropper.destroy();
+//         cropper = null;
+//     }
+//     if (props.open && newSrc) {
+//         if (image.value.complete) {
+//             startCropper();
+//         } else {
+//             image.value.onload = startCropper;
+//         }
+//     }
+// });
 
-    canvas.value.addEventListener("mousedown", startAction);
-    canvas.value.addEventListener("mousemove", performAction);
-    canvas.value.addEventListener("mouseup", endAction);
+onUnmounted(() => {
+    if (cropper) {
+        cropper.destroy();
+    }
 });
 </script>
 
-<style scoped lang="less">
-dialog {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-
-    max-width: 500px;
-    width: 100%;
-    padding: 1rem;
-
-    border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    outline: none;
-    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+<style scoped>
+.container {
+    max-width: 640px;
+    margin: 20px auto;
 }
 
-.canvas-wrap {
-    position: relative;
+img {
+    max-width: 100%;
+}
 
-    &:after {
-        content: "";
-        display: block;
-        padding-bottom: 100%;
-    }
-
-    canvas {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        border: 1px solid var(--gray-color-200);
-        background-color: var(--gray-color-100);
-    }
+.img-container {
+    margin-bottom: 20px;
 }
 
 .button-wrap {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    gap: 10px;
     justify-content: center;
-    gap: 1rem;
-
-    button {
-        flex-grow: 1;
-        min-width: 150px;
-    }
+    margin-top: 20px;
 }
 
-@media (max-width: 768px) {
+dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    max-width: 80vw;
+    max-height: 80vh;
+    overflow: auto;
 }
-
-@media (max-width: 355px) {
-    .button-wrap {
-        flex-direction: column-reverse;
-
-        button {
-            width: 100%;
-        }
-    }
-}
-</style>
+</style>  
