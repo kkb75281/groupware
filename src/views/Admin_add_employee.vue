@@ -209,10 +209,10 @@ let resigterEmp = (e) => {
                 emp_pos
             );
 
-            await skapi.getUsers().then(res => {
-                // let list = res.list;
-                window.sessionStorage.setItem('employee', JSON.stringify(res.list));
-            });
+            // await skapi.getUsers().then(res => {
+            //     // let list = res.list;
+            //     window.sessionStorage.setItem('employee', JSON.stringify(res.list));
+            // });
 
             await skapi.getInvitations().then(res => {
                 // let list = res.list;
