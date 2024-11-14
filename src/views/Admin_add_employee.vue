@@ -37,7 +37,7 @@ hr
 
         .input-wrap
             p.label.essential 직책(직급)
-            input#_el_position(type="text" name="position" required)
+            input#_el_position(type="text" name="position" placeholder="직책(직급)을 입력해주세요." required)
 
         br
 
@@ -45,31 +45,31 @@ hr
 
         .input-wrap
             p.label.essential 이름
-            input(type="text" name="name" required)
+            input(type="text" name="name" placeholder="이름을 입력해주세요." required)
         
         br
 
         .input-wrap
             p.label.essential 이메일
-            input(type="email" name="email" required)
+            input(type="email" name="email" placeholder="이메일을 입력해주세요." required)
 
         br
 
         .input-wrap
             p.label 생년월일
-            input(type="date" name="birthdate")
+            input(type="date" name="birthdate" placeholder="생년월일을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(type="tel" name="phone_number")
+            input(type="tel" name="phone_number" placeholder="전화번호를 입력해주세요. (+8200000000)")
 
         br
 
         .input-wrap
             p.label 주소
-            input(type="text" name="address")
+            input(type="text" name="address"  placeholder="주소를 입력해주세요.")
 
         br
 

@@ -108,8 +108,8 @@ hr
                             td {{ employee.email }}
                             td
                                 .btn-wrap
-                                    button.btn.bg-gray.sm 재전송
-                                    button.btn.bg-gray.sm 초청취소
+                                    button.btn.bg-gray.sm(@click="resendInvite(employee.email)") 재전송
+                                    button.btn.bg-gray.sm(@click="cancelInvite(employee.email)") 초청취소
                             td {{ employee.birthdate }}
                             td {{ employee.phone_number }}
                             td {{ employee.address }}       
@@ -165,7 +165,7 @@ if (!employee.value.length) {
     loading.value = false;
 }
 
-function displayEmployee(employee) {
+let displayEmployee = (employee) => {
     window.sessionStorage.setItem('employee', JSON.stringify(employee));
 }
 
@@ -184,7 +184,7 @@ if (!inviteEmployee.value.length) {
     loading.value = false;
 }
 
-function displayinviteEmployee(employee) {
+let displayinviteEmployee = (employee) => {
     window.sessionStorage.setItem('inviteEmployee', JSON.stringify(employee));
 }
 
@@ -211,29 +211,48 @@ let toggleSelect = (el) => {
     }
 }
 
-// let removeList = () => {
-//     if(!selectedList.value) {
-//         alert('삭제할 항목을 선택해주세요.');
-//         return;
-//     }
+let removeList = () => {
+    if(!selectedList.value) {
+        alert('삭제할 항목을 선택해주세요.');
+        return;
+    }
 
-//     // console.log(selectedList.value[0])
+    // console.log(selectedList.value[0])
 
-//     skapi.deleteAccount({user_id: selectedList.value[0]}).then(res => {
-//         console.log('=== deleteAccout === res : ', res);
-//         updateSessionStorage();
-//     });
+    skapi.blockAccount({user_id: selectedList.value[0]}).then(res => {
+        console.log('=== blockAccount === res : ', res);
+        updateSessionStorage();
+    }).catch(err => {
+        console.log('=== blockAccount === err : ', err);
+    });
 
-//     // console.log(el)
-//     // updateSessionStorage();
-//     // console.log('삭제요', selectedList.value);
-// }
+    // console.log(el)
+    // updateSessionStorage();
+    // console.log('삭제요', selectedList.value);
+}
 
-// function updateSessionStorage() {
-//     let allEmployees = JSON.parse(window.sessionStorage.getItem('employee'));
-//     let updatedEmployees = allEmployees.filter(emp => !selectedList.value.includes(emp.user_id));
-//     window.sessionStorage.setItem('employee', JSON.stringify(updatedEmployees));
-// }
+let updateSessionStorage = () => {
+    let allEmployees = JSON.parse(window.sessionStorage.getItem('employee'));
+    let updatedEmployees = allEmployees.filter(emp => !selectedList.value.includes(emp.user_id));
+    window.sessionStorage.setItem('employee', JSON.stringify(updatedEmployees));
+}
+
+let resendInvite = (email) => {
+    skapi.resendInvitation({ email: email }).then(res => {
+        alert('초대메일이 재전송되었습니다.');
+    }).catch(err => {
+        alert('초대메일 재전송에 실패하였습니다.');
+    });
+}
+
+let cancelInvite = (email) => {
+    skapi.cancelInvitation({email: email}).then(res => {
+        alert('초대메일이 취소되었습니다.');
+        console.log('=== cancelInvite === res : ', res);
+    }).catch(err => {
+        alert('초대메일 취소에 실패하였습니다.');
+    })
+}
 </script>
 
 <style scoped lang="less">
