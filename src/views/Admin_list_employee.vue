@@ -11,9 +11,9 @@ hr
 
         .tb-toolbar
             .btn-wrap
-                button.btn.outline.warning(:disabled="!selectedList.length" @click="removeDivision") 삭제
+                button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="removeList") 삭제
                 button.btn.outline(@click="router.push('/admin/add-employee')") 등록
-                button.btn.bg-gray.btn-hisinvite(@click="btnInviteToggle") 초청여부
+                button.btn.bg-gray.btn-hisinvite(@click="btnToggleInvite") 초청여부
     .tb-overflow
         template(v-if="loading")
             Loading#loading
@@ -149,6 +149,10 @@ let isAllSelected = computed(() => {
 let sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 let employee = ref(sessionEmployee || []);
 
+// skapi.getUsers().then(res => {
+//     console.log('=== getUsers === res : ', res.list);
+// });
+
 if (!employee.value.length) {
     loading.value = true;
 
@@ -166,7 +170,7 @@ function displayEmployee(employee) {
 }
 
 let sessionInviteEmployee = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
-let inviteEmployee = ref(sessionEmployee || []);
+let inviteEmployee = ref(sessionInviteEmployee || []);
 
 if (!inviteEmployee.value.length) {
     loading.value = true;
@@ -184,14 +188,9 @@ function displayinviteEmployee(employee) {
     window.sessionStorage.setItem('inviteEmployee', JSON.stringify(employee));
 }
 
-let btnInviteToggle = () => {
-    if (!invitation.value) {
-        invitation.value = !invitation.value;
-        document.querySelector('.btn-hisinvite').innerText = '직원목록';
-    } else {
-        invitation.value = !invitation.value;
-        document.querySelector('.btn-hisinvite').innerText = '초청여부';
-    }
+let btnToggleInvite = () => {
+    invitation.value = !invitation.value;
+    document.querySelector('.btn-hisinvite').innerText = invitation.value ? '직원목록' : '초청여부';
 }
 
 let toggleSelectAll = () => {
@@ -205,10 +204,36 @@ let toggleSelectAll = () => {
 let toggleSelect = (el) => {
     if (selectedList.value.includes(el)) {
         selectedList.value = selectedList.value.filter(itemId => itemId !== el);
+        // console.log('selectedList.value : ', selectedList.value);
+        // removeList(selectedList.value);
     } else {
         selectedList.value.push(el);
     }
 }
+
+// let removeList = () => {
+//     if(!selectedList.value) {
+//         alert('삭제할 항목을 선택해주세요.');
+//         return;
+//     }
+
+//     // console.log(selectedList.value[0])
+
+//     skapi.deleteAccount({user_id: selectedList.value[0]}).then(res => {
+//         console.log('=== deleteAccout === res : ', res);
+//         updateSessionStorage();
+//     });
+
+//     // console.log(el)
+//     // updateSessionStorage();
+//     // console.log('삭제요', selectedList.value);
+// }
+
+// function updateSessionStorage() {
+//     let allEmployees = JSON.parse(window.sessionStorage.getItem('employee'));
+//     let updatedEmployees = allEmployees.filter(emp => !selectedList.value.includes(emp.user_id));
+//     window.sessionStorage.setItem('employee', JSON.stringify(updatedEmployees));
+// }
 </script>
 
 <style scoped lang="less">
