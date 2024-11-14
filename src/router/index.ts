@@ -39,6 +39,11 @@ const router = createRouter({
       component: () => import('@/views/Mailing.vue'),
     },
     {
+      path: '/crop',
+      name: 'crop',
+      component: () => import('@/components/crop_image.vue'),
+    },
+    {
       path: '/',
       component: Main,
       beforeEnter: checkUser,
