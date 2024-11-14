@@ -1,5 +1,5 @@
 <template lang="pug">
-h1 직원 목록
+h1.title 직원 목록
 
 hr
 
@@ -13,58 +13,106 @@ hr
             .btn-wrap
                 button.btn.outline.warning(:disabled="!selectedList.length" @click="removeDivision") 삭제
                 button.btn.outline(@click="router.push('/admin/add-employee')") 등록
+                button.btn.bg-gray.btn-hisinvite(@click="btnInviteToggle") 초청여부
     .tb-overflow
         template(v-if="loading")
             Loading#loading
         table.table#employee_list
-            colgroup
-                col(style="width: 3rem;")
-                col(style="width: 3rem;")
-                col(style="width: 5rem;")
-                col(style="width: 10%;")
-                col(style="width: 25%;")
-                col(style="width: 11%;")
-                col(style="width: 10%; min-width: 6rem;")
-                col(style="width: 10%; min-width: 6rem;")
-                col(style="min-width: 15rem;")
-            thead
-                tr
-                    th(scope="col")
-                        label.checkbox
-                            input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
-                            span.label-checkbox
-                    th(scope="col") NO
-                    th(scope="col") 직책(직급)
-                    th(scope="col") 이름
-                    th(scope="col") 이메일
-                    th(scope="col") 초청여부
-                    th(scope="col") 생년월일
-                    th(scope="col") 전화번호
-                    th(scope="col") 주소
-
-            tbody
-                template(v-if="loading")
-                    tr(v-for="i in 4")
-                template(v-else-if="!employee")
+            template(v-if="!invitation")
+                colgroup
+                    col(style="width: 3rem;")
+                    col(style="width: 3rem;")
+                    col(style="width: 5rem;")
+                    col(style="width: 10%;")
+                    col(style="width: 25%;")
+                    //- col(style="width: 11%;")
+                    col(style="width: 10%; min-width: 6rem;")
+                    col(style="width: 10%; min-width: 6rem;")
+                    col(style="min-width: 15rem;")
+                thead
                     tr
-                        td(colspan="8") 데이터가 없습니다.
-                template(v-else)
-                    tr(v-for="(employee, index) in employee")
-                        td
+                        th(scope="col")
                             label.checkbox
-                                input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
+                                input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
                                 span.label-checkbox
-                        td.list-num {{ index + 1 }}
-                        td {{ employee.access_group }}
-                        td {{ employee.name }}
-                        td {{ employee.email }}
-                        td
-                            .btn-wrap
-                                button.btn.bg-gray.sm 재전송
-                                button.btn.bg-gray.sm 초청취소
-                        td {{ employee.birthdate }}
-                        td {{ employee.phone_number }}
-                        td {{ employee.address }}
+                        th(scope="col") NO
+                        th(scope="col") 직책(직급)
+                        th(scope="col") 이름
+                        th(scope="col") 이메일
+                        //- th(scope="col") 초청여부
+                        th(scope="col") 생년월일
+                        th(scope="col") 전화번호
+                        th(scope="col") 주소
+                tbody
+                    template(v-if="loading")
+                        tr(v-for="i in 4")
+                    template(v-else-if="!employee")
+                        tr
+                            td(colspan="8") 데이터가 없습니다.
+                    template(v-else)
+                        tr(v-for="(employee, index) in employee")
+                            td
+                                label.checkbox
+                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
+                                    span.label-checkbox
+                            td.list-num {{ index + 1 }}
+                            td {{ employee.access_group }}
+                            td {{ employee.name }}
+                            td {{ employee.email }}
+                            //- td
+                            //-     .btn-wrap
+                            //-         button.btn.bg-gray.sm 초청완료
+                            td {{ employee.birthdate }}
+                            td {{ employee.phone_number }}
+                            td {{ employee.address }}     
+            template(v-else)
+                colgroup
+                    col(style="width: 3rem;")
+                    col(style="width: 3rem;")
+                    col(style="width: 5rem;")
+                    col(style="width: 10%;")
+                    col(style="width: 25%;")
+                    col(style="width: 11%;")
+                    col(style="width: 10%; min-width: 6rem;")
+                    col(style="width: 10%; min-width: 6rem;")
+                    col(style="min-width: 15rem;")
+                thead
+                    tr
+                        th(scope="col")
+                            label.checkbox
+                                input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
+                                span.label-checkbox
+                        th(scope="col") NO
+                        th(scope="col") 직책(직급)
+                        th(scope="col") 이름
+                        th(scope="col") 이메일
+                        th(scope="col") 초청여부
+                        th(scope="col") 생년월일
+                        th(scope="col") 전화번호
+                        th(scope="col") 주소
+                tbody
+                    template(v-if="loading")
+                        tr(v-for="i in 4")
+                    template(v-else-if="!inviteEmployee")
+                        tr
+                            td(colspan="8") 데이터가 없습니다.
+                    template(v-else)
+                        tr(v-for="(employee, index) in inviteEmployee")
+                            td
+                                label.checkbox
+                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
+                                    span.label-checkbox
+                            td.list-num {{ index + 1 }}
+                            td {{ employee.access_group }}
+                            td {{ employee.name }}
+                            td {{ employee.email }}
+                            td
+                                .btn-wrap
+                                    button.btn.bg-gray.sm 재전송
+                                    button.btn.bg-gray.sm 초청취소
+                            td {{ employee.birthdate }}
+                            td {{ employee.phone_number }}
+                            td {{ employee.address }}       
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -93,23 +141,18 @@ const route = useRoute();
 let loading = ref(false);
 let currentPage = ref(1);
 let selectedList = ref([]);
+let invitation = ref(false);
 let isAllSelected = computed(() => {
     return selectedList.value.length > 0 && employee.value.every(emp => selectedList.value.includes(emp.user_id));
 });
 
-let sessionEmployee = JSON.parse(window.sessionStorage.getItem('employees'));
+let sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 let employee = ref(sessionEmployee || []);
-
-skapi.getInvitations().then(res => {
-        console.log('=== getInvitations === res : ', res);
-        
-    });
 
 if (!employee.value.length) {
     loading.value = true;
 
-    skapi.getInvitations().then(res => {
-        console.log('=== getInvitations === res : ', res);
+    skapi.getUsers().then(res => {
         employee.value = res.list;
         displayEmployee(res.list);
         loading.value = false;
@@ -119,7 +162,36 @@ if (!employee.value.length) {
 }
 
 function displayEmployee(employee) {
-    window.sessionStorage.setItem('employees', JSON.stringify(employee));
+    window.sessionStorage.setItem('employee', JSON.stringify(employee));
+}
+
+let sessionInviteEmployee = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
+let inviteEmployee = ref(sessionEmployee || []);
+
+if (!inviteEmployee.value.length) {
+    loading.value = true;
+
+    skapi.getInvitations().then(res => {
+        inviteEmployee.value = res.list;
+        displayinviteEmployee(res.list);
+        loading.value = false;
+    });
+} else {
+    loading.value = false;
+}
+
+function displayinviteEmployee(employee) {
+    window.sessionStorage.setItem('inviteEmployee', JSON.stringify(employee));
+}
+
+let btnInviteToggle = () => {
+    if (!invitation.value) {
+        invitation.value = !invitation.value;
+        document.querySelector('.btn-hisinvite').innerText = '직원목록';
+    } else {
+        invitation.value = !invitation.value;
+        document.querySelector('.btn-hisinvite').innerText = '초청여부';
+    }
 }
 
 let toggleSelectAll = () => {
