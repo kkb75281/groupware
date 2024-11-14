@@ -157,7 +157,7 @@ async function main() {
 		tag: profile.user_id.replaceAll('-', '_'),
 	});
 
-	document.querySelector('input[name="position"]').value = division.list[0].data.position;
+	document.querySelector('input[name="position"]').value = division.list[0]?.data?.position;
 	document.querySelector('input[name="authority"]').value = access_group[profile.access_group];
 	// document.getElementById('position').innerText = '직책 : ' + division.list[0].data.position + ' , 권한 : ' + access_group[profile.access_group];
 }
