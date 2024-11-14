@@ -21,79 +21,79 @@ hr
 
         .input-wrap
             p.label.essential 부서(회사)명
-            input(type="text" name="division_name" required)
+            input(type="text" name="division_name" placeholder="부서명을 입력해주세요." required)
         
         br
 
         .input-wrap
             p.label 설명
-            input(type="text" name="division_description")
+            input(type="text" name="division_description" placeholder="부서(회사) 설명을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 대표자명
-            input(type="text" name="division_ceo_name")
+            input(type="text" name="division_ceo_name" placeholder="대표자명을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 주소
-            input(type="text" name="division_address")
+            input(type="text" name="division_address" placeholder="주소를 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 사업자번호
-            input(type="text" name="division_business_code")
+            input(type="text" name="division_business_code" placeholder="사업자번호를 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 법인번호
-            input(type="text" name="division_corporate_number")
+            input(type="text" name="division_corporate_number" placeholder="법인번호를 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 업태
-            input(type="text" name="division_business_type")
+            input(type="text" name="division_business_type" placeholder="업태를 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 종목
-            input(type="text" name="division_business_item")
+            input(type="text" name="division_business_item" placeholder="종목을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 설립일
-            input(type="text" name="division_establishment_date")
+            input(type="text" name="division_establishment_date" placeholder="설립일을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(type="text" name="division_phone_number")
+            input(type="text" name="division_phone_number" placeholder="전화번호를 입력해주세요. (+8200000000)")
 
         br
 
         .input-wrap
             p.label 이메일
-            input(type="text" name="division_email")
+            input(type="text" name="division_email" placeholder="이메일을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 팩스번호
-            input(type="text" name="division_fax")
+            input(type="text" name="division_fax" placeholder="팩스번호를 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 홈페이지
-            input(type="text" name="division_homepage")
+            input(type="text" name="division_homepage" placeholder="홈페이지를 입력해주세요.")
 
         br
 

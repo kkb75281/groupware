@@ -108,7 +108,7 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
     divisions.value = sessionDivisions;
 }
 
-function displayDivisions(divisions) {
+let displayDivisions = (divisions) => {
     let saveSession = {};
 
     divisions.forEach((division, index) => {
@@ -117,8 +117,6 @@ function displayDivisions(divisions) {
 
     window.sessionStorage.setItem('divisions', JSON.stringify(saveSession));
 }
-
-console.log('=== divisions.value ===', divisions.value);
 
 let toggleSelectAll = () => {
     if (isAllSelected.value) {
