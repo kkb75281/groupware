@@ -9,16 +9,14 @@
 		form#_el_pictureForm
 			.image
 				img#profile-img(:src="uploadProfileSrc" alt="profile image")
-				//- label(for="_el_file_input")
-				.label(@click="showOptions = !showOptions")
+				.label(ref="optionsBtn" @click="showOptions = !showOptions")
 					.icon.white
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-				ul.options(v-if="showOptions")
+				ul.options(v-if="showOptions" @click.stop)
 					li(@click="selectFile") 사진 변경
-					li(@click="setToDefault") 기본 이미지로 변경
+					li(@click="setToDefault" :class="{'disabled': uploadProfileSrc === null}") 기본 이미지로 변경
 				input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
-			
 
 		br
 
@@ -78,14 +76,14 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, watch, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, updateUser, profileImage } from '@/user';
 
 const router = useRouter();
 const route = useRoute();
 
-let uploadProfileSrc = ref('');
+let uploadProfileSrc = ref(null);
 let getFileInfo = ref(null);
 
 let changeProfileImg = (e) => {
@@ -101,7 +99,6 @@ let changeProfileImg = (e) => {
 }
 
 let showOptions = ref(false);
-let _el_file_input = ref(null);
 
 let selectFile = () => {
 	showOptions.value = false;
@@ -111,10 +108,24 @@ let selectFile = () => {
 let setToDefault = () => {
 	showOptions.value = false;
 	uploadProfileSrc.value = null;
-	_el_file_input.value.value = ''
-	// fileInput.value.value = '' // input의 파일 선택 상태 초기화
-  	// changeProfileImg({ target: _el_file_input.value })
+	_el_file_input.value = '';
 }
+
+let optionsBtn = ref(null);
+
+let closeOptions = (e) => {
+	if (showOptions.value && !optionsBtn.value.contains(e.target)) {
+		showOptions.value = false;
+	}
+};
+
+onMounted(() => {
+	document.addEventListener('click', closeOptions);
+});
+
+onUnmounted(() => {
+	document.removeEventListener('click', closeOptions);
+});
 
 // 입력창을 비활성화한다.
 document.querySelectorAll('form input').forEach((el) => (el.disabled = true));
@@ -189,37 +200,39 @@ let registerMypage = (e) => {
 	let profile_pic_postParams = {};
 	let samePerson = false;
 
-	if(user.user_id === getFileInfo.value.uploader) {
+
+	if(user.user_id === getFileInfo.value?.uploader) {
 		samePerson = true;
 		profile_pic_postParams.record_id = getFileInfo.value.record_id;
 	} else {
 		profile_pic_postParams = {
 			table: {
-			name: 'profile_picture',
-			access_group: 'authorized',
+				name: 'profile_picture',
+				access_group: 'authorized',
 			}
 		};
 	}
 
 	async function post() {
-		if(_el_file_input.value.files.length > 0) {
+		if(_el_file_input.files.length > 0) {
 			// 새로 선택한 사진이 있을시 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
 			profile_pic_postParams.remove_bin = null;
 			
 			// 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
 			let picRec = await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
-			_el_picture_input.value.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
+			_el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
 		}
 
 		if(uploadProfileSrc.value === null && samePerson) {
-			await skapi.deleteRecord({record_id: getFileInfo.value.record_id}).then(r => {
+			_el_picture_input.value = null;
+			await skapi.deleteRecords({record_id: getFileInfo.value.record_id}).then(r => {
 				console.log('== deleteRecord == r : ', r);
-				user.picture = null;
 			}).catch(err => {
 				console.log('== deleteRecord == err : ', err);
 			});
 		}
 
+		console.log(e)
 		// 프로필 정보를 업데이트한다.
 		await skapi.updateProfile(e);
 		updateUser(e);
@@ -303,6 +316,16 @@ let registerMypage = (e) => {
 				&:hover {
 					background-color: var(--primary-color-400);
 					color: #fff;
+
+					&.disabled {
+						background-color: unset;
+						color: unset;
+					}
+				}
+				&.disabled {
+					opacity: 0.25;
+					cursor: default;
+					pointer-events: none;
 				}
 			}
 		}

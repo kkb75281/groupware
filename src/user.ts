@@ -18,6 +18,7 @@ export let updateUser = () => {
       }
 
       if (user.picture) {
+        console.log('=== user.ts === user.picture : ', user.picture);
         skapi
           .getFile(user.picture, {
             dataType: 'endpoint',
@@ -29,6 +30,8 @@ export let updateUser = () => {
             window.alert('프로필 사진을 불러오는데 실패했습니다.');
             throw err; // 의도적으로 에러 전달
           });
+      } else {
+        profileImage.value = '';
       }
     } else {
       user = {};
