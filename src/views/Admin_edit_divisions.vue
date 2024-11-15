@@ -213,6 +213,7 @@ let post_params = {
 
 let editDivision = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    document.querySelectorAll('form button').forEach(el => el.disabled = true);
     
     skapi.postRecord(e, post_params).then((r) => {
         let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
