@@ -159,11 +159,11 @@ async function main() {
 		skapi.getFile(profile.picture, {
 			dataType: 'info',
 		}).then(res => {
-			console.log('== getFile == res : ', res)
+			// console.log('== getFile == res : ', res)
 			getFileInfo.value = res;
 			// previous_profile_pic = res.record_id;
 		}).catch(err => {
-			console.log('== getFile == err : ', err)
+			// console.log('== getFile == err : ', err)
 		});
 	}
 
@@ -226,13 +226,12 @@ let registerMypage = (e) => {
 		if(uploadProfileSrc.value === null && samePerson) {
 			_el_picture_input.value = null;
 			await skapi.deleteRecords({record_id: getFileInfo.value.record_id}).then(r => {
-				console.log('== deleteRecord == r : ', r);
+				// console.log('== deleteRecord == r : ', r);
 			}).catch(err => {
-				console.log('== deleteRecord == err : ', err);
+				// console.log('== deleteRecord == err : ', err);
 			});
 		}
 
-		console.log(e)
 		// 프로필 정보를 업데이트한다.
 		await skapi.updateProfile(e);
 		updateUser(e);

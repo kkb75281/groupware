@@ -18,7 +18,6 @@ export let updateUser = () => {
       }
 
       if (user.picture) {
-        console.log('=== user.ts === user.picture : ', user.picture);
         skapi
           .getFile(user.picture, {
             dataType: 'endpoint',
