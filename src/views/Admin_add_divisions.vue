@@ -121,7 +121,7 @@ hr
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
 
-CropImage(:open="openModal" :imageSrc="uploadSrc._el_profile_img" @cropped="setCroppedImage" @close="openModal = false")
+CropImage(:open="openModal" :imageSrc="uploadSrc._el_profile_img" @cropped="setCroppedImage" @close="uploadSrc._el_profile_img = null; openModal = false")
 
 br  
 br  
