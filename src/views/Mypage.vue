@@ -9,11 +9,16 @@
 		form#_el_pictureForm
 			.image
 				img#profile-img(:src="uploadProfileSrc" alt="profile image")
-				label(for="_el_file_input")
+				//- label(for="_el_file_input")
+				.label(@click="showOptions = !showOptions")
 					.icon.white
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-				input#_el_file_input(type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
+				ul.options(v-if="showOptions")
+					li(@click="selectFile") 사진 변경
+					li(@click="setToDefault") 기본 이미지로 변경
+				input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
+			
 
 		br
 
@@ -73,7 +78,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, watch } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user, updateUser, profileImage } from '@/user';
 
@@ -81,28 +86,38 @@ const router = useRouter();
 const route = useRoute();
 
 let uploadProfileSrc = ref('');
+let getFileInfo = ref(null);
 
 let changeProfileImg = (e) => {
-    let file = e.target.files[0];
-
+	let file = e.target.files[0];
+	
     if (file) {
-        let reader = new FileReader();
+		let reader = new FileReader();
         reader.onload = (e) => {
-            uploadProfileSrc.value = e.target.result; // ref 값 업데이트
+			uploadProfileSrc.value = e.target.result; // ref 값 업데이트
         };
         reader.readAsDataURL(file);
     }
 }
 
+let showOptions = ref(false);
+let _el_file_input = ref(null);
+
+let selectFile = () => {
+	showOptions.value = false;
+	document.getElementById('_el_file_input').click();
+}
+
+let setToDefault = () => {
+	showOptions.value = false;
+	uploadProfileSrc.value = null;
+	_el_file_input.value.value = ''
+	// fileInput.value.value = '' // input의 파일 선택 상태 초기화
+  	// changeProfileImg({ target: _el_file_input.value })
+}
+
 // 입력창을 비활성화한다.
 document.querySelectorAll('form input').forEach((el) => (el.disabled = true));
-
-let profile_pic_postParams = {
-	table: {
-      name: 'profile_picture',
-      access_group: 'authorized',
-    },
-};
 
 async function main() {
 	// 프로필 정보를 가져와서 입력창에 넣어준다.
@@ -130,14 +145,15 @@ async function main() {
 		})
 
 		// 사용자가 올린 프로필 사진 레코드를 가져온다.
-		// skapi.getFile(profile.picture, {
-		// 	dataType: 'info',
-		// }).then(res => {
-		// 	console.log('== getFile == res : ', res)
-		// 	// previous_profile_pic = res.record_id;
-		// }).catch(err => {
-		// 	console.log('== getFile == err : ', err)
-		// });
+		skapi.getFile(profile.picture, {
+			dataType: 'info',
+		}).then(res => {
+			console.log('== getFile == res : ', res)
+			getFileInfo.value = res;
+			// previous_profile_pic = res.record_id;
+		}).catch(err => {
+			console.log('== getFile == err : ', err)
+		});
 	}
 
 	// 프로필 정보를 가져왔으므로 입력창을 활성화한다.
@@ -168,14 +184,40 @@ let registerMypage = (e) => {
 	// 입력창을 비활성화한다.
 	document.querySelectorAll('form input').forEach(el => el.disabled = true);
 
+	// 올린 사람과 수정하는 사람이 같지 않으면 table 정보로
+	// 같으면 record_id로 사진 수정
+	let profile_pic_postParams = {};
+	let samePerson = false;
+
+	if(user.user_id === getFileInfo.value.uploader) {
+		samePerson = true;
+		profile_pic_postParams.record_id = getFileInfo.value.record_id;
+	} else {
+		profile_pic_postParams = {
+			table: {
+			name: 'profile_picture',
+			access_group: 'authorized',
+			}
+		};
+	}
+
 	async function post() {
-		if(_el_file_input.files.length > 0) {
+		if(_el_file_input.value.files.length > 0) {
 			// 새로 선택한 사진이 있을시 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
 			profile_pic_postParams.remove_bin = null;
 			
 			// 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
 			let picRec = await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
-			_el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
+			_el_picture_input.value.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
+		}
+
+		if(uploadProfileSrc.value === null && samePerson) {
+			await skapi.deleteRecord({record_id: getFileInfo.value.record_id}).then(r => {
+				console.log('== deleteRecord == r : ', r);
+				user.picture = null;
+			}).catch(err => {
+				console.log('== deleteRecord == err : ', err);
+			});
 		}
 
 		// 프로필 정보를 업데이트한다.
@@ -213,7 +255,7 @@ let registerMypage = (e) => {
         position: relative;
         display: inline-block;
 
-        label {
+        .label {
             position: absolute;
             right: 0;
             bottom: 0;
@@ -237,6 +279,33 @@ let registerMypage = (e) => {
                 }
             }
         }
+		
+		.options {
+			position: absolute;
+			right: -113px;
+			bottom: -40px;
+			z-index: 9;
+			background-color: var(--gray-color-100);
+			border: 1px solid var(--gray-color-300);
+			padding: 5px;
+			border-radius: 4px;
+			
+			li {
+				font-size: 0.8rem;
+				text-align: left;
+				cursor: pointer;
+				padding: 4px 8px;
+				border-radius: 4px;
+
+				&:first-child {
+					margin-bottom: 4px;
+				}
+				&:hover {
+					background-color: var(--primary-color-400);
+					color: #fff;
+				}
+			}
+		}
     }
 
     #profile-img {
