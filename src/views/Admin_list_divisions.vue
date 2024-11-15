@@ -105,7 +105,11 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
         loading.value = false;
     });
 } else {
-    divisions.value = JSON.parse(sessionDivisions);
+    if(sessionDivisions === 'no data') {
+        divisions.value = 'no data';
+    } else {
+        divisions.value = JSON.parse(sessionDivisions);
+    }
 }
 
 let displayDivisions = (divisions) => {
