@@ -337,7 +337,8 @@ let registerMypage = (e) => {
         height: 100px;
         border-radius: 50%;
         display: block;
-        object-fit: contain;
+        // object-fit: contain;
+		object-fit: cover;
         position: relative;
         background-color: var(--gray-color-100);
 

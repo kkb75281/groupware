@@ -274,7 +274,8 @@ watch(() => route.path, (newPath, oldPath) => {
 		img {
 			width: 100%;
 			height: 100%;
-			object-fit: contain;
+			// object-fit: contain;
+			object-fit: cover;
 			z-index: 1;
 			position: relative;
 		}
