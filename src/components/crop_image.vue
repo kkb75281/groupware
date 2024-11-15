@@ -1,21 +1,19 @@
 <template lang="pug">
 dialog(ref="dialog" @keydown.esc.prevent="closeDialog")
     .container
-        h3 Image
-        .img-container
-            img(ref="image" :src="imageSrc" alt="Source Image")
-
-        h3 Preview
-        .img-container
-            canvas(ref="canvas")
+        .image-wrap
+            .image.crop
+                img(ref="image" :src="imageSrc" alt="Source Image")
+            .image.preview(ref="preview")
+                canvas(ref="canvas")
 
         .button-wrap
-            button.btn.outline(@click="emit('close')") Close
+            button.btn.outline(@click="resetCropper(); emit('close')") Close
             button.btn(@click="cropImage") Crop & Submit
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch, defineProps, defineEmits } from 'vue';
+import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
 
@@ -29,6 +27,7 @@ const emit = defineEmits(['cropped', 'close']);
 const dialog = ref(null);
 const image = ref(null);
 const canvas = ref(null);
+let preview = ref(null);
 let cropper = null;
 
 // Cropper 초기화 함수
@@ -43,14 +42,81 @@ const startCropper = () => {
         zoomable: true,
         movable: true,
         background: false,
+        aspectRatio: 1,
+        minCanvasHeight: 400,
+        minCanvasWidth: 400,
+        minCropBoxHeight: 200,
+
+        // Cropper가 준비되면 크기와 위치를 고정합니다.
+        ready() {
+            const cropBoxSize = 200; // 자르기 상자의 원하는 고정 크기
+            const canvasWidth = 400; // 캔버스의 고정 너비
+            const canvasHeight = 400; // 캔버스의 고정 높이
+
+            // 자르기 상자의 크기와 위치를 설정
+            cropper.setCropBoxData({
+                width: cropBoxSize,
+                height: cropBoxSize,
+                left: (canvasWidth - cropBoxSize) / 2,
+                top: (canvasHeight - cropBoxSize) / 2
+            });
+
+            // 이미지 캔버스의 초기 크기와 위치를 고정
+            cropper.setCanvasData({
+                width: canvasWidth,
+                height: canvasHeight,
+                left: 0,
+                top: 0
+            });
+        },
+
+        crop() {
+            updatePreview();
+        },
+        // cropBoxResizable: true,
+        preview: [preview.value],
     });
-    console.log(cropper)
+};
+
+// Cropper 및 Preview 초기화 함수
+const resetCropper = () => {
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    // 캔버스 내용 초기화
+    const ctx = canvas.value.getContext('2d');
+    ctx.clearRect(0, 0, 400, 400);
+};
+
+// Preview 캔버스를 실시간 업데이트하는 함수
+const updatePreview = () => {
+    if (cropper) {
+        const croppedCanvas = cropper.getCroppedCanvas();
+
+        // Preview 캔버스 컨텍스트 가져오기
+        const ctx = canvas.value.getContext('2d');
+
+        // 캔버스 크기 설정
+        canvas.value.width = croppedCanvas.width;
+        canvas.value.height = croppedCanvas.height;
+
+        // Preview 캔버스에 크롭된 이미지를 그리기
+        ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
+        ctx.drawImage(croppedCanvas, 0, 0);
+    }
 };
 
 // 이미지 자르기 함수
 const cropImage = () => {
     if (cropper) {
         const croppedCanvas = cropper.getCroppedCanvas();
+
+        if (!croppedCanvas) {
+            console.error("크롭된 이미지를 캔버스에 가져오는데 실패했습니다.");
+            return;
+        }
+
         const ctx = canvas.value.getContext('2d');
 
         // 캔버스 크기 설정
@@ -63,44 +129,39 @@ const cropImage = () => {
 
         // Blob 형태로 변환하여 부모 컴포넌트로 전달
         croppedCanvas.toBlob((blob) => {
-            emit('cropped', blob);
+            if (blob) {
+                const imageUrl = URL.createObjectURL(blob);
+                console.log("URL 생성 성공", imageUrl);
+                emit('cropped', imageUrl);
+
+                // 필요에 따라 Blob URL을 메모리에서 해제할 수도 있습니다.
+                // URL.revokeObjectURL(imageUrl);  // 이 라인은 더 이상 필요하지 않을 때 해제하는 용도로 사용하세요.
+            } else {
+                console.error("Blob 생성에 실패했습니다.");
+            }
         }, 'image/jpeg');
     }
 };
 
 // 다이얼로그 열고 닫힘 및 imageSrc 변경 감지
-watch(() => props.open, (isOpen) => {
+watch(() => props.open, async (isOpen) => {
     if (isOpen) {
         dialog.value.showModal();
-
-        if (image.value.complete) {
-            startCropper();
-        } else {
-            image.value.onload = startCropper;
-        }
+        await nextTick();
+        startCropper();
     } else {
         dialog.value.close();
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-        }
+        resetCropper();
     }
 });
 
-// imageSrc 변경 시 Cropper 초기화
-// watch(() => props.imageSrc,(newSrc) => {
-//     if (cropper) {
-//         cropper.destroy();
-//         cropper = null;
-//     }
-//     if (props.open && newSrc) {
-//         if (image.value.complete) {
-//             startCropper();
-//         } else {
-//             image.value.onload = startCropper;
-//         }
-//     }
-// });
+// imageSrc 변경을 감지하여 Cropper 초기화
+watch(() => props.imageSrc, (newSrc) => {
+    if (newSrc) {
+        resetCropper(); // 기존 Cropper 인스턴스 초기화
+        startCropper(); // 새 이미지로 Cropper 설정
+    }
+});
 
 onUnmounted(() => {
     if (cropper) {
@@ -109,18 +170,39 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
-.container {
-    max-width: 640px;
-    margin: 20px auto;
-}
-
+<style scoped lang="less">
 img {
+    display: block;
     max-width: 100%;
 }
 
-.img-container {
-    margin-bottom: 20px;
+.image-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+
+    .preview {
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6); /* 어두운 필터 색상 */
+            mask: radial-gradient(circle, transparent 70%, rgba(0,0,0,0.9) 71%);
+            pointer-events: none;
+            z-index: 1;
+        }
+    }
+}
+
+.cropper {
+    width: 400px !important;
 }
 
 .button-wrap {
