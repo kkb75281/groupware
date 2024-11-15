@@ -149,6 +149,7 @@ async function main() {
 		}).then(res=>{
 			document.getElementById('profile-img').src = res;
 			profileImage.value = res;
+			uploadProfileSrc.value = res;
 			// console.log('=== getFile === profileImage.value : ', profileImage.value);
 		}).catch(err=>{
 			window.alert('프로필 사진을 불러오는데 실패했습니다.');
@@ -194,6 +195,7 @@ let registerMypage = (e) => {
 	e.preventDefault();
 	// 입력창을 비활성화한다.
 	document.querySelectorAll('form input').forEach(el => el.disabled = true);
+	document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
 	// 올린 사람과 수정하는 사람이 같지 않으면 table 정보로
 	// 같으면 record_id로 사진 수정
@@ -225,11 +227,11 @@ let registerMypage = (e) => {
 
 		if(uploadProfileSrc.value === null && samePerson) {
 			_el_picture_input.value = null;
-			await skapi.deleteRecords({record_id: getFileInfo.value.record_id}).then(r => {
-				// console.log('== deleteRecord == r : ', r);
-			}).catch(err => {
-				// console.log('== deleteRecord == err : ', err);
-			});
+			await skapi.deleteRecords({record_id: getFileInfo.value.record_id});
+		} else if(uploadProfileSrc.value === null && !samePerson) {
+			_el_picture_input.value = null;
+			profile_pic_postParams.remove_bin = null;
+			await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
 		}
 
 		// 프로필 정보를 업데이트한다.
