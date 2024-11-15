@@ -154,8 +154,9 @@ let openCropImageDialog = (e) => {
 }
 
 let setCroppedImage = (croppedImage) => {
-  uploadSrc.value._el_profile_img = croppedImage;
-  openModal.value = false;
+    console.log(croppedImage);
+    uploadSrc.value._el_profile_img = croppedImage;
+    openModal.value = false;
 }
 
 let uploadImgSrc = (e) => {
