@@ -69,9 +69,12 @@ header#header
 #popup.profile(v-show="isProfileOpen" @click.stop)
 	.popup-header
 		.image
-			.icon
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+			template(v-if="profileImage")
+				img(:src="profileImage" alt="img-profile")
+			template(v-else)
+				.icon
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 		.content
 			.user
 				h4 {{ user.name }}
@@ -271,7 +274,8 @@ watch(() => route.path, (newPath, oldPath) => {
 		img {
 			width: 100%;
 			height: 100%;
-			object-fit: contain;
+			// object-fit: contain;
+			object-fit: cover;
 			z-index: 1;
 			position: relative;
 		}
@@ -307,6 +311,7 @@ watch(() => route.path, (newPath, oldPath) => {
 			justify-content: center;
 			background-color: var(--gray-color-100);
 			border-radius: 50%;
+			overflow: hidden;
 		}
 
 		.content {

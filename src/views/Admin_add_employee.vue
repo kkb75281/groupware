@@ -124,6 +124,7 @@ let changeProfileImg = (e) => {
 let resigterEmp = (e) => {
     // 입력창을 비활성화한다.
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
     async function post() {
         // 사용자를 등록(초대)한다. try catch는 아래와는 달리 작게 만들도록 한다.

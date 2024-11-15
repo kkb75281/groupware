@@ -154,8 +154,9 @@ let openCropImageDialog = (e) => {
 }
 
 let setCroppedImage = (croppedImage) => {
-  uploadSrc.value._el_profile_img = croppedImage;
-  openModal.value = false;
+    console.log(croppedImage);
+    uploadSrc.value._el_profile_img = croppedImage;
+    openModal.value = false;
 }
 
 let uploadImgSrc = (e) => {
@@ -173,6 +174,8 @@ let uploadImgSrc = (e) => {
 
 let resigterComp = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    document.querySelectorAll('form button').forEach(el => el.disabled = true);
+    
     //form data에 이미지 파일 추가
     skapi.postRecord(e, {
         table: {
