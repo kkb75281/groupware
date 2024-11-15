@@ -8,8 +8,8 @@ dialog(ref="dialog" @keydown.esc.prevent="closeDialog")
                 canvas(ref="canvas")
 
         .button-wrap
-            button.btn.outline(@click="resetCropper(); emit('close')") Close
-            button.btn(@click="cropImage") Crop & Submit
+            button.btn.outline(@click="closeDialog") 취소
+            button.btn(@click="cropImage") 자르기
 </template>
 
 <script setup>
@@ -43,38 +43,18 @@ const startCropper = () => {
         movable: true,
         background: false,
         aspectRatio: 1,
-        minCanvasHeight: 400,
-        minCanvasWidth: 400,
-        minCropBoxHeight: 200,
-
-        // Cropper가 준비되면 크기와 위치를 고정합니다.
-        ready() {
-            const cropBoxSize = 200; // 자르기 상자의 원하는 고정 크기
-            const canvasWidth = 400; // 캔버스의 고정 너비
-            const canvasHeight = 400; // 캔버스의 고정 높이
-
-            // 자르기 상자의 크기와 위치를 설정
-            cropper.setCropBoxData({
-                width: cropBoxSize,
-                height: cropBoxSize,
-                left: (canvasWidth - cropBoxSize) / 2,
-                top: (canvasHeight - cropBoxSize) / 2
-            });
-
-            // 이미지 캔버스의 초기 크기와 위치를 고정
-            cropper.setCanvasData({
-                width: canvasWidth,
-                height: canvasHeight,
-                left: 0,
-                top: 0
-            });
-        },
+        cropBoxResizable: true,
+        minContainerHeight: 200,
+        minCanvasWidth: 200,
+        minCanvasHeight: 200,
+        maxCanvasWidth: 400,
+        maxCanvasHeight: 400,
+        maxCropBoxHeight: 200,
+        preview: [preview.value],
 
         crop() {
             updatePreview();
         },
-        // cropBoxResizable: true,
-        preview: [preview.value],
     });
 };
 
@@ -87,6 +67,11 @@ const resetCropper = () => {
     // 캔버스 내용 초기화
     const ctx = canvas.value.getContext('2d');
     ctx.clearRect(0, 0, 400, 400);
+};
+
+const closeDialog = () => {
+    resetCropper(); // Cropper 초기화
+    emit('close'); // 부모 컴포넌트에 닫기 이벤트 전달
 };
 
 // Preview 캔버스를 실시간 업데이트하는 함수
@@ -139,7 +124,7 @@ const cropImage = () => {
             } else {
                 console.error("Blob 생성에 실패했습니다.");
             }
-        }, 'image/jpeg');
+        }, 'image/png');
     }
 };
 
@@ -171,6 +156,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="less">
+.container {
+    overflow: auto;
+}
+
 img {
     display: block;
     max-width: 100%;
@@ -180,11 +169,13 @@ img {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 1rem;
 
     .preview {
         position: relative;
         overflow: hidden;
+        background-color: var(--gray-color-400);
 
         &::before {
             content: '';
