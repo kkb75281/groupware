@@ -37,7 +37,7 @@ hr
             tbody
                 template(v-if="loading")
                     tr(v-for="i in 4")
-                template(v-else-if="!divisions || Object.keys(divisions).length === 0")
+                template(v-else-if="divisions === 'no data' || !divisions || Object.keys(divisions).length === 0")
                     tr
                         td(colspan="5") 데이터가 없습니다.
                 template(v-else)
@@ -88,7 +88,7 @@ let isAllSelected = computed(() => {
     return keys.length > 0 && keys.every(key => selectedList.value.includes(key));
 });
 
-let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+let sessionDivisions = window.sessionStorage.getItem('divisions');
 
 if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
     loading.value = true;
@@ -105,11 +105,18 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
         loading.value = false;
     });
 } else {
-    divisions.value = sessionDivisions;
+    divisions.value = JSON.parse(sessionDivisions);
 }
 
 let displayDivisions = (divisions) => {
     let saveSession = {};
+
+    console.log(divisions);
+    if (!divisions.length) {
+        window.sessionStorage.setItem('divisions', 'no data');
+
+        return;
+    }
 
     divisions.forEach((division, index) => {
         saveSession[division.record_id] = division;
