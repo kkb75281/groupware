@@ -183,9 +183,9 @@ let resigterComp = (e) => {
             access_group: 99
         }
     }).then((r) => {
-        let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+        let sessionDivisions = window.sessionStorage.getItem('divisions');
 
-        if(!sessionDivisions) {
+        if(sessionDivisions == 'no data' || !JSON.pase(sessionDivisions)) {
             sessionDivisions = {};
         }
         
