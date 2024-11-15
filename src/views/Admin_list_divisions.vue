@@ -41,7 +41,7 @@ hr
                     tr
                         td(colspan="5") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(division, key, index) in divisions")
+                    tr(v-for="(division, index) in Object.values(divisions)" :key="division.record_id")
                         td 
                             label.checkbox
                                 input(type="checkbox" name="checkbox" :checked="selectedList.includes(division.record_id)" @click="toggleSelect(division.record_id)")
@@ -80,11 +80,11 @@ const router = useRouter();
 const route = useRoute();
 
 let loading = ref(false);
-let divisions = ref(null);
+let divisions = ref([]);
 let currentPage = ref(1);
 let selectedList = ref([]);
 let isAllSelected = computed(() => {
-    let keys = selectedList.value ? Object.keys(selectedList.value) : [];
+    let keys = Object.keys(divisions.value);
     return keys.length > 0 && keys.every(key => selectedList.value.includes(key));
 });
 
@@ -108,7 +108,7 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
     divisions.value = sessionDivisions;
 }
 
-function displayDivisions(divisions) {
+let displayDivisions = (divisions) => {
     let saveSession = {};
 
     divisions.forEach((division, index) => {
