@@ -173,6 +173,8 @@ let uploadImgSrc = (e) => {
 
 let resigterComp = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    document.querySelectorAll('form button').forEach(el => el.disabled = true);
+    
     //form data에 이미지 파일 추가
     skapi.postRecord(e, {
         table: {
