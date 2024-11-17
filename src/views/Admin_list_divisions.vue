@@ -11,7 +11,7 @@ hr
 
         .tb-toolbar
             .btn-wrap
-                button.btn.outline.warning(:disabled="!selectedList.length" @click="removeDivision") 삭제
+                button.btn.outline.warning(:disabled="!selectedList.length" @click="deleteDivision") 삭제
                 button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
         template(v-if="loading")
@@ -71,7 +71,7 @@ br
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { skapi } from '@/main';
 
 import Loading from '@/components/loading.vue';
@@ -88,29 +88,33 @@ let isAllSelected = computed(() => {
     return keys.length > 0 && keys.every(key => selectedList.value.includes(key));
 });
 
-let sessionDivisions = window.sessionStorage.getItem('divisions');
+onMounted(() => {
+    let sessionDivisions = window.sessionStorage.getItem('divisions');
 
-if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
-    loading.value = true;
+    if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
+        loading.value = true;
 
-    skapi.getRecords({
-        table: {
-            name: 'divisions',
-            access_group: 99
-        }
-    },
-    ).then(response => {
-        divisions.value = response.list;
-        displayDivisions(response.list);
-        loading.value = false;
-    });
-} else {
-    if(sessionDivisions === 'no data') {
-        divisions.value = 'no data';
+        skapi.getRecords({
+            table: {
+                name: 'divisions',
+                access_group: 99
+            }
+        },
+        ).then(response => {
+            divisions.value = response.list;
+            displayDivisions(response.list);
+            loading.value = false;
+        });
     } else {
-        divisions.value = JSON.parse(sessionDivisions);
+        if(sessionDivisions === 'no data') {
+            divisions.value = 'no data';
+        } else {
+            divisions.value = JSON.parse(sessionDivisions);
+        }
     }
-}
+});
+
+
 
 let displayDivisions = (divisions) => {
     let saveSession = {};
@@ -142,6 +146,39 @@ let toggleSelect = (id) => {
         selectedList.value = selectedList.value.filter(itemId => itemId !== id);
     } else {
         selectedList.value.push(id);
+    }
+}
+
+let deleteDivision = async () => {
+    let userId = Object.values(selectedList.value);
+
+    let isSuccess = [];
+    let isFail = [];
+
+    await Promise.all(userId.map(el => {
+        return skapi.deleteAccount(el).then(res => {
+            isSuccess.push(el);
+            
+            skapi.getRecords({
+                table: {
+                    name: 'divisions',
+                    access_group: 99
+                }
+            },
+            ).then(response => {
+                divisions.value = response.list;
+                displayDivisions(response.list);
+            });
+        }).catch(err => {
+            console.log('== err == : ', err)
+            isFail.push(el);
+        });
+    }));
+
+    if (isSuccess.length > 0) {
+        alert(`${isSuccess.length}개의 부서(회사)가 삭제되었습니다.`);
+    } else {
+        alert('부서(회사) 삭제에 실패하였습니다.');
     }
 }
 </script>

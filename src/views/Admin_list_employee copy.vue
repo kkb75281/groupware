@@ -65,38 +65,52 @@ hr
                     tr
                         td(colspan="9") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee")
-                        //- 직원목록/숨김여부
-                        template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
+                    tr(v-for="(employee, index) in employee")
+                        //- 직원목록
+                        template(v-if="empListType === '직원목록' && !employee.approved.includes('suspended')")
                             td
                                 label.checkbox
-                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
+                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
                                     span.label-checkbox
                             td.list-num {{ index + 1 }}
-                            td {{ emp.access_group }}
-                            td {{ emp.name }}
-                            td {{ emp.email }}
-                            td {{ emp.birthdate }}
-                            td {{ emp.phone_number }}
-                            td {{ emp.address }}
+                            td {{ employee.access_group }}
+                            td {{ employee.name }}
+                            td {{ employee.email }}
+                            td {{ employee.birthdate }}
+                            td {{ employee.phone_number }}
+                            td {{ employee.address }}
+
+                        //- 숨김여부
+                        template(v-else-if="empListType === '숨김여부' && employee.approved.includes('suspended')")
+                            td
+                                label.checkbox
+                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
+                                    span.label-checkbox
+                            td.list-num {{ index + 1 }}
+                            td {{ employee.access_group }}
+                            td {{ employee.name }}
+                            td {{ employee.email }}
+                            td {{ employee.birthdate }}
+                            td {{ employee.phone_number }}
+                            td {{ employee.address }}
                         
                         //- 초청여부
                         template(v-else-if="empListType === '초청여부'")
                             td
                                 label.checkbox
-                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
+                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
                                     span.label-checkbox
                             td.list-num {{ index + 1 }}
-                            td {{ emp.access_group }}
-                            td {{ emp.name }}
-                            td {{ emp.email }}
+                            td {{ employee.access_group }}
+                            td {{ employee.name }}
+                            td {{ employee.email }}
                             td
                                 .btn-wrap
-                                    button.btn.bg-gray.sm(@click="resendInvite(emp.email)") 재전송
-                                    button.btn.bg-gray.sm(@click="cancelInvite(emp.email)") 초청취소
-                            td {{ emp.birthdate }}
-                            td {{ emp.phone_number }}
-                            td {{ emp.address }}
+                                    button.btn.bg-gray.sm(@click="resendInvite(employee.email)") 재전송
+                                    button.btn.bg-gray.sm(@click="cancelInvite(employee.email)") 초청취소
+                            td {{ employee.birthdate }}
+                            td {{ employee.phone_number }}
+                            td {{ employee.address }}
                     
                     //- 초청여부
                     //- template(v-else-if='empListType === "초청여부"')
@@ -182,13 +196,13 @@ br
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { skapi } from '@/main';
 
 import Loading from '@/components/loading.vue';
 
-let router = useRouter();
-let route = useRoute();
+const router = useRouter();
+const route = useRoute();
 
 let loading = ref(false);
 let currentPage = ref(1);
@@ -199,38 +213,27 @@ let isAllSelected = computed(() => {
     return selectedList.value.length > 0 && employee.value.every(emp => selectedList.value.includes(emp.user_id));
 });
 
-let originalEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 let sessionEmployee;
 let employee = ref([]);
 let suspendedLength = ref(0);
 
 watch(empListType, (nv) => {
     if(nv) {
-        // checkbox reset
-        selectedList.value = [];
-
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
-
             if (!sessionEmployee) {
                 loading.value = true;
 
                 skapi.getUsers().then(res => {
-                    let list = res.list.filter(emp => emp.approved.includes('approved'));
-
-                    employee.value = list;
+                    employee.value = res.list;
                     displayEmployee(res.list);
                     loading.value = false;
                 });
             } else {
-                employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved'));
+                employee.value = sessionEmployee;
             }
         } else if (nv === '숨김여부') {
-            let list = JSON.parse(window.sessionStorage.getItem('employee'))
-            let result  = list.filter(emp => emp.approved.includes('suspended'));
-
-            employee.value = result;
-            suspendedLength.value = result.length;
+            suspendedLength.value = employee.value.filter(emp => emp.approved.includes('suspended')).length;
         } else if (nv === '초청여부') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
 
@@ -250,25 +253,8 @@ watch(empListType, (nv) => {
     }
 }, { immediate: true });
 
-let getEmployee = () => {
-    skapi.getUsers().then(res => {
-        // console.log('== getEmployee == res.list : ', res.list);
-        
-        // empListType reset
-        empListType.value = '직원목록';
-
-        // checkbox reset
-        selectedList.value = [];
-
-        // employee list update
-        employee.value = res.list.filter(emp => emp.approved.includes('approved'));
-        displayEmployee(res.list);
-    });
-}
-
 let displayEmployee = (employee) => {
     window.sessionStorage.setItem('employee', JSON.stringify(employee));
-    // window.sessionStorage.setItem('employeeTimestamp', new Date().getTime());
 }
 
 let displayinviteEmployee = (employee) => {
@@ -291,70 +277,40 @@ let toggleSelect = (el) => {
     }
 }
 
-let blockEmployee = async () => {
+let blockEmployee = () => {
     let userId = Object.values(selectedList.value);
 
-    let isSuccess = [];
-    let isFail = [];
-
-    await Promise.all(userId.map(el => {
-        return skapi.blockAccount({ user_id: el }).then(res => {
-            isSuccess.push(el);
-            getEmployee();
+    userId.forEach(el => {
+        skapi.blockAccount({user_id: el}).then(res => {
+            console.log('=== blockAccount === res : ', res);
         }).catch(err => {
-            isFail.push(el);
+            console.log('=== blockAccount === err : ', err);
         });
-    }));
-
-    if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}명의 직원이 숨김 처리되었습니다.`);
-    } else {
-        alert('숨김 처리에 실패하였습니다.');
-    }
+    })
 }
 
-let unblockEmployee = async () => {
+let unblockEmployee = () => {
     let userId = Object.values(selectedList.value);
 
-    let isSuccess = [];
-    let isFail = [];
-
-    await Promise.all(userId.map(el => {
-        return skapi.unblockAccount({ user_id: el }).then(res => {
-            isSuccess.push(el);
-            getEmployee();
+    userId.forEach(el => {
+        skapi.unblockAccount({user_id: el}).then(res => {
+            console.log('=== unblockAccount === res : ', res);
         }).catch(err => {
-            isFail.push(el);
+            console.log('=== unblockAccount === err : ', err);
         });
-    }));
-
-    if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}명의 직원이 숨김 해제되었습니다.`);
-    } else {
-        alert('숨김 해제에 실패하였습니다.');
-    }
+    })
 }
 
-let deleteEmployee = async () => {
+let deleteEmployee = () => {
     let userId = Object.values(selectedList.value);
 
-    let isSuccess = [];
-    let isFail = [];
-
-    await Promise.all(userId.map(el => {
-        return skapi.deleteAccount({ user_id: el }).then(res => {
-            isSuccess.push(el);
-            getEmployee();
+    userId.forEach(el => {
+        skapi.deleteAccount({user_id: el}).then(res => {
+            console.log('=== deleteUser === res : ', res);
         }).catch(err => {
-            isFail.push(el);
+            console.log('=== deleteUser === err : ', err);
         });
-    }));
-
-    if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}명의 직원이 삭제되었습니다.`);
-    } else {
-        alert('직원 삭제에 실패하였습니다.');
-    }
+    })
 }
 
 let resendInvite = (email) => {

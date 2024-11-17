@@ -58,6 +58,8 @@ onMounted(() => {
     } else {
         remVal.value = false;
     }
+
+		window.sessionStorage.clear();
 });
 
 let setLocalStorage = (e) => {
