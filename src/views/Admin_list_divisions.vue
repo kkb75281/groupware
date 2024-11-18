@@ -157,22 +157,22 @@ let deleteDivision = async () => {
     await Promise.all(userId.map(el => {
         return skapi.deleteRecords({record_id: el}).then(res => {
             isSuccess.push(el);
-            
-            skapi.getRecords({
-                table: {
-                    name: 'divisions',
-                    access_group: 99
-                }
-            },
-            ).then(response => {
-                divisions.value = response.list;
-                displayDivisions(response.list);
-            });
         }).catch(err => {
             // console.log('== err == : ', err)
             isFail.push(el);
         });
     }));
+
+    skapi.getRecords({
+        table: {
+            name: 'divisions',
+            access_group: 99
+        }
+    },
+    ).then(response => {
+        divisions.value = response.list;
+        displayDivisions(response.list);
+    });
 
     if (isSuccess.length > 0) {
         alert(`${isSuccess.length}개의 부서(회사)가 삭제되었습니다.`);
