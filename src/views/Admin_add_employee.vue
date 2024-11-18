@@ -8,12 +8,12 @@ hr
 .form-wrap
     form#profPic
         .image
-            img#profile-img(:src="uploadProfileSrc" alt="profile image")
-            label(for="_el_file_input")
+            img#profile-img(:src="uploadSrc.init_profile_pic" alt="profile image")
+            label(for="init_profile_pic")
                 .icon.white
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-            input#_el_file_input(type="file" name="init_profile_pic" @change="changeProfileImg" style="display:none")
+            input#init_profile_pic(type="file" name="init_profile_pic" @change="openCropImageDialog" style="display:none")
 
     br
 
@@ -89,6 +89,8 @@ hr
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-employee')") 취소
             button.btn(type="submit") 등록
 
+CropImage(:open="openModal" :imageSrc="currnetImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+
 br  
 br  
 br  
@@ -98,6 +100,8 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { skapi } from '@/main';
+
+import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -119,17 +123,64 @@ divisions.then(divisions => {
     document.querySelector('select[name="division"]').disabled = false;
 });
 
-let uploadProfileSrc = ref('');
+// let uploadProfileSrc = ref('');
 
-let changeProfileImg = (e) => {
-    let file = e.target.files[0];
+// let changeProfileImg = (e) => {
+//     let file = e.target.files[0];
 
+//     if (file) {
+//         let reader = new FileReader();
+//         reader.onload = (e) => {
+//             uploadProfileSrc.value = e.target.result; // ref 값 업데이트
+//         };
+//         reader.readAsDataURL(file);
+//     }
+// }
+
+let openModal = ref(false);
+let croppedImages = ref({});
+let currentTargetId = ref('');
+let currnetImageSrc = ref('');
+let uploadSrc = ref({
+    init_profile_pic: '',
+});
+
+let openCropImageDialog = (e) => {
+    const file = e.target.files[0];
+    
     if (file) {
-        let reader = new FileReader();
-        reader.onload = (e) => {
-            uploadProfileSrc.value = e.target.result; // ref 값 업데이트
-        };
-        reader.readAsDataURL(file);
+        const fileURL = URL.createObjectURL(file);
+        currnetImageSrc.value = fileURL;
+        currentTargetId.value = e.target.id;
+        uploadSrc.value[currentTargetId.value] = fileURL;
+        openModal.value = true;
+    }
+}
+
+let closeCropImageDialog = () => {
+    uploadSrc.value[currentTargetId.value] = null;
+    openModal.value = false;
+}
+
+let setCroppedImage = async(croppedImage) => {
+    if(currentTargetId.value) {
+        try {
+            // 미리보기 이미지 경로 업데이트
+            uploadSrc.value[currentTargetId.value] = croppedImage;
+
+            // Blob URL에서 Blob 객체를 가져오기
+            const response = await fetch(croppedImage);
+            const blob = await response.blob();
+
+            // Blob 객체를 저장 (서버 전송용)
+            croppedImages.value[currentTargetId.value] = blob;
+
+            openModal.value = false;
+            currnetImageSrc.value = '';
+            currentTargetId.value = '';
+        } catch (error) {
+            console.error('Error processing Blob URL:', error);
+        }
     }
 }
 
@@ -142,11 +193,27 @@ let resigterEmp = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
+    let ext = skapi.util.extractFormData(e); // { data: {}, files: {} }
+
+    const formData = new FormData();
+
+    // 기존 form data 추가
+    for(let key in ext.data) {
+        formData.append(key, ext.data[key]);
+    }
+
+    // 이미지 파일을 form data에 추가
+    if(Object.keys(croppedImages.value).length > 0) {
+        Object.keys(croppedImages.value).forEach((key) => {
+            formData.append(key, croppedImages.value[key], `${key}.jpg`);
+        });
+    }
+
     async function post() {
         // 사용자를 등록(초대)한다. try catch는 아래와는 달리 작게 만들도록 한다.
         try {
             // let email_tag = document.querySelector('input[name=email]').value.replaceAll('.', '_').replace('+', '_').replace('@','_'); // 테크는 특수 문자를 사용할 수 없다.
-            if(_el_file_input.files.length > 0) {
+            if(init_profile_pic.files.length > 0) {
                 // let invHisParams = {
                 //     table: {
                 //         name: 'invitations', // 관리자가 직원의 초청기록 등록할 때 사용하는 테이블
@@ -169,6 +236,7 @@ let resigterEmp = (e) => {
                 let initPicParams = {
                     table: {
                         name: 'init_profile_pic' + makeSafe(document.querySelector('input[name=email]').value), // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
+                        // name: 'init_profile_pic' + makeSafe(uploadSrc.value.init_profile_pic), // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
                         access_group: 1
                     },
                 };
@@ -196,7 +264,7 @@ let resigterEmp = (e) => {
             //     birthdate_public: true,
             // }
 
-            let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'});
+            let added = await skapi.inviteUser(formData, {confirmation_url: '/mailing'});
             // added = SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
             // extract user id
             let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출

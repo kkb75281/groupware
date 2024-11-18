@@ -174,9 +174,6 @@ let setCroppedImage = async(croppedImage) => {
             const response = await fetch(croppedImage);
             const blob = await response.blob();
 
-            console.log("Cropped Image Blob:", blob); // Blob 확인
-            console.log("Cropped Images Store:", croppedImages.value);
-
             // Blob 객체를 저장 (서버 전송용)
             croppedImages.value[currentTargetId.value] = blob;
 
