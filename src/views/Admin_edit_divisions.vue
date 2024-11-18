@@ -173,36 +173,6 @@ let uploadSrc = ref({
     division_official_seal: bin?.division_official_seal?.[0]?.url || ''
 });
 
-// let uploadImgSrc = (e) => {
-//     let targetInput = e.target.id;
-//     let file = e.target.files[0];
-
-//     if (file) {
-//         let reader = new FileReader();
-//         reader.onload = (e) => {
-//             uploadSrc.value[targetInput] = e.target.result;
-//         };
-//         reader.readAsDataURL(file);
-//     }
-
-//     // 이미지 변경시 예전 이미지 모두 삭제
-//     if(targetInput === '_el_profile_img' && record.bin.division_logo) {
-//         record.bin.division_logo.forEach(element => {
-//             post_params.remove_bin.push(element);    
-//         });
-//     }
-//     if(targetInput === '_el_used_seal_img' && record.bin.division_used_seal) {
-//         record.bin.division_used_seal.forEach(element => {
-//             post_params.remove_bin.push(element);    
-//         });
-//     }
-//     if(targetInput === '_el_official_seal_img' && record.bin.division_official_seal) {
-//         record.bin.division_official_seal.forEach(element => {
-//             post_params.remove_bin.push(element);    
-//         });
-//     }
-// }
-
 let openCropImageDialog = (e) => {
     const file = e.target.files[0];
     
