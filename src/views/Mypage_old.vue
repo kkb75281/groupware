@@ -52,7 +52,7 @@
 
 			.input-wrap
 				p.label 전화번호
-				input(type="tel" name="phone_number" placeholder="+82123456789" required)
+				input(type="tel" name="phone_number" placeholder="+82000000000" required)
 
 			br
 
