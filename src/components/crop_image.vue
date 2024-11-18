@@ -116,7 +116,7 @@ const cropImage = () => {
         croppedCanvas.toBlob((blob) => {
             if (blob) {
                 const imageUrl = URL.createObjectURL(blob);
-                console.log("URL 생성 성공", imageUrl);
+                // console.log("URL 생성 성공", imageUrl);
                 emit('cropped', imageUrl);
 
                 // 필요에 따라 Blob URL을 메모리에서 해제할 수도 있습니다.
@@ -147,6 +147,10 @@ watch(() => props.imageSrc, (newSrc) => {
         startCropper(); // 새 이미지로 Cropper 설정
     }
 });
+
+onMounted(() => {
+    console.log(props.imageSrc)
+})
 
 onUnmounted(() => {
     if (cropper) {
