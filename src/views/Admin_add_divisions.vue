@@ -21,7 +21,7 @@ hr
 
         .input-wrap
             p.label.essential 부서(회사)명
-            input(type="text" name="division_name" placeholder="부서명을 입력해주세요." required)
+            input(type="text" name="division_name" placeholder="부서(회사)명을 입력해주세요." required)
         
         br
 
@@ -185,7 +185,7 @@ let resigterComp = (e) => {
     }).then((r) => {
         let sessionDivisions = window.sessionStorage.getItem('divisions');
 
-        if(sessionDivisions == 'no data' || !JSON.pase(sessionDivisions)) {
+        if(sessionDivisions == 'no data' || !JSON.parse(sessionDivisions)) {
             sessionDivisions = {};
         }
         
