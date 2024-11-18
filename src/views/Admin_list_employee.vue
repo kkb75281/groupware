@@ -93,78 +93,10 @@ hr
                             td
                                 .btn-wrap
                                     button.btn.bg-gray.sm(@click="resendInvite(emp.email)") 재전송
-                                    button.btn.bg-gray.sm(@click="cancelInvite(emp.email)") 초청취소
+                                    button.btn.bg-gray.sm(@click="cancelInvite(emp)") 초청취소
                             td {{ emp.birthdate }}
                             td {{ emp.phone_number }}
                             td {{ emp.address }}
-                    
-                    //- 초청여부
-                    //- template(v-else-if='empListType === "초청여부"')
-                        tr(v-for="(employee, index) in inviteEmployee")
-                            td
-                                label.checkbox
-                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
-                                    span.label-checkbox
-                            td.list-num {{ index + 1 }}
-                            td {{ employee.access_group }}
-                            td {{ employee.name }}
-                            td {{ employee.email }}
-                            td
-                                .btn-wrap
-                                    button.btn.bg-gray.sm(@click="resendInvite(employee.email)") 재전송
-                                    button.btn.bg-gray.sm(@click="cancelInvite(employee.email)") 초청취소
-                            td {{ employee.birthdate }}
-                            td {{ employee.phone_number }}
-                            td {{ employee.address }}
-
-            //- template(v-else-if='empListType === "초청여부"')
-            //-     colgroup
-            //-         col(style="width: 3rem;")
-            //-         col(style="width: 3rem;")
-            //-         col(style="width: 5rem;")
-            //-         col(style="width: 10%;")
-            //-         col(style="width: 25%;")
-            //-         col(style="width: 11%;")
-            //-         col(style="width: 10%; min-width: 6rem;")
-            //-         col(style="width: 10%; min-width: 6rem;")
-            //-         col(style="min-width: 15rem;")
-            //-     thead
-            //-         tr
-            //-             th(scope="col")
-            //-                 label.checkbox
-            //-                     input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
-            //-                     span.label-checkbox
-            //-             th(scope="col") NO
-            //-             th(scope="col") 직책(직급)
-            //-             th(scope="col") 이름
-            //-             th(scope="col") 이메일
-            //-             th(scope="col") 초청여부
-            //-             th(scope="col") 생년월일
-            //-             th(scope="col") 전화번호
-            //-             th(scope="col") 주소
-            //-     tbody
-            //-         template(v-if="loading")
-            //-             tr(v-for="i in 4")
-            //-         template(v-else-if="!inviteEmployee")
-            //-             tr
-            //-                 td(colspan="8") 데이터가 없습니다.
-            //-         template(v-else)
-            //-             tr(v-for="(employee, index) in inviteEmployee")
-            //-                 td
-            //-                     label.checkbox
-            //-                         input(type="checkbox" name="checkbox" :checked="selectedList.includes(employee.user_id)" @click="toggleSelect(employee.user_id)")
-            //-                         span.label-checkbox
-            //-                 td.list-num {{ index + 1 }}
-            //-                 td {{ employee.access_group }}
-            //-                 td {{ employee.name }}
-            //-                 td {{ employee.email }}
-            //-                 td
-            //-                     .btn-wrap
-            //-                         button.btn.bg-gray.sm(@click="resendInvite(employee.email)") 재전송
-            //-                         button.btn.bg-gray.sm(@click="cancelInvite(employee.email)") 초청취소
-            //-                 td {{ employee.birthdate }}
-            //-                 td {{ employee.phone_number }}
-            //-                 td {{ employee.address }}
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -244,7 +176,6 @@ watch(empListType, (nv) => {
                 });
             } else {
                 employee.value = sessionEmployee;
-                console.log(employee.value);
             }
         }
     }
@@ -266,7 +197,6 @@ let getEmployee = () => {
 
 let displayEmployee = (employee) => {
     window.sessionStorage.setItem('employee', JSON.stringify(employee));
-    // window.sessionStorage.setItem('employeeTimestamp', new Date().getTime());
 }
 
 let displayinviteEmployee = (employee) => {
@@ -364,21 +294,70 @@ let resendInvite = (email) => {
     });
 }
 
-let cancelInvite = (email) => {
-    skapi.cancelInvitation({email: email}).then(res => {
-        alert('초대메일이 취소되었습니다.');
-        console.log('=== cancelInvite === res : ', res);
-        for(let user of employee.value) {
-            if(user.email === email) {
-                employee.value = employee.value.filter(emp => emp.email !== email);
-                break;
-            }
+function makeSafe(str) {
+    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+}
+
+let cancelInvite = (employee_info) => {
+    let safeEmail = makeSafe(employee_info.email);
+    let safeUserId = makeSafe(employee_info.user_id);
+
+    let picTable = {
+        table: {
+            name: 'init_profile_pic_' + safeEmail, // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
+            access_group: 1
         }
-        console.log(employee.value);
-        displayinviteEmployee(employee.value);
+    }
+
+    let positionTable = {
+        table: {
+            name: 'emp_division',
+            access_group: 1
+        },
+        index: {
+            name: 'user_id',
+            value: safeUserId
+        }
+    }
+
+    let privateStorage = {
+        table: {
+            name: 'emp_access_ref',
+            access_group: 99
+        },
+        index: {
+            name: 'user_id',
+            value: safeUserId
+        }
+    }
+
+    let ref_info = {
+        table: {
+            name: 'ref_ids',
+            access_group: 1
+        },
+        index: {
+            name: 'user_id',
+            value: safeUserId
+        },
+    }
+
+    skapi.cancelInvitation(employee_info).then((res) => {
+        // 이제 record_id 몰라도 query로 레코드 삭제 가능
+        skapi.deleteRecords(picTable);
+        skapi.deleteRecords(positionTable);
+        skapi.deleteRecords(privateStorage);
+        skapi.deleteRecords(ref_info);
+
+        alert('초대메일이 취소되었습니다.');
+
+        skapi.getInvitations().then(res => {
+            employee.value = res.list;
+            displayinviteEmployee(res.list);
+        });
     }).catch(err => {
         alert('초대메일 취소에 실패하였습니다.');
-    })
+    });
 }
 </script>
 
