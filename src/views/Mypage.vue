@@ -50,18 +50,33 @@
 			.input-wrap
 				p.label 생년월일
 				input(type="date" name="birthdate")
+				label.checkbox.public
+					input(type="checkbox" name="birthdate_public" checked hidden)
+					span.label-checkbox 공개여부
 
 			br
 
 			.input-wrap
 				p.label 전화번호
-				input(type="tel" name="phone_number" placeholder="+82123456789")
+				input(type="tel" name="phone_number" placeholder="+82000000000")
+				//- label.checkbox.public
+				//- 	input(type="checkbox" name="phone_number_public" checked hidden)
+				//- 	span.label-checkbox 공개여부
 
 			br
 
 			.input-wrap
 				p.label 주소
 				input(type="text" name="address" placeholder="주소를 입력해주세요.")
+				label.checkbox.public
+					input(type="checkbox" name="address_public" checked hidden)
+					span.label-checkbox 공개여부
+
+			br
+
+			.input-wrap.upload-file
+				p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
+				input(type="file" name="additional_data" multiple)
 
 			br
 
@@ -121,6 +136,20 @@ let closeOptions = (e) => {
 
 onMounted(() => {
 	document.addEventListener('click', closeOptions);
+
+	skapi.getProfile().then(res => {
+        let checkPublic = document.querySelectorAll('.checkbox.public');
+
+        checkPublic.forEach((el) => {
+            let checkboxName = el.querySelector('input').getAttribute('name');
+
+            if (res[checkboxName] === true) {
+                el.querySelector('input').checked = true;
+            } else if (res[checkboxName] === false) {
+                el.querySelector('input').checked = false;
+            }
+        });
+    });
 });
 
 onUnmounted(() => {
@@ -381,5 +410,21 @@ let registerMypage = (e) => {
 		color: var(--gray-color-500);
 		cursor: default;
 	}
+}
+
+.checkbox.public {
+    position: absolute;
+    top: 2px;
+    right: 0;
+
+    .label-checkbox {
+        font-size: 0.75rem;
+        line-height: 1;
+
+        &::before {
+            width: 0.8rem;
+            height: 0.8rem;
+        }
+    }
 }
 </style>

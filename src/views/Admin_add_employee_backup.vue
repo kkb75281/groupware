@@ -73,12 +73,6 @@ hr
 
         br
 
-        .input-wrap.upload-file
-            p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-            input(type="file" name="additional_data" multiple)
-
-        br
-
         input(type="checkbox" name="email_public" checked hidden)
         input(type="checkbox" name="phone_number_public" checked hidden)
         input(type="checkbox" name="address_public" checked hidden)
@@ -145,44 +139,44 @@ let resigterEmp = (e) => {
     async function post() {
         // 사용자를 등록(초대)한다. try catch는 아래와는 달리 작게 만들도록 한다.
         try {
-            // let email_tag = document.querySelector('input[name=email]').value.replaceAll('.', '_').replace('+', '_').replace('@','_'); // 테크는 특수 문자를 사용할 수 없다.
+            let email_tag = document.querySelector('input[name=email]').value.replaceAll('.', '_').replace('+', '_').replace('@','_'); // 테크는 특수 문자를 사용할 수 없다.
             if(_el_file_input.files.length > 0) {
-                // let invHisParams = {
-                //     table: {
-                //         name: 'invitations', // 관리자가 직원의 초청기록 등록할 때 사용하는 테이블
-                //         access_group: 99,
-                //     },
-                //     tag: email_tag
-                // };
+                let invHisParams = {
+                    table: {
+                        name: 'invitations', // 관리자가 직원의 초청기록 등록할 때 사용하는 테이블
+                        access_group: 99,
+                    },
+                    tag: email_tag
+                };
 
-                // // 과거 초청기록 확인
-                // let prevInvitation = await skapi.getRecords(invHisParams);
-                // if(prevInvitation.list.length > 0) {
-                //     invHisParams.record_id = prevInvitation.list[0].record_id;
-                // }
+                // 과거 초청기록 확인
+                let prevInvitation = await skapi.getRecords(invHisParams);
+                if(prevInvitation.list.length > 0) {
+                    invHisParams.record_id = prevInvitation.list[0].record_id;
+                }
 
-                // // 초정기록을 데이터베이스에 업로드/업데이트
-                // let invHistory = await skapi.postRecord(event, invHisParams);
+                // 초정기록을 데이터베이스에 업로드/업데이트
+                let invHistory = await skapi.postRecord(event, invHisParams);
 
                 // 사진을 데이터베이스에 업로드하고 보안키를 제외한 이미지 url주소를 userprofile의 picture에 넣어준다.
 
                 let initPicParams = {
                     table: {
-                        name: 'init_profile_pic' + makeSafe(document.querySelector('input[name=email]').value), // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
+                        name: 'init_profile_pic', // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
                         access_group: 1
                     },
                 };
 
                 // 과거 사진 확인
-                // let prevPic = await skapi.getRecords(Object.assign({tag: email_tag}, initPicParams));
+                let prevPic = await skapi.getRecords(Object.assign({tag: email_tag}, initPicParams));
 
-                // if(prevPic.list.length > 0) {
-                //     // 업데이트
-                //     initPicParams.record_id = prevPic.list[0].record_id;
-                //     initPicParams.remove_bin = null; // 이전 사진 삭제
-                // }
+                if(prevPic.list.length > 0) {
+                    // 업데이트
+                    initPicParams.record_id = prevPic.list[0].record_id;
+                    initPicParams.remove_bin = null; // 이전 사진 삭제
+                }
 
-                // initPicParams.tags = [email_tag];
+                initPicParams.tags = [email_tag];
 
                 let userInitProfilePic = await skapi.postRecord(document.getElementById('profPic'), initPicParams);
                 _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
@@ -199,78 +193,48 @@ let resigterEmp = (e) => {
             let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'});
             // added = SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
             // extract user id
-            let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
-            let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
+            let user_id = added.split(' ').pop().slice(0, -1).replaceAll('-', '_'); // tag는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
 
-            // 직원의 부서(회사)를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
+
+            // 직원의 부서(회사)를 등록한다. user_id는 불편하니까 tag로 사용한다.
+
+            console.log('user_id : ', user_id);
+            // 과거 기록 확인
+            let previous_emp = await skapi.getRecords({
+                table: {
+                    name: 'emp_division',
+                    access_group: 1
+                },
+                tag: user_id
+            });
+
+            let emp_pos = {
+                table: {
+                    name: 'emp_division',
+                    access_group: 1
+                },
+                reference: document.querySelector('select[name=division]').value, // 부서(회사) record_id. 레퍼런스 해놓으면 referenced_count 에서 몇명이 속해있는지 알 수 있다. https://docs.skapi.com/api-reference/data-types/README.html#recorddata
+                tags: [user_id],
+            }
+            if(previous_emp.list.length > 0) {
+                // 업데이트
+                emp_pos.record_id = previous_emp.list[0].record_id;
+            }
 
             await skapi.postRecord(
                 {
                     position: _el_position.value // 직책(직급)
                 },
-                {
-                    table: {
-                        name: 'emp_division',
-                        access_group: 1
-                    },
-                    index: {
-                        name: 'user_id',
-                        value: user_id_safe
-                    },
-                    tags: [_el_position.value] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
-                }
+                emp_pos
             );
-            
-            // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
-            let emp_ref = await skapi.postRecord(null, {
-                table: {
-                    name: 'emp_access_ref',
-                    access_group: 99
-                },
-                index: {
-                    name: 'user_id',
-                    value: user_id_safe
-                },
-                reference: {
-                    can_remove_reference: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
-                }
-            })
 
-            let access_group_value = document.querySelector('select[name=access_group]').value;
-
-            // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
-            if(access_group_value !== '99') {
-                // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
-                await skapi.grantPrivateRecordAccess({
-                    record_id: emp_ref.record_id,
-                    user_id: user_id
-                });
-            }
-
-            // 자료방 reference record id 를 저장한다. 직원이 로그인해서 찾을수있게
-            await skapi.postRecord({ privateStorageReference: emp_ref.record_id }, {
-                table: {
-                    name: 'ref_ids',
-                    access_group: 1
-                },
-                index: {
-                    name: 'user_id',
-                    value: user_id_safe
-                },
-            });
-
-            if(document.querySelector('input[name=additional_data]').files.length) {
-                // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
-                await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
-                    table: {
-                        name: 'emp_additional_data',
-                        access_group: 99
-                    },
-                    reference: emp_ref.record_id, // 자료방 레코드 id
-                });
-            }
+            // await skapi.getUsers().then(res => {
+            //     // let list = res.list;
+            //     window.sessionStorage.setItem('employee', JSON.stringify(res.list));
+            // });
 
             await skapi.getInvitations().then(res => {
+                // let list = res.list;
                 window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
             });
 

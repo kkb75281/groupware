@@ -251,9 +251,7 @@ watch(empListType, (nv) => {
 }, { immediate: true });
 
 let getEmployee = () => {
-    skapi.getUsers().then(res => {
-        // console.log('== getEmployee == res.list : ', res.list);
-        
+    skapi.getUsers().then(res => {        
         // empListType reset
         empListType.value = '직원목록';
 
@@ -347,6 +345,7 @@ let deleteEmployee = async () => {
             getEmployee();
         }).catch(err => {
             isFail.push(el);
+            console.log('== err == : ', err)
         });
     }));
 
