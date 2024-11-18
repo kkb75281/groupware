@@ -75,7 +75,7 @@ hr
 
         .input-wrap
             p.label 전화번호
-            input(type="text" name="division_phone_number" placeholder="전화번호를 입력해주세요. (+8200000000)")
+            input(type="text" name="division_phone_number" placeholder="전화번호를 입력해주세요. (++82000000000)")
 
         br
 

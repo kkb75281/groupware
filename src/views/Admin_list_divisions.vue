@@ -119,7 +119,6 @@ onMounted(() => {
 let displayDivisions = (divisions) => {
     let saveSession = {};
 
-    console.log(divisions);
     if (!divisions.length) {
         window.sessionStorage.setItem('divisions', 'no data');
 
@@ -156,7 +155,7 @@ let deleteDivision = async () => {
     let isFail = [];
 
     await Promise.all(userId.map(el => {
-        return skapi.deleteAccount(el).then(res => {
+        return skapi.deleteRecords({record_id: el}).then(res => {
             isSuccess.push(el);
             
             skapi.getRecords({
@@ -170,7 +169,7 @@ let deleteDivision = async () => {
                 displayDivisions(response.list);
             });
         }).catch(err => {
-            console.log('== err == : ', err)
+            // console.log('== err == : ', err)
             isFail.push(el);
         });
     }));
