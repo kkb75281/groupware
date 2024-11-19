@@ -8,14 +8,12 @@ hr
     form#_el_comp_form(@submit.prevent="editDivision")
         div(style="text-align:center;")
             .image
-                //- img#profile-img(v-if="bin.hasOwnProperty('division_logo')" :src="bin['division_logo'][0].url" alt="Company Logo")
-                //- img#profile-img(v-else :src="uploadSrc._el_profile_img" alt="Company Logo")
-                img#profile-img(:src="uploadSrc._el_profile_img" alt="Company Logo")
-                label(for="_el_profile_img")
+                img#profile-img(:src="uploadSrc.division_logo" alt="Company Logo")
+                label(for="division_logo")
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#_el_profile_img(type="file" name="division_logo" @change="uploadImgSrc" style="display:none")
+                input#division_logo(type="file" name="division_logo" @change="openCropImageDialog" style="display:none")
 
         br
 
@@ -100,30 +98,28 @@ hr
         p(style="margin-bottom: 0.5rem") 도장
         .image-wrap(style="text-align:center;")
             .image.seal
-                //- img#used-img(v-if="bin.hasOwnProperty('division_used_seal')" :src="bin['division_used_seal'][0].url" alt="Company Used Seal")
-                //- img#used-img(v-else :src="uploadSrc._el_used_seal_img" alt="Company Used Seal")
-                img#used-img(:src="uploadSrc._el_used_seal_img" alt="Company Used Seal")
-                label(for="_el_used_seal_img")
+                img#used-img(:src="uploadSrc.division_used_seal" alt="Company Used Seal")
+                label(for="division_used_seal")
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#_el_used_seal_img(type="file" name="division_used_seal" @change="uploadImgSrc" style="display:none")
+                input#division_used_seal(type="file" name="division_used_seal" @change="openCropImageDialog" style="display:none")
 
             .image.seal
-                //- img#official-img(v-if="bin.hasOwnProperty('division_official_seal')" :src="bin['division_official_seal'][0].url" alt="Company Used Seal")
-                //- img#official-img(v-else :src="uploadSrc._el_official_seal_img" alt="Company Used Seal")
-                img#official-img(:src="uploadSrc._el_official_seal_img" alt="Company Used Seal")
-                label(for="_el_official_seal_img")
+                img#official-img(:src="uploadSrc.division_official_seal" alt="Company Used Seal")
+                label(for="division_official_seal")
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#_el_official_seal_img(type="file" name="division_official_seal" @change="uploadImgSrc" style="display:none")
+                input#division_official_seal(type="file" name="division_official_seal" @change="openCropImageDialog" style="display:none")
 
         br
 
         .button-wrap
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
+
+CropImage(:open="openModal" :imageSrc="currnetImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
 br  
 br  
@@ -134,6 +130,8 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { skapi } from '@/main';
+
+import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -165,39 +163,62 @@ if (!record) {
     loading.value = false;
 }
 
+let openModal = ref(false);
+let croppedImages = ref({});
+let currentTargetId = ref('');
+let currnetImageSrc = ref('');
 let uploadSrc = ref({
-    _el_profile_img: bin?.division_logo?.[0]?.url || '',
-    _el_used_seal_img: bin?.division_used_seal?.[0]?.url || '',
-    _el_official_seal_img: bin?.division_official_seal?.[0]?.url || ''
+    division_logo: bin?.division_logo?.[0]?.url || '',
+    division_used_seal: bin?.division_used_seal?.[0]?.url || '',
+    division_official_seal: bin?.division_official_seal?.[0]?.url || ''
 });
 
-let uploadImgSrc = (e) => {
-    let targetInput = e.target.id;
-    let file = e.target.files[0];
-
+let openCropImageDialog = (e) => {
+    const file = e.target.files[0];
+    
     if (file) {
-        let reader = new FileReader();
-        reader.onload = (e) => {
-            uploadSrc.value[targetInput] = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        const fileURL = URL.createObjectURL(file);
+        currnetImageSrc.value = fileURL;
+        currentTargetId.value = e.target.id;
+        uploadSrc.value[currentTargetId.value] = fileURL;
+        openModal.value = true;
     }
 
     // 이미지 변경시 예전 이미지 모두 삭제
-    if(targetInput === '_el_profile_img' && record.bin.division_logo) {
-        record.bin.division_logo.forEach(element => {
-            post_params.remove_bin.push(element);    
-        });
+    if(currentTargetId.value && record.bin[currentTargetId.value]) {
+        record.bin[currentTargetId.value].forEach(el => {
+            post_params.remove_bin.push(el);
+        })
     }
-    if(targetInput === '_el_used_seal_img' && record.bin.division_used_seal) {
-        record.bin.division_used_seal.forEach(element => {
-            post_params.remove_bin.push(element);    
-        });
-    }
-    if(targetInput === '_el_official_seal_img' && record.bin.division_official_seal) {
-        record.bin.division_official_seal.forEach(element => {
-            post_params.remove_bin.push(element);    
-        });
+}
+
+let closeCropImageDialog = () => {
+    uploadSrc.value[currentTargetId.value] = null;
+    openModal.value = false;
+}
+
+let setCroppedImage = async(croppedImage) => {
+    if(currentTargetId.value) {
+        try {
+            // 미리보기 이미지 경로 업데이트
+            uploadSrc.value[currentTargetId.value] = croppedImage;
+
+            // Blob URL에서 Blob 객체를 가져오기
+            const response = await fetch(croppedImage);
+            const blob = await response.blob();
+
+            console.log("Cropped Image Blob:", blob); // Blob 확인
+            console.log("Cropped Images Store:", croppedImages.value);
+
+            // Blob 객체를 저장 (서버 전송용)
+            croppedImages.value[currentTargetId.value] = blob;
+
+            openModal.value = false;
+            currnetImageSrc.value = '';
+            currentTargetId.value = '';
+        } catch (error) {
+            console.error('Error processing Blob URL:', error);
+        }
     }
 }
 
@@ -214,8 +235,25 @@ let post_params = {
 let editDivision = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
+
+    let ext = skapi.util.extractFormData(e); // { data: {}, files: {} }
+
+    const formData = new FormData();
+
+    // 기존 form data 추가
+    for(let key in ext.data) {
+        formData.append(key, ext.data[key]);
+    }
+
+    // 이미지 파일을 form data에 추가
+    if(Object.keys(croppedImages.value).length > 0) {
+        Object.keys(croppedImages.value).forEach((key) => {
+            formData.append(key, croppedImages.value[key], `${key}.jpg`);
+        });
+    }
     
-    skapi.postRecord(e, post_params).then((r) => {
+    console.log('post_params', post_params)
+    skapi.postRecord(formData, post_params).then((r) => {
         let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 
         sessionDivisions[r.record_id] = r;

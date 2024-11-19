@@ -1,113 +1,150 @@
 <template lang="pug">
 .wrap
-	.title
-		h1 마이페이지
+    .title
+        h1 마이페이지
 
-	hr
+    hr
 
-	.form-wrap
-		form#_el_pictureForm
-			.image
-				img#profile-img(:src="uploadProfileSrc" alt="profile image")
-				.label(ref="optionsBtn" @click="showOptions = !showOptions")
-					.icon.white
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-				ul.options(v-if="showOptions" @click.stop)
-					li(@click="selectFile") 사진 변경
-					li(@click="setToDefault" :class="{'disabled': uploadProfileSrc === null}") 기본 이미지로 변경
-				input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
+    .form-wrap
+        form#_el_pictureForm
+            .image
+                img#profile-img(:src="uploadProfileSrc" alt="profile image")
+                .label(ref="optionsBtn" :class="{'disabled': disabled}" @click="showOptions = !showOptions")
+                    .icon.white
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
+                ul.options(v-if="showOptions" @click.stop)
+                    li(@click="selectFile") 사진 변경
+                    li(@click="setToDefault" :class="{'disabled': uploadProfileSrc === null}") 기본 이미지로 변경
+                input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
 
-		br
+        br
 
-		form#_el_mypage_form(@submit.prevent="registerMypage")
-			input(type="text" name="picture" id='_el_picture_input' hidden)
-			#position
-				.input-wrap
-					p.label 직책
-					input(type="text" name="position" disabled)
-				
-				br
+        form#_el_mypage_form(@submit.prevent="registerMypage")
+            input(type="text" name="picture" id='_el_picture_input' hidden)
+            #position
+                .input-wrap
+                    p.label 직책
+                    input(v-model="userPosition" type="text" name="position" disabled)
+                
+                br
 
-				.input-wrap
-					p.label 권한
-					input(type="text" name="authority" disabled)
+                .input-wrap
+                    p.label 권한
+                    input(v-model="access_group[user.access_group]" type="text" name="authority" disabled)
 
-			br
+            br
 
-			.input-wrap
-				p.label.essential 이름
-				input(type="text" name="name"  placeholder="이름을 입력해주세요." required)
-			
-			br
+            .input-wrap
+                p.label.essential 이름
+                input(v-model="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="disabled" required)
+            
+            br
 
-			.input-wrap
-				p.label.essential 이메일
-				input(type="email" name="email"  placeholder="이메일을 입력해주세요." required)
+            .input-wrap
+                p.label.essential 이메일
+                input(v-model="user.email" type="email" name="email" placeholder="이메일을 입력해주세요." :disabled="disabled && !onlyEmail" required)
 
-			br
+            template(v-if="verifiedEmail && !onlyEmail")
+                button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
+                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail") 이메일 인증
 
-			.input-wrap
-				p.label 생년월일
-				input(type="date" name="birthdate")
-				label.checkbox.public
-					input(type="checkbox" name="birthdate_public" checked hidden)
-					span.label-checkbox 공개여부
+            br
 
-			br
+            .input-wrap
+                p.label 비밀번호
+                button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || !disabled") 비밀번호 변경
 
-			.input-wrap
-				p.label 전화번호
-				input(type="tel" name="phone_number" placeholder="+82000000000")
-				//- label.checkbox.public
-				//- 	input(type="checkbox" name="phone_number_public" checked hidden)
-				//- 	span.label-checkbox 공개여부
+            br
 
-			br
+            .input-wrap
+                p.label 생년월일
+                input(v-model="user.birthdate" type="date" name="birthdate" :disabled="disabled")
+                label.checkbox.public(:class="{'disabled': disabled}")
+                    input(v-model="user.birthdate_public" type="checkbox" name="birthdate_public" checked hidden :disabled="disabled")
+                    span.label-checkbox 공개여부
 
-			.input-wrap
-				p.label 주소
-				input(type="text" name="address" placeholder="주소를 입력해주세요.")
-				label.checkbox.public
-					input(type="checkbox" name="address_public" checked hidden)
-					span.label-checkbox 공개여부
+            br
 
-			br
+            .input-wrap
+                p.label 전화번호
+                input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="+82000000000" :disabled="disabled")
+                //- label.checkbox.public(:class="{'disabled': disabled}")
+                //- 	input(v-model="user.phone_number_public" type="checkbox" name="phone_number_public" checked hidden :disabled="disabled")
+                //- 	span.label-checkbox 공개여부
 
-			.input-wrap.upload-file
-				p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-				input(type="file" name="additional_data" multiple)
+            br
 
-			br
+            .input-wrap
+                p.label 주소
+                input(v-model="user.address" type="text" name="address" placeholder="주소를 입력해주세요." :disabled="disabled")
+                label.checkbox.public(:class="{'disabled': disabled}")
+                    input(v-model="user.address_public" type="checkbox" name="address_public" checked hidden :disabled="disabled")
+                    span.label-checkbox 공개여부
 
-			.button-wrap
-				button.btn.bg-gray(type="button" @click="$router.push('/')") 취소
-				button.btn(type="submit") 등록
+            br
 
-	br  
-	br  
-	br  
+            .input-wrap.upload-file
+                p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
+                input(type="file" name="additional_data" multiple :disabled="disabled")
+
+            br
+
+            .button-wrap
+                template(v-if="disabled && !onlyEmail")
+                    button#startEdit.btn(type="button" :disabled="disabled" @click="startEdit") 수정
+                template(v-else)
+                    button.btn.bg-gray(type="button" @click="cancelEdit") 취소
+                    button.btn(type="submit") 등록
+
+    br  
+    br  
+    br  
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { skapi } from '@/main';
-import { user, updateUser, profileImage } from '@/user';
+import { user, updateUser, profileImage, verifiedEmail } from '@/user';
+import { convertToObject } from 'typescript';
 
 const router = useRouter();
 const route = useRoute();
+
+console.log(user)
+
+skapi.getRecords({
+    table: {
+        name: 'emp_division',
+        access_group: 'authorized',
+    },
+    tag: user.user_id.replaceAll('-', '_'),
+}).then(r => {
+    userPosition.value = r?.list[0]?.data?.position;
+});
+
+let access_group = {
+    1: '직원',
+    98: '관리자',
+    99: '마스터',
+};
+
+let disabled = ref(true);
+let userPosition = ref(null);
+let originUserProfile = {};
+let onlyEmail = ref(false);
 
 let uploadProfileSrc = ref(null);
 let getFileInfo = ref(null);
 
 let changeProfileImg = (e) => {
-	let file = e.target.files[0];
-	
+    let file = e.target.files[0];
+    
     if (file) {
-		let reader = new FileReader();
+        let reader = new FileReader();
         reader.onload = (e) => {
-			uploadProfileSrc.value = e.target.result; // ref 값 업데이트
+            uploadProfileSrc.value = e.target.result; // ref 값 업데이트
         };
         reader.readAsDataURL(file);
     }
@@ -116,160 +153,135 @@ let changeProfileImg = (e) => {
 let showOptions = ref(false);
 
 let selectFile = () => {
-	showOptions.value = false;
-	document.getElementById('_el_file_input').click();
+    showOptions.value = false;
+    document.getElementById('_el_file_input').click();
 }
 
 let setToDefault = () => {
-	showOptions.value = false;
-	uploadProfileSrc.value = null;
-	_el_file_input.value = '';
+    showOptions.value = false;
+    uploadProfileSrc.value = null;
+    _el_file_input.value = '';
 }
 
 let optionsBtn = ref(null);
 
 let closeOptions = (e) => {
-	if (showOptions.value && !optionsBtn.value.contains(e.target)) {
-		showOptions.value = false;
-	}
+    if (showOptions.value && !optionsBtn.value.contains(e.target)) {
+        showOptions.value = false;
+    }
 };
 
-onMounted(() => {
-	document.addEventListener('click', closeOptions);
+onMounted(async() => {
+    if (user && user.picture) {
+        // 프로필 사진 이미지를 보여준다. 보안키가 필요한 url 이니 skapi.getFile을 사용한다.
+        skapi.getFile(user.picture, {
+            dataType: 'endpoint',
+        }).then(res=>{
+            document.getElementById('profile-img').src = res;
+            profileImage.value = res;
+            uploadProfileSrc.value = res;
+            // console.log('=== getFile === profileImage.value : ', profileImage.value);
+        }).catch(err=>{
+            window.alert('프로필 사진을 불러오는데 실패했습니다.');
+            throw err;	// 의도적으로 에러 전달
+        })
 
-	skapi.getProfile().then(res => {
-        let checkPublic = document.querySelectorAll('.checkbox.public');
-
-        checkPublic.forEach((el) => {
-            let checkboxName = el.querySelector('input').getAttribute('name');
-
-            if (res[checkboxName] === true) {
-                el.querySelector('input').checked = true;
-            } else if (res[checkboxName] === false) {
-                el.querySelector('input').checked = false;
-            }
+        // 사용자가 올린 프로필 사진 레코드를 가져온다.
+        skapi.getFile(user.picture, {
+            dataType: 'info',
+        }).then(res => {
+            // console.log('== getFile == res : ', res)
+            getFileInfo.value = res;
+            // previous_profile_pic = res.record_id;
+        }).catch(err => {
+            // console.log('== getFile == err : ', err)
         });
-    });
+    }
+
+    document.addEventListener('click', closeOptions);
 });
 
 onUnmounted(() => {
-	document.removeEventListener('click', closeOptions);
+    document.removeEventListener('click', closeOptions);
 });
 
-// 입력창을 비활성화한다.
-document.querySelectorAll('form input').forEach((el) => (el.disabled = true));
+let startEdit = () => {
+    for (let k in originUserProfile) {
+        delete originUserProfile[k];
+    }
 
-async function main() {
-	// 프로필 정보를 가져와서 입력창에 넣어준다.
-	let profile = await skapi.getProfile();
+    for (let k in user) {
+        originUserProfile[k] = user[k];
+    }
 
-	document.querySelector('[name=name]').value = profile.name || '';
-	document.querySelector('[name=email]').value = profile.email || '';
-	document.querySelector('[name=birthdate]').value = profile.birthdate || '';
-	document.querySelector('[name=phone_number]').value = profile.phone_number || '';
-	document.querySelector('[name=address]').value = profile.address || '';
-	document.querySelector('[name=picture]').value = profile.picture || '';
-
-	// 프로필 사진이 있으면...
-	if (profile.picture) {
-		// 프로필 사진 이미지를 보여준다. 보안키가 필요한 url 이니 skapi.getFile을 사용한다.
-		skapi.getFile(profile.picture, {
-			dataType: 'endpoint',
-		}).then(res=>{
-			document.getElementById('profile-img').src = res;
-			profileImage.value = res;
-			uploadProfileSrc.value = res;
-			// console.log('=== getFile === profileImage.value : ', profileImage.value);
-		}).catch(err=>{
-			window.alert('프로필 사진을 불러오는데 실패했습니다.');
-			throw err;	// 의도적으로 에러 전달
-		})
-
-		// 사용자가 올린 프로필 사진 레코드를 가져온다.
-		skapi.getFile(profile.picture, {
-			dataType: 'info',
-		}).then(res => {
-			// console.log('== getFile == res : ', res)
-			getFileInfo.value = res;
-			// previous_profile_pic = res.record_id;
-		}).catch(err => {
-			// console.log('== getFile == err : ', err)
-		});
-	}
-
-	// 프로필 정보를 가져왔으므로 입력창을 활성화한다.
-	document.querySelectorAll('form input').forEach((el) => (el.disabled = false));
-
-	let access_group = {
-		1: '직원',
-		98: '관리자',
-		99: '마스터',
-	};
-
-	let division = await skapi.getRecords({
-		table: {
-			name: 'emp_division',
-			access_group: 'authorized',
-		},
-		tag: profile.user_id.replaceAll('-', '_'),
-	});
-
-	document.querySelector('input[name="position"]').value = division?.list[0]?.data?.position;
-	document.querySelector('input[name="authority"]').value = access_group[profile.access_group];
-	// document.getElementById('position').innerText = '직책 : ' + division.list[0].data.position + ' , 권한 : ' + access_group[profile.access_group];
+    disabled.value = false;
 }
-main();
 
-let registerMypage = (e) => {
-	e.preventDefault();
-	// 입력창을 비활성화한다.
-	document.querySelectorAll('form input').forEach(el => el.disabled = true);
-	document.querySelectorAll('form button').forEach(el => el.disabled = true);
+let cancelEdit = () => {
+    for (let k in user) {
+        delete user[k];
+    }
 
-	// 올린 사람과 수정하는 사람이 같지 않으면 table 정보로
-	// 같으면 record_id로 사진 수정
-	let profile_pic_postParams = {};
-	let samePerson = false;
+    for (let k in originUserProfile) {
+        user[k] = originUserProfile[k];
+    }
 
+    disabled.value = true;
+}
 
-	if(user.user_id === getFileInfo.value?.uploader) {
-		samePerson = true;
-		profile_pic_postParams.record_id = getFileInfo.value.record_id;
-	} else {
-		profile_pic_postParams = {
-			table: {
-				name: 'profile_picture',
-				access_group: 'authorized',
-			}
-		};
-	}
+let registerMypage = async(e) => {
+    e.preventDefault();
+    // 입력창을 비활성화한다.
+    // document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    // document.querySelectorAll('form button').forEach(el => el.disabled = true);
+    disabled.value = true;
 
-	async function post() {
-		if(_el_file_input.files.length > 0) {
-			// 새로 선택한 사진이 있을시 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
-			profile_pic_postParams.remove_bin = null;
-			
-			// 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
-			let picRec = await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
-			_el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
-		}
+    // 올린 사람과 수정하는 사람이 같지 않으면 table 정보로
+    // 같으면 record_id로 사진 수정
+    let profile_pic_postParams = {};
+    let samePerson = false;
 
-		if(uploadProfileSrc.value === null && samePerson) {
-			_el_picture_input.value = null;
-			await skapi.deleteRecords({record_id: getFileInfo.value.record_id});
-		} else if(uploadProfileSrc.value === null && !samePerson) {
-			_el_picture_input.value = null;
-			profile_pic_postParams.remove_bin = null;
-			await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
-		}
+    if(user.user_id === getFileInfo.value?.uploader) {
+        samePerson = true;
+        profile_pic_postParams.record_id = getFileInfo.value.record_id;
+    } else {
+        profile_pic_postParams = {
+            table: {
+                name: 'profile_picture',
+                access_group: 'authorized',
+            }
+        };
+    }
 
-		// 프로필 정보를 업데이트한다.
-		await skapi.updateProfile(e);
-		updateUser(e);
-		window.alert('등록완료');
-		router.push('/');
-	}
-	post();
+    if(_el_file_input.files.length > 0) {
+        // 새로 선택한 사진이 있을시 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
+        profile_pic_postParams.remove_bin = null;
+        
+        // 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
+        let picRec = await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
+        _el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
+    }
+
+    if(uploadProfileSrc.value === null && samePerson) {
+        _el_picture_input.value = null;
+        await skapi.deleteRecords({record_id: getFileInfo.value.record_id});
+    } else if(uploadProfileSrc.value === null && !samePerson) {
+        _el_picture_input.value = null;
+        profile_pic_postParams.remove_bin = null;
+        await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
+    }
+
+    // 프로필 정보를 업데이트한다.
+    await skapi.updateProfile(e);
+
+    // if(user.email !== originUserProfile.email) {
+    //     verifiedEmail.value = true;
+    // }
+
+    updateUser(e);
+    window.alert('등록완료');
+    onlyEmail.value = false;
+    // router.push('/');
 }
 </script>
 
@@ -291,6 +303,10 @@ let registerMypage = (e) => {
     margin: 0 auto;
 }
 
+.checkbox.disabled {
+    opacity: 0.5;
+}
+
 #_el_pictureForm {
     text-align: center;
 
@@ -305,6 +321,11 @@ let registerMypage = (e) => {
             background-color: var(--primary-color-400);
             border-radius: 50%;
             cursor: pointer;
+
+            &.disabled {
+                pointer-events: none;
+                background-color: var(--gray-color-300);
+            }
 
             .icon {
                 padding: 4px;
@@ -322,43 +343,43 @@ let registerMypage = (e) => {
                 }
             }
         }
-		
-		.options {
-			position: absolute;
-			right: -113px;
-			bottom: -40px;
-			z-index: 9;
-			background-color: var(--gray-color-100);
-			border: 1px solid var(--gray-color-300);
-			padding: 5px;
-			border-radius: 4px;
-			
-			li {
-				font-size: 0.8rem;
-				text-align: left;
-				cursor: pointer;
-				padding: 4px 8px;
-				border-radius: 4px;
+        
+        .options {
+            position: absolute;
+            right: -113px;
+            bottom: -40px;
+            z-index: 9;
+            background-color: var(--gray-color-100);
+            border: 1px solid var(--gray-color-300);
+            padding: 5px;
+            border-radius: 4px;
+            
+            li {
+                font-size: 0.8rem;
+                text-align: left;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 4px;
 
-				&:first-child {
-					margin-bottom: 4px;
-				}
-				&:hover {
-					background-color: var(--primary-color-400);
-					color: #fff;
+                &:first-child {
+                    margin-bottom: 4px;
+                }
+                &:hover {
+                    background-color: var(--primary-color-400);
+                    color: #fff;
 
-					&.disabled {
-						background-color: unset;
-						color: unset;
-					}
-				}
-				&.disabled {
-					opacity: 0.25;
-					cursor: default;
-					pointer-events: none;
-				}
-			}
-		}
+                    &.disabled {
+                        background-color: unset;
+                        color: unset;
+                    }
+                }
+                &.disabled {
+                    opacity: 0.25;
+                    cursor: default;
+                    pointer-events: none;
+                }
+            }
+        }
     }
 
     #profile-img {
@@ -367,7 +388,7 @@ let registerMypage = (e) => {
         border-radius: 50%;
         display: block;
         // object-fit: contain;
-		object-fit: cover;
+        object-fit: cover;
         position: relative;
         background-color: var(--gray-color-100);
 
@@ -404,12 +425,12 @@ let registerMypage = (e) => {
 // }
 
 #position {
-	input {
-		pointer-events: none;
-		background-color: var(--gray-color-100);
-		color: var(--gray-color-500);
-		cursor: default;
-	}
+    input {
+        pointer-events: none;
+        background-color: var(--gray-color-100);
+        color: var(--gray-color-500);
+        cursor: default;
+    }
 }
 
 .checkbox.public {

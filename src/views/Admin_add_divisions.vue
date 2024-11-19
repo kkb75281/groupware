@@ -14,7 +14,6 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                //- input#_el_profile_img(type="file" name="division_logo" @change="uploadImgSrc" style="display:none")
                 input#division_logo(type="file" name="division_logo" @change="openCropImageDialog" style="display:none")
 
         br
@@ -175,9 +174,6 @@ let setCroppedImage = async(croppedImage) => {
             const response = await fetch(croppedImage);
             const blob = await response.blob();
 
-            console.log("Cropped Image Blob:", blob); // Blob 확인
-            console.log("Cropped Images Store:", croppedImages.value);
-
             // Blob 객체를 저장 (서버 전송용)
             croppedImages.value[currentTargetId.value] = blob;
 
@@ -187,19 +183,6 @@ let setCroppedImage = async(croppedImage) => {
         } catch (error) {
             console.error('Error processing Blob URL:', error);
         }
-    }
-}
-
-let uploadImgSrc = (e) => {
-    let targetInput = e.target.id;
-    let file = e.target.files[0];
-
-    if (file) {
-        let reader = new FileReader();
-        reader.onload = (e) => {
-            uploadSrc.value[targetInput] = e.target.result;
-        };
-        reader.readAsDataURL(file);
     }
 }
 
