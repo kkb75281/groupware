@@ -4,6 +4,7 @@ import { skapi } from '@/main';
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
 import Mypage from '@/views/Mypage.vue';
+import Mypage_list_data from '@/views/Mypage_list_data.vue';
 import Admin from '@/views/Admin.vue';
 import Profile from '@/views/Profile.vue';
 import Admin_add_employee from '@/views/Admin_add_employee.vue';
@@ -57,6 +58,11 @@ const router = createRouter({
           path: '/mypage',
           name: 'mypage',
           component: Mypage,
+        },
+        {
+          path: 'list-data',
+          name: 'list-data',
+          component: Mypage_list_data,
         },
         {
           path: 'admin',
