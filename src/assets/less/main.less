@@ -280,6 +280,16 @@
             border-radius: 8px;
             padding: 0 16px;
         }
+
+        &:disabled {
+            &::file-selector-button {
+                height: 1.5rem;
+                background-color: var(--gray-color-100);
+                border: 1px solid var(--gray-color-200);
+                border-radius: 8px;
+                padding: 0 16px;
+            }
+        }
     }
 
     select {
@@ -355,6 +365,16 @@
                     &::before {
                         border-color: var(--primary-color-400);
                         background: var(--primary-color-400) url('@/assets/img/icon_checked.svg') center/cover no-repeat;
+                    }
+                }
+            }
+            &:disabled:checked {
+                & ~ .label-checkbox {
+                    cursor: default;
+
+                    &::before {
+                        border-color: var(--gray-color-400);
+                        background: var(--gray-color-400) url('@/assets/img/icon_checked.svg') center/cover no-repeat;
                     }
                 }
             }
