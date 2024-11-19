@@ -206,6 +206,8 @@ let resigterEmp = (e) => {
                     access_group: 1
                 },
                 tag: user_id
+            }).then(res => {
+                console.log('=== getRecords res ===', res);
             });
 
             let emp_pos = {
@@ -226,7 +228,9 @@ let resigterEmp = (e) => {
                     position: _el_position.value // 직책(직급)
                 },
                 emp_pos
-            );
+            ).then(res => {
+                console.log('=== postRecord res ===', res);
+            });
 
             // await skapi.getUsers().then(res => {
             //     // let list = res.list;
