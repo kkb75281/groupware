@@ -88,6 +88,12 @@ const router = createRouter({
               name: 'list-employee',
               component: Admin_list_employee,
             },
+            {
+              path: 'employee-data/:userId',
+              name: 'employee-data',
+              component: () => import('@/views/Employee_data.vue'),
+              props: true,
+            },
           ],
         },
         {

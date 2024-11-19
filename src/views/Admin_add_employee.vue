@@ -287,7 +287,7 @@ let resigterEmp = (e) => {
                     },
                     tags: [_el_position.value] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
                 }
-            );
+            ).then(response => console.log('response : ', response));
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
             let emp_ref = await skapi.postRecord(null, {
