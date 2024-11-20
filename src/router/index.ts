@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { skapi } from '@/main';
 
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
@@ -14,12 +13,6 @@ import Admin_list_divisions from '@/views/Admin_list_divisions.vue';
 import Admin_list_employee from '@/views/Admin_list_employee.vue';
 import Login from '@/views/Login.vue';
 import Forgot_password from '@/views/Forgot_password.vue';
-
-let checkUser = async (t: any, f: any, n: any) => {
-  let u = await skapi.getProfile();
-  if (u) return n();
-  n('/login');
-};
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -40,14 +33,8 @@ const router = createRouter({
       component: () => import('@/views/Mailing.vue'),
     },
     {
-      path: '/crop',
-      name: 'crop',
-      component: () => import('@/components/crop_image.vue'),
-    },
-    {
       path: '/',
       component: Main,
-      beforeEnter: checkUser,
       children: [
         {
           path: '/',
