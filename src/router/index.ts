@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { user } from '@/user';
 
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
@@ -23,6 +24,11 @@ const router = createRouter({
       component: Login,
     },
     {
+      path: '/verification',
+      name: 'verification',
+      component: () => import('@/views/Verification.vue')
+    },
+    {
       path: '/forgot',
       name: 'forgot',
       component: Forgot_password,
@@ -35,6 +41,14 @@ const router = createRouter({
     {
       path: '/',
       component: Main,
+      beforeEnter: (to, from, next) => {
+        console.log('user', user);
+        if (user.user_id) {
+          next();
+        } else {
+          next({ name: 'login' });
+        }
+      },
       children: [
         {
           path: '/',
