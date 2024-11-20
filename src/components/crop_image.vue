@@ -148,10 +148,6 @@ watch(() => props.imageSrc, (newSrc) => {
     }
 });
 
-onMounted(() => {
-    console.log(props.imageSrc)
-})
-
 onUnmounted(() => {
     if (cropper) {
         cropper.destroy();
