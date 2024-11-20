@@ -37,7 +37,7 @@
 
             .input-wrap
                 p.label.essential 이름
-                input(v-model="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="disabled" required)
+                input(:value="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="disabled" required)
             
             br
 
@@ -128,10 +128,10 @@ let onlyEmail = ref(false);
 let sendEmail = async() => {
     try {
         await skapi.verifyEmail();
-        router.push('/verification');
     } catch (err) {
         window.alert(err.message);
     }
+    router.push('/verification');
 }
 
 let uploadProfileSrc = ref(null);
@@ -244,7 +244,6 @@ let registerMypage = async(e) => {
     // 입력창을 비활성화한다.
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
-    disabled.value = true;
 
     // 올린 사람과 수정하는 사람이 같지 않으면 table 정보로
     // 같으면 record_id로 사진 수정
@@ -290,6 +289,7 @@ let registerMypage = async(e) => {
 
     window.alert('등록완료');
     onlyEmail.value = false;
+    disabled.value = true;
     // router.push('/');
 }
 </script>
