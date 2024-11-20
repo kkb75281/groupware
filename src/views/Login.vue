@@ -71,6 +71,7 @@ let login = (e) => {
     promiseRunning.value = true;
 
     skapi.login(e).then(async (u) => {
+		sessionStorage.setItem('user', JSON.stringify(u));
         router.push('/');
     }).catch(err => {
 		for (let k in user) {

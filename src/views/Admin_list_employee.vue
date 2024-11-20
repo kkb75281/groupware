@@ -226,7 +226,6 @@ watch(empListType, (nv) => {
                     employee.value = list;
                     displayEmployee(res.list);
                     loading.value = false;
-                    console.log('employee.value : ', employee.value);
                 });
             } else {
                 employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved'));
@@ -247,7 +246,6 @@ watch(empListType, (nv) => {
                     employee.value = res.list;
                     displayinviteEmployee(res.list);
                     loading.value = false;
-                console.log('초청 employee.value : ', employee.value);
                 });
 
             } else {
@@ -259,13 +257,10 @@ watch(empListType, (nv) => {
 
 let getEmployee = () => {
     skapi.getUsers().then(res => {        
-        // empListType reset
         empListType.value = '직원목록';
 
-        // checkbox reset
         selectedList.value = [];
 
-        // employee list update
         employee.value = res.list.filter(emp => emp.approved.includes('approved'));
         displayEmployee(res.list);
     });
@@ -351,7 +346,6 @@ let deleteEmployee = async () => {
             getEmployee();
         }).catch(err => {
             isFail.push(el);
-            console.log('== err == : ', err)
         });
     }));
 
