@@ -8,6 +8,7 @@ hr
         .input-wrap.search
             input(type="text" placeholder="검색어를 입력하세요")
             button.btn-search
+
         template(v-if="user.access_group > 98")
             .input-wrap
                     select(v-model="empListType")
@@ -70,7 +71,7 @@ hr
                     tr
                         td(colspan="9") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee")
+                    tr(v-for="(emp, index) in employee" @dblclick="goToDetailEmp(emp)")
                         //- 직원목록/숨김여부
                         template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
                             td
@@ -175,6 +176,7 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted } from 'vue';
 import { skapi } from '@/main';
+import { user } from '@/user';
 
 import Loading from '@/components/loading.vue';
 
@@ -190,7 +192,7 @@ let isAllSelected = computed(() => {
     return selectedList.value.length > 0 && employee.value.every(emp => selectedList.value.includes(emp.user_id));
 });
 
-// let originalEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
+let originalEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 let sessionEmployee;
 let employee = ref([]);
 let suspendedLength = ref(0);
@@ -254,8 +256,6 @@ watch(empListType, (nv) => {
         }
     }
 }, { immediate: true });
-
-console.log('== employee.value == : ', employee.value)
 
 let getEmployee = () => {
     skapi.getUsers().then(res => {        
