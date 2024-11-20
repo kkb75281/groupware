@@ -41,9 +41,18 @@ const router = createRouter({
     {
       path: '/',
       component: Main,
+      // beforeEnter: (to, from, next) => {
+      //   console.log('user', user);
+      //   if (user.user_id) {
+      //     next();
+      //   } else {
+      //     next({ name: 'login' });
+      //   }
+      // },
       beforeEnter: (to, from, next) => {
-        console.log('user', user);
-        if (user.user_id) {
+        let savedUser = JSON.parse(sessionStorage.getItem('user'));
+      
+        if (savedUser?.user_id) {
           next();
         } else {
           next({ name: 'login' });

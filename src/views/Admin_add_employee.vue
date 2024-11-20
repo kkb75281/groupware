@@ -195,7 +195,20 @@ let resigterEmp = (e) => {
                 _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
             }
 
-            let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'});
+            let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'}).catch(err => {
+                console.log('초청 실패');
+                document.querySelector('form #_el_picture_input').value = '';
+                document.querySelectorAll('form select').forEach(el => {
+                    el.selectedIndex = 0;
+                });
+                document.querySelectorAll('form input').forEach(el => {
+                    el.disabled = false;
+                    el.value = '';
+                });
+                document.querySelectorAll('form button').forEach(el => {
+                    el.disabled = false;
+                });
+            });
             // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
 
             // extract user id
@@ -219,7 +232,7 @@ let resigterEmp = (e) => {
                     },
                     tags: [_el_position.value] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
                 }
-            ).then(response => console.log('response : ', response));
+            ).then(res => console.log('직책 res : ', res));
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
             let emp_ref = await skapi.postRecord(null, {
@@ -234,7 +247,7 @@ let resigterEmp = (e) => {
                 reference: {
                     can_remove_reference: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
                 }
-            })
+            }).then(res => console.log('자료방 res : ', res));
 
             let access_group_value = document.querySelector('select[name=access_group]').value;
 
