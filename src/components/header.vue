@@ -115,8 +115,8 @@ header#header
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
-import { user } from '@/user'
-import { skapi, profileImage } from '@/main'
+import { user, profileImage } from '@/user'
+import { skapi } from '@/main'
 import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/navbar'
 
 const router = useRouter();
