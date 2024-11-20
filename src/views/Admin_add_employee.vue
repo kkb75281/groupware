@@ -73,17 +73,17 @@ hr
 
         br
 
-        //- .input-wrap.upload-file
-        //-     p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-        //-     input(type="file" name="additional_data" multiple)
-
         .input-wrap.upload-file
             p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-            input(type="file" name="additional_data" multiple @change="handleFileSelect")
-                ul.file-list
-                    li(v-for="file in selectedFiles" :key="file.name")
-                    | {{ file.name }}
-                    button(@click="removeFile(file)") 삭제  
+            input(type="file" name="additional_data" multiple)
+
+        //- .input-wrap.upload-file
+        //-     p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
+        //-     input(type="file" name="additional_data" multiple @change="handleFileSelect")
+        //-         ul.file-list
+        //-             li(v-for="file in selectedFiles" :key="file.name")
+        //-             | {{ file.name }}
+        //-             button(@click="removeFile(file)") 삭제  
 
         br
 
