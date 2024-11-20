@@ -123,20 +123,6 @@ divisions.then(divisions => {
     document.querySelector('select[name="division"]').disabled = false;
 });
 
-// let uploadProfileSrc = ref('');
-
-// let changeProfileImg = (e) => {
-//     let file = e.target.files[0];
-
-//     if (file) {
-//         let reader = new FileReader();
-//         reader.onload = (e) => {
-//             uploadProfileSrc.value = e.target.result; // ref 값 업데이트
-//         };
-//         reader.readAsDataURL(file);
-//     }
-// }
-
 let openModal = ref(false);
 let croppedImages = ref({});
 let currentTargetId = ref('');
@@ -193,46 +179,10 @@ let resigterEmp = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
-    let ext = skapi.util.extractFormData(e); // { data: {}, files: {} }
-
-    const formData = new FormData();
-
-    // 기존 form data 추가
-    for(let key in ext.data) {
-        formData.append(key, ext.data[key]);
-    }
-
-    // 이미지 파일을 form data에 추가
-    if(Object.keys(croppedImages.value).length > 0) {
-        Object.keys(croppedImages.value).forEach((key) => {
-            formData.append(key, croppedImages.value[key], `${key}.jpg`);
-        });
-    }
-
     async function post() {
         // 사용자를 등록(초대)한다. try catch는 아래와는 달리 작게 만들도록 한다.
         try {
-            // let email_tag = document.querySelector('input[name=email]').value.replaceAll('.', '_').replace('+', '_').replace('@','_'); // 테크는 특수 문자를 사용할 수 없다.
             if(init_profile_pic.files.length > 0) {
-                // let invHisParams = {
-                //     table: {
-                //         name: 'invitations', // 관리자가 직원의 초청기록 등록할 때 사용하는 테이블
-                //         access_group: 99,
-                //     },
-                //     tag: email_tag
-                // };
-
-                // // 과거 초청기록 확인
-                // let prevInvitation = await skapi.getRecords(invHisParams);
-                // if(prevInvitation.list.length > 0) {
-                //     invHisParams.record_id = prevInvitation.list[0].record_id;
-                // }
-
-                // // 초정기록을 데이터베이스에 업로드/업데이트
-                // let invHistory = await skapi.postRecord(event, invHisParams);
-
-                // 사진을 데이터베이스에 업로드하고 보안키를 제외한 이미지 url주소를 userprofile의 picture에 넣어준다.
-
                 let initPicParams = {
                     table: {
                         name: 'init_profile_pic' + makeSafe(document.querySelector('input[name=email]').value), // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
@@ -241,31 +191,13 @@ let resigterEmp = (e) => {
                     },
                 };
 
-                // 과거 사진 확인
-                // let prevPic = await skapi.getRecords(Object.assign({tag: email_tag}, initPicParams));
-
-                // if(prevPic.list.length > 0) {
-                //     // 업데이트
-                //     initPicParams.record_id = prevPic.list[0].record_id;
-                //     initPicParams.remove_bin = null; // 이전 사진 삭제
-                // }
-
-                // initPicParams.tags = [email_tag];
-
                 let userInitProfilePic = await skapi.postRecord(document.getElementById('profPic'), initPicParams);
                 _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
             }
 
-            // let publicSetting = {
-            //     email_public: true,
-            //     phone_number_public: true,
-            //     address_public: true,
-            //     gender_public: true,
-            //     birthdate_public: true,
-            // }
+            let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'});
+            // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
 
-            let added = await skapi.inviteUser(formData, {confirmation_url: '/mailing'});
-            // added = SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
             // extract user id
             let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
             let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
