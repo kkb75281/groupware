@@ -3,7 +3,6 @@ import './assets/less/main.less';
 import { createApp, ref } from 'vue';
 import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
-import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
 
@@ -38,21 +37,11 @@ let loginCheck = (profile: object) => {
       profileImage.value = '';
     }
 
-    // console.log('loginCheck', profile);
-    // return;
   } else {
     if(iwaslogged) {
       router.push({ name: 'login' });
     }
     iwaslogged = false;
-    // const routeName = router.currentRoute.value.name;
-    // const allowedRoutes = ['forgot', 'mailing'];
-
-    // if (allowedRoutes.includes(routeName)) {
-    //   router.push({ name: routeName });
-    // } else {
-    //   router.push({ name: 'login' });
-    // }
   }
 }
 
