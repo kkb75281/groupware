@@ -216,4 +216,13 @@ dialog {
     max-height: 80vh;
     overflow: auto;
 }
+
+@media (max-width: 576px) {
+    dialog {
+        max-width: 100%;
+        max-height: 100%;
+        width: calc(100% - 32px);
+        height: calc(100% - 32px);
+    }
+}
 </style>  
