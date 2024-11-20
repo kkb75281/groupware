@@ -22,14 +22,14 @@
         p.desc 
             | 이메일 인증이 완료되었습니다.
             br
-            | 로그인 페이지로 이동하여 로그인해주세요.
+            | 메인 화면으로 이동하여 서비스를 이용해주세요.
         
         br
         br
         br
         br
 
-        button.btn.btn-go-login(@click="router.push('/login')") 로그인 화면으로
+        button.btn.btn-go-login(@click="router.push('/mypage')") 마이페이지 화면으로
 </template>
 
 <script setup>
@@ -48,15 +48,7 @@ let resending = ref(false);
 
 let resend = () => {
     resending.value = true;
-	alert('The Code has been resent.');
-    
-    skapi.forgotPassword({ email: user.email }).then(r => {
-		step.value = 2;
-		code.value = '';
-	}).catch(err => {
-        alert(err.message);
-		code.value = '';
-    })
+    skapi.verifyEmail();
 
     setTimeout(() => {
         resending.value = false;

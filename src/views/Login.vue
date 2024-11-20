@@ -30,7 +30,7 @@
 				input#input_autoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" checked)
 				span.label-checkbox 로그인 상태 유지
 
-			router-link.btn-forgot(to="/forgot") 비밀번호 찾기
+			router-link.btn-forgot(to="/forgot-password") 비밀번호 찾기
 
 		button.btn.btn-login(type="submit") 로그인
 </template>
