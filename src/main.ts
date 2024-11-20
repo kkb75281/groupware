@@ -7,10 +7,26 @@ import router from './router';
 
 const app = createApp(App);
 
+let loginCheck = (profile: object) => {
+  if (profile) {
+    console.log('loginCheck', profile);
+    return;
+  } else {
+    const routeName = router.currentRoute.value.name;
+    const allowedRoutes = ['forgot', 'mailing'];
+
+    if (allowedRoutes.includes(routeName)) {
+      router.push({ name: routeName });
+    } else {
+      router.push({ name: 'login' });
+    }
+  }
+}
+
 const skapi = new Skapi(
   'ap21UAo9MdRQtaQ8CmGr',
   '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
-  { autoLogin: window.localStorage.getItem('remember') === 'true' },
+  { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: {onLogin: loginCheck} },
   { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
 ); // pb
 
