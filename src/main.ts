@@ -2,14 +2,13 @@ import './assets/less/main.less';
 
 import { createApp, ref } from 'vue';
 import { Skapi } from 'skapi-js';
-import { user } from './user';
+import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
 
 const app = createApp(App);
 
 export let iwaslogged = false;
-export let profileImage = ref('');
 
 let loginCheck = (profile: object) => {
   for (let k in user) {

@@ -92,8 +92,8 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted } from 'vue';
-import { skapi, profileImage } from '@/main';
-import { user } from '@/user';
+import { skapi } from '@/main';
+import { user, profileImage } from '@/user';
 
 const router = useRouter();
 const route = useRoute();
