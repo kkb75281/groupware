@@ -13,7 +13,6 @@ import Admin_edit_divisions from '@/views/Admin_edit_divisions.vue';
 import Admin_list_divisions from '@/views/Admin_list_divisions.vue';
 import Admin_list_employee from '@/views/Admin_list_employee.vue';
 import Login from '@/views/Login.vue';
-import Forgot_password from '@/views/Forgot_password.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,9 +28,23 @@ const router = createRouter({
       component: () => import('@/views/Verification.vue')
     },
     {
-      path: '/forgot',
-      name: 'forgot',
-      component: Forgot_password,
+      path: '/change-password',
+      name: 'change-password',
+      beforeEnter: (to, from, next) => {
+        let savedUser = JSON.parse(sessionStorage.getItem('user'));
+      
+        if (savedUser?.user_id) {
+          next();
+        } else {
+          next({ name: 'login' });
+        }
+      },
+      component: () => import('@/views/Change_password.vue')
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('@/views/Forgot_password.vue')
     },
     {
       path: '/mailing',
@@ -41,14 +54,6 @@ const router = createRouter({
     {
       path: '/',
       component: Main,
-      // beforeEnter: (to, from, next) => {
-      //   console.log('user', user);
-      //   if (user.user_id) {
-      //     next();
-      //   } else {
-      //     next({ name: 'login' });
-      //   }
-      // },
       beforeEnter: (to, from, next) => {
         let savedUser = JSON.parse(sessionStorage.getItem('user'));
       
