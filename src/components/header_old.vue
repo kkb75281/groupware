@@ -101,7 +101,7 @@ header#header
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, nextTick, watch } from 'vue';
-import { user, updateUser } from '@/user'
+import { user } from '@/user'
 import { skapi } from '@/main'
 import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/navbar'
 
@@ -116,7 +116,6 @@ let newNoti = ref(false);
 
 let logout = () => {
 	skapi.logout().then(() => {
-        updateUser();
         router.push({ path: "/login" });
     });
 }

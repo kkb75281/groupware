@@ -37,7 +37,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { user, updateUser } from '@/user';
+import { user } from '@/user';
 import { skapi } from "@/main";
 import { ref, watch, onMounted } from 'vue';
 
@@ -71,7 +71,6 @@ let login = (e) => {
     promiseRunning.value = true;
 
     skapi.login(e).then(async (u) => {
-        await updateUser();
         router.push('/');
     }).catch(err => {
 		for (let k in user) {

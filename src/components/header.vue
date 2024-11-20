@@ -108,8 +108,8 @@ header#header
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
-import { user, updateUser, profileImage } from '@/user'
-import { skapi } from '@/main'
+import { user } from '@/user'
+import { skapi, profileImage } from '@/main'
 import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/navbar'
 
 const router = useRouter();
@@ -168,7 +168,6 @@ onUnmounted(() => {
 
 let logout = () => {
 	skapi.logout().then(() => {
-        updateUser();
         router.push({ path: "/login" });
     });
 }
