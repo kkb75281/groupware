@@ -2,24 +2,57 @@ import './assets/less/main.less';
 
 import { createApp, ref } from 'vue';
 import { Skapi } from 'skapi-js';
+import { user } from './user';
 import App from './App.vue';
 import router from './router';
 
 const app = createApp(App);
 
-let loginCheck = (profile: object) => {
-  if (profile) {
-    console.log('loginCheck', profile);
-    return;
-  } else {
-    const routeName = router.currentRoute.value.name;
-    const allowedRoutes = ['forgot', 'mailing'];
+export let iwaslogged = false;
+export let profileImage = ref('');
 
-    if (allowedRoutes.includes(routeName)) {
-      router.push({ name: routeName });
+let loginCheck = (profile: object) => {
+  for (let k in user) {
+    delete user[k];
+  }
+  if (profile) {
+    iwaslogged = true;
+
+    for (let k in profile) {
+      user[k] = profile[k];
+    }
+
+    if (user.picture) {
+      skapi
+        .getFile(user.picture, {
+          dataType: 'endpoint',
+        })
+        .then((res) => {
+          profileImage.value = res;
+        })
+        .catch((err) => {
+          window.alert('프로필 사진을 불러오는데 실패했습니다.');
+          throw err; // 의도적으로 에러 전달
+        });
     } else {
+      profileImage.value = '';
+    }
+
+    // console.log('loginCheck', profile);
+    // return;
+  } else {
+    if(iwaslogged) {
       router.push({ name: 'login' });
     }
+    iwaslogged = false;
+    // const routeName = router.currentRoute.value.name;
+    // const allowedRoutes = ['forgot', 'mailing'];
+
+    // if (allowedRoutes.includes(routeName)) {
+    //   router.push({ name: routeName });
+    // } else {
+    //   router.push({ name: 'login' });
+    // }
   }
 }
 
