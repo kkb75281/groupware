@@ -73,9 +73,17 @@ hr
 
         br
 
+        //- .input-wrap.upload-file
+        //-     p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
+        //-     input(type="file" name="additional_data" multiple)
+
         .input-wrap.upload-file
             p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-            input(type="file" name="additional_data" multiple)
+            input(type="file" name="additional_data" multiple @change="handleFileSelect")
+                ul.file-list
+                    li(v-for="file in selectedFiles" :key="file.name")
+                    | {{ file.name }}
+                    button(@click="removeFile(file)") 삭제  
 
         br
 
@@ -105,6 +113,28 @@ import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+// let selectedFiles = [];
+
+// let handleFileSelect = (event) => {
+//     // 현재 선택된 파일들
+//     const files = Array.from(event.target.files);
+
+//     // 기존 파일 리스트에 새 파일 추가 (중복 방지)
+//     files.forEach((file) => {
+//         if (!this.selectedFiles.find((f) => f.name === file.name)) {
+//             this.selectedFiles.push(file);
+//         }
+//     });
+
+//     // 파일 입력 초기화 (같은 파일 선택 가능)
+//     event.target.value = null;
+// }
+
+// let removeFile = (file) => {
+//     // 선택된 파일 삭제
+//     this.selectedFiles = this.selectedFiles.filter((f) => f !== file);
+// }
 
 let divisions = skapi.getRecords({
         table: {
