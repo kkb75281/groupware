@@ -97,6 +97,13 @@ header#header
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-business-center")
 					p 회사 정보
 
+			li(v-if="user.access_group < 99")
+				router-link.router(to="/admin/list-employee")
+					.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
+					p 직원 목록
+
 			li(@click="logout")
 				.router
 					.icon

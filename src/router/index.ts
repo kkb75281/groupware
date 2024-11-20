@@ -4,6 +4,7 @@ import { user } from '@/user';
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
 import Mypage from '@/views/Mypage.vue';
+import Mypage_list_data from '@/views/Mypage_list_data.vue';
 import Admin from '@/views/Admin.vue';
 import Profile from '@/views/Profile.vue';
 import Admin_add_employee from '@/views/Admin_add_employee.vue';
@@ -40,9 +41,18 @@ const router = createRouter({
     {
       path: '/',
       component: Main,
+      // beforeEnter: (to, from, next) => {
+      //   console.log('user', user);
+      //   if (user.user_id) {
+      //     next();
+      //   } else {
+      //     next({ name: 'login' });
+      //   }
+      // },
       beforeEnter: (to, from, next) => {
-        console.log('user', user);
-        if (user.user_id) {
+        let savedUser = JSON.parse(sessionStorage.getItem('user'));
+      
+        if (savedUser?.user_id) {
           next();
         } else {
           next({ name: 'login' });
@@ -58,6 +68,11 @@ const router = createRouter({
           path: '/mypage',
           name: 'mypage',
           component: Mypage,
+        },
+        {
+          path: 'list-data',
+          name: 'list-data',
+          component: Mypage_list_data,
         },
         {
           path: 'admin',
@@ -88,6 +103,12 @@ const router = createRouter({
               path: 'list-employee',
               name: 'list-employee',
               component: Admin_list_employee,
+            },
+            {
+              path: 'employee-data/:userId',
+              name: 'employee-data',
+              component: () => import('@/views/Employee_data.vue'),
+              props: true,
             },
           ],
         },
