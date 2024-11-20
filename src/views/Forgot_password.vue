@@ -38,8 +38,8 @@
 			.input-wrap
 				p.label 6자리 인증 코드
 				.input
-					input(type="text" name="code" ref="codeField" :value="code" @input="e => {code = e.target.value; e.target.setCustomValidity('');}" @change="validateCode" placeholder="######" required)
-					button.btn.btn-resend(@click="resend") 코드 다시 받기
+					input(type="text" name="code" ref="codeField" :value="code" @input="e => {code = e.target.value; e.target.setCustomValidity('');}" @change="validateCode" placeholder="6자리 코드" required)
+					button.btn.outline.btn-resend(@click="resend") 코드 다시 받기
 
 			.button-wrap
 				a.btn.bg-gray.btn-back(@click="back") 이전

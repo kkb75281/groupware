@@ -37,7 +37,7 @@
 
             .input-wrap
                 p.label.essential 이름
-                input(v-model="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="disabled" required)
+                input(:value="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="disabled" required)
             
             br
 
@@ -47,13 +47,13 @@
 
             template(v-if="verifiedEmail && !onlyEmail")
                 button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
-                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="router.push('verification')") 이메일 인증
+                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
 
             br
 
             .input-wrap
                 p.label 비밀번호
-                button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || !disabled") 비밀번호 변경
+                button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || !disabled" @click="router.push('change-password')") 비밀번호 변경
 
             br
 
@@ -92,7 +92,7 @@
 
             .button-wrap
                 template(v-if="disabled && !onlyEmail")
-                    button#startEdit.btn(type="button" :disabled="disabled" @click="startEdit") 수정
+                    button#startEdit.btn(type="button" :disabled="verifiedEmail" @click="startEdit") 수정
                 template(v-else)
                     button.btn.bg-gray(type="button" @click="cancelEdit") 취소
                     button.btn(type="submit") 등록
@@ -114,16 +114,6 @@ const route = useRoute();
 
 console.log(user)
 
-skapi.getRecords({
-    table: {
-        name: 'emp_division',
-        access_group: 'authorized',
-    },
-    tag: user.user_id.replaceAll('-', '_'),
-}).then(r => {
-    userPosition.value = r?.list[0]?.data?.position;
-});
-
 let access_group = {
     1: '직원',
     98: '관리자',
@@ -134,6 +124,15 @@ let disabled = ref(true);
 let userPosition = ref(null);
 let originUserProfile = {};
 let onlyEmail = ref(false);
+
+let sendEmail = async() => {
+    try {
+        await skapi.verifyEmail();
+    } catch (err) {
+        window.alert(err.message);
+    }
+    router.push('/verification');
+}
 
 let uploadProfileSrc = ref(null);
 let getFileInfo = ref(null);
@@ -172,6 +171,17 @@ let closeOptions = (e) => {
 };
 
 onMounted(async() => {
+    if (user) {
+        skapi.getRecords({
+            table: {
+                name: 'emp_division',
+                access_group: 'authorized',
+            },
+            tag: user.user_id.replaceAll('-', '_'),
+        }).then(r => {
+            userPosition.value = r?.list[0]?.data?.position;
+        });
+    }
     if (user && user.picture) {
         // 프로필 사진 이미지를 보여준다. 보안키가 필요한 url 이니 skapi.getFile을 사용한다.
         skapi.getFile(user.picture, {
@@ -232,9 +242,8 @@ let cancelEdit = () => {
 let registerMypage = async(e) => {
     e.preventDefault();
     // 입력창을 비활성화한다.
-    // document.querySelectorAll('form input').forEach(el => el.disabled = true);
-    // document.querySelectorAll('form button').forEach(el => el.disabled = true);
-    disabled.value = true;
+    document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
     // 올린 사람과 수정하는 사람이 같지 않으면 table 정보로
     // 같으면 record_id로 사진 수정
@@ -280,6 +289,7 @@ let registerMypage = async(e) => {
 
     window.alert('등록완료');
     onlyEmail.value = false;
+    disabled.value = true;
     // router.push('/');
 }
 </script>
