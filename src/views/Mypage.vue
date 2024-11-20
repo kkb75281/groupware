@@ -47,7 +47,7 @@
 
             template(v-if="verifiedEmail && !onlyEmail")
                 button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
-                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail") 이메일 인증
+                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="verifiyEmail") 이메일 인증
 
             br
 
@@ -105,8 +105,8 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import { skapi } from '@/main';
-import { user, updateUser, profileImage, verifiedEmail } from '@/user';
+import { skapi, profileImage } from '@/main';
+import { user, verifiedEmail } from '@/user';
 import { convertToObject } from 'typescript';
 
 const router = useRouter();
@@ -134,6 +134,10 @@ let disabled = ref(true);
 let userPosition = ref(null);
 let originUserProfile = {};
 let onlyEmail = ref(false);
+
+let verifyEmail = () => {
+
+}
 
 let uploadProfileSrc = ref(null);
 let getFileInfo = ref(null);
@@ -278,7 +282,6 @@ let registerMypage = async(e) => {
     //     verifiedEmail.value = true;
     // }
 
-    updateUser(e);
     window.alert('등록완료');
     onlyEmail.value = false;
     // router.push('/');
