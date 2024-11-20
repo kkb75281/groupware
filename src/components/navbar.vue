@@ -14,21 +14,21 @@ nav#navbar
 
         ul.menu-item
             li.item(:class="{'active': route.name === 'home'}")
-                router-link(to="/")
+                router-link.router(to="/")
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
                     .text 
                         span 대시보드
             li.item(:class="{'active': route.name === 'mypage'}")
-                router-link(to="/mypage")
+                router-link.router(to="/mypage")
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                     .text 
                         span 마이페이지
             li.item(:class="{'active': route.name === 'list-data'}")
-                router-link(to="/list-data")
+                router-link.router(to="/list-data")
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
@@ -36,29 +36,29 @@ nav#navbar
                         span 자료 (임시)
             template(v-if="user.access_group > 98")
                 li.item(:class="{'active': route.path.startsWith('/admin')}")
-                    router-link(to="/admin/list-divisions")
+                    .router(@click="toggleSubMenu")
                         .icon
                             svg
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
                         .text 
                             span 마스터 페이지
-                            svg.arrow(:class="{'down': route.path.startsWith('/admin')}")
+                            svg.arrow(:class="{'down': showSubMenu}")
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-                ul.sub-menu-item(:class="{'show': route.path.startsWith('/admin')}")
+                ul.sub-menu-item(ref="adminSubMenu")
                     li(:class="{'active': route.name === 'list-divisions'}")
                         router-link(to="/admin/list-divisions") 부서(회사) 목록
                     li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
                         router-link(to="/admin/list-employee") 직원 목록
             template(v-else)
                 li.item(:class="{'active': route.name === 'list-employee'}")
-                    router-link(to="/admin/list-employee")
+                    router-link.router(to="/admin/list-employee")
                         .icon
                             svg
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
                         .text 
                             span 직원 목록
             li.item(:class="{'active': route.name === 'component'}")
-                router-link(to="/component") 
+                router-link.router(to="/component") 
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-component")
@@ -76,12 +76,20 @@ nav#navbar
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { watch, onMounted, onUnmounted } from 'vue'
+import { watch, onMounted, onUnmounted, ref } from 'vue'
 import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar'
 import { user } from '@/user'
 
 const router = useRouter();
 const route = useRoute();
+
+let adminSubMenu = ref(null);
+let showSubMenu = ref(false);
+
+let toggleSubMenu = (e) => {
+    adminSubMenu.value.classList.toggle('show');
+    showSubMenu.value = !showSubMenu.value;
+}   
 
 onMounted(() => {
   checkScreenWidth(); // 컴포넌트가 마운트될 때 한 번 실행
@@ -97,6 +105,10 @@ watch(() => route.path, (newPath, oldPath) => {
         if (isOpen.value) {
             isOpen.value = !isOpen.value;
             document.body.classList.toggle('open', isOpen.value);
+        }
+        if (newPath !== oldPath && !newPath.startsWith('/admin')) {
+            adminSubMenu.value.classList.remove('show');
+            showSubMenu.value = false;
         }
     }
 })
@@ -148,7 +160,7 @@ watch(() => route.path, (newPath, oldPath) => {
             }
 
             &.active {
-                a {
+                .router {
                     background-color: var(--primary-color-400);
                     color: #fff;
 
@@ -176,13 +188,14 @@ watch(() => route.path, (newPath, oldPath) => {
             }
         }
 
-        a {
+        .router {
             display: flex;
             flex-wrap: nowrap;
             align-items: center;
             justify-content: center;
             padding: 1.2rem 0;
             border-radius: 8px;
+            cursor: pointer;
 
             .text {
                 display: block;
