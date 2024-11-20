@@ -92,8 +92,8 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted } from 'vue';
-import { skapi } from '@/main';
-import { user, updateUser, profileImage } from '@/user';
+import { skapi, profileImage } from '@/main';
+import { user } from '@/user';
 
 const router = useRouter();
 const route = useRoute();
@@ -265,7 +265,6 @@ let registerMypage = (e) => {
 
 		// 프로필 정보를 업데이트한다.
 		await skapi.updateProfile(e);
-		updateUser(e);
 		window.alert('등록완료');
 		router.push('/');
 	}
