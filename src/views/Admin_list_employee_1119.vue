@@ -40,8 +40,6 @@ hr
                 
                 template(v-if='empListType === "초청여부"')
                     col(style="width: 11%;")
-                template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
-                    col(style="width: 11%;")
                 col(style="width: 10%; min-width: 6rem;")
                 col(style="width: 10%; min-width: 6rem;")
                 col(style="min-width: 15rem;")
@@ -59,8 +57,6 @@ hr
 
                     template(v-if='empListType === "초청여부"')
                         th(scope="col") 초청여부
-                    template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
-                        th(scope="col") 상세보기
                     th(scope="col") 생년월일
                     th(scope="col") 전화번호
                     th(scope="col") 주소
@@ -71,7 +67,7 @@ hr
                     tr
                         td(colspan="9") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee" @dblclick="goToDetailEmp(emp)")
+                    tr(v-for="(emp, index) in employee")
                         //- 직원목록/숨김여부
                         template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
                             td
@@ -82,10 +78,6 @@ hr
                             td {{ emp.access_group }}
                             td {{ emp.name }}
                             td {{ emp.email }}
-                            template(v-if='user.access_group > 98')
-                                td
-                                    .btn-wrap
-                                        button.btn.bg-gray.sm(@click="openModal(emp)") 상세보기
                             td {{ emp.birthdate }}
                             td {{ emp.phone_number }}
                             td {{ emp.address }}
@@ -120,56 +112,6 @@ hr
 br
 br
 br
-
-//- Modal
-#modal.modal(v-if="isModalOpen" @click="closeModal")
-    .modal-cont(@click.stop)
-        .modal-header
-            h2.modal-title 직원 상세
-            button.btn-close(@click="closeModal")
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-        .modal-body
-            #_el_pictureForm
-                .image
-                    img#profile-img(:src="uploadProfileSrc" alt="profile image")
-
-            .input-wrap
-                p.label 직책
-                input(type="text" name="" :value="selectedEmp?.name || '-' " readonly)
-
-            .input-wrap
-                p.label 권한
-                input(type="text" name="" :value="selectedEmp?.access_group || '-' " readonly)
-
-            .input-wrap
-                p.label 이름
-                input(type="text" name="" :value="selectedEmp?.name || '-' " readonly)
-
-            .input-wrap
-                p.label 이메일
-                input(type="email" name="" :value="selectedEmp?.email || '-' " readonly)
-
-            .input-wrap
-                p.label 생년월일
-                input(type="email" name="" :value="selectedEmp?.birthdate || '-' " readonly)
-
-            .input-wrap
-                p.label 전화번호
-                input(type="email" name="" :value="selectedEmp?.phone_number || '-' " readonly)
-
-            .input-wrap
-                p.label 주소
-                input(type="email" name="" :value="selectedEmp?.address || '-' " readonly)
-
-            .input-wrap.upload-file
-                p.label 기타자료
-                ul.file-list
-                    li.file-item
-                        button.btn.sm.bg-gray 파일1
-                //- input(type="email" name="" :value="selectedEmp?.phone_number || '-' " readonly)
-        //- .modal-footer
-        //-     button.btn.bg-gray(@click="closeModal") 닫기
 </template>
 
 <script setup>
@@ -196,18 +138,6 @@ let originalEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 let sessionEmployee;
 let employee = ref([]);
 let suspendedLength = ref(0);
-let isModalOpen = ref(false);
-let selectedEmp = ref(null);
-
-let openModal = (emp) => {
-    selectedEmp.value = emp;
-    isModalOpen.value = true;
-};
-
-let closeModal = () => {
-    isModalOpen.value = false;
-    selectedEmp.value = null;
-};
 
 watch(empListType, (nv) => {
     if(nv) {
@@ -226,6 +156,7 @@ watch(empListType, (nv) => {
                     employee.value = list;
                     displayEmployee(res.list);
                     loading.value = false;
+                    console.log('employee.value : ', employee.value);
                 });
             } else {
                 employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved'));
@@ -247,7 +178,6 @@ watch(empListType, (nv) => {
                     displayinviteEmployee(res.list);
                     loading.value = false;
                 });
-
             } else {
                 employee.value = sessionEmployee;
             }
@@ -257,10 +187,13 @@ watch(empListType, (nv) => {
 
 let getEmployee = () => {
     skapi.getUsers().then(res => {        
+        // empListType reset
         empListType.value = '직원목록';
 
+        // checkbox reset
         selectedList.value = [];
 
+        // employee list update
         employee.value = res.list.filter(emp => emp.approved.includes('approved'));
         displayEmployee(res.list);
     });
@@ -346,6 +279,7 @@ let deleteEmployee = async () => {
             getEmployee();
         }).catch(err => {
             isFail.push(el);
+            console.log('== err == : ', err)
         });
     }));
 
@@ -429,14 +363,6 @@ let cancelInvite = (employee_info) => {
         alert('초대메일 취소에 실패하였습니다.');
     });
 }
-
-let goToDetailEmp = (emp) => {
-    router.push({ name: 'employee-data', params: { 
-            userId: emp.user_id, 
-            name: emp.name,
-            accessGroup: emp.access_group 
-        } });
-};
 </script>
 
 <style scoped lang="less">
@@ -485,109 +411,6 @@ let goToDetailEmp = (emp) => {
         width: 100%;
         height: 100%;
         object-fit: contain;
-    }
-}
-
-#_el_pictureForm {
-    text-align: center;
-
-    .image {
-        position: relative;
-        display: inline-block;
-
-        .label {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            background-color: var(--primary-color-400);
-            border-radius: 50%;
-            cursor: pointer;
-
-            &.disabled {
-                pointer-events: none;
-                background-color: var(--gray-color-300);
-            }
-
-            .icon {
-                padding: 4px;
-                width: 32px;
-                height: 32px;
-                position: relative;
-
-                svg {
-                    width: 18px;
-                    height: 18px;
-                    transform: translate(-50%, -50%);
-                    top: 50%;
-                    left: 50%;
-                    position: absolute;
-                }
-            }
-        }
-        
-        .options {
-            position: absolute;
-            right: -113px;
-            bottom: -40px;
-            z-index: 9;
-            background-color: var(--gray-color-100);
-            border: 1px solid var(--gray-color-300);
-            padding: 5px;
-            border-radius: 4px;
-            
-            li {
-                font-size: 0.8rem;
-                text-align: left;
-                cursor: pointer;
-                padding: 4px 8px;
-                border-radius: 4px;
-
-                &:first-child {
-                    margin-bottom: 4px;
-                }
-                &:hover {
-                    background-color: var(--primary-color-400);
-                    color: #fff;
-
-                    &.disabled {
-                        background-color: unset;
-                        color: unset;
-                    }
-                }
-                &.disabled {
-                    opacity: 0.25;
-                    cursor: default;
-                    pointer-events: none;
-                }
-            }
-        }
-    }
-
-    #profile-img {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        display: block;
-        // object-fit: contain;
-        object-fit: cover;
-        position: relative;
-        background-color: var(--gray-color-100);
-
-        &::before {
-            content: "No Image";
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            background-color: var(--gray-color-100);
-            color: #888;
-            font-size: 14px;
-            text-align: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
     }
 }
 </style>

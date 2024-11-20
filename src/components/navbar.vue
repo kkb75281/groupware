@@ -27,6 +27,13 @@ nav#navbar
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                     .text 
                         span 마이페이지
+            li.item(:class="{'active': route.name === 'list-data'}")
+                router-link(to="/list-data")
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
+                    .text 
+                        span 자료 (임시)
             template(v-if="user.access_group > 98")
                 li.item(:class="{'active': route.path.startsWith('/admin')}")
                     router-link(to="/admin/list-divisions")
@@ -40,14 +47,14 @@ nav#navbar
                 ul.sub-menu-item(:class="{'show': route.path.startsWith('/admin')}")
                     li(:class="{'active': route.name === 'list-divisions'}")
                         router-link(to="/admin/list-divisions") 부서(회사) 목록
-                    li(:class="{'active': route.name === 'list-employee'}")
+                    li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
                         router-link(to="/admin/list-employee") 직원 목록
             template(v-else)
                 li.item(:class="{'active': route.name === 'list-employee'}")
                     router-link(to="/admin/list-employee")
                         .icon
                             svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
                         .text 
                             span 직원 목록
             li.item(:class="{'active': route.name === 'component'}")
