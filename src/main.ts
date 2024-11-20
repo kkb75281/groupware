@@ -11,11 +11,12 @@ const app = createApp(App);
 export let iwaslogged = false;
 
 let loginCheck = (profile: object) => {
-  for (let k in user) {
-    delete user[k];
-  }
   if (profile) {
     iwaslogged = true;
+
+    for (let k in user) {
+      delete user[k];
+    }
 
     for (let k in profile) {
       user[k] = profile[k];
