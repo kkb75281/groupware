@@ -202,6 +202,7 @@ let selectedEmp = ref(null);
 let openModal = (emp) => {
     selectedEmp.value = emp;
     isModalOpen.value = true;
+    console.log('selectedEmp', selectedEmp.value);
 };
 
 let closeModal = () => {
