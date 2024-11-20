@@ -36,7 +36,6 @@ let loginCheck = (profile: object) => {
     } else {
       profileImage.value = '';
     }
-
   } else {
     if(iwaslogged) {
       router.push({ name: 'login' });
