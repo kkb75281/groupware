@@ -8,6 +8,8 @@ import router from './router';
 
 const app = createApp(App);
 
+console.log('ddd');
+
 export let iwaslogged = false;
 
 let loginCheck = (profile: object) => {
