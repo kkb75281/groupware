@@ -195,22 +195,8 @@ let resigterEmp = (e) => {
                 _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
             }
 
-            let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'}).catch(err => {
-                console.log('초청 실패');
-                document.querySelector('form #_el_picture_input').value = '';
-                document.querySelectorAll('form select').forEach(el => {
-                    el.selectedIndex = 0;
-                });
-                document.querySelectorAll('form input').forEach(el => {
-                    el.disabled = false;
-                    el.value = '';
-                });
-                document.querySelectorAll('form button').forEach(el => {
-                    el.disabled = false;
-                });
-            });
+            let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'});
             // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
-
             // extract user id
             let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
             let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
@@ -232,10 +218,10 @@ let resigterEmp = (e) => {
                     },
                     tags: [_el_position.value] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
                 }
-            ).then(res => console.log('직책 res : ', res));
+            )
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
-            let emp_ref = await skapi.postRecord(null, {
+            await skapi.postRecord(null, {
                 table: {
                     name: 'emp_access_ref',
                     access_group: 99
@@ -247,41 +233,40 @@ let resigterEmp = (e) => {
                 reference: {
                     can_remove_reference: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
                 }
-            }).then(res => console.log('자료방 res : ', res));
+            }).then(async(res) => {
+                let access_group_value = document.querySelector('select[name=access_group]').value;
 
-            let access_group_value = document.querySelector('select[name=access_group]').value;
-
-            // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
-            if(access_group_value !== '99') {
-                // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
-                await skapi.grantPrivateRecordAccess({
-                    record_id: emp_ref.record_id,
-                    user_id: user_id
-                });
-            }
-
-            // 자료방 reference record id 를 저장한다. 직원이 로그인해서 찾을수있게
-            await skapi.postRecord({ privateStorageReference: emp_ref.record_id }, {
-                table: {
-                    name: 'ref_ids',
-                    access_group: 1
-                },
-                index: {
-                    name: 'user_id',
-                    value: user_id_safe
-                },
-            });
-
-            if(document.querySelector('input[name=additional_data]').files.length) {
-                // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
-                await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
+                // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
+                if(access_group_value !== '99') {
+                    // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
+                    await skapi.grantPrivateRecordAccess({
+                        record_id: res.record_id,
+                        user_id: user_id
+                    });
+                }
+                // 자료방 reference record id 를 저장한다. 직원이 로그인해서 찾을수있게
+                await skapi.postRecord({ privateStorageReference: res.record_id }, {
                     table: {
-                        name: 'emp_additional_data',
-                        access_group: 99
+                        name: 'ref_ids',
+                        access_group: 1
                     },
-                    reference: emp_ref.record_id, // 자료방 레코드 id
+                    index: {
+                        name: 'user_id',
+                        value: user_id_safe
+                    },
                 });
-            }
+
+                if(document.querySelector('input[name=additional_data]').files.length) {
+                    // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
+                    await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
+                        table: {
+                            name: 'emp_additional_data',
+                            access_group: 99
+                        },
+                        reference: res.record_id, // 자료방 레코드 id
+                    });
+                }
+            });
 
             await skapi.getInvitations().then(res => {
                 window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
@@ -290,9 +275,19 @@ let resigterEmp = (e) => {
             window.alert('등록완료');
         }
         catch (error) {
-            window.alert(error.message);
-            document.querySelectorAll('form input').forEach(el => el.disabled = false);
-
+            window.alert('직원 등록에 실패하였습니다. 다시 시도해주세요.' + error.message);
+            document.querySelector('form #profile-img').src = '';
+            document.querySelectorAll('form select').forEach(el => {
+                el.selectedIndex = 0;
+            });
+            document.querySelectorAll('form input').forEach(el => {
+                el.disabled = false;
+                el.value = '';
+            });
+            document.querySelectorAll('form button').forEach(el => {
+                el.disabled = false;
+            });
+            
             throw error;
         }
 
