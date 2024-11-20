@@ -47,7 +47,7 @@
 
             template(v-if="verifiedEmail && !onlyEmail")
                 button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
-                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="router.push('verification')") 이메일 인증
+                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
 
             br
 
@@ -92,7 +92,7 @@
 
             .button-wrap
                 template(v-if="disabled && !onlyEmail")
-                    button#startEdit.btn(type="button" :disabled="disabled" @click="startEdit") 수정
+                    button#startEdit.btn(type="button" :disabled="verifiedEmail" @click="startEdit") 수정
                 template(v-else)
                     button.btn.bg-gray(type="button" @click="cancelEdit") 취소
                     button.btn(type="submit") 등록
@@ -134,6 +134,15 @@ let disabled = ref(true);
 let userPosition = ref(null);
 let originUserProfile = {};
 let onlyEmail = ref(false);
+
+let sendEmail = async() => {
+    try {
+        await skapi.verifyEmail();
+        router.push('/verification');
+    } catch (err) {
+        window.alert(err.message);
+    }
+}
 
 let uploadProfileSrc = ref(null);
 let getFileInfo = ref(null);
