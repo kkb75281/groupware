@@ -47,7 +47,7 @@
 
             template(v-if="verifiedEmail && !onlyEmail")
                 button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
-                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="verifiyEmail") 이메일 인증
+                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="router.push('verification')") 이메일 인증
 
             br
 
@@ -134,10 +134,6 @@ let disabled = ref(true);
 let userPosition = ref(null);
 let originUserProfile = {};
 let onlyEmail = ref(false);
-
-let verifyEmail = () => {
-
-}
 
 let uploadProfileSrc = ref(null);
 let getFileInfo = ref(null);
