@@ -2,38 +2,42 @@ import { useRouter } from 'vue-router';
 import { reactive, ref, computed } from 'vue';
 import { skapi } from '@/main';
 
+export let iwaslogged = ref(false);
 export let user: { [key: string]: any } = reactive({});
 export let verifiedEmail = computed(() => !user.email_verified);
 export let profileImage = ref('');
 
-export let updateUser = () => {
-  return skapi.getProfile().then((u: any) => {
-    console.log('=== user.ts === u : ', u);
-    for (let k in user) {
-      delete user[k];
-    }
-    if (u) {
-      for (let k in u) {
-        user[k] = u[k];
-      }
+export const loginCheck = (profile: object | null, router: any) => {
+  if (profile) {
+    Object.assign(user, profile);
 
-      if (user.picture) {
-        skapi
-          .getFile(user.picture, {
-            dataType: 'endpoint',
-          })
-          .then((res) => {
-            profileImage.value = res;
-          })
-          .catch((err) => {
-            window.alert('프로필 사진을 불러오는데 실패했습니다.');
-            throw err; // 의도적으로 에러 전달
-          });
-      } else {
-        profileImage.value = '';
-      }
-    } else {
-      user = {};
+    // 브라우저 저장소에 로그인 상태 저장
+    localStorage.setItem('user', JSON.stringify(profile));
+    localStorage.setItem('iwaslogged', 'true');
+
+    iwaslogged.value = true;
+  } else {
+    if (iwaslogged.value) {
+      Object.assign(user, {});
+      router.push({ name: 'login' });
     }
-  });
+
+    // 브라우저 저장소 상태 초기화
+    localStorage.removeItem('user');
+    localStorage.removeItem('iwaslogged');
+
+    iwaslogged.value = false;
+  }
+};
+
+// 초기화 함수
+export const initializeUserState = () => {
+  const storedUser = localStorage.getItem('user');
+  const storedLoggedIn = localStorage.getItem('iwaslogged') === 'true';
+
+  if (storedUser) {
+    Object.assign(user, JSON.parse(storedUser));
+  }
+
+  iwaslogged.value = storedLoggedIn;
 };

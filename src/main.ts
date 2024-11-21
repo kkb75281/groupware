@@ -2,48 +2,13 @@ import './assets/less/main.less';
 
 import { createApp, ref } from 'vue';
 import { Skapi } from 'skapi-js';
-import { user, profileImage } from './user';
+import { loginCheck, initializeUserState } from './user';
 import App from './App.vue';
 import router from './router';
 
 const app = createApp(App);
 
-export let iwaslogged = false;
-
-let loginCheck = (profile: object) => {
-  if (profile) {
-    iwaslogged = true;
-
-    for (let k in user) {
-      delete user[k];
-    }
-
-    for (let k in profile) {
-      user[k] = profile[k];
-    }
-
-    if (user.picture) {
-      skapi
-        .getFile(user.picture, {
-          dataType: 'endpoint',
-        })
-        .then((res) => {
-          profileImage.value = res;
-        })
-        .catch((err) => {
-          window.alert('프로필 사진을 불러오는데 실패했습니다.');
-          throw err; // 의도적으로 에러 전달
-        });
-    } else {
-      profileImage.value = '';
-    }
-  } else {
-    if(iwaslogged) {
-      router.push({ name: 'login' });
-    }
-    iwaslogged = false;
-  }
-}
+initializeUserState();
 
 const skapi = new Skapi(
   'ap21UAo9MdRQtaQ8CmGr',
