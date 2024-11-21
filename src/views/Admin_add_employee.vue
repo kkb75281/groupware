@@ -225,16 +225,17 @@ let resigterEmp = (e) => {
                 _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
             }
 
+            // 직원을 초대한다.
             let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'}).catch(err => {
                 throw err;
             });
             // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
+
             // extract user id
             let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
             let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
 
             // 직원의 부서(회사)를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
-
             await skapi.postRecord(
                 {
                     position: _el_position.value // 직책(직급)
@@ -276,6 +277,7 @@ let resigterEmp = (e) => {
                         user_id: user_id
                     });
                 }
+                
                 // 자료방 reference record id 를 저장한다. 직원이 로그인해서 찾을수있게
                 await skapi.postRecord({ privateStorageReference: res.record_id }, {
                     table: {
