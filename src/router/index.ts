@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { user } from '@/user';
+import { user, initializeUserState } from '@/user';
 
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
@@ -30,7 +30,9 @@ const router = createRouter({
     {
       path: '/change-password',
       name: 'change-password',
-      beforeEnter: (to, from, next) => {
+      beforeEnter: async(to, from, next) => {
+        await initializeUserState();
+
         if (user.user_id) {
           next();
         } else {
@@ -52,7 +54,9 @@ const router = createRouter({
     {
       path: '/',
       component: Main,
-      beforeEnter: (to, from, next) => {
+      beforeEnter: async(to, from, next) => {
+        await initializeUserState();
+
         if (user.user_id) {
           next();
         } else {
