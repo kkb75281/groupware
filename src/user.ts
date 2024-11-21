@@ -17,8 +17,6 @@ export const loginCheck = (profile: object | null, router: any) => {
 
     iwaslogged.value = true;
   } else {
-    const router = useRouter();
-
     if (iwaslogged.value) {
       Object.assign(user, {});
       router.push({ name: 'login' });
@@ -33,7 +31,7 @@ export const loginCheck = (profile: object | null, router: any) => {
 };
 
 // 초기화 함수
-export const initializeUserState = () => {
+export const initializeUserState = async() => {
   const storedUser = localStorage.getItem('user');
   const storedLoggedIn = localStorage.getItem('iwaslogged') === 'true';
 
