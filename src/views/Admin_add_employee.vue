@@ -79,11 +79,16 @@ hr
 
         //- .input-wrap.upload-file
         //-     p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-        //-     input(type="file" name="additional_data" multiple @change="handleFileSelect")
-        //-         ul.file-list
-        //-             li(v-for="file in selectedFiles" :key="file.name")
-        //-             | {{ file.name }}
-        //-             button(@click="removeFile(file)") 삭제  
+        //-     //- .btn-upload-file(@click="uploadFile" :class="{'nonClickable' : loading}")
+        //-     .btn-upload-file
+        //-         input(type="file" id="file" name="additional_data" multiple @change="updateFileList")
+        //-         label.btn.outline(for="file") 파일찾기
+        //-     ul.file-list
+        //-         li.file-item
+        //-             a.file-link(href="#" target="_blank") 파일명
+        //-             button.btn-remove(@click="removeFile")
+        //-                 svg
+        //-                     use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
         br
 
@@ -113,28 +118,6 @@ import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
 const route = useRoute();
-
-// let selectedFiles = [];
-
-// let handleFileSelect = (event) => {
-//     // 현재 선택된 파일들
-//     const files = Array.from(event.target.files);
-
-//     // 기존 파일 리스트에 새 파일 추가 (중복 방지)
-//     files.forEach((file) => {
-//         if (!this.selectedFiles.find((f) => f.name === file.name)) {
-//             this.selectedFiles.push(file);
-//         }
-//     });
-
-//     // 파일 입력 초기화 (같은 파일 선택 가능)
-//     event.target.value = null;
-// }
-
-// let removeFile = (file) => {
-//     // 선택된 파일 삭제
-//     this.selectedFiles = this.selectedFiles.filter((f) => f !== file);
-// }
 
 let divisions = skapi.getRecords({
         table: {
@@ -413,5 +396,17 @@ let resigterEmp = (e) => {
     align-items: center;
     justify-content: end;
     gap: 8px;
+}
+
+.btn-upload-file {
+    .btn {
+        max-width: 100px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+}
+
+.file-list {
+    margin-top: 12px;
 }
 </style>

@@ -166,7 +166,8 @@ br
                 p.label 기타자료
                 ul.file-list
                     li.file-item
-                        button.btn.sm.bg-gray 파일1
+                        a.file-link(href="#" target="_blank") 파일명
+                        button.btn.sm.bg-gray.btn-remove(@click="removeFile") 삭제
                 //- input(type="email" name="" :value="selectedEmp?.phone_number || '-' " readonly)
         //- .modal-footer
         //-     button.btn.bg-gray(@click="closeModal") 닫기
@@ -209,6 +210,14 @@ let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
 };
+
+skapi.getRecords().then(res => {
+    for(let info in res.list) {
+        console.log('=== for === info : ', res.list[info].user_id);
+        console.log('=== for === info : ', res.list[info].user_id);
+    }
+    // console.log('=== getRecords === res : ', res.list);
+})
 
 watch(empListType, (nv) => {
     if(nv) {

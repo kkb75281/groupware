@@ -265,10 +265,28 @@
             margin-left: 4px;
         }
 
-        .file-list {
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 4px;
             border: 1px dashed var(--gray-color-300);
             border-radius: 8px;
-            padding: 8px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            color: var(--gray-color-500);
+        }
+
+        .file-link {
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+
+        svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--gray-color-500);
         }
     }
 
