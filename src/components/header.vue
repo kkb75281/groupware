@@ -175,6 +175,9 @@ onUnmounted(() => {
 
 let logout = () => {
 	skapi.logout().then(() => {
+		Object.assign(user, {});
+		localStorage.removeItem('user');
+    	localStorage.removeItem('iwaslogged');
         router.push({ path: "/login" });
     });
 }
