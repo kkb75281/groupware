@@ -112,8 +112,6 @@ import { convertToObject } from 'typescript';
 const router = useRouter();
 const route = useRoute();
 
-console.log(user)
-
 let access_group = {
     1: '직원',
     98: '관리자',
@@ -179,8 +177,26 @@ onMounted(async() => {
             },
             tag: user.user_id.replaceAll('-', '_'),
         }).then(r => {
+            console.log(r)
             userPosition.value = r?.list[0]?.data?.position;
         });
+
+        function makeSafe(str) {
+            return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+        }
+
+        let user_id_safe = makeSafe(user.user_id);
+
+        skapi.getRecords({
+            table: {
+                name: 'ref_ids',
+                access_group: 1
+            },
+            index: {
+                name: 'user_id',
+                value: user_id_safe
+            },
+        }).then(r => console.log(r))
     }
     if (user && user.picture) {
         // 프로필 사진 이미지를 보여준다. 보안키가 필요한 url 이니 skapi.getFile을 사용한다.

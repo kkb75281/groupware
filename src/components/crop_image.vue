@@ -224,5 +224,10 @@ dialog {
         width: calc(100% - 32px);
         height: calc(100% - 32px);
     }
+    .image-wrap {
+        .preview {
+            display: none;
+        }
+    }
 }
 </style>  
