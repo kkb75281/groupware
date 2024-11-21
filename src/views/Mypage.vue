@@ -112,6 +112,8 @@ import { convertToObject } from 'typescript';
 const router = useRouter();
 const route = useRoute();
 
+let uploadProfileSrc = ref(null);
+
 // user position 가져오기
 skapi.getRecords({
     table: {
@@ -132,16 +134,38 @@ function makeSafe(str) {
 }
 
 // user additional data 가져오기
+let misc = JSON.parse(user?.misc || null);
+
+// private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
+if(!misc?.private_record_id) {
+    skapi.getRecords({
+        table: {
+            name: 'ref_ids',
+            access_group: 1
+        },
+        index: {
+            name: 'user_id',
+            value: makeSafe(user.user_id)
+        },
+    }).then(r => {
+        skapi.updateProfile({
+            misc: JSON.stringify({ private_record_id: r.list[0].data.privateStorageReference })
+        });
+    });
+}
+
+let miscParse = JSON.parse(user.misc);
+
+// 추가자료 업로드 한 것 가져오기
 skapi.getRecords({
     table: {
-        name: 'ref_ids',
-        access_group: 1
+        name: 'emp_additional_data',
+        access_group: 99
     },
-    index: {
-        name: 'user_id',
-        value: makeSafe(user.user_id)
-    },
-}).then(r => console.log(r))
+    reference: miscParse.private_record_id
+}).then(r => {
+    console.log(r)
+})
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
 skapi.getFile(user.picture, {
@@ -170,12 +194,6 @@ let sendEmail = async() => {
         window.alert(err.message);
     }
     router.push('/verification');
-}
-
-let uploadProfileSrc = ref(null);
-
-if(profileImage.value) {
-    uploadProfileSrc.value = profileImage.value;
 }
 
 let getFileInfo = ref(null);
@@ -292,6 +310,12 @@ let registerMypage = async(e) => {
 }
 
 onMounted(async() => {
+    console.log(user.picture)
+    if(profileImage.value) {
+        uploadProfileSrc.value = profileImage.value;
+        console.log(profileImage.value)
+    }
+
     document.addEventListener('click', closeOptions);
 });
 
