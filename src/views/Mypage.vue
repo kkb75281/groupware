@@ -86,7 +86,16 @@
 
             .input-wrap.upload-file
                 p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-                input(type="file" name="additional_data" multiple :disabled="disabled")
+                //- input(type="file" name="additional_data" multiple :disabled="disabled")
+                .btn-upload-file
+                    input(type="file" id="file" name="additional_data" multiple @change="updateFileList" hidden)
+                    label.btn.outline(for="file") 파일찾기
+                ul.file-list
+                    li.file-item
+                        a.file-link(href="#" target="_blank") 파일명
+                        button.btn-remove(@click="removeFile")
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
             br
 
@@ -113,6 +122,7 @@ const router = useRouter();
 const route = useRoute();
 
 let uploadProfileSrc = ref(null);
+let uploadFile = ref([]);
 
 // user position 가져오기
 skapi.getRecords({
@@ -156,6 +166,8 @@ if(!misc?.private_record_id) {
 
 let miscParse = JSON.parse(user.misc);
 
+console.log('miscParse : ', miscParse);
+
 // 추가자료 업로드 한 것 가져오기
 skapi.getRecords({
     table: {
@@ -164,7 +176,7 @@ skapi.getRecords({
     },
     reference: miscParse.private_record_id
 }).then(r => {
-    console.log(r)
+    console.log('== getRecords == r : ', r.list[0].bin);
 })
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
@@ -486,5 +498,17 @@ onUnmounted(() => {
             height: 0.8rem;
         }
     }
+}
+
+.btn-upload-file {
+    .btn {
+        max-width: 100px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+}
+
+.file-list {
+    margin-top: 12px;
 }
 </style>
