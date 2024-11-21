@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { user, initializeUserState } from '@/user';
+import { user } from '@/user';
 
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
@@ -30,15 +30,6 @@ const router = createRouter({
     {
       path: '/change-password',
       name: 'change-password',
-      beforeEnter: async(to, from, next) => {
-        await initializeUserState();
-
-        if (user.user_id) {
-          next();
-        } else {
-          next({ name: 'login' });
-        }
-      },
       component: () => import('@/views/Change_password.vue')
     },
     {
@@ -54,15 +45,6 @@ const router = createRouter({
     {
       path: '/',
       component: Main,
-      beforeEnter: async(to, from, next) => {
-        await initializeUserState();
-
-        if (user.user_id) {
-          next();
-        } else {
-          next({ name: 'login' });
-        }
-      },
       children: [
         {
           path: '/',

@@ -1,12 +1,21 @@
 <template lang="pug">
-router-view
+router-view(v-if="route.name == 'login' || loaded")
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
+import { loaded, iwaslogged } from '@/main';
+import { user } from '@/user';
+import { watch } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
+
+watch(loaded, (nv) => {
+    if(nv && !iwaslogged.value && !Object.keys(user).length) {
+        router.push('/login');
+    }
+}, { immediate: true });
 </script>
 
 <style scoped lang="less">
