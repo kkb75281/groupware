@@ -16,8 +16,7 @@ export let loginCheck = async(profile: object | null, router: any) => {
     Object.assign(user, profile);
     
     if (user.picture) {
-      skapi
-      .getFile(user.picture, {
+      skapi.getFile(user.picture, {
         dataType: 'endpoint',
       })
       .then((res) => {

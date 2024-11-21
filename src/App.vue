@@ -1,5 +1,5 @@
 <template lang="pug">
-router-view(v-if="route.name == 'login' || loaded")
+router-view(v-if="loaded")
 </template>
 
 <script setup>
