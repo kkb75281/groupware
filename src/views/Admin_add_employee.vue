@@ -115,6 +115,7 @@ import { ref } from 'vue';
 import { skapi } from '@/main';
 
 import CropImage from '@/components/crop_image.vue';
+import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();

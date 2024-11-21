@@ -211,13 +211,13 @@ let closeModal = () => {
     selectedEmp.value = null;
 };
 
-skapi.getRecords().then(res => {
-    for(let info in res.list) {
-        console.log('=== for === info : ', res.list[info].user_id);
-        console.log('=== for === info : ', res.list[info].user_id);
-    }
-    // console.log('=== getRecords === res : ', res.list);
-})
+// skapi.getRecords().then(res => {
+//     for(let info in res.list) {
+//         console.log('=== for === info : ', res.list[info].user_id);
+//         console.log('=== for === info : ', res.list[info].user_id);
+//     }
+//     // console.log('=== getRecords === res : ', res.list);
+// })
 
 watch(empListType, (nv) => {
     if(nv) {
