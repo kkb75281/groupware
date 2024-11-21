@@ -2,6 +2,7 @@ import { useRouter } from 'vue-router';
 import { reactive, ref, computed } from 'vue';
 import { skapi } from '@/main';
 
+const router = useRouter();
 export let iwaslogged = ref(false);
 export let user: { [key: string]: any } = reactive({});
 export let verifiedEmail = computed(() => !user.email_verified);
