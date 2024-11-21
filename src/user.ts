@@ -12,8 +12,8 @@ export const loginCheck = (profile: object | null, router: any) => {
     Object.assign(user, profile);
 
     // 브라우저 저장소에 로그인 상태 저장
-    localStorage.setItem('user', JSON.stringify(profile));
-    localStorage.setItem('iwaslogged', 'true');
+    sessionStorage.setItem('user', JSON.stringify(profile));
+    sessionStorage.setItem('iwaslogged', 'true');
 
     iwaslogged.value = true;
   } else {
@@ -23,8 +23,8 @@ export const loginCheck = (profile: object | null, router: any) => {
     // }
 
     // 브라우저 저장소 상태 초기화
-    localStorage.removeItem('user');
-    localStorage.removeItem('iwaslogged');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('iwaslogged');
 
     iwaslogged.value = false;
   }
@@ -32,8 +32,8 @@ export const loginCheck = (profile: object | null, router: any) => {
 
 // 초기화 함수
 export const initializeUserState = async() => {
-  const storedUser = localStorage.getItem('user');
-  const storedLoggedIn = localStorage.getItem('iwaslogged') === 'true';
+  const storedUser = sessionStorage.getItem('user');
+  const storedLoggedIn = sessionStorage.getItem('iwaslogged') === 'true';
 
   if (storedUser) {
     Object.assign(user, JSON.parse(storedUser));
