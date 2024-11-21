@@ -87,19 +87,15 @@
             .input-wrap.upload-file
                 p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
                 //- input(type="file" name="additional_data" multiple :disabled="disabled")
-                .file-wrap
-                    .btn-upload-file
-                        input(type="file" id="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-                        label.btn.outline(for="file") 파일 업로드
-                    ul.file-list
-                        li.file-item(v-for="(file, index) in uploadFile" :key="index")
-                            a.file-name(:href="file.path" download) {{ file.filename }}
-                            button.btn-remove(@click="removeFile(file)")
-                                template(v-if="file.user_id !== user.user_id")
-                                    
-                                template(v-else)
-                                    svg
-                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+                .btn-upload-file
+                    input(type="file" id="file" name="additional_data" multiple @change="updateFileList" hidden)
+                    label.btn.outline(for="file") 파일찾기
+                ul.file-list
+                    li.file-item
+                        a.file-link(href="#" target="_blank") 파일명
+                        button.btn-remove(@click="removeFile")
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
             br
 
@@ -126,7 +122,7 @@ const router = useRouter();
 const route = useRoute();
 
 let uploadProfileSrc = ref(null);
-let uploadFile = ref({});
+let uploadFile = ref([]);
 
 // user position 가져오기
 skapi.getRecords({
@@ -170,6 +166,8 @@ if(!misc?.private_record_id) {
 
 let miscParse = JSON.parse(user.misc);
 
+console.log('miscParse : ', miscParse);
+
 // 추가자료 업로드 한 것 가져오기
 skapi.getRecords({
     table: {
@@ -178,20 +176,8 @@ skapi.getRecords({
     },
     reference: miscParse.private_record_id
 }).then(r => {
-    console.log('r : ', r)
-    uploadFile.value = r.list[0].bin.additional_data;
-
-    if(r.list[0].user_id !== user.user_id) {
-        console.log('아이디 다름');
-    } else {
-        console.log('아이디 같음');
-    }
-});
-
-// 업로드 파일 삭제
-let removeFile = (file) => {
-
-}
+    console.log('== getRecords == r : ', r.list[0].bin);
+})
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
 skapi.getFile(user.picture, {
@@ -199,7 +185,7 @@ skapi.getFile(user.picture, {
 }).then(res => {
     getFileInfo.value = res;
 }).catch(err => {
-    console.log('== getFile == err : ', err);
+    console.log('== getFile == err : ', err)
 });
 
 let access_group = {
@@ -512,5 +498,17 @@ onUnmounted(() => {
             height: 0.8rem;
         }
     }
+}
+
+.btn-upload-file {
+    .btn {
+        max-width: 100px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+}
+
+.file-list {
+    margin-top: 12px;
 }
 </style>
