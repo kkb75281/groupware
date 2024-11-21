@@ -17,10 +17,10 @@ export const loginCheck = (profile: object | null, router: any) => {
 
     iwaslogged.value = true;
   } else {
-    if (iwaslogged.value) {
-      Object.assign(user, {});
-      router.push({ name: 'login' });
-    }
+    // if (iwaslogged.value) {
+    //   Object.assign(user, {});
+    //   router.push({ name: 'login' });
+    // }
 
     // 브라우저 저장소 상태 초기화
     localStorage.removeItem('user');
