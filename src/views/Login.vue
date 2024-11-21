@@ -38,7 +38,7 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { user } from '@/user';
-import { skapi } from "@/main";
+import { skapi, iwaslogged } from "@/main";
 import { ref, watch, onMounted } from 'vue';
 
 const router = useRouter();
@@ -50,7 +50,7 @@ let promiseRunning = ref(false);
 let error = ref(null);
 let enableAccount = ref(false);
 
-skapi.logout();
+// skapi.logout();
 
 onMounted(() => {
     if (window.localStorage.getItem('remember') === 'true') {
@@ -71,7 +71,6 @@ let login = (e) => {
     promiseRunning.value = true;
 
     skapi.login(e).then(async (u) => {
-		// sessionStorage.setItem('user', JSON.stringify(u));
         router.push('/');
     }).catch(err => {
 		for (let k in user) {
@@ -93,6 +92,12 @@ let login = (e) => {
         promiseRunning.value = false;
     })
 };
+
+watch(iwaslogged, (nv) => {
+	if(nv && Object.keys(user).length > 0) {
+		router.push('/');
+	}
+}, { immediate: true });
 </script>
 
 <style scoped lang="less">
