@@ -107,8 +107,10 @@ watch(() => route.path, (newPath, oldPath) => {
             document.body.classList.toggle('open', isOpen.value);
         }
         if (newPath !== oldPath && !newPath.startsWith('/admin')) {
-            adminSubMenu.value.classList.remove('show');
-            showSubMenu.value = false;
+            if (adminSubMenu.value && adminSubMenu.value.classList.contains('show')) {
+                adminSubMenu.value.classList.remove('show');
+                showSubMenu.value = false;
+            }
         }
     }
 })
