@@ -31,9 +31,7 @@ const router = createRouter({
       path: '/change-password',
       name: 'change-password',
       beforeEnter: (to, from, next) => {
-        let savedUser = JSON.parse(sessionStorage.getItem('user'));
-      
-        if (savedUser?.user_id) {
+        if (user.user_id) {
           next();
         } else {
           next({ name: 'login' });
@@ -55,9 +53,7 @@ const router = createRouter({
       path: '/',
       component: Main,
       beforeEnter: (to, from, next) => {
-        let savedUser = JSON.parse(sessionStorage.getItem('user'));
-      
-        if (savedUser?.user_id) {
+        if (user.user_id) {
           next();
         } else {
           next({ name: 'login' });
