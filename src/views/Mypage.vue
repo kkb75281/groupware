@@ -112,6 +112,46 @@ import { convertToObject } from 'typescript';
 const router = useRouter();
 const route = useRoute();
 
+// user position 가져오기
+skapi.getRecords({
+    table: {
+        name: 'emp_division',
+        access_group: 'authorized',
+    },
+    tag: user.user_id.replaceAll('-', '_'),
+}).then(r => {
+    if(r.list.length === 0 && user.access_group === 99) {
+        userPosition.value = '마스터';
+    } else {
+        userPosition.value = r?.list[0]?.data?.position;
+    }
+});
+
+function makeSafe(str) {
+    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+}
+
+// user additional data 가져오기
+skapi.getRecords({
+    table: {
+        name: 'ref_ids',
+        access_group: 1
+    },
+    index: {
+        name: 'user_id',
+        value: makeSafe(user.user_id)
+    },
+}).then(r => console.log(r))
+
+// 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
+skapi.getFile(user.picture, {
+    dataType: 'info',
+}).then(res => {
+    getFileInfo.value = res;
+}).catch(err => {
+    console.log('== getFile == err : ', err)
+});
+
 let access_group = {
     1: '직원',
     98: '관리자',
@@ -133,6 +173,11 @@ let sendEmail = async() => {
 }
 
 let uploadProfileSrc = ref(null);
+
+if(profileImage.value) {
+    uploadProfileSrc.value = profileImage.value;
+}
+
 let getFileInfo = ref(null);
 
 let changeProfileImg = (e) => {
@@ -167,69 +212,6 @@ let closeOptions = (e) => {
         showOptions.value = false;
     }
 };
-
-onMounted(async() => {
-    if (user) {
-        skapi.getRecords({
-            table: {
-                name: 'emp_division',
-                access_group: 'authorized',
-            },
-            tag: user.user_id.replaceAll('-', '_'),
-        }).then(r => {
-            console.log(r)
-            userPosition.value = r?.list[0]?.data?.position;
-        });
-
-        function makeSafe(str) {
-            return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
-        }
-
-        let user_id_safe = makeSafe(user.user_id);
-
-        skapi.getRecords({
-            table: {
-                name: 'ref_ids',
-                access_group: 1
-            },
-            index: {
-                name: 'user_id',
-                value: user_id_safe
-            },
-        }).then(r => console.log(r))
-    }
-    if (user && user.picture) {
-        // 프로필 사진 이미지를 보여준다. 보안키가 필요한 url 이니 skapi.getFile을 사용한다.
-        skapi.getFile(user.picture, {
-            dataType: 'endpoint',
-        }).then(res=>{
-            document.getElementById('profile-img').src = res;
-            profileImage.value = res;
-            uploadProfileSrc.value = res;
-            // console.log('=== getFile === profileImage.value : ', profileImage.value);
-        }).catch(err=>{
-            window.alert('프로필 사진을 불러오는데 실패했습니다.');
-            throw err;	// 의도적으로 에러 전달
-        })
-
-        // 사용자가 올린 프로필 사진 레코드를 가져온다.
-        skapi.getFile(user.picture, {
-            dataType: 'info',
-        }).then(res => {
-            // console.log('== getFile == res : ', res)
-            getFileInfo.value = res;
-            // previous_profile_pic = res.record_id;
-        }).catch(err => {
-            // console.log('== getFile == err : ', err)
-        });
-    }
-
-    document.addEventListener('click', closeOptions);
-});
-
-onUnmounted(() => {
-    document.removeEventListener('click', closeOptions);
-});
 
 let startEdit = () => {
     for (let k in originUserProfile) {
@@ -308,6 +290,14 @@ let registerMypage = async(e) => {
     disabled.value = true;
     // router.push('/');
 }
+
+onMounted(async() => {
+    document.addEventListener('click', closeOptions);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', closeOptions);
+});
 </script>
 
 <style scoped lang="less">
