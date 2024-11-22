@@ -236,6 +236,16 @@ let resigterEmp = (e) => {
             let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
 
             // 직원의 부서(회사)를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
+            // await skapi.postRecord(
+            //     null,
+            //     {
+            //         table: {
+            //             name: 'emp_division',
+            //             access_group: 1
+            //         },
+            //         tags: [_el_position.value, "_uid_" + user_id_safe, "_div_A"] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
+            //     }
+            // )
             await skapi.postRecord(
                 {
                     position: _el_position.value // 직책(직급)
