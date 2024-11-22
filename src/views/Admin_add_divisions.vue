@@ -205,6 +205,24 @@ let resigterComp = (e) => {
             formData.append(key, croppedImages.value[key], `${key}.jpg`);
         });
     }
+    
+    // skapi.postRecord({
+    //     'A1': "이름",
+    //     'A2': "부서(회사)명",
+    // }, {
+    //     table: {
+    //         name: 'divisionNames',
+    //         access_group: 1
+    //     }
+    // })
+
+    // //직원
+    // skapi.getRecords({
+    //     table: {
+    //         name: 'divisionNames',
+    //         access_group: 1
+    //     },
+    // })
 
     //form data에 이미지 파일 추가
     skapi.postRecord(formData, {
