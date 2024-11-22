@@ -386,6 +386,14 @@ onMounted(async() => {
         uploadProfileSrc.value = profileImage.value;
     }
 
+    skapi.getFile(user.picture, {
+        dataType: 'endpoint',
+    }).then(res => {
+        uploadProfileSrc.value = res;
+    }).catch(err => {
+        console.log('== getFile == err : ', err)
+    });
+
     document.addEventListener('click', closeOptions);
 });
 
