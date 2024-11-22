@@ -175,15 +175,17 @@ br
                 p.label 기타자료
                 .file-wrap
                     ul.file-list
-                        li.file-item(v-for="(file, index) in uploadFile" :key="index")
-                            a.file-name(:href="file.path" download) {{ file.filename }}
-                            button.btn-remove(@click="removeFile(file)")
-                                template(v-if="file.user_id !== user.user_id")
-                                    
-                                template(v-else)
-                                    svg
-                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-                    //- input(type="email" name="" :value="selectedEmp?.phone_number || '-' " readonly)
+                        template(v-if="uploadFile.length === 0")
+                            li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
+                        template(v-else)
+                            li.file-item(v-for="(file, index) in uploadFile" :key="index")
+                                a.file-name(:href="file.path" download) {{ file.filename }}
+                                button.btn-remove(@click="removeFile(file)")
+                                    template(v-if="uploadFile.user_id !== user.user_id")
+                                        
+                                    template(v-else)
+                                        svg
+                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
         //- .modal-footer
         //-     button.btn.bg-gray(@click="closeModal") 닫기
 </template>
@@ -217,6 +219,7 @@ let isModalOpen = ref(false);
 let selectedEmp = ref(null);
 let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
+let uploadFile = ref({});
 
 let callParams = computed(() => {
     switch (searchFor.value) {
@@ -285,7 +288,54 @@ let openModal = (emp: { [key: string]: any }) => {
         });
     }
     isModalOpen.value = true;
-    console.log('selectedEmp', selectedEmp.value);
+    
+    // user additional data 가져오기
+    let misc = JSON.parse(selectedEmp.value?.misc || null);
+
+    // private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
+    if(!misc?.private_record_id) {
+        skapi.getRecords({
+            table: {
+                name: 'ref_ids',
+                access_group: 1
+            },
+            index: {
+                name: 'user_id',
+                value: makeSafe(selectedEmp.value?.user_id)
+            },
+        }).then(r => {
+            if(r.list.length === 0) {
+                return;
+            }
+
+            skapi.updateProfile({
+                misc: JSON.stringify({ private_record_id: r.list[0].data.privateStorageReference })
+            });
+        });
+    } 
+    
+    if(!selectedEmp.value?.misc) {
+        uploadFile.value = [];
+        return;
+    }
+
+    let miscParse = JSON.parse(selectedEmp.value?.misc);
+
+    // 추가자료 업로드 한 것 가져오기
+    skapi.getRecords({
+        table: {
+            name: 'emp_additional_data',
+            access_group: 99,
+        },
+        reference: miscParse.private_record_id,
+    }).then((r) => {
+        if (r.list.length === 0) {
+            return;
+        }
+
+        uploadFile.value = r.list[0].bin.additional_data;
+        uploadFile.value.user_id = r.list[0].user_id;
+    });
 };
 
 let closeModal = () => {
@@ -540,56 +590,12 @@ let cancelInvite = (employee_info) => {
     });
 }
 
-// user additional data 가져오기
-// for(let i in employee.value) {
-//     let misc = JSON.parse(employee.value[i]?.misc || null);
-//     console.log('employee.value[i] : ', employee.value[i]);
-
-//     // private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
-//     if(!misc?.private_record_id) {
-//         skapi.getRecords({
-//             table: {
-//                 name: 'ref_ids',
-//                 access_group: 1
-//             },
-//             index: {
-//                 name: 'user_id',
-//                 value: makeSafe(employee.value[i]?.user_id)
-//             },
-//         }).then(r => {
-//             skapi.updateProfile({
-//                 misc: JSON.stringify({ private_record_id: r.list[0].data.privateStorageReference })
-//             });
-//         });
-//     }
-
-//     let miscParse = JSON.parse(employee.value[i]?.misc);
-
-//     // 추가자료 업로드 한 것 가져오기
-//     skapi.getRecords({
-//         table: {
-//             name: 'emp_additional_data',
-//             access_group: 99
-//         },
-//         reference: miscParse.private_record_id
-//     }).then(r => {
-//         console.log('r : ', r)
-//         uploadFile.value = r.list[0].bin.additional_data;
-
-//         if(r.list[0].user_id !== user.user_id) {
-//             console.log('아이디 다름');
-//         } else {
-//             console.log('아이디 같음');
-//         }
-//     });
-// }
-
 
 
 
 // 업로드 파일 삭제
 let removeFile = (file) => {
-
+    console.log('uploadFile : ', uploadFile.value);
 }
 
 // let goToDetailEmp = (emp) => {

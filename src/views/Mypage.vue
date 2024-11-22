@@ -96,14 +96,18 @@
                             //- label.btn.outline(for="file") 파일 업로드
                     
                     ul.file-list
-                        li.file-item(v-for="(file, index) in uploadFile" :key="index")
-                            a.file-name(:href="file.path" download) {{ file.filename }}
-                            button.btn-remove(@click="removeFile(file)")
-                                template(v-if="file.user_id !== user.user_id")
-                                    
-                                template(v-else)
-                                    svg
-                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+                        template(v-if="uploadFile.length > 0")
+                            li.file-item(v-for="(file, index) in uploadFile" :key="index")
+                                a.file-name(:href="file.path" download) {{ file.filename }}
+                                button.btn-remove(@click="removeFile(file)")
+                                    template(v-if="file.user_id !== user.user_id")
+                                        
+                                    template(v-else)
+                                        svg
+                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+                        
+                        template(v-if="uploadFile.length === 0")
+                            p.text 업로드 된 자료가 없습니다.
 
             br
 
@@ -169,6 +173,9 @@ function makeSafe(str) {
 
 // user additional data 가져오기
 let misc = JSON.parse(user?.misc || null);
+
+console.log('misc : ', misc);
+
 // private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
 if(!misc?.private_record_id) {
     skapi.getRecords({
@@ -191,7 +198,11 @@ if(!misc?.private_record_id) {
     });
 }
 
+console.log('user : ', user);
+
 let miscParse = JSON.parse(user.misc);
+
+console.log('miscParse : ', miscParse);
 
 // 추가자료 업로드 한 것 가져오기
 skapi.getRecords({
@@ -201,9 +212,14 @@ skapi.getRecords({
     },
     reference: miscParse.private_record_id
 }).then(r => {
-    console.log(r)
+    if(r.list.length === 0) {
+        return;
+    } else {
+        uploadFile.value = r.list[0].bin.additional_data;
+    }
 
-    uploadFile.value = r.list[0].bin.additional_data;
+    // uploadFile.value = r.list[0].bin.additional_data;
+
 
     if(r.list[0].user_id !== user.user_id) {
         console.log('아이디 다름');
@@ -378,7 +394,6 @@ let registerMypage = async(e) => {
 
 // 업로드 파일 삭제
 let removeFile = () => {
-
 }
 
 onMounted(async() => {
@@ -386,13 +401,13 @@ onMounted(async() => {
         uploadProfileSrc.value = profileImage.value;
     }
 
-    skapi.getFile(user.picture, {
-        dataType: 'endpoint',
-    }).then(res => {
-        uploadProfileSrc.value = res;
-    }).catch(err => {
-        console.log('== getFile == err : ', err)
-    });
+    // skapi.getFile(user.picture, {
+    //     dataType: 'endpoint',
+    // }).then(res => {
+    //     uploadProfileSrc.value = res;
+    // }).catch(err => {
+    //     console.log('== getFile == err : ', err)
+    // });
 
     document.addEventListener('click', closeOptions);
 });
