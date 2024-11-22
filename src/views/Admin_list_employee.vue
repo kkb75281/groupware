@@ -1,20 +1,27 @@
 <template lang="pug">
-h1.title 직원 목록
+div(style="display: flex; gap: 1rem")
+    h1.title 직원 목록
+    .input-wrap(v-if="user.access_group > 98")
+        select(v-model="empListType")
+            option(value="직원목록") 직원목록
+            option(value="초청여부") 초청여부
+            option(value="숨김여부") 숨김여부
 
 hr
 
 .table-wrap
     .tb-head-wrap
-        .input-wrap.search
-            input(type="text" placeholder="검색어를 입력하세요")
-            button.btn-search
+        form#searchForm(@submit.prevent="searchEmp")
+            .input-wrap
+                select(v-model="searchFor")
+                    option(value="name") 이름
+                    option(value="access_group") 직급/직책
+                    option(value="email") 이메일
+            .input-wrap.search
+                input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요")
+                button.btn-search
 
         template(v-if="user.access_group > 98")
-            .input-wrap
-                    select(v-model="empListType")
-                        option(value="직원목록") 직원목록
-                        option(value="초청여부") 초청여부
-                        option(value="숨김여부") 숨김여부
             .tb-toolbar
                 .btn-wrap
                     template(v-if="empListType === '직원목록'")
@@ -132,7 +139,7 @@ br
         .modal-body
             #_el_pictureForm
                 .image
-                    img#profile-img(:src="uploadProfileSrc" alt="profile image")
+                    img#profile-img(:src="selectedEmp?.picture" alt="profile image")
 
             .input-wrap
                 p.label 직책
@@ -179,11 +186,12 @@ br
         //-     button.btn.bg-gray(@click="closeModal") 닫기
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
+import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
 
@@ -205,10 +213,82 @@ let employee = ref([]);
 let suspendedLength = ref(0);
 let isModalOpen = ref(false);
 let selectedEmp = ref(null);
-let uploadFile = ref({});
+let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
+let searchValue = ref('');
 
-let openModal = (emp) => {
+let callParams = computed(() => {
+    switch (searchFor.value) {
+        case 'name':
+            return {
+                searchFor: 'name',
+                value: searchValue.value,
+                condition: '>='
+            };
+        case 'access_group':
+            return {
+                searchFor: 'access_group',
+                value: searchValue.value,
+                condition: '='
+            };
+        case 'email':
+            return {
+                searchFor: 'email',
+                value: searchValue.value,
+                condition: '='
+            };
+        // case 'timestamp':
+        //     return {
+        //         searchFor: 'timestamp',
+        //         value: new Date().getTime(),
+        //         condition: '<='
+        //     };
+    }
+    // return {
+    //     searchFor: searchFor.value,
+    //     value: new Date().getTime(),
+    //     condition: '='
+    // };
+});
+
+let searchEmp = async() => {
+    loading.value = true;
+
+    if (!searchValue.value) {
+        searchFor.value = 'name';
+        callParams.value.searchFor = 'timestamp';
+        callParams.value.value = new Date().getTime();
+        callParams.value.condition = '<=';
+    }
+
+    let fetchedData = await skapi.getUsers(callParams.value, { ascending: !searchValue.value ? false : true }).catch((err) => {
+        loading.value = false;
+        alert(err);
+    });
+
+    // console.log(fetchedData);
+    
+    if(fetchedData) {
+        employee.value = fetchedData.list;
+        // displayEmployee(fetchedData.list);
+    }
+    
+    loading.value = false;
+}
+
+let openModal = (emp: { [key: string]: any }) => {
     selectedEmp.value = emp;
+    if(emp.picture) {
+        skapi.getFile(emp.picture, {
+            dataType: 'endpoint',
+        })
+        .then((res: any) => {  
+            emp.picture = res;
+        })
+        .catch((err: Error) => {
+            window.alert('프로필 사진을 불러오는데 실패했습니다.');
+            throw err;
+        });
+    }
     isModalOpen.value = true;
     console.log('selectedEmp', selectedEmp.value);
 };
@@ -520,6 +600,12 @@ let removeFile = (file) => {
         top: 126px;
         left: 50%;
         transform: translateX(-50%);
+    }
+
+    #searchForm {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 }
 
