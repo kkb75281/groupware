@@ -146,21 +146,22 @@ let showOptions = ref(false);
 
 
 // user position 가져오기
-skapi.getRecords(
-    {
-        table: {
-            name: 'emp_division',
-            access_group: 'authorized',
-        },
-    }).then(r => {
-        if(r.list.length === 0 && user.access_group === 99) {
-            userPosition.value = '마스터';
-        } else {
-            userPosition.value = r?.list[0]?.data?.position;
-        }
-    }).catch(err => {
-        console.log('== getRecords == err : ', err);
-});
+// skapi.getRecords(
+//     {
+//         table: {
+//             name: 'emp_division',
+//             access_group: 'authorized',
+//         },
+//     }).then(r => {
+//         console.log(r.list, user.access_group);
+//         if(r.list.length === 0 && user.access_group === 99) {
+//             userPosition.value = '마스터';
+//         } else {
+//             userPosition.value = r?.list[0]?.data?.position;
+//         }
+//     }).catch(err => {
+//         console.log('== getRecords == err : ', err);
+// });
 
 function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
@@ -211,17 +212,6 @@ skapi.getFile(user.picture, {
 }).catch(err => {
     console.log('== getFile == err : ', err)
 });
-
-let access_group = {
-    1: '직원',
-    98: '관리자',
-    99: '마스터',
-};
-
-let disabled = ref(true);
-let userPosition = ref(null);
-let originUserProfile = {};
-let onlyEmail = ref(false);
 
 let sendEmail = async() => {
     try {
