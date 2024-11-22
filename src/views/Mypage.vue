@@ -202,6 +202,14 @@ skapi.getRecords({
     reference: miscParse.private_record_id
 }).then(r => {
     console.log(r)
+
+    uploadFile.value = r.list[0].bin.additional_data;
+
+    if(r.list[0].user_id !== user.user_id) {
+        console.log('아이디 다름');
+    } else {
+        console.log('아이디 같음');
+    }
 })
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
@@ -366,6 +374,11 @@ let registerMypage = async(e) => {
     onlyEmail.value = false;
     disabled.value = true;
     // router.push('/');
+}
+
+// 업로드 파일 삭제
+let removeFile = () => {
+
 }
 
 onMounted(async() => {
