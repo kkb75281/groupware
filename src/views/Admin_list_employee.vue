@@ -136,7 +136,7 @@ br
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="" :value="selectedEmp?.name || '-' " readonly)
+                input(type="text" name="" :value="selectedEmp?.position || '-' " readonly)
 
             .input-wrap
                 p.label 권한
@@ -164,11 +164,17 @@ br
 
             .input-wrap.upload-file
                 p.label 기타자료
-                ul.file-list
-                    li.file-item
-                        a.file-link(href="#" target="_blank") 파일명
-                        button.btn.sm.bg-gray.btn-remove(@click="removeFile") 삭제
-                //- input(type="email" name="" :value="selectedEmp?.phone_number || '-' " readonly)
+                .file-wrap
+                    ul.file-list
+                        li.file-item(v-for="(file, index) in uploadFile" :key="index")
+                            a.file-name(:href="file.path" download) {{ file.filename }}
+                            button.btn-remove(@click="removeFile(file)")
+                                template(v-if="file.user_id !== user.user_id")
+                                    
+                                template(v-else)
+                                    svg
+                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+                    //- input(type="email" name="" :value="selectedEmp?.phone_number || '-' " readonly)
         //- .modal-footer
         //-     button.btn.bg-gray(@click="closeModal") 닫기
 </template>
@@ -199,6 +205,7 @@ let employee = ref([]);
 let suspendedLength = ref(0);
 let isModalOpen = ref(false);
 let selectedEmp = ref(null);
+let uploadFile = ref({});
 
 let openModal = (emp) => {
     selectedEmp.value = emp;
@@ -210,14 +217,6 @@ let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
 };
-
-// skapi.getRecords().then(res => {
-//     for(let info in res.list) {
-//         console.log('=== for === info : ', res.list[info].user_id);
-//         console.log('=== for === info : ', res.list[info].user_id);
-//     }
-//     // console.log('=== getRecords === res : ', res.list);
-// })
 
 watch(empListType, (nv) => {
     if(nv) {
@@ -440,13 +439,65 @@ let cancelInvite = (employee_info) => {
     });
 }
 
-let goToDetailEmp = (emp) => {
-    router.push({ name: 'employee-data', params: { 
-            userId: emp.user_id, 
-            name: emp.name,
-            accessGroup: emp.access_group 
-        } });
-};
+// user additional data 가져오기
+// for(let i in employee.value) {
+//     let misc = JSON.parse(employee.value[i]?.misc || null);
+//     console.log('employee.value[i] : ', employee.value[i]);
+
+//     // private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
+//     if(!misc?.private_record_id) {
+//         skapi.getRecords({
+//             table: {
+//                 name: 'ref_ids',
+//                 access_group: 1
+//             },
+//             index: {
+//                 name: 'user_id',
+//                 value: makeSafe(employee.value[i]?.user_id)
+//             },
+//         }).then(r => {
+//             skapi.updateProfile({
+//                 misc: JSON.stringify({ private_record_id: r.list[0].data.privateStorageReference })
+//             });
+//         });
+//     }
+
+//     let miscParse = JSON.parse(employee.value[i]?.misc);
+
+//     // 추가자료 업로드 한 것 가져오기
+//     skapi.getRecords({
+//         table: {
+//             name: 'emp_additional_data',
+//             access_group: 99
+//         },
+//         reference: miscParse.private_record_id
+//     }).then(r => {
+//         console.log('r : ', r)
+//         uploadFile.value = r.list[0].bin.additional_data;
+
+//         if(r.list[0].user_id !== user.user_id) {
+//             console.log('아이디 다름');
+//         } else {
+//             console.log('아이디 같음');
+//         }
+//     });
+// }
+
+
+
+
+// 업로드 파일 삭제
+let removeFile = (file) => {
+
+}
+
+// let goToDetailEmp = (emp) => {
+//     router.push({ name: 'employee-data', params: { 
+//             userId: emp.user_id, 
+//             name: emp.name,
+//             accessGroup: emp.access_group 
+//         } });
+// };
 </script>
 
 <style scoped lang="less">

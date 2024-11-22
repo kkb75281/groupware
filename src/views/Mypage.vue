@@ -86,11 +86,15 @@
 
             .input-wrap.upload-file
                 p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-                //- input(type="file" name="additional_data" multiple :disabled="disabled")
                 .file-wrap
-                    .btn-upload-file
-                        input(type="file" id="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-                        label.btn.outline(for="file") 파일 업로드
+                    template(v-if="disabled")
+
+                    template(v-else)
+                        .btn-upload-file
+                            input(type="file" name="additional_data" multiple :disabled="disabled")
+                            //- input(type="file" id="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                            //- label.btn.outline(for="file") 파일 업로드
+                    
                     ul.file-list
                         li.file-item(v-for="(file, index) in uploadFile" :key="index")
                             a.file-name(:href="file.path" download) {{ file.filename }}
@@ -129,18 +133,20 @@ let uploadProfileSrc = ref(null);
 let uploadFile = ref({});
 
 // user position 가져오기
-skapi.getRecords({
-    table: {
-        name: 'emp_division',
-        access_group: 'authorized',
-    },
-    tag: user.user_id.replaceAll('-', '_'),
-}).then(r => {
-    if(r.list.length === 0 && user.access_group === 99) {
-        userPosition.value = '마스터';
-    } else {
-        userPosition.value = r?.list[0]?.data?.position;
-    }
+skapi.getRecords(
+    {
+        table: {
+            name: 'emp_division',
+            access_group: 'authorized',
+        },
+    }).then(r => {
+        if(r.list.length === 0 && user.access_group === 99) {
+            userPosition.value = '마스터';
+        } else {
+            userPosition.value = r?.list[0]?.data?.position;
+        }
+    }).catch(err => {
+        console.log('== getRecords == err : ', err);
 });
 
 function makeSafe(str) {
@@ -189,14 +195,15 @@ skapi.getRecords({
 });
 
 // 업로드 파일 삭제
-let removeFile = (file) => {
+// let removeFile = (file) => {
 
-}
+// }
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
 skapi.getFile(user.picture, {
     dataType: 'info',
 }).then(res => {
+    console.log('== getFile == res : ', res);
     getFileInfo.value = res;
 }).catch(err => {
     console.log('== getFile == err : ', err);
@@ -320,6 +327,45 @@ let registerMypage = async(e) => {
         _el_picture_input.value = null;
         profile_pic_postParams.remove_bin = null;
         await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
+    }
+
+    if(document.querySelector('input[name=additional_data]').files.length) {
+        console.log('파일 있음');
+        // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
+        await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
+            table: {
+                name: 'emp_additional_data',
+                access_group: 99
+            },
+            reference: miscParse.private_record_id, // 자료방 레코드 id
+        }).then(res => {
+            console.log('추가자료 업로드 === postRecord === res : ', res);
+            console.log('추가자료 업로드 === postRecord === miscParse.private_record_id : ', miscParse.private_record_id);
+        }).catch(err => {
+            console.log('추가자료 업로드 === postRecord === err : ', err);
+            throw new Error('추가자료 업로드 실패');
+        });
+
+        // 추가자료 업로드 한 것 가져오기
+        skapi.getRecords({
+            table: {
+                name: 'emp_additional_data',
+                access_group: 99
+            },
+            reference: miscParse.private_record_id
+        }).then(r => {
+            console.log('직원이 추가자료 업로드 : ', r)
+
+            uploadFile.value = r.list[0].bin.additional_data;
+
+            if(r.list[0].user_id !== user.user_id) {
+                console.log('아이디 다름');
+            } else {
+                console.log('아이디 같음');
+            }
+        });
+    } else {
+        console.log('파일 없음');
     }
 
     // 프로필 정보를 업데이트한다.
@@ -510,6 +556,36 @@ onUnmounted(() => {
         &::before {
             width: 0.8rem;
             height: 0.8rem;
+        }
+    }
+}
+
+.input-wrap {
+    &.upload-file {
+        .btn-upload-file + .file-list {
+            .file-item {
+                // width: 444px;
+            }
+        }
+        
+        .file-item {
+            width: 651px;
+        }
+    }
+}
+
+@media (max-width: 682px) {
+    .input-wrap {
+        &.upload-file {
+            .btn-upload-file + .file-list {
+                .file-item {
+                    width: 100%;
+                }
+            }
+
+            .file-item {
+                width: 100%;
+            }
         }
     }
 }
