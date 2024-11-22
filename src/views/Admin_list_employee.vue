@@ -13,12 +13,12 @@ hr
     .tb-head-wrap
         form#searchForm(@submit.prevent="searchEmp")
             .input-wrap
-                select(v-model="searchFor")
+                select(v-model="searchFor" :disabled="empListType !== '직원목록'")
                     option(value="name") 이름
-                    option(value="access_group") 직급/직책
+                    option(value="access_group") 부서
                     option(value="email") 이메일
             .input-wrap.search
-                input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요")
+                input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요" :disabled="empListType !== '직원목록'")
                 button.btn-search
 
         template(v-if="user.access_group > 98")
@@ -42,9 +42,8 @@ hr
                 col(style="width: 3rem;")
                 col(style="width: 5rem;")
                 col(style="width: 10%;")
+                col(style="width: 10%;")
                 col(style="width: 25%;")
-                template(v-if='empListType === "직원목록" || empListType === "숨김여부"')
-                
                 template(v-if='empListType === "초청여부"')
                     col(style="width: 11%;")
                 template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
@@ -60,10 +59,9 @@ hr
                             span.label-checkbox
                     th(scope="col") NO
                     th(scope="col") 직책(직급)
+                    th(scope="col") 부서
                     th(scope="col") 이름
                     th(scope="col") 이메일
-                    template(v-if='empListType === "직원목록" || empListType === "숨김여부"')
-
                     template(v-if='empListType === "초청여부"')
                         th(scope="col") 초청여부
                     template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
@@ -86,7 +84,11 @@ hr
                                     input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
                                     span.label-checkbox
                             td.list-num {{ index + 1 }}
-                            td {{ emp.access_group }}
+                            td {{ emp.position }}
+                            td {{ emp.division }}
+                                //- template(v-if="Object.keys(empInfo).includes(emp.user_id)") {{ empInfo[emp.user_id]?.division }}
+                                //- template(v-else) ...
+                            //- td {{ emp.user_id }}
                             td {{ emp.name }}
                             td {{ emp.email }}
                             template(v-if='user.access_group > 98')
@@ -188,7 +190,7 @@ br
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onScopeDispose } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import type { Ref } from 'vue';
@@ -236,18 +238,7 @@ let callParams = computed(() => {
                 value: searchValue.value,
                 condition: '='
             };
-        // case 'timestamp':
-        //     return {
-        //         searchFor: 'timestamp',
-        //         value: new Date().getTime(),
-        //         condition: '<='
-        //     };
     }
-    // return {
-    //     searchFor: searchFor.value,
-    //     value: new Date().getTime(),
-    //     condition: '='
-    // };
 });
 
 let searchEmp = async() => {
@@ -265,11 +256,15 @@ let searchEmp = async() => {
         alert(err);
     });
 
-    // console.log(fetchedData);
-    
     if(fetchedData) {
+        // if(empListType.value === '직원목록') {
+        //     employee.value = fetchedData.list.filter(emp => emp.approved.includes('approved'));
+        // } else if(empListType.value === '숨김여부') {
+        //     employee.value = fetchedData.list.filter(emp => emp.approved.includes('suspended'));
+        // } else if(empListType.value === '초청여부') {
+        //     employee.value = fetchedData.list;
+        // }
         employee.value = fetchedData.list;
-        // displayEmployee(fetchedData.list);
     }
     
     loading.value = false;
@@ -298,6 +293,8 @@ let closeModal = () => {
     selectedEmp.value = null;
 };
 
+let empInfo: {[key:string]: any} = ref({});
+
 watch(empListType, (nv) => {
     if(nv) {
         // checkbox reset
@@ -306,11 +303,34 @@ watch(empListType, (nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-            if (!sessionEmployee) {
+            if (sessionEmployee) {
                 loading.value = true;
 
-                skapi.getUsers().then(res => {
+                skapi.getUsers().then(async(res) => {
                     let list = res.list.filter(emp => emp.approved.includes('approved'));
+
+                    // console.log(list)
+                    await skapi.getRecords({
+                        table: {
+                            name: 'emp_division',
+                            access_group: 1
+                        }
+                    }).then(async(r) => {
+                        console.log(r)
+                        for(let record of r.list) {
+                            let key = (record.index.value).replace(/_/g, '-');
+                            empInfo.value[key] = {
+                                division: record.record_id,
+                                position: record.data.position
+                            }
+                        }
+                        res.list.forEach(emp => {
+                            if(Object.keys(empInfo.value).includes(emp.user_id)) {
+                                emp.division = empInfo.value[emp.user_id].division;
+                                emp.position = empInfo.value[emp.user_id].position;
+                            }
+                        });
+                    });
 
                     employee.value = list;
                     displayEmployee(res.list);
@@ -318,6 +338,7 @@ watch(empListType, (nv) => {
                 });
             } else {
                 employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved'));
+
             }
         } else if (nv === '숨김여부') {
             let list = JSON.parse(window.sessionStorage.getItem('employee'))
