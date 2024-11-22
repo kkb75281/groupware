@@ -112,7 +112,20 @@ import { convertToObject } from 'typescript';
 const router = useRouter();
 const route = useRoute();
 
+let optionsBtn = ref(null);
+let getFileInfo = ref(null);
+let userPosition = ref(null);
 let uploadProfileSrc = ref(null);
+let originUserProfile = {};
+let access_group = {
+    1: '직원',
+    98: '관리자',
+    99: '마스터',
+};
+let disabled = ref(true);
+let onlyEmail = ref(false);
+let showOptions = ref(false);
+
 
 // user position 가져오기
 skapi.getRecords({
@@ -135,7 +148,6 @@ function makeSafe(str) {
 
 // user additional data 가져오기
 let misc = JSON.parse(user?.misc || null);
-
 // private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
 if(!misc?.private_record_id) {
     skapi.getRecords({
@@ -148,44 +160,41 @@ if(!misc?.private_record_id) {
             value: makeSafe(user.user_id)
         },
     }).then(r => {
+        if(r.list.length === 0) {
+            return;
+        }
+
         skapi.updateProfile({
-            misc: JSON.stringify({ private_record_id: r.list[0].data.privateStorageReference })
+            misc: JSON.stringify({ private_record_id: r.list[0]?.data?.privateStorageReference })
         });
     });
+} else {
+    let miscParse = JSON.parse(user.misc);
+    
+    // 추가자료 업로드 한 것 가져오기
+    skapi.getRecords({
+        table: {
+            name: 'emp_additional_data',
+            access_group: 99
+        },
+        reference: miscParse.private_record_id
+    }).then(r => {
+        console.log(r)
+    })
 }
 
-let miscParse = JSON.parse(user.misc);
-
-// 추가자료 업로드 한 것 가져오기
-skapi.getRecords({
-    table: {
-        name: 'emp_additional_data',
-        access_group: 99
-    },
-    reference: miscParse.private_record_id
-}).then(r => {
-    console.log(r)
-})
-
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
-skapi.getFile(user.picture, {
-    dataType: 'info',
-}).then(res => {
-    getFileInfo.value = res;
-}).catch(err => {
-    console.log('== getFile == err : ', err)
-});
-
-let access_group = {
-    1: '직원',
-    98: '관리자',
-    99: '마스터',
-};
-
-let disabled = ref(true);
-let userPosition = ref(null);
-let originUserProfile = {};
-let onlyEmail = ref(false);
+if(!user.picture) {
+    getFileInfo.value = null;
+} else {
+    skapi.getFile(user.picture, {
+        dataType: 'info',
+    }).then(res => {
+        getFileInfo.value = res;
+    }).catch(err => {
+        console.log('== getFile == err : ', err)
+    });
+}
 
 let sendEmail = async() => {
     try {
@@ -195,8 +204,6 @@ let sendEmail = async() => {
     }
     router.push('/verification');
 }
-
-let getFileInfo = ref(null);
 
 let changeProfileImg = (e) => {
     let file = e.target.files[0];
@@ -210,8 +217,6 @@ let changeProfileImg = (e) => {
     }
 }
 
-let showOptions = ref(false);
-
 let selectFile = () => {
     showOptions.value = false;
     document.getElementById('_el_file_input').click();
@@ -222,8 +227,6 @@ let setToDefault = () => {
     uploadProfileSrc.value = null;
     _el_file_input.value = '';
 }
-
-let optionsBtn = ref(null);
 
 let closeOptions = (e) => {
     if (showOptions.value && !optionsBtn.value.contains(e.target)) {
@@ -310,10 +313,8 @@ let registerMypage = async(e) => {
 }
 
 onMounted(async() => {
-    console.log(user.picture)
     if(profileImage.value) {
         uploadProfileSrc.value = profileImage.value;
-        console.log(profileImage.value)
     }
 
     document.addEventListener('click', closeOptions);
