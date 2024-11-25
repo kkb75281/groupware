@@ -76,7 +76,7 @@ hr
                     tr
                         td(colspan="9") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee" @dblclick="goToDetailEmp(emp)")
+                    tr(v-for="(emp, index) in employee")
                         //- 직원목록/숨김여부
                         template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
                             td
@@ -176,7 +176,7 @@ br
                 p.label 기타자료
                 .file-wrap
                     ul.file-list
-                        template(v-if="uploadFile.length === 0")
+                        template(v-if="!uploadFile")
                             li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
                         template(v-else)
                             li.file-item(v-for="(file, index) in uploadFile" :key="index")
@@ -203,14 +203,14 @@ import Loading from '@/components/loading.vue';
 let router = useRouter();
 let route = useRoute();
 
-skapi.getRecords({
-    table: {
-        name: 'divisionNames',
-        access_group: 1
-    },
-}).then(r => {
-    console.log(r.list[0])
-})
+// skapi.getRecords({
+//     table: {
+//         name: 'divisionNames',
+//         access_group: 1
+//     },
+// }).then(r => {
+//     console.log(r.list[0])
+// })
 
 let loading = ref(false);
 let currentPage = ref(1);
@@ -229,7 +229,7 @@ let isModalOpen = ref(false);
 let selectedEmp = ref(null);
 let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
-let uploadFile = ref({});
+let uploadFile = ref(null);
 
 let callParams = computed(() => {
     switch (searchFor.value) {
@@ -283,8 +283,10 @@ let searchEmp = async() => {
     loading.value = false;
 }
 
-let openModal = (emp: { [key: string]: any }) => {
+let openModal = async(emp: { [key: string]: any }) => {
     selectedEmp.value = emp;
+    isModalOpen.value = true;
+
     if(emp.picture) {
         skapi.getFile(emp.picture, {
             dataType: 'endpoint',
@@ -297,56 +299,38 @@ let openModal = (emp: { [key: string]: any }) => {
             throw err;
         });
     }
-    isModalOpen.value = true;
     
     // user additional data 가져오기
-    let misc = JSON.parse(selectedEmp.value?.misc || null);
-
-    // private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
-    if(!misc?.private_record_id) {
-        skapi.getRecords({
-            table: {
-                name: 'ref_ids',
-                access_group: 1
-            },
-            index: {
-                name: 'user_id',
-                value: makeSafe(selectedEmp.value?.user_id)
-            },
-        }).then(r => {
-            if(r.list.length === 0) {
-                return;
-            }
-
-            skapi.updateProfile({
-                misc: JSON.stringify({ private_record_id: r.list[0].data.privateStorageReference })
-            });
-        });
-    } 
-    
-    if(!selectedEmp.value?.misc) {
-        uploadFile.value = [];
-        return;
-    }
-
-    let miscParse = JSON.parse(selectedEmp.value?.misc);
-
-    // 추가자료 업로드 한 것 가져오기
     skapi.getRecords({
         table: {
-            name: 'emp_additional_data',
-            access_group: 99,
+            name: 'ref_ids',
+            access_group: 1
         },
-        reference: miscParse.private_record_id,
-    }).then((r) => {
-        console.log('=== openModal; getRecords === r : ', r);
-        if (r.list.length === 0) {
-            return uploadFile.value = {};
-        }
+        index: {
+            name: 'user_id',
+            value: makeSafe(selectedEmp.value?.user_id)
+        },
+    }).then(r => {
+        // 추가자료 업로드 한 것 가져오기
+        skapi.getRecords({
+            table: {
+                name: 'emp_additional_data',
+                access_group: 99,
+            },
+            reference: r.list[0].data.privateStorageReference
+        }).then((r) => {
+            console.log('=== openModal; getRecords === r : ', r);
+            if (r.list.length === 0) {
+                return uploadFile.value = null;
+            }
 
-        uploadFile.value = r.list[0].bin.additional_data;
-        // uploadFile.value.user_id = r.list[0].user_id;
-        // uploadFile.value.record_id = r.list[0].record_id;
+            uploadFile.value = r.list[0].bin.additional_data;
+            uploadFile.value.user_id = r.list[0].user_id;
+            console.log('=== getRecords === uploadFile.value : ', uploadFile.value);
+            console.log('=== getRecords === selectedEmp.value : ', selectedEmp.value);
+        }).catch((err) => {
+            console.log('=== openModal; getRecords === err : ', err);
+        });
     });
 };
 
