@@ -120,20 +120,43 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
-let divisions = skapi.getRecords({
-        table: {
-            name: 'divisions',
-            access_group: 99
-        }
-}).then(response => response.list);
+// let selectedFiles = [];
 
-divisions.then(divisions => {
-    divisions.forEach(division => {
+// let handleFileSelect = (event) => {
+//     // 현재 선택된 파일들
+//     const files = Array.from(event.target.files);
+
+//     // 기존 파일 리스트에 새 파일 추가 (중복 방지)
+//     files.forEach((file) => {
+//         if (!this.selectedFiles.find((f) => f.name === file.name)) {
+//             this.selectedFiles.push(file);
+//         }
+//     });
+
+//     // 파일 입력 초기화 (같은 파일 선택 가능)
+//     event.target.value = null;
+// }
+
+// let removeFile = (file) => {
+//     // 선택된 파일 삭제
+//     this.selectedFiles = this.selectedFiles.filter((f) => f !== file);
+// }
+
+skapi.getRecords({
+    table: {
+        name: 'divisionNames',
+        access_group: 1
+    }
+}).then(r => {
+    let divisionNames = r.list[0].data;
+
+    for(let key in divisionNames) {
         const option = document.createElement('option');
-        option.value = division.record_id;
-        option.innerText = division.data.division_name;
+        option.value = key;
+        option.innerText = divisionNames[key];
         document.querySelector('select[name="division"]').appendChild(option);
-    });
+    }
+
     document.querySelector('select[name="division"]').disabled = false;
 });
 
@@ -219,33 +242,35 @@ let resigterEmp = (e) => {
             let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
             let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
 
+            let user_division_name = document.querySelector('select[name=division]').value;
+
             // 직원의 부서(회사)를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
-            // await skapi.postRecord(
-            //     null,
-            //     {
-            //         table: {
-            //             name: 'emp_division',
-            //             access_group: 1
-            //         },
-            //         tags: [_el_position.value, "_uid_" + user_id_safe, "_div_A"] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
-            //     }
-            // )
             await skapi.postRecord(
-                {
-                    position: _el_position.value // 직책(직급)
-                },
+                null,
                 {
                     table: {
                         name: 'emp_division',
                         access_group: 1
                     },
-                    index: {
-                        name: 'user_id',
-                        value: user_id_safe
-                    },
-                    tags: [_el_position.value] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
+                    tags: [_el_position.value, "_uid_" + user_id_safe, "_udvs_" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
                 }
             )
+            // await skapi.postRecord(
+            //     {
+            //         position: _el_position.value // 직책(직급)
+            //     },
+            //     {
+            //         table: {
+            //             name: 'emp_division',
+            //             access_group: 1
+            //         },
+            //         index: {
+            //             name: 'user_id',
+            //             value: user_id_safe
+            //         },
+            //         tags: [_el_position.value] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
+            //     }
+            // )
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
             await skapi.postRecord(null, {

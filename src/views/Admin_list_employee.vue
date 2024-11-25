@@ -106,7 +106,8 @@ hr
                                     input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
                                     span.label-checkbox
                             td.list-num {{ index + 1 }}
-                            td {{ emp.access_group }}
+                            td {{ emp.position }}
+                            td {{ emp.division }}
                             td {{ emp.name }}
                             td {{ emp.email }}
                             td
@@ -201,6 +202,15 @@ import Loading from '@/components/loading.vue';
 
 let router = useRouter();
 let route = useRoute();
+
+skapi.getRecords({
+    table: {
+        name: 'divisionNames',
+        access_group: 1
+    },
+}).then(r => {
+    console.log(r.list[0])
+})
 
 let loading = ref(false);
 let currentPage = ref(1);
@@ -353,7 +363,7 @@ watch(empListType, (nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-            if (sessionEmployee) {
+            if (!sessionEmployee) {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {

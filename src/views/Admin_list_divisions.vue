@@ -73,12 +73,68 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, onMounted } from 'vue';
 import { skapi } from '@/main';
-import { loading, divisions, displayDivisions } from '@/division';
+import { loading, divisions, divisionNameList } from '@/division';
 
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+skapi.getRecords({
+    table: {
+        name: 'divisions',
+        access_group: 99
+    }
+}).then(response => {
+    console.log('== response == : ', response);
+});
+
+let sessionDivisions = window.sessionStorage.getItem('divisions');
+
+if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
+    loading.value = true;
+
+    skapi.getRecords({
+        table: {
+            name: 'divisions',
+            access_group: 99
+        }
+    },
+    ).then(response => {
+        divisions.value = response.list;
+        displayDivisions(response.list);
+        loading.value = false;
+    });
+} else {
+    if(sessionDivisions === 'no data') {
+        divisions.value = 'no data';
+    } else {
+        divisions.value = JSON.parse(sessionDivisions);
+    }
+}
+
+if(Object.keys(divisions.value)) {
+    Object.keys(divisions.value).forEach((key, index) => {
+        let specialKey = `DVS_${index}`;
+        divisionNameList.value[specialKey] = divisions.value[key].data.division_name;
+    });
+}
+
+let displayDivisions = (divisions) => {
+    let saveSession = {};
+
+    if (!divisions.length) {
+        window.sessionStorage.setItem('divisions', 'no data');
+
+        return;
+    }
+
+    divisions.forEach((division) => {
+        saveSession[division.record_id] = division;
+    });
+
+    window.sessionStorage.setItem('divisions', JSON.stringify(saveSession));
+}
 
 let currentPage = ref(1);
 let selectedList = ref([]);
