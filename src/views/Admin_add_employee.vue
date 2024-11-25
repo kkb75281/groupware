@@ -234,7 +234,7 @@ let resigterEmp = (e) => {
 
             // 직원을 초대한다.
             let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'}).catch(err => {
-                throw err;
+                throw new err;
             });
             // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
 
@@ -319,6 +319,18 @@ let resigterEmp = (e) => {
                         reference: res.record_id, // 자료방 레코드 id
                     });
                 }
+
+                // document.querySelector('input[name=additional_data]').addEventListener("change", function (event) {
+                //     const files = event.target.files;
+
+                //     if (files.length > 0) {
+                //             Array.from(files).forEach((file, index) => {
+                //             const formData = new FormData();
+                //             formData.append("file", file);
+                //             console.log(`FormData for file ${index + 1}:`, formData.get("file"));
+                //         });
+                //     }
+                // });
             });
 
             await skapi.getInvitations().then(res => {
