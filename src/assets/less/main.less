@@ -265,10 +265,85 @@
             margin-left: 4px;
         }
 
+        .file-wrap {
+            // display: flex;
+            // gap: 8px 16px;
+            // flex-wrap: wrap;
+
+            margin-top: 12px;
+        }
+
         .file-list {
+            // flex: 1;
+        }
+
+        .btn-upload-file {
+            input[type="file"] {
+                margin-bottom: 16px;
+                border-bottom: 1px solid var(--gray-color-200);
+                padding-bottom: 16px;
+            }
+
+            input[type="file"]:disabled + .btn {
+                background-color: var(--primary-color-100);
+                border: 1px solid var(--primary-color-200);
+                color: var(--primary-color-200);
+                cursor: default; 
+            }
+
+            .btn {
+                width: fit-content;
+                min-width: 190px;
+                height: 36px;
+                font-size: 0.8rem;
+                cursor: pointer;
+            }
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 4px;
             border: 1px dashed var(--gray-color-300);
             border-radius: 8px;
-            padding: 8px;
+            padding: 6.5px 12px;
+            font-size: 0.75rem;
+            color: var(--gray-color-500);
+            margin-top: 8px;
+            // flex: 1;
+            
+
+            &:first-child {
+                margin-top: 0;
+            }
+
+            .file-name {
+                line-height: 1.4;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+
+        .file-link {
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+
+        button {
+            flex: none;
+        }
+
+        svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--gray-color-500);
         }
     }
 
@@ -927,10 +1002,21 @@
     }
 }
 
+@media (max-width: 682px) {
+    .input-wrap {
+        &.upload-file {
+            .file-list {
+                flex: auto;
+                width: 100%;
+            }
+        }
+    }
+}
+
 @media (max-width: 576px) {
     .modal {
         .modal-cont {
             min-width: calc(100% - 16px);
         }
     }
-  }
+}

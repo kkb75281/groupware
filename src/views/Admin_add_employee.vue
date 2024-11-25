@@ -79,11 +79,16 @@ hr
 
         //- .input-wrap.upload-file
         //-     p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-        //-     input(type="file" name="additional_data" multiple @change="handleFileSelect")
-        //-         ul.file-list
-        //-             li(v-for="file in selectedFiles" :key="file.name")
-        //-             | {{ file.name }}
-        //-             button(@click="removeFile(file)") 삭제  
+        //-     //- .btn-upload-file(@click="uploadFile" :class="{'nonClickable' : loading}")
+        //-     .btn-upload-file
+        //-         input(type="file" id="file" name="additional_data" multiple @change="updateFileList")
+        //-         label.btn.outline(for="file") 파일찾기
+        //-     ul.file-list
+        //-         li.file-item
+        //-             a.file-link(href="#" target="_blank") 파일명
+        //-             button.btn-remove(@click="removeFile")
+        //-                 svg
+        //-                     use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
         br
 
@@ -110,6 +115,7 @@ import { ref } from 'vue';
 import { skapi } from '@/main';
 
 import CropImage from '@/components/crop_image.vue';
+import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -428,5 +434,17 @@ let resigterEmp = (e) => {
     align-items: center;
     justify-content: end;
     gap: 8px;
+}
+
+.btn-upload-file {
+    .btn {
+        max-width: 100px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+}
+
+.file-list {
+    margin-top: 12px;
 }
 </style>
