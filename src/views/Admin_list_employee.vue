@@ -84,8 +84,8 @@ hr
                                     input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
                                     span.label-checkbox
                             td.list-num {{ index + 1 }}
-                            td {{ emp.position }}
-                            td {{ emp.division }}
+                            //- td {{ emp.position }}
+                            //- td {{ emp.division }}
                                 //- template(v-if="Object.keys(empInfo).includes(emp.user_id)") {{ empInfo[emp.user_id]?.division }}
                                 //- template(v-else) ...
                             //- td {{ emp.user_id }}
@@ -339,12 +339,14 @@ let openModal = (emp: { [key: string]: any }) => {
         },
         reference: miscParse.private_record_id,
     }).then((r) => {
+        console.log('=== openModal; getRecords === r : ', r);
         if (r.list.length === 0) {
-            return;
+            return uploadFile.value = {};
         }
 
         uploadFile.value = r.list[0].bin.additional_data;
-        uploadFile.value.user_id = r.list[0].user_id;
+        // uploadFile.value.user_id = r.list[0].user_id;
+        // uploadFile.value.record_id = r.list[0].record_id;
     });
 };
 
@@ -370,27 +372,26 @@ watch(empListType, (nv) => {
                     let list = res.list.filter(emp => emp.approved.includes('approved'));
 
                     // console.log(list)
-                    await skapi.getRecords({
-                        table: {
-                            name: 'emp_division',
-                            access_group: 1
-                        }
-                    }).then(async(r) => {
-                        console.log(r)
-                        for(let record of r.list) {
-                            let key = (record.index.value).replace(/_/g, '-');
-                            empInfo.value[key] = {
-                                division: record.record_id,
-                                position: record.data.position
-                            }
-                        }
-                        res.list.forEach(emp => {
-                            if(Object.keys(empInfo.value).includes(emp.user_id)) {
-                                emp.division = empInfo.value[emp.user_id].division;
-                                emp.position = empInfo.value[emp.user_id].position;
-                            }
-                        });
-                    });
+                    // await skapi.getRecords({
+                    //     table: {
+                    //         name: 'emp_division',
+                    //         access_group: 1
+                    //     }
+                    // }).then(async(r) => {
+                    //     for(let record of r.list) {
+                    //         let key = (record.index.value).replace('_', '-');
+                    //         empInfo.value[key] = {
+                    //             division: record.record_id,
+                    //             position: record.data.position
+                    //         }
+                    //     }
+                    //     res.list.forEach(emp => {
+                    //         if(Object.keys(empInfo.value).includes(emp.user_id)) {
+                    //             emp.division = empInfo.value[emp.user_id].division;
+                    //             emp.position = empInfo.value[emp.user_id].position;
+                    //         }
+                    //     });
+                    // });
 
                     employee.value = list;
                     displayEmployee(res.list);
@@ -600,12 +601,49 @@ let cancelInvite = (employee_info) => {
     });
 }
 
-
-
-
 // 업로드 파일 삭제
 let removeFile = (file) => {
-    console.log('uploadFile : ', uploadFile.value);
+    console.log('AA === removeFile === file : ', file);
+    console.log('AA uploadFile.value : ', uploadFile.value);
+
+    for(let i of uploadFile.value) {
+        if(file.path === i.path) {
+            uploadFile.value = uploadFile.value.filter((f) => {
+                return f.path !== file.path;
+            });
+            break;
+        }
+    }
+
+    console.log('BB uploadFile.value : ', uploadFile.value);
+
+    let misc = JSON.parse(selectedEmp.value?.misc || null);
+    let miscParse = JSON.parse(selectedEmp.value?.misc);
+
+    skapi.postRecord(uploadFile.value, {
+        record_id: miscParse.private_record_id,
+        table: {
+            name: 'emp_additional_data',
+            access_group: 99,
+        },
+        reference: miscParse.private_record_id,
+    }).then((res) => {
+        console.log('AA === postRecord === res : ', res)
+        // console.log('BB === removeFile === file : ', file)
+        // console.log('BB uploadFile.value : ', uploadFile.value);
+
+        // // uploadFile.value = uploadFile.value.filter((f) => {
+        // //     console.log('=== removeFile === f : ', f);
+        // //     return f.filename !== file.filename;
+        // // });
+
+        // // res.list[0].bin.additional_data = uploadFile.value;
+
+        // console.log('CC uploadFile.value : ', uploadFile.value);
+        console.log('BB === postRecord === res : ', res);
+    }).catch((err) => {
+        console.log('=== deleteRecords === err : ', err);
+    });
 }
 
 // let goToDetailEmp = (emp) => {

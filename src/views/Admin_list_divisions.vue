@@ -80,15 +80,6 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
-skapi.getRecords({
-    table: {
-        name: 'divisions',
-        access_group: 99
-    }
-}).then(response => {
-    console.log('== response == : ', response);
-});
-
 let sessionDivisions = window.sessionStorage.getItem('divisions');
 
 if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
