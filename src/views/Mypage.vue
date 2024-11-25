@@ -346,7 +346,7 @@ let registerMypage = async(e) => {
         await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
             table: {
                 name: 'emp_additional_data',
-                access_group: 99
+                access_group: 99,
             },
             reference: miscParse.private_record_id, // 자료방 레코드 id
         }).then(res => {
