@@ -205,24 +205,44 @@ let resigterComp = (e) => {
             formData.append(key, croppedImages.value[key], `${key}.jpg`);
         });
     }
-    
-    // skapi.postRecord({
-    //     'A1': "이름",
-    //     'A2': "부서(회사)명",
-    // }, {
-    //     table: {
-    //         name: 'divisionNames',
-    //         access_group: 1
-    //     }
-    // })
 
-    // //직원
-    // skapi.getRecords({
-    //     table: {
-    //         name: 'divisionNames',
-    //         access_group: 1
-    //     },
-    // })
+    // 부서명 저장
+    skapi.getRecords({
+        table: {
+            name: 'divisionNames',
+            access_group: 1
+        }
+    }).then(r => {
+        if(r.list.length === 0) {
+            skapi.postRecord({
+                'DVS_0': ext.data.division_name,
+            }, {
+                table: {
+                    name: 'divisionNames',
+                    access_group: 1
+                }
+            })
+        } else {
+            let currentData = r.list[0].data;
+            let keys = Object.keys(currentData);
+            let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
+            let newNumber = 1;
+            while (numbers.includes(newNumber)) {
+                newNumber++; // 겹치지 않는 숫자를 찾을 때까지 증가
+            }
+            let newKey = `DVS_${newNumber}`;
+
+            currentData[newKey] = ext.data.division_name;
+
+            skapi.postRecord(currentData, {
+                record_id: r.list[0].record_id,
+                table: {
+                    name: 'divisionNames',
+                    access_group: 1
+                }
+            })
+        }
+    })
 
     //form data에 이미지 파일 추가
     skapi.postRecord(formData, {
@@ -231,6 +251,7 @@ let resigterComp = (e) => {
             access_group: 99
         }
     }).then((r) => {
+
         let sessionDivisions = window.sessionStorage.getItem('divisions');
 
         if(sessionDivisions == 'no data' || !JSON.parse(sessionDivisions)) {
