@@ -85,7 +85,7 @@
             br
 
             .input-wrap.upload-file
-                p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
+                p.label 기타자료
                 .file-wrap
                     template(v-if="disabled")
 
@@ -98,8 +98,8 @@
                     ul.file-list
                         template(v-if="uploadFile.length > 0")
                             li.file-item(v-for="(file, index) in uploadFile" :key="index")
-                                a.file-name(:href="file.path" download) {{ file.filename }}
-                                button.btn-remove(@click="removeFile(file)")
+                                a.file-name(:href="file.url" download) {{ file.filename }}
+                                button.btn-remove(type="button" @click="removeFile(file)")
                                     template(v-if="file.user_id !== user.user_id")
                                         
                                     template(v-else)
@@ -171,10 +171,14 @@ function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
 }
 
+function getFileUserId(str) {
+    if (!str) return '';
+
+    return str.split('/')[3]
+}
+
 // user additional data 가져오기
 let misc = JSON.parse(user?.misc || null);
-
-console.log('misc : ', misc);
 
 // private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
 if(!misc?.private_record_id) {
@@ -198,35 +202,47 @@ if(!misc?.private_record_id) {
     });
 }
 
-console.log('user : ', user);
-
 let miscParse = JSON.parse(user.misc);
 
-console.log('miscParse : ', miscParse);
+// console.log('miscParse : ', miscParse);
 
 // 추가자료 업로드 한 것 가져오기
-skapi.getRecords({
-    table: {
-        name: 'emp_additional_data',
-        access_group: 99
-    },
-    reference: miscParse.private_record_id
-}).then(r => {
-    if(r.list.length === 0) {
-        return;
-    } else {
-        uploadFile.value = r.list[0].bin.additional_data;
-    }
+const getAdditionalData = () => {
+    skapi.getRecords({
+        table: {
+            name: 'emp_additional_data',
+            access_group: 99
+        },
+        reference: miscParse.private_record_id
+    }).then(res => {
+        if(res.list.length === 0) {
+            return;
+        } else {
+            let fileList = [];
 
-    // uploadFile.value = r.list[0].bin.additional_data;
+            console.log('== getRecords == res : ', res);
 
+            res.list.forEach((item) => {
+                if (item.bin.additional_data && item.bin.additional_data.length > 0) {
 
-    if(r.list[0].user_id !== user.user_id) {
-        console.log('아이디 다름');
-    } else {
-        console.log('아이디 같음');
-    }
-})
+                    const result = item.bin.additional_data.map((el) => ({
+                        ...el,
+                        user_id: getFileUserId(el.path),
+                        record_id: item.record_id,
+                    }));    
+
+                    fileList.push(...result);
+                }
+            })
+
+            console.log('== getRecords == fileList : ', fileList);
+
+            uploadFile.value = fileList;
+        }
+    })
+}
+
+getAdditionalData()
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
 // skapi.getFile(user.picture, {
@@ -340,14 +356,17 @@ let registerMypage = async(e) => {
         await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
     }
 
-    
+    const filebox = document.querySelector('input[name="additional_data"]');
 
-    if(document.querySelector('input[name=additional_data]').files.length) {
+    if(filebox && filebox.files.length) {
         console.log('파일 있음');
+
         // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
-        const uploadPromises = Array.from(document.querySelector('input[name=additional_data]').files).map(file => {
+        const uploadPromises = Array.from(filebox.files).map(file => {
             const formData = new FormData();
-            formData.append('additional_data', file); // file을 FormData에 추가
+
+            formData.append('additional_data', file);
+            
             return skapi.postRecord(formData, {
                 table: {
                     name: 'emp_additional_data',
@@ -359,33 +378,12 @@ let registerMypage = async(e) => {
 
         const results = await Promise.all(uploadPromises);
         console.log('All files uploaded:', results);
-
-        // 추가자료 업로드 한 것 가져오기
-        skapi.getRecords({
-            table: {
-                name: 'emp_additional_data',
-                access_group: 99
-            },
-            reference: miscParse.private_record_id
-        }).then(r => {
-            console.log('직원이 추가자료 업로드 : ', r)
-
-            uploadFile.value = r.list[0].bin.additional_data;
-
-            console.log('=== getRecords === uploadFile.value : ', uploadFile.value);
-
-            if(r.list[0].user_id !== user.user_id) {
-                console.log('아이디 다름');
-            } else {
-                console.log('아이디 같음');
-            }
-        });
     } else {
         console.log('파일 없음');
     }
 
     // 프로필 정보를 업데이트한다.
-    await skapi.updateProfile(e);
+    await skapi.updateProfile(e).then(getAdditionalData)
 
     // if(user.email !== originUserProfile.email) {
     //     verifiedEmail.value = true;
@@ -398,7 +396,14 @@ let registerMypage = async(e) => {
 }
 
 // 업로드 파일 삭제
-let removeFile = () => {
+let removeFile =  (item) => {
+    let query = {
+        record_id: [item.record_id]
+    };
+
+     skapi.deleteRecords(query).then(response => {
+        getAdditionalData();
+    });
 }
 
 onMounted(async() => {
