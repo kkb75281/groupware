@@ -229,13 +229,13 @@ skapi.getRecords({
 })
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
-skapi.getFile(user.picture, {
-    dataType: 'info',
-}).then(res => {
-    getFileInfo.value = res;
-}).catch(err => {
-    console.log('== getFile == err : ', err)
-});
+// skapi.getFile(user.picture, {
+//     dataType: 'info',
+// }).then(res => {
+//     getFileInfo.value = res;
+// }).catch(err => {
+//     console.log('== getFile == err : ', err)
+// });
 
 let sendEmail = async() => {
     try {
@@ -340,22 +340,25 @@ let registerMypage = async(e) => {
         await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
     }
 
+    
+
     if(document.querySelector('input[name=additional_data]').files.length) {
         console.log('파일 있음');
         // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
-        await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
-            table: {
-                name: 'emp_additional_data',
-                access_group: 99,
-            },
-            reference: miscParse.private_record_id, // 자료방 레코드 id
-        }).then(res => {
-            console.log('추가자료 업로드 === postRecord === res : ', res);
-            console.log('추가자료 업로드 === postRecord === miscParse.private_record_id : ', miscParse.private_record_id);
-        }).catch(err => {
-            console.log('추가자료 업로드 === postRecord === err : ', err);
-            throw new Error('추가자료 업로드 실패');
+        const uploadPromises = Array.from(document.querySelector('input[name=additional_data]').files).map(file => {
+            const formData = new FormData();
+            formData.append('additional_data', file); // file을 FormData에 추가
+            return skapi.postRecord(formData, {
+                table: {
+                    name: 'emp_additional_data',
+                    access_group: 99
+                },
+                reference: miscParse.private_record_id,
+            });
         });
+
+        const results = await Promise.all(uploadPromises);
+        console.log('All files uploaded:', results);
 
         // 추가자료 업로드 한 것 가져오기
         skapi.getRecords({
@@ -368,6 +371,8 @@ let registerMypage = async(e) => {
             console.log('직원이 추가자료 업로드 : ', r)
 
             uploadFile.value = r.list[0].bin.additional_data;
+
+            console.log('=== getRecords === uploadFile.value : ', uploadFile.value);
 
             if(r.list[0].user_id !== user.user_id) {
                 console.log('아이디 다름');

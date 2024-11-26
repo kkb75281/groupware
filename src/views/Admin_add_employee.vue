@@ -255,22 +255,6 @@ let resigterEmp = (e) => {
                     tags: [_el_position.value, "_uid_" + user_id_safe, "_udvs_" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
                 }
             )
-            // await skapi.postRecord(
-            //     {
-            //         position: _el_position.value // 직책(직급)
-            //     },
-            //     {
-            //         table: {
-            //             name: 'emp_division',
-            //             access_group: 1
-            //         },
-            //         index: {
-            //             name: 'user_id',
-            //             value: user_id_safe
-            //         },
-            //         tags: [_el_position.value] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
-            //     }
-            // )
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
             await skapi.postRecord(null, {
@@ -299,6 +283,7 @@ let resigterEmp = (e) => {
                 
                 // 자료방 reference record id 를 저장한다. 직원이 로그인해서 찾을수있게
                 await skapi.postRecord({ privateStorageReference: res.record_id }, {
+                    // unique_id: user_id_safe,
                     table: {
                         name: 'ref_ids',
                         access_group: 1
@@ -309,28 +294,51 @@ let resigterEmp = (e) => {
                     },
                 });
 
-                if(document.querySelector('input[name=additional_data]').files.length) {
-                    // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
-                    await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
-                        table: {
-                            name: 'emp_additional_data',
-                            access_group: 99
-                        },
-                        reference: res.record_id, // 자료방 레코드 id
+                // if(document.querySelector('input[name=additional_data]').files.length) {
+                //     // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
+                //     await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
+                //         table: {
+                //             name: 'emp_additional_data',
+                //             access_group: 99
+                //         },
+                //         reference: res.record_id, // 자료방 레코드 id
+                //     });
+                // }
+
+                const files = document.querySelector('input[name=additional_data]').files;
+
+                // if (files.length) {
+                //     console.log(files)
+                //     const uploadPromises = Array.from(files).map(file => 
+                //         skapi.postRecord(file, {
+                //             table: {
+                //                 name: 'emp_additional_data',
+                //                 access_group: 99
+                //             },
+                //             reference: res.record_id, // 자료방 레코드 id (공통 참조)
+                //         })
+                //     );
+
+                //     // 모든 파일 업로드가 완료될 때까지 기다림
+                //     await Promise.all(uploadPromises);
+                // }
+
+                if (files.length) {
+                    const uploadPromises = Array.from(files).map(file => {
+                        const formData = new FormData();
+                        formData.append('additional_data', file); // file을 FormData에 추가
+                        return skapi.postRecord(formData, {
+                            table: {
+                                name: 'emp_additional_data',
+                                access_group: 99
+                            },
+                            reference: res.record_id,
+                        });
                     });
+
+                    const results = await Promise.all(uploadPromises);
+                    console.log('All files uploaded:', results);
                 }
-
-                // document.querySelector('input[name=additional_data]').addEventListener("change", function (event) {
-                //     const files = event.target.files;
-
-                //     if (files.length > 0) {
-                //             Array.from(files).forEach((file, index) => {
-                //             const formData = new FormData();
-                //             formData.append("file", file);
-                //             console.log(`FormData for file ${index + 1}:`, formData.get("file"));
-                //         });
-                //     }
-                // });
             });
 
             await skapi.getInvitations().then(res => {
