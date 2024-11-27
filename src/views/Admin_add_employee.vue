@@ -252,7 +252,7 @@ let resigterEmp = (e) => {
                         name: 'emp_division',
                         access_group: 1
                     },
-                    tags: [_el_position.value, "_uid_" + user_id_safe, "_udvs_" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
+                    tags: ["_upst_" + _el_position.value, "_uid_" + user_id_safe, "_udvs_" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
                 }
             )
 

@@ -11,16 +11,34 @@ const app = createApp(App);
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
 
+function getChanges(before, after) {
+  const beforeKeys = new Set(Object.keys(before));
+  const afterKeys = new Set(Object.keys(after));
+
+  const addedKeys = [...afterKeys].filter(key => !beforeKeys.has(key));
+  const removedKeys = [...beforeKeys].filter(key => !afterKeys.has(key));
+  const modifiedKeys = [...afterKeys].filter(key => beforeKeys.has(key) && before[key] !== after[key]);
+
+  return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
+}
+
 export let loginCheck = async(profile: object | null, router: any) => {
   if (profile) {
+    let originalUser = { ...user }
+
     Object.assign(user, profile);
+
+    for (const key in originalUser) {
+      if (!profile.hasOwnProperty(key)) {
+        delete user[key];
+      }
+    }
     
     if (user.picture) {
       skapi.getFile(user.picture, {
         dataType: 'endpoint',
       })
       .then((res) => {  
-        console.log(res)
         profileImage.value = res;
       })
       .catch((err) => {
@@ -28,7 +46,7 @@ export let loginCheck = async(profile: object | null, router: any) => {
         throw err; // 의도적으로 에러 전달
       });
     } else {
-      profileImage.value = '';
+      profileImage.value = null;
     }
     
     iwaslogged.value = true;
@@ -38,8 +56,8 @@ export let loginCheck = async(profile: object | null, router: any) => {
       iwaslogged.value = false;
     }
   }
-  console.log('profile', profile)
-  console.log('iwaslogged', iwaslogged.value)
+  // console.log('profile', profile)
+  // console.log('iwaslogged', iwaslogged.value)
   loaded.value = true;
 };
 
