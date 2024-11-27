@@ -178,33 +178,8 @@ function getFileUserId(str) {
 }
 
 // user additional data 가져오기
-let misc = JSON.parse(user?.misc || null);
-
-// private_record_id가 없을 경우 ref_ids 테이블에서 가져와서 업데이트
-if(!misc?.private_record_id) {
-    skapi.getRecords({
-        table: {
-            name: 'ref_ids',
-            access_group: 1
-        },
-        index: {
-            name: 'user_id',
-            value: makeSafe(user.user_id)
-        },
-    }).then(r => {
-        if(r.list.length === 0) {
-            return;
-        }
-
-        skapi.updateProfile({
-            misc: JSON.stringify({ private_record_id: r.list[0]?.data?.privateStorageReference })
-        });
-    });
-}
-
-let miscParse = JSON.parse(user.misc);
-
-// console.log('miscParse : ', miscParse);
+let uniqueId = "_unqid_" + user.user_id;
+console.log(uniqueId)
 
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = () => {
@@ -213,7 +188,9 @@ const getAdditionalData = () => {
             name: 'emp_additional_data',
             access_group: 99
         },
-        reference: miscParse.private_record_id
+        reference: {
+            unique_id: uniqueId,
+        }
     }).then(res => {
         if(res.list.length === 0) {
             return;
@@ -372,7 +349,9 @@ let registerMypage = async(e) => {
                     name: 'emp_additional_data',
                     access_group: 99
                 },
-                reference: miscParse.private_record_id,
+                reference: {
+                    unique_id: uniqueId,
+                }
             });
         });
 
