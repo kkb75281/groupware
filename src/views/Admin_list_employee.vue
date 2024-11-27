@@ -74,7 +74,7 @@ hr
                     tr(v-for="i in 4")
                 template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
                     tr
-                        td(colspan="9") 데이터가 없습니다.
+                        td(colspan="10") 데이터가 없습니다.
                 template(v-else)
                     tr(v-for="(emp, index) in employee")
                         //- 직원목록/숨김여부
@@ -84,6 +84,8 @@ hr
                                     input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
                                     span.label-checkbox
                             td.list-num {{ index + 1 }}
+                            td
+                            td
                             //- td {{ emp.position }}
                             //- td {{ emp.division }}
                                 //- template(v-if="Object.keys(empInfo).includes(emp.user_id)") {{ empInfo[emp.user_id]?.division }}
@@ -181,8 +183,8 @@ br
                         template(v-else)
                             li.file-item(v-for="(file, index) in uploadFile" :key="index")
                                 a.file-name(:href="file.path" download) {{ file.filename }}
-                                button.btn-remove(@click="removeFile(file)")
-                                    template(v-if="uploadFile.user_id !== user.user_id")
+                                button.btn-remove(type="button" @click="removeFile(file)")
+                                    template(v-if="file.user_id !== user.user_id")
                                         
                                     template(v-else)
                                         svg
@@ -254,6 +256,12 @@ let callParams = computed(() => {
     }
 });
 
+function getFileUserId(str: string) {
+    if (!str) return '';
+
+    return str.split('/')[3]
+}
+
 let searchEmp = async() => {
     loading.value = true;
 
@@ -283,9 +291,86 @@ let searchEmp = async() => {
     loading.value = false;
 }
 
+ // 추가자료 업로드 한 것 가져오기
+const getAdditionalData = () => {
+    // 방어코드
+    if (!selectedEmp || !selectedEmp.value) return;
+
+    const referenceId = JSON.parse(selectedEmp.value?.misc);
+
+    if (!referenceId) return;
+
+    skapi.getRecords({
+        table: {
+            name: 'emp_additional_data',
+            access_group: 99,
+        },
+        reference: referenceId.private_record_id,
+    }).then((r) => {
+        console.log('=== openModal; getRecords === r : ', r);
+
+        if(r.list.length === 0) {
+            return;
+        } else {
+            let fileList = [];
+
+            console.log('== getRecords == res : ', r);
+
+            r.list.forEach((item) => {
+                if (item.bin.additional_data && item.bin.additional_data.length > 0) {
+
+                    const result = item.bin.additional_data.map((el) => ({
+                        ...el,
+                        user_id: getFileUserId(el.path),
+                        record_id: item.record_id,
+                    }));    
+
+                    fileList.push(...result);
+                }
+            })
+
+            console.log('== getRecords == fileList : ', fileList);
+
+            uploadFile.value = fileList;
+        }
+
+        // // uploadFile.value에 값을 추가
+        // if (!uploadFile.value) {
+        //     uploadFile.value = []; // 초기화
+        // }
+
+        // // r.list의 각 요소를 순회
+        // for (let list of r.list) {
+        //     console.log('=== getRecords === list : ', list.bin.additional_data);
+        //     uploadFile.value.push(list.bin.additional_data);
+        // }
+
+        // const objList = JSON.parse(JSON.stringify(uploadFile.value));
+        // const combined = objList.flat().filter(item => typeof item === 'object' && item !== null);
+
+        // console.log('=== objList === : ', objList);
+        // console.log('=== combined === : ', combined);
+
+        // if (r.list.length === 0) {
+        //     return uploadFile.value = null;
+        // }
+
+        // uploadFile.value = combined;
+        
+        // // for(let i of uploadFile.value) {
+        // //     console.log('=== openModal; getRecords === i : ', i);
+        // //     i.user_id = r.list[0].user_id;
+        // // }
+        // console.log('=== getRecords === uploadFile.value : ', uploadFile.value);
+        // console.log('=== getRecords === selectedEmp.value : ', selectedEmp.value);
+    })
+}
+
+
 let openModal = async(emp: { [key: string]: any }) => {
     selectedEmp.value = emp;
     isModalOpen.value = true;
+    uploadFile.value = null
 
     if(emp.picture) {
         skapi.getFile(emp.picture, {
@@ -310,27 +395,8 @@ let openModal = async(emp: { [key: string]: any }) => {
             name: 'user_id',
             value: makeSafe(selectedEmp.value?.user_id)
         },
-    }).then(r => {
-        // 추가자료 업로드 한 것 가져오기
-        skapi.getRecords({
-            table: {
-                name: 'emp_additional_data',
-                access_group: 99,
-            },
-            reference: r.list[0].data.privateStorageReference
-        }).then((r) => {
-            console.log('=== openModal; getRecords === r : ', r);
-            if (r.list.length === 0) {
-                return uploadFile.value = null;
-            }
-
-            uploadFile.value = r.list[0].bin.additional_data;
-            uploadFile.value.user_id = r.list[0].user_id;
-            console.log('=== getRecords === uploadFile.value : ', uploadFile.value);
-            console.log('=== getRecords === selectedEmp.value : ', selectedEmp.value);
-        }).catch((err) => {
-            console.log('=== openModal; getRecords === err : ', err);
-        });
+    }).then(() => {
+        getAdditionalData();
     });
 };
 
@@ -586,57 +652,79 @@ let cancelInvite = (employee_info) => {
 }
 
 // 업로드 파일 삭제
-let removeFile = (file) => {
-    console.log('AA === removeFile === file : ', file);
-    console.log('AA uploadFile.value : ', uploadFile.value);
+let removeFile =  (item) => {
+    let query = {
+        record_id: [item.record_id]
+    };
 
-    for(let i of uploadFile.value) {
-        if(file.path === i.path) {
-            uploadFile.value = uploadFile.value.filter((f) => {
-                return f.path !== file.path;
-            });
-            break;
-        }
-    }
-
-    console.log('BB uploadFile.value : ', uploadFile.value);
-
-    let misc = JSON.parse(selectedEmp.value?.misc || null);
-    let miscParse = JSON.parse(selectedEmp.value?.misc);
-
-    skapi.postRecord(uploadFile.value, {
-        record_id: miscParse.private_record_id,
-        table: {
-            name: 'emp_additional_data',
-            access_group: 99,
-        },
-        reference: miscParse.private_record_id,
-    }).then((res) => {
-        console.log('AA === postRecord === res : ', res)
-        // console.log('BB === removeFile === file : ', file)
-        // console.log('BB uploadFile.value : ', uploadFile.value);
-
-        // // uploadFile.value = uploadFile.value.filter((f) => {
-        // //     console.log('=== removeFile === f : ', f);
-        // //     return f.filename !== file.filename;
-        // // });
-
-        // // res.list[0].bin.additional_data = uploadFile.value;
-
-        // console.log('CC uploadFile.value : ', uploadFile.value);
-        console.log('BB === postRecord === res : ', res);
-    }).catch((err) => {
-        console.log('=== deleteRecords === err : ', err);
+     skapi.deleteRecords(query).then(() => {
+        getAdditionalData();
     });
 }
 
-// let goToDetailEmp = (emp) => {
-//     router.push({ name: 'employee-data', params: { 
-//             userId: emp.user_id, 
-//             name: emp.name,
-//             accessGroup: emp.access_group 
-//         } });
-// };
+// let removeFile = (file) => {
+//     console.log('AA === removeFile === file : ', file);
+//     console.log('AA == removeFile === uploadFile.value : ', uploadFile.value);
+
+//     // skapi.deleteRecords({
+//     //     table: {
+//     //         name: 'emp_additional_data',
+//     //         access_group: 99,
+//     //     },
+//     //     reference: 
+//     // }).then(res => {
+//     //     console.log('=== deleteRecords === res : ', res);
+//     // }).catch(err => {
+//     //     console.log('=== deleteRecords === err : ', err);
+//     //     throw err;
+//     // });
+
+//     // for(let i of uploadFile.value) {
+//     //     console.log('=== removeFile === i : ', i);
+//     //     if(file.path === i.path) {
+//     //         uploadFile.value = uploadFile.value.filter((f) => {
+//     //             return f.path !== file.path;
+//     //         });
+//     //         break;
+//     //     }
+//     // }
+
+//     // console.log('BB == removeFile === uploadFile.value : ', uploadFile.value);
+
+//     // let misc = JSON.parse(selectedEmp.value?.misc || null);
+//     // let miscParse = JSON.parse(selectedEmp.value?.misc);
+
+//     // skapi.deleteRecords(uploadFile.value).then(res => {
+//     //     console.log('=== deleteRecords === res : ', res);
+//     // }).catch(err => {
+//     //     console.log('=== deleteRecords === err : ', err);
+//     // });
+
+//     // skapi.postRecord(uploadFile.value, {
+//     //     record_id: miscParse.private_record_id,
+//     //     table: {
+//     //         name: 'emp_additional_data',
+//     //         access_group: 99,
+//     //     },
+//     //     reference: miscParse.private_record_id,
+//     // }).then((res) => {
+//     //     console.log('AA === postRecord === res : ', res)
+//     //     console.log('BB === removeFile === file : ', file)
+//     //     console.log('CC == removeFile === uploadFile.value : ', uploadFile.value);
+
+//     //     // uploadFile.value = uploadFile.value.filter((f) => {
+//     //     //     console.log('=== removeFile === f : ', f);
+//     //     //     return f.filename !== file.filename;
+//     //     // });
+
+//     //     // res.list[0].bin.additional_data = uploadFile.value;
+
+//     //     // console.log('CC uploadFile.value : ', uploadFile.value);
+//     //     console.log('BB === postRecord === res : ', res);
+//     // }).catch((err) => {
+//     //     console.log('=== deleteRecords === err : ', err);
+//     // });
+// }
 </script>
 
 <style scoped lang="less">
