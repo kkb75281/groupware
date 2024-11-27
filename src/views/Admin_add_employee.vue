@@ -245,7 +245,7 @@ let resigterEmp = (e) => {
             let user_division_name = document.querySelector('select[name=division]').value;
 
             // 직원의 부서(회사)를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
-            await skapi.postRecord(
+            skapi.postRecord(
                 null,
                 {
                     table: {
@@ -255,9 +255,13 @@ let resigterEmp = (e) => {
                     tags: [_el_position.value, "_uid_" + user_id_safe, "_udvs_" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
                 }
             )
+
+            let uniqueId = "_unqid_" + user_id;
+            console.log('uniqueId', uniqueId);
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
             await skapi.postRecord(null, {
+                unique_id: uniqueId,
                 table: {
                     name: 'emp_access_ref',
                     access_group: 99
@@ -275,53 +279,13 @@ let resigterEmp = (e) => {
                 // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
                 if(access_group_value !== '99') {
                     // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
-                    await skapi.grantPrivateRecordAccess({
+                    skapi.grantPrivateRecordAccess({
                         record_id: res.record_id,
                         user_id: user_id
                     });
                 }
-                
-                // 자료방 reference record id 를 저장한다. 직원이 로그인해서 찾을수있게
-                await skapi.postRecord({ privateStorageReference: res.record_id }, {
-                    // unique_id: user_id_safe,
-                    table: {
-                        name: 'ref_ids',
-                        access_group: 1
-                    },
-                    index: {
-                        name: 'user_id',
-                        value: user_id_safe
-                    },
-                });
-
-                // if(document.querySelector('input[name=additional_data]').files.length) {
-                //     // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
-                //     await skapi.postRecord(document.querySelector('input[name=additional_data]'), {
-                //         table: {
-                //             name: 'emp_additional_data',
-                //             access_group: 99
-                //         },
-                //         reference: res.record_id, // 자료방 레코드 id
-                //     });
-                // }
 
                 const files = document.querySelector('input[name=additional_data]').files;
-
-                // if (files.length) {
-                //     console.log(files)
-                //     const uploadPromises = Array.from(files).map(file => 
-                //         skapi.postRecord(file, {
-                //             table: {
-                //                 name: 'emp_additional_data',
-                //                 access_group: 99
-                //             },
-                //             reference: res.record_id, // 자료방 레코드 id (공통 참조)
-                //         })
-                //     );
-
-                //     // 모든 파일 업로드가 완료될 때까지 기다림
-                //     await Promise.all(uploadPromises);
-                // }
 
                 if (files.length) {
                     const uploadPromises = Array.from(files).map(file => {
@@ -332,7 +296,9 @@ let resigterEmp = (e) => {
                                 name: 'emp_additional_data',
                                 access_group: 99
                             },
-                            reference: res.record_id,
+                            reference: {
+                                unique_id: uniqueId,
+                            }
                         });
                     });
 
@@ -341,7 +307,7 @@ let resigterEmp = (e) => {
                 }
             });
 
-            await skapi.getInvitations().then(res => {
+            skapi.getInvitations().then(res => {
                 window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
             });
 
