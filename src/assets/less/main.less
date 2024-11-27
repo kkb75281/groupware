@@ -978,7 +978,16 @@
 
     .modal-body {
         overflow-y: scroll;
-        height: calc(100% - 84px);
+        height: calc(100% - 176px);
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-color-300);
     }
 
     .input-wrap {
@@ -1017,6 +1026,15 @@
     .modal {
         .modal-cont {
             min-width: calc(100% - 16px);
+        }
+
+        .modal-body {
+            height: calc(100% - 168px);
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            padding-top: 20px;
         }
     }
 }

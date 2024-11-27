@@ -219,7 +219,7 @@ const getAdditionalData = () => {
     })
 }
 
-getAdditionalData()
+getAdditionalData();
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
 // skapi.getFile(user.picture, {
