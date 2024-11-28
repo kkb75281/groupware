@@ -288,10 +288,12 @@ let resigterEmp = (e) => {
                 const files = document.querySelector('input[name=additional_data]').files;
 
                 if (files.length) {
-                    const uploadPromises = Array.from(files).map(file => {
+                    for(let file of files) {
                         const formData = new FormData();
-                        formData.append('additional_data', file); // file을 FormData에 추가
-                        return skapi.postRecord(formData, {
+
+                        formData.append('additional_data', file);
+                        
+                        await skapi.postRecord(formData, {
                             table: {
                                 name: 'emp_additional_data',
                                 access_group: 99
@@ -300,10 +302,7 @@ let resigterEmp = (e) => {
                                 unique_id: uniqueId,
                             }
                         });
-                    });
-
-                    const results = await Promise.all(uploadPromises);
-                    console.log('All files uploaded:', results);
+                    }
                 }
 
                 // const files = document.querySelector('input[name="additional_data"]').files;

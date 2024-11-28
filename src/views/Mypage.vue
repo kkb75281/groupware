@@ -99,7 +99,7 @@
                         template(v-if="uploadFile.length > 0")
                             li.file-item(v-for="(file, index) in uploadFile" :key="index")
                                 a.file-name(:href="file.url" download) {{ file.filename }}
-                                button.btn-remove(type="button" @click="removeFile(file)")
+                                button.btn-remove(v-if="!disabled" type="button" @click="removeFile(file, index)")
                                     template(v-if="file.user_id !== user.user_id")
                                         
                                     template(v-else)
@@ -138,6 +138,7 @@ let getFileInfo = ref(null);
 let userPosition = ref(null);
 let uploadProfileSrc = ref(null);
 let uploadFile = ref({});
+let removeFileList = [];
 let originUserProfile = {};
 let access_group = {
     1: '직원',
@@ -294,6 +295,7 @@ let cancelEdit = () => {
 
 let registerMypage = async(e) => {
     e.preventDefault();
+
     // 입력창을 비활성화한다.
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
@@ -338,13 +340,12 @@ let registerMypage = async(e) => {
     if(filebox && filebox.files.length) {
         console.log('파일 있음');
 
-        // 추가 자료를 업로드한다. 직원에게 reference 레코드에 권한을 부여하였으니 reference 된 모든 레코드를 열람 할수 있다.
-        const uploadPromises = Array.from(filebox.files).map(file => {
+        for(let file of filebox.files) {
             const formData = new FormData();
 
             formData.append('additional_data', file);
             
-            return skapi.postRecord(formData, {
+            await skapi.postRecord(formData, {
                 table: {
                     name: 'emp_additional_data',
                     access_group: 99
@@ -353,12 +354,15 @@ let registerMypage = async(e) => {
                     unique_id: uniqueId,
                 }
             });
-        });
-
-        const results = await Promise.all(uploadPromises);
-        console.log('All files uploaded:', results);
+        }
     } else {
         console.log('파일 없음');
+    }
+
+    if(removeFileList.length) {
+        skapi.deleteRecords({record_id: removeFileList}).then(r => {
+            removeFileList = [];
+        });
     }
 
     // 프로필 정보를 업데이트한다.
@@ -375,14 +379,19 @@ let registerMypage = async(e) => {
 }
 
 // 업로드 파일 삭제
-let removeFile =  (item) => {
-    let query = {
-        record_id: [item.record_id]
-    };
+let removeFile =  (item, index) => {
+    removeFileList.push(item.record_id);
 
-     skapi.deleteRecords(query).then(response => {
-        getAdditionalData();
-    });
+    uploadFile.value.splice(index, 1);
+
+    // console.log(item)
+    // let query = {
+    //     record_id: [item.record_id]
+    // };
+
+    // skapi.deleteRecords(query).then(response => {
+    //     getAdditionalData();
+    // });
 }
 
 onMounted(async() => {
