@@ -146,34 +146,46 @@ br
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="" :value="selectedEmp?.position || '-' " :disabled="disabled")
+                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 권한
-                input(type="text" name="" :value="selectedEmp?.access_group || '-' " :disabled="disabled")
-
+                template(v-if="readonly")
+                    input(type="text" name="access_group" :value="selectedEmp?.access_group || '-' " :readonly="readonly")
+                template(v-else)
+                    select(name="access_group" :value="selectedEmp?.position || '-' " style="height: 40px;")
+                        option(disabled selected) 권한선택
+                        option(value="1") 직원
+                        option(value="98") 관리자
+                        option(value="99") 마스터
+                
             .input-wrap
                 p.label 이름
-                input(type="text" name="" :value="selectedEmp?.name || '-' " :disabled="disabled")
+                input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 이메일
-                input(type="email" name="" :value="selectedEmp?.email || '-' " readonly :disabled="disabled")
+                input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="이메일을 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 생년월일
-                input(type="email" name="" :value="selectedEmp?.birthdate || '-' " readonly :disabled="disabled")
+                input(type="date" name="birthdate" :value="selectedEmp?.birthdate || '-' " :readonly="readonly")
 
             .input-wrap
                 p.label 전화번호
-                input(type="email" name="" :value="selectedEmp?.phone_number || '-' " readonly :disabled="disabled")
+                input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="전화번호를 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 주소
-                input(type="email" name="" :value="selectedEmp?.address || '-' " readonly :disabled="disabled")
+                input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="주소를 입력해주세요." :readonly="readonly")
 
             .input-wrap.upload-file
-                p.label 기타자료
+                template(v-if="readonly")
+                    p.label(style="margin-bottom: 0;") 기타자료
+                template(v-else)
+                    .label-wrap(style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;")
+                        p.label(style="margin-bottom: 0;") 기타자료
+                        button.btn.sm.btn-add-file(type="button") 파일 추가
                 .file-wrap
                     ul.file-list
                         template(v-if="!uploadFile")
@@ -181,17 +193,17 @@ br
                         template(v-else)
                             li.file-item(v-for="(file, index) in uploadFile" :key="index")
                                 a.file-name(:href="file.path" download) {{ file.filename }}
-                                button.btn-remove(type="button" @click="removeFile(file)" :disabled="disabled")
+                                button.btn-remove(type="button" @click="removeFile(file)")
                                     template(v-if="file.user_id !== user.user_id")
                                         
                                     template(v-else)
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
         .modal-footer
-            template(v-if="disabled")
+            template(v-if="readonly")
                 button.btn.btn-edit(type="button" @click="editEmp") 수정
             template(v-else)
-                button.btn.bg-gray(type="button" @click="closeModal") 취소
+                button.btn.bg-gray(type="button" @click="cancelEdit") 취소
                 button.btn.btn-register(type="submit" @click="registerEmp") 등록
 </template>
 
@@ -206,8 +218,6 @@ import Loading from '@/components/loading.vue';
 
 let router = useRouter();
 let route = useRoute();
-
-
 
 let loading = ref(false);
 let currentPage = ref(1);
@@ -227,7 +237,7 @@ let selectedEmp = ref(null);
 let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let uploadFile = ref(null);
-let disabled = ref(true);
+let readonly = ref(true);
 
 let callParams = computed(() => {
     switch (searchFor.value) {
@@ -412,7 +422,7 @@ watch(empListType, (nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-            if (sessionEmployee) {
+            if (!sessionEmployee) {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
@@ -661,17 +671,21 @@ let removeFile =  (item) => {
         record_id: [item.record_id]
     };
 
-    //  skapi.deleteRecords(query).then(() => {
-    //     getAdditionalData(item);
-    // });
+     skapi.deleteRecords(query).then((res) => {
+        getAdditionalData();
+    });
 }
 
 let editEmp = () => {
-    disabled.value = false;
+    readonly.value = false;
+}
+
+let cancelEdit = () => {
+    readonly.value = true;
 }
 
 let registerEmp = () => {
-    disabled.value = true;
+    readonly.value = true;
 }
 </script>
 
@@ -829,6 +843,32 @@ let registerEmp = () => {
             position: absolute;
             top: 0;
             left: 0;
+        }
+    }
+}
+
+.modal {
+    .input-wrap {
+        input {
+            border-color: var(--primary-color-400);
+            cursor: initial;
+
+            &:read-only {
+                border-color: var(--gray-color-200);
+                cursor: default;
+
+                &:hover {
+                    border-color: var(--gray-color-200);
+                }
+            }
+
+            &:hover {
+                border-color: var(--primary-color-400);
+            }
+        }
+
+        select {
+            border-color: var(--primary-color-400);
         }
     }
 }
