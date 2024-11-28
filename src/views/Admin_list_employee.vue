@@ -84,11 +84,8 @@ hr
                                     input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
                                     span.label-checkbox
                             td.list-num {{ index + 1 }}
-                            td
-                                template(v-if="Object.keys(empInfo).includes(emp.user_id)") {{ empInfo[emp.user_id]?.position }}
-                            td
-                                template(v-if="Object.keys(empInfo).includes(emp.user_id)") {{ divisionNames[empInfo[emp.user_id]?.division] }}
-                            //- td {{ emp.user_id }}
+                            td {{ emp?.position }}
+                            td {{ divisionNameList[emp?.division] }}
                             td {{ emp.name }}
                             td {{ emp.email }}
                             template(v-if='user.access_group > 98')
@@ -196,14 +193,13 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, onScopeDispose } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
+import { divisionNameList } from '@/division'
 import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
 
 let router = useRouter();
 let route = useRoute();
-
-
 
 let loading = ref(false);
 let currentPage = ref(1);
@@ -247,40 +243,47 @@ let callParams = computed(() => {
     }
 });
 
-let divisionNames = ref({});
-
-skapi.getRecords({
-    table: {
-        name: 'divisionNames',
-        access_group: 1
-    },
-}).then(r => {
-    divisionNames.value = r.list[0].data;
-})
+if(!Object.keys(divisionNameList.value).length) {
+    console.log('dd')
+    skapi.getRecords({
+        table: {
+            name: 'divisionNames',
+            access_group: 1
+        },
+    }).then(r => {
+        divisionNameList.value = r.list[0].data;
+    })
+}
 
 let empInfo: {[key:string]: any} = ref({});
 
-skapi.getRecords({
-    table: {
-        name: 'emp_division',
-        access_group: 1
-    }
-}).then(r => {
-    // console.log(r.list)
-    for(let record of r.list) {
-        let udvs = record.tags.filter(t => t.includes('_udvs_'))[0];
-        let uid = record.tags.filter(t => t.includes('_uid_'))[0];
-        let upst = record.tags.filter(t => !t.includes('_udvs_') && !t.includes('_uid_'))[0];
-        
-        udvs = udvs.replace('_udvs_', '');
-        uid = uid.replace('_uid_', '').replaceAll('_', '-');
-
-        empInfo.value[uid] = {
-            division: udvs,
-            position: upst
+let getEmpDivision = async() => {
+    await skapi.getRecords({
+        table: {
+            name: 'emp_division',
+            access_group: 1
         }
-    }
-})
+    }).then(r => {
+        for(let record of r.list) {
+            let udvs = record.tags.filter(t => t.includes('_udvs_'))[0];
+            let uid = record.tags.filter(t => t.includes('_uid_'))[0];
+            let upst = record.tags.filter(t => !t.includes('_udvs_') && !t.includes('_uid_'))[0];
+            
+            udvs = udvs.replace('_udvs_', '');
+            uid = uid.replace('_uid_', '').replaceAll('_', '-');
+
+
+
+            // for(let e of employee.value){
+            //     if(e.user_id === uid) {
+            //         e.division = udvs;
+            //         e.position = upst;
+            //     }
+            // }
+        }
+        // window.sessionStorage.setItem('employee', JSON.stringify(employee.value));
+    })
+}
 
 function getFileUserId(str: string) {
     if (!str) return '';
@@ -392,7 +395,6 @@ const getAdditionalData = () => {
     })
 }
 
-
 let openModal = async(emp: { [key: string]: any }) => {
     selectedEmp.value = emp;
     isModalOpen.value = true;
@@ -431,7 +433,7 @@ let closeModal = () => {
     selectedEmp.value = null;
 };
 
-watch(empListType, (nv) => {
+watch(empListType, async(nv) => {
     if(nv) {
         // checkbox reset
         selectedList.value = [];
@@ -439,7 +441,7 @@ watch(empListType, (nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-            if (sessionEmployee) {
+            if (!sessionEmployee) {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
@@ -452,35 +454,18 @@ watch(empListType, (nv) => {
                     // 8891ac0f-bc24-472b-9807-903bf768a944
                     // df5d3061-aefb-4a8b-8900-89d4dbd6c33f
                     // console.log(list)
-                    // await skapi.getRecords({
-                    //     table: {
-                    //         name: 'emp_division',
-                    //         access_group: 1
-                    //     }
-                    // }).then(async(r) => {
-                    //     for(let record of r.list) {
-                    //         let key = (record.index.value).replace('_', '-');
-                    //         empInfo.value[key] = {
-                    //             division: record.record_id,
-                    //             position: record.data.position
-                    //         }
-                    //     }
-                    //     res.list.forEach(emp => {
-                    //         if(Object.keys(empInfo.value).includes(emp.user_id)) {
-                    //             emp.division = empInfo.value[emp.user_id].division;
-                    //             emp.position = empInfo.value[emp.user_id].position;
-                    //         }
-                    //     });
-                    // });
+                    // getEmpDivision();
 
                     employee.value = list;
                     displayEmployee(res.list);
-                    loading.value = false;
                 });
             } else {
                 employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved'));
-
             }
+
+            await getEmpDivision();
+            console.log('here')
+            loading.value = false;
         } else if (nv === '숨김여부') {
             let list = JSON.parse(window.sessionStorage.getItem('employee'))
             let result  = list.filter(emp => emp.approved.includes('suspended'));
