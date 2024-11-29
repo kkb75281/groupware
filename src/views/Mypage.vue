@@ -87,9 +87,7 @@
             .input-wrap.upload-file
                 p.label 기타자료
                 .file-wrap
-                    template(v-if="disabled")
-
-                    template(v-else)
+                    template(v-if="!disabled")
                         .btn-upload-file
                             input(type="file" name="additional_data" multiple :disabled="disabled")
                             //- input(type="file" id="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
@@ -97,15 +95,15 @@
                     
                     ul.file-list
                         template(v-if="uploadFile.length > 0")
-                            li.file-item(v-for="(file, index) in uploadFile" :key="index")
+                            li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
                                 a.file-name(:href="file.url" download) {{ file.filename }}
-                                button.btn-remove(v-if="!disabled" type="button" @click="removeFile(file, index)")
-                                    template(v-if="file.user_id !== user.user_id")
-                                        
-                                    template(v-else)
+                                template(v-if="!disabled && file.user_id === user.user_id")
+                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
+                                        svg
+                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+                                    button.btn-remove(v-else type="button" @click="removeFile(file)")
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-                        
                         template(v-if="uploadFile.length === 0")
                             p.text 업로드 된 자료가 없습니다.
 
@@ -118,6 +116,8 @@
                     button.btn.bg-gray(type="button" @click="cancelEdit") 취소
                     button.btn(type="submit") 등록
 
+    CropImage(:open="openModal" :imageSrc="currnetImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+
     br  
     br  
     br  
@@ -128,7 +128,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
-import { convertToObject } from 'typescript';
+import { divisionNameList } from '@/division'
 
 const router = useRouter();
 const route = useRoute();
@@ -138,7 +138,7 @@ let getFileInfo = ref(null);
 let userPosition = ref(null);
 let uploadProfileSrc = ref(null);
 let uploadFile = ref({});
-let removeFileList = [];
+let removeFileList = ref([]);
 let originUserProfile = {};
 let access_group = {
     1: '직원',
@@ -149,38 +149,42 @@ let disabled = ref(true);
 let onlyEmail = ref(false);
 let showOptions = ref(false);
 
-
-// user position 가져오기
-// skapi.getRecords(
-//     {
-//         table: {
-//             name: 'emp_division',
-//             access_group: 'authorized',
-//         },
-//     }).then(r => {
-//         console.log(r.list, user.access_group);
-//         if(r.list.length === 0 && user.access_group === 99) {
-//             userPosition.value = '마스터';
-//         } else {
-//             userPosition.value = r?.list[0]?.data?.position;
-//         }
-//     }).catch(err => {
-//         console.log('== getRecords == err : ', err);
-// });
-
-function makeSafe(str) {
-    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+let getUserDivision = async() => {
+    // 부서 이름 가져오기
+    await skapi.getRecords({
+        table: {
+            name: 'divisionNames',
+            access_group: 1
+        },
+    }).then(r => {
+        divisionNameList.value = r.list[0].data;
+    })
+    
+    // user position 가져오기
+    skapi.getRecords({
+        table: {
+            name: 'emp_division',
+            access_group: 1
+        }
+    }).then(r => {
+        for(let record of r.list) {
+            let udvs = record.tags.filter(t => t.includes('_udvs_'))[0];
+            let uid = record.tags.filter(t => t.includes('_uid_'))[0];
+            let upst = record.tags.filter(t => !t.includes('_udvs_') && !t.includes('_uid_'))[0];
+            
+            udvs = udvs.replace('_udvs_', '');
+            uid = uid.replace('_uid_', '').replaceAll('_', '-');
+    
+            if(user.user_id === uid) {
+                userPosition.value = divisionNameList.value[udvs];
+            }
+        }
+    })
 }
-
-function getFileUserId(str) {
-    if (!str) return '';
-
-    return str.split('/')[3]
-}
+getUserDivision();
 
 // user additional data 가져오기
 let uniqueId = "_unqid_" + user.user_id;
-console.log(uniqueId)
 
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = () => {
@@ -196,10 +200,16 @@ const getAdditionalData = () => {
         } else {
             let fileList = [];
 
-            console.log('== getRecords == res : ', res);
+            // console.log('== getRecords == res : ', res);
 
             res.list.forEach((item) => {
                 if (item.bin.additional_data && item.bin.additional_data.length > 0) {
+
+                    function getFileUserId(str) {
+                        if (!str) return '';
+
+                        return str.split('/')[3]
+                    }
 
                     const result = item.bin.additional_data.map((el) => ({
                         ...el,
@@ -211,7 +221,7 @@ const getAdditionalData = () => {
                 }
             })
 
-            console.log('== getRecords == fileList : ', fileList);
+            // console.log('== getRecords == fileList : ', fileList);
 
             uploadFile.value = fileList;
         }
@@ -228,6 +238,8 @@ getAdditionalData();
 // }).catch(err => {
 //     console.log('== getFile == err : ', err)
 // });
+
+console.log('== user == user : ', user);
 
 let sendEmail = async() => {
     try {
@@ -357,9 +369,9 @@ let registerMypage = async(e) => {
         console.log('파일 없음');
     }
 
-    if(removeFileList.length) {
-        skapi.deleteRecords({record_id: removeFileList}).then(r => {
-            removeFileList = [];
+    if(removeFileList.value.length) {
+        skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
+            removeFileList.value = [];
         });
     }
 
@@ -377,19 +389,12 @@ let registerMypage = async(e) => {
 }
 
 // 업로드 파일 삭제
-let removeFile =  (item, index) => {
-    removeFileList.push(item.record_id);
+let removeFile =  (item) => {
+    removeFileList.value.push(item.record_id);
+}
 
-    uploadFile.value.splice(index, 1);
-
-    // console.log(item)
-    // let query = {
-    //     record_id: [item.record_id]
-    // };
-
-    // skapi.deleteRecords(query).then(response => {
-    //     getAdditionalData();
-    // });
+let cancelRemoveFile = (item) => {
+    removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
 }
 
 onMounted(async() => {
@@ -587,6 +592,15 @@ onUnmounted(() => {
         
         .file-item {
             width: 651px;
+
+            &.disabled {
+                background-color: var(--gray-color-50);
+            }
+            &.remove {
+                background-color: var(--warning-color-50);
+                border: 1px dashed var(--warning-color-400);
+                color: var(--warning-color-500);
+            }
         }
     }
 }
