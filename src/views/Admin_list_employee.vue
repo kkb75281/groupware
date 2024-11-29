@@ -158,23 +158,23 @@ br
                 
             .input-wrap
                 p.label 이름
-                input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." :readonly="readonly")
+                input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." readonly :disabled="disabled")
 
             .input-wrap
                 p.label 이메일
-                input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="이메일을 입력해주세요." :readonly="readonly")
+                input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="이메일을 입력해주세요." readonly :disabled="disabled")
 
             .input-wrap
                 p.label 생년월일
-                input(type="date" name="birthdate" :value="selectedEmp?.birthdate || '-' " :readonly="readonly")
+                input(type="date" name="birthdate" :value="selectedEmp?.birthdate || '-' " readonly :disabled="disabled")
 
             .input-wrap
                 p.label 전화번호
-                input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="전화번호를 입력해주세요." :readonly="readonly")
+                input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="전화번호를 입력해주세요." readonly :disabled="disabled")
 
             .input-wrap
                 p.label 주소
-                input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="주소를 입력해주세요." :readonly="readonly")
+                input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="주소를 입력해주세요." readonly :disabled="disabled")
 
             .input-wrap.upload-file
                 p.label(style="margin-bottom: 0;") 기타자료
@@ -239,6 +239,7 @@ let searchValue = ref('');
 let uploadFile = ref(null);
 let backupUploadFile = ref([]);
 let readonly = ref(true);
+let disabled = ref(false);
 let removeFileList = ref([]);
 
 let callParams = computed(() => {
@@ -286,14 +287,14 @@ let getEmpDivision = async() => {
         }
     }).then(r => {
         for(let record of r.list) {
-            let udvs = record.tags.filter(t => t.includes('_udvs_'))[0];
-            let uid = record.tags.filter(t => t.includes('_uid_'))[0];
-            let upst = record.tags.filter(t => !t.includes('_udvs_') && !t.includes('_uid_'))[0];
+            let udvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
+            let uid = record.tags.filter(t => t.includes('[emp_id]'))[0];
+            let upst = record.tags.filter(t => !t.includes('[emp_dvs]') && !t.includes('[emp_id]'))[0];
             
-            udvs = udvs.replace('_udvs_', '');
-            uid = uid.replace('_uid_', '').replaceAll('_', '-');
+            udvs = udvs.replace('[emp_dvs]', '');
+            uid = uid.replace('[emp_id]', '').replaceAll('_', '-');
 
-            console.log(record)
+            // console.log(record)
 
             // for(let e of employee.value){
             //     if(e.user_id === uid) {
@@ -344,15 +345,13 @@ let searchEmp = async() => {
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = (emp) => {
     console.log('=== openModal; getAdditionalData === emp : ', emp);
-    let empUniqueId = "_unqid_" + selectedEmp.value.user_id;
 
     skapi.getRecords({
         table: {
             name: 'emp_additional_data',
             access_group: 99,
         },
-        // reference: referenceId.private_record_id,
-        reference: empUniqueId,
+        reference: "[emp_additional_data]" + selectedEmp.value.user_id,
     }).then(res => {
         // console.log('=== openModal; getRecords === res : ', res);
 
@@ -377,7 +376,7 @@ const getAdditionalData = (emp) => {
                 }
             })
 
-            console.log('== getRecords == fileList : ', fileList);
+            // console.log('== getRecords == fileList : ', fileList);
 
             uploadFile.value = fileList;
         }
@@ -414,7 +413,7 @@ let openModal = async(emp: { [key: string]: any }) => {
             value: makeSafe(selectedEmp.value?.user_id)
         },
     }).then((res) => {
-        console.log('=== openModal; getRecords === res : ', res);
+        // console.log('=== openModal; getRecords === res : ', res);
         getAdditionalData(emp);
     });
 };
@@ -423,6 +422,7 @@ let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
     readonly.value = true;
+    disabled.value = false;
 };
 
 watch(empListType, async(nv) => {
@@ -658,7 +658,6 @@ let cancelInvite = (employee_info) => {
     });
 }
 
-// 업로드 파일 삭제
 let removeFile =  (item) => {
     removeFileList.value.push(item.record_id);
 }
@@ -669,11 +668,13 @@ let cancelRemoveFile = (item) => {
 
 let editEmp = () => {
     readonly.value = false;
+    disabled.value = true;
     backupUploadFile.value = [...uploadFile.value];
 }
 
 let cancelEdit = () => {
     readonly.value = true;
+    disabled.value = false;
     removeFileList.value = [];
     uploadFile.value = [...backupUploadFile.value];
 }
@@ -681,14 +682,9 @@ let cancelEdit = () => {
 let registerEmp = async(e) => {
     e.preventDefault();
 
-    // console.log('=== registerEmp === e : ', e);
-    // console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
     readonly.value = true;
 
     let filebox = document.querySelector('input[name=additional_data]');
-    console.log('=== registerEmp === filebox : ', filebox);
-
-    // console.log('=== registerEmp === empUniqueId : ', empUniqueId);
 
     if (filebox && filebox.files.length) {
         console.log('파일 있음');
@@ -707,10 +703,10 @@ let registerEmp = async(e) => {
                     unique_id: "[emp_additional_data]" + selectedEmp.value.user_id,
                 }
             }).then(res => {
-                console.log('=== registerEmp === res : ', res);
+                // console.log('=== registerEmp === res : ', res);
                 const newUploadedFile = res.bin.additional_data[0];
 
-                console.log('=== registerEmp === newUploadedFile : ', newUploadedFile);
+                // console.log('=== registerEmp === newUploadedFile : ', newUploadedFile);
             });
 
             // const newFile = {
@@ -721,8 +717,8 @@ let registerEmp = async(e) => {
             // uploadFile.value.push(newFile);
 
             backupUploadFile.value = [...uploadFile.value];
-            console.log('=== registerEmp === uploadFile.value : ', uploadFile.value);
-            console.log('=== registerEmp === backupUploadFile.value : ', backupUploadFile.value);
+            // console.log('=== registerEmp === uploadFile.value : ', uploadFile.value);
+            // console.log('=== registerEmp === backupUploadFile.value : ', backupUploadFile.value);
         }
     } else {
         console.log('파일 없음');
@@ -743,6 +739,7 @@ let registerEmp = async(e) => {
 
     window.alert('등록완료');
     readonly.value = true;
+    disabled.value = false;
 }
 </script>
 
