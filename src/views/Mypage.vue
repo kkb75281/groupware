@@ -8,15 +8,16 @@
     .form-wrap
         form#_el_pictureForm
             .image
-                img#profile-img(:src="uploadProfileSrc" alt="profile image")
+                img#profile-img(:src="uploadSrc.profile_pic" alt="profile image")
                 .label(ref="optionsBtn" :class="{'disabled': disabled}" @click="showOptions = !showOptions")
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
                 ul.options(v-if="showOptions" @click.stop)
                     li(@click="selectFile") 사진 변경
-                    li(@click="setToDefault" :class="{'disabled': uploadProfileSrc === null}") 기본 이미지로 변경
-                input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
+                    li(@click="setToDefault" :class="{'disabled': uploadSrc.profile_pic === null}") 기본 이미지로 변경
+                input#profile_pic(ref="profile_pic" type="file" name="profile_pic" @change="openCropImageDialog" style="display:none")
+                //- input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
 
         br
 
@@ -96,7 +97,7 @@
                     ul.file-list
                         template(v-if="uploadFile.length > 0")
                             li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
-                                a.file-name(:href="file.url" download) {{ file.filename }}
+                                a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
                                 template(v-if="!disabled && file.user_id === user.user_id")
                                     button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
                                         svg
@@ -130,13 +131,14 @@ import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
 import { divisionNameList } from '@/division'
 
+import CropImage from '@/components/crop_image.vue';
+
 const router = useRouter();
 const route = useRoute();
 
 let optionsBtn = ref(null);
 let getFileInfo = ref(null);
 let userPosition = ref(null);
-let uploadProfileSrc = ref(null);
 let uploadFile = ref({});
 let removeFileList = ref([]);
 let originUserProfile = {};
@@ -227,19 +229,87 @@ const getAdditionalData = () => {
         }
     })
 }
-
 getAdditionalData();
 
-// 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
-// skapi.getFile(user.picture, {
-//     dataType: 'info',
-// }).then(res => {
-//     getFileInfo.value = res;
-// }).catch(err => {
-//     console.log('== getFile == err : ', err)
-// });
-
 console.log('== user == user : ', user);
+
+let openModal = ref(false);
+let croppedImages = ref({});
+let currentTargetId = ref('');
+let currnetImageSrc = ref('');
+let uploadSrc = ref({
+    profile_pic: '',
+});
+
+let getProfileImage = async() => {
+    await skapi.getFile(user.picture, {
+        dataType: 'endpoint',
+    })
+    .then((res) => {  
+        profileImage.value = res;
+        uploadSrc.value.profile_pic = res;
+    })
+    .catch((err) => {
+        window.alert('프로필 사진을 불러오는데 실패했습니다.');
+        throw err;
+    });
+}
+
+if(user.picture) {
+    if(profileImage.value) {
+        uploadSrc.value.profile_pic = profileImage.value;
+    } else {
+        getProfileImage();
+    }
+
+    // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
+    skapi.getFile(user.picture, {
+        dataType: 'info',
+    }).then(res => {
+        getFileInfo.value = res;
+    }).catch(err => {
+        console.log('== getFile == err : ', err)
+    });
+}
+
+let openCropImageDialog = (e) => {
+    const file = e.target.files[0];
+    
+    if (file) {
+        const fileURL = URL.createObjectURL(file);
+        currnetImageSrc.value = fileURL;
+        currentTargetId.value = e.target.id;
+        uploadSrc.value[currentTargetId.value] = fileURL;
+        openModal.value = true;
+    }
+}
+
+let closeCropImageDialog = () => {
+    uploadSrc.value[currentTargetId.value] = null;
+    openModal.value = false;
+}
+
+let setCroppedImage = async(croppedImage) => {
+    if(currentTargetId.value) {
+        try {
+            // 미리보기 이미지 경로 업데이트
+            uploadSrc.value[currentTargetId.value] = croppedImage;
+
+            // Blob URL에서 Blob 객체를 가져오기
+            const response = await fetch(croppedImage);
+            const blob = await response.blob();
+
+            // Blob 객체를 저장 (서버 전송용)
+            croppedImages.value[currentTargetId.value] = blob;
+
+            openModal.value = false;
+            currnetImageSrc.value = '';
+            currentTargetId.value = '';
+        } catch (error) {
+            console.error('Error processing Blob URL:', error);
+        }
+    }
+}
 
 let sendEmail = async() => {
     try {
@@ -250,27 +320,15 @@ let sendEmail = async() => {
     router.push('/verification');
 }
 
-let changeProfileImg = (e) => {
-    let file = e.target.files[0];
-    
-    if (file) {
-        let reader = new FileReader();
-        reader.onload = (e) => {
-            uploadProfileSrc.value = e.target.result; // ref 값 업데이트
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
 let selectFile = () => {
     showOptions.value = false;
-    document.getElementById('_el_file_input').click();
+    document.getElementById('profile_pic').click();
 }
 
 let setToDefault = () => {
     showOptions.value = false;
-    uploadProfileSrc.value = null;
-    _el_file_input.value = '';
+    uploadSrc.value.profile_pic = null;
+    profile_pic.value = '';
 }
 
 let closeOptions = (e) => {
@@ -327,30 +385,28 @@ let registerMypage = async(e) => {
         };
     }
 
-    if(_el_file_input.files.length > 0) {
+    if(profile_pic.files.length > 0) {
         // 새로 선택한 사진이 있을시 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
         profile_pic_postParams.remove_bin = null;
         
         // 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
-        let picRec = await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
+        let picRec = await skapi.postRecord(document.getElementById('profile_pic'), profile_pic_postParams);
         _el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
     }
 
-    if(uploadProfileSrc.value === null && samePerson) {
+    if(uploadSrc.value.profile_pic === null && samePerson) {
         _el_picture_input.value = null;
         await skapi.deleteRecords({record_id: getFileInfo.value.record_id});
-    } else if(uploadProfileSrc.value === null && !samePerson) {
+    } else if(uploadSrc.value.profile_pic === null && !samePerson) {
         _el_picture_input.value = null;
         profile_pic_postParams.remove_bin = null;
-        await skapi.postRecord(_el_pictureForm, profile_pic_postParams);
+        await skapi.postRecord(document.getElementById('profile_pic'), profile_pic_postParams);
     }
 
-    const filebox = document.querySelector('input[name="additional_data"]');
+    const files = document.querySelector('input[name="additional_data"]').files;
 
-    if(filebox && filebox.files.length) {
-        console.log('파일 있음');
-
-        for(let file of filebox.files) {
+    if(files.length) {
+        for(let file of files) {
             const formData = new FormData();
 
             formData.append('additional_data', file);
@@ -361,12 +417,10 @@ let registerMypage = async(e) => {
                     access_group: 99
                 },
                 reference: {
-                    unique_id: uniqueId,
+                    unique_id: "[emp_additional_data]" + user.user_id,
                 }
             });
         }
-    } else {
-        console.log('파일 없음');
     }
 
     if(removeFileList.value.length) {
@@ -398,18 +452,6 @@ let cancelRemoveFile = (item) => {
 }
 
 onMounted(async() => {
-    if(profileImage.value) {
-        uploadProfileSrc.value = profileImage.value;
-    }
-
-    // skapi.getFile(user.picture, {
-    //     dataType: 'endpoint',
-    // }).then(res => {
-    //     uploadProfileSrc.value = res;
-    // }).catch(err => {
-    //     console.log('== getFile == err : ', err)
-    // });
-
     document.addEventListener('click', closeOptions);
 });
 
