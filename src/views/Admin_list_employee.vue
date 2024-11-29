@@ -349,9 +349,7 @@ const getAdditionalData = (emp) => {
             access_group: 99,
         },
         // reference: referenceId.private_record_id,
-        reference: {
-            unique_id: empUniqueId,
-        }
+        reference: empUniqueId,
     }).then(res => {
         // console.log('=== openModal; getRecords === res : ', res);
 
