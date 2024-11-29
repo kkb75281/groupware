@@ -293,7 +293,7 @@ let getEmpDivision = async() => {
             udvs = udvs.replace('_udvs_', '');
             uid = uid.replace('_uid_', '').replaceAll('_', '-');
 
-
+            console.log(record)
 
             // for(let e of employee.value){
             //     if(e.user_id === uid) {
@@ -686,10 +686,9 @@ let registerEmp = async(e) => {
     readonly.value = true;
 
     let filebox = document.querySelector('input[name=additional_data]');
-    // console.log('=== registerEmp === filebox : ', filebox);
-    let empUniqueId = "_unqid_" + selectedEmp.value.user_id;
+    console.log('=== registerEmp === filebox : ', filebox);
 
-    console.log('=== registerEmp === empUniqueId : ', empUniqueId);
+    // console.log('=== registerEmp === empUniqueId : ', empUniqueId);
 
     if (filebox && filebox.files.length) {
         console.log('파일 있음');
@@ -705,7 +704,7 @@ let registerEmp = async(e) => {
                     access_group: 99
                 },
                 reference: {
-                    unique_id: empUniqueId,
+                    unique_id: "[emp_additional_data]" + selectedEmp.value.user_id,
                 }
             }).then(res => {
                 console.log('=== registerEmp === res : ', res);
