@@ -248,20 +248,18 @@ let resigterEmp = (e) => {
             skapi.postRecord(
                 null,
                 {
+                    unique_id: "[emp_division]" + user_id,
                     table: {
                         name: 'emp_division',
                         access_group: 1
                     },
-                    tags: ["_upst_" + _el_position.value, "_uid_" + user_id_safe, "_udvs_" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
+                    tags: ["[emp_pst]" + _el_position.value, "[emp_id]" + user_id_safe, "[emp_dvs]" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
                 }
             )
-
-            let uniqueId = "_unqid_" + user_id;
-            console.log('uniqueId', uniqueId);
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
             await skapi.postRecord(null, {
-                unique_id: uniqueId,
+                unique_id: "[emp_additional_data]" + user_id,
                 table: {
                     name: 'emp_access_ref',
                     access_group: 99
@@ -299,39 +297,11 @@ let resigterEmp = (e) => {
                                 access_group: 99
                             },
                             reference: {
-                                unique_id: uniqueId,
+                                unique_id: "[emp_additional_data]" + user_id,
                             }
                         });
                     }
                 }
-
-                // const files = document.querySelector('input[name="additional_data"]').files;
-
-                // if (files.length) {
-                //     const uploadPromises = Array.from(files).map(file => {
-                //         const formData = new FormData();
-                //         formData.append('additional_data', file); // file을 FormData에 추가
-
-                //         // 각 파일을 독립적으로 업로드, 동일한 reference 값을 설정
-                //         return skapi.postRecord(formData, {
-                //             table: {
-                //                 name: 'emp_additional_data',
-                //                 access_group: 99
-                //             },
-                //             reference: {
-                //                 unique_id: `${uniqueId}_${file.name}_${Date.now()}` // 파일마다 고유 reference 설정
-                //             }
-                //         }).then(response => {
-                //             console.log(`File uploaded: ${file.name}, record_id: ${response.record_id}`);
-                //             return response;
-                //         }).catch(err => {
-                //             console.error(`Error uploading file: ${file.name}`, err);
-                //         });
-                //     });
-
-                //     const results = await Promise.all(uploadPromises);
-                //     console.log('All files uploaded:', results);
-                // }
             });
 
             skapi.getInvitations().then(res => {
