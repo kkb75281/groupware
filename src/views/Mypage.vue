@@ -189,9 +189,7 @@ const getAdditionalData = () => {
             name: 'emp_additional_data',
             access_group: 99
         },
-        reference: {
-            unique_id: uniqueId,
-        }
+        reference: uniqueId,
     }).then(res => {
         if(res.list.length === 0) {
             return;
