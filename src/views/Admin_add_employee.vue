@@ -304,6 +304,34 @@ let resigterEmp = (e) => {
                         });
                     }
                 }
+
+                // const files = document.querySelector('input[name="additional_data"]').files;
+
+                // if (files.length) {
+                //     const uploadPromises = Array.from(files).map(file => {
+                //         const formData = new FormData();
+                //         formData.append('additional_data', file); // file을 FormData에 추가
+
+                //         // 각 파일을 독립적으로 업로드, 동일한 reference 값을 설정
+                //         return skapi.postRecord(formData, {
+                //             table: {
+                //                 name: 'emp_additional_data',
+                //                 access_group: 99
+                //             },
+                //             reference: {
+                //                 unique_id: `${uniqueId}_${file.name}_${Date.now()}` // 파일마다 고유 reference 설정
+                //             }
+                //         }).then(response => {
+                //             console.log(`File uploaded: ${file.name}, record_id: ${response.record_id}`);
+                //             return response;
+                //         }).catch(err => {
+                //             console.error(`Error uploading file: ${file.name}`, err);
+                //         });
+                //     });
+
+                //     const results = await Promise.all(uploadPromises);
+                //     console.log('All files uploaded:', results);
+                // }
             });
 
             skapi.getInvitations().then(res => {

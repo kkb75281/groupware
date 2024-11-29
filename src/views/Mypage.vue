@@ -189,9 +189,7 @@ const getAdditionalData = () => {
             name: 'emp_additional_data',
             access_group: 99
         },
-        reference: {
-            unique_id: uniqueId,
-        }
+        reference: uniqueId,
     }).then(res => {
         if(res.list.length === 0) {
             return;
@@ -220,7 +218,7 @@ const getAdditionalData = () => {
     })
 }
 
-getAdditionalData()
+getAdditionalData();
 
 // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
 // skapi.getFile(user.picture, {
