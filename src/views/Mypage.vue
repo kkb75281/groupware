@@ -97,7 +97,8 @@
                     ul.file-list
                         template(v-if="uploadFile.length > 0")
                             li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
-                                a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
+                                //- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
+                                a.file-name(:href="file.url" download) {{ file.filename }}
                                 template(v-if="!disabled && file.user_id === user.user_id")
                                     button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
                                         svg
@@ -140,6 +141,7 @@ let optionsBtn = ref(null);
 let getFileInfo = ref(null);
 let userPosition = ref(null);
 let uploadFile = ref({});
+let backupUploadFile = ref([]);
 let removeFileList = ref([]);
 let originUserProfile = {};
 let access_group = {
@@ -170,12 +172,12 @@ let getUserDivision = async() => {
         }
     }).then(r => {
         for(let record of r.list) {
-            let udvs = record.tags.filter(t => t.includes('_udvs_'))[0];
-            let uid = record.tags.filter(t => t.includes('_uid_'))[0];
-            let upst = record.tags.filter(t => !t.includes('_udvs_') && !t.includes('_uid_'))[0];
+            let udvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
+            let uid = record.tags.filter(t => t.includes('[emp_id]'))[0];
+            let upst = record.tags.filter(t => !t.includes('[emp_dvs]') && !t.includes('[emp_id]'))[0];
             
-            udvs = udvs.replace('_udvs_', '');
-            uid = uid.replace('_uid_', '').replaceAll('_', '-');
+            udvs = udvs.replace('[emp_dvs]', '');
+            uid = uid.replace('[emp_id]', '').replaceAll('_', '-');
     
             if(user.user_id === uid) {
                 userPosition.value = divisionNameList.value[udvs];
@@ -186,7 +188,7 @@ let getUserDivision = async() => {
 getUserDivision();
 
 // user additional data 가져오기
-let uniqueId = "_unqid_" + user.user_id;
+// let uniqueId = "_unqid_" + user.user_id;
 
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = () => {
@@ -195,14 +197,14 @@ const getAdditionalData = () => {
             name: 'emp_additional_data',
             access_group: 99
         },
-        reference: uniqueId,
+        reference: "[emp_additional_data]" + user.user_id,
     }).then(res => {
         if(res.list.length === 0) {
             return;
         } else {
             let fileList = [];
 
-            // console.log('== getRecords == res : ', res);
+            console.log('== getRecords == res : ', res);
 
             res.list.forEach((item) => {
                 if (item.bin.additional_data && item.bin.additional_data.length > 0) {
@@ -218,7 +220,6 @@ const getAdditionalData = () => {
                         user_id: getFileUserId(el.path),
                         record_id: item.record_id,
                     }));    
-
                     fileList.push(...result);
                 }
             })
@@ -347,6 +348,7 @@ let startEdit = () => {
     }
 
     disabled.value = false;
+    backupUploadFile.value = [...uploadFile.value];
 }
 
 let cancelEdit = () => {
@@ -359,6 +361,8 @@ let cancelEdit = () => {
     }
 
     disabled.value = true;
+    removeFileList.value = [];
+    uploadFile.value = [...backupUploadFile.value];
 }
 
 let registerMypage = async(e) => {
@@ -420,6 +424,8 @@ let registerMypage = async(e) => {
                     unique_id: "[emp_additional_data]" + user.user_id,
                 }
             });
+
+            backupUploadFile.value = [...uploadFile.value];
         }
     }
 
@@ -429,7 +435,7 @@ let registerMypage = async(e) => {
         });
     }
 
-    // 프로필 정보를 업데이트한다.
+    // 프로필 정보를 업데이트
     await skapi.updateProfile(e).then(getAdditionalData)
 
     // if(user.email !== originUserProfile.email) {
@@ -439,7 +445,6 @@ let registerMypage = async(e) => {
     window.alert('등록완료');
     onlyEmail.value = false;
     disabled.value = true;
-    // router.push('/');
 }
 
 // 업로드 파일 삭제
