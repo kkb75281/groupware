@@ -304,7 +304,14 @@ let resigterEmp = (e) => {
                 }
             });
 
-            skapi.getInvitations().then(res => {
+            await skapi.getInvitations().then(res => {
+                // let result = res.list;
+                // for(let r of result) {
+                //     if(r.user_id === user_id) {
+                //         r.position = _el_position.value;
+                //         r.division = user_division_name;
+                //     }
+                // }
                 window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
             });
 

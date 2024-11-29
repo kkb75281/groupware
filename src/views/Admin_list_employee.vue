@@ -90,7 +90,7 @@ hr
                             td {{ emp.email }}
                             template(v-if='user.access_group > 98')
                                 td
-                                    .btn-wrap
+                                    .btn-wrap(v-if="emp.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && emp.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f'")
                                         button.btn.bg-gray.sm(@click="openModal(emp)") 상세보기
                             td {{ emp.birthdate }}
                             td {{ emp.phone_number }}
@@ -103,8 +103,8 @@ hr
                                     input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
                                     span.label-checkbox
                             td.list-num {{ index + 1 }}
-                            td {{ emp.position }}
-                            td {{ emp.division }}
+                            td {{ emp?.position }}
+                            td {{ divisionNameList[emp?.division] }}
                             td {{ emp.name }}
                             td {{ emp.email }}
                             td
@@ -143,14 +143,14 @@ br
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="readonly")
+                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="disabled")
 
             .input-wrap
                 p.label 권한
-                template(v-if="readonly")
-                    input(type="text" name="access_group" :value="selectedEmp?.access_group || '-' " :readonly="readonly")
+                template(v-if="disabled")
+                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " :readonly="disabled")
                 template(v-else)
-                    select(name="access_group" :value="selectedEmp?.position || '-' " style="height: 40px;")
+                    select(name="access_group" :value="selectedEmp?.access_group || '-' " style="height: 40px;")
                         option(disabled selected) 권한선택
                         option(value="1") 직원
                         option(value="98") 관리자
@@ -158,29 +158,27 @@ br
                 
             .input-wrap
                 p.label 이름
-                input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." :readonly="readonly")
+                input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
 
             .input-wrap
                 p.label 이메일
-                input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="이메일을 입력해주세요." :readonly="readonly")
+                input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="이메일을 입력해주세요." disabled)
 
             .input-wrap
                 p.label 생년월일
-                input(type="date" name="birthdate" :value="selectedEmp?.birthdate || '-' " :readonly="readonly")
+                input(type="date" name="birthdate" :value="selectedEmp?.birthdate || '-' " disabled)
 
             .input-wrap
                 p.label 전화번호
-                input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="전화번호를 입력해주세요." :readonly="readonly")
+                input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="전화번호를 입력해주세요." disabled)
 
             .input-wrap
                 p.label 주소
-                input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="주소를 입력해주세요." :readonly="readonly")
+                input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="주소를 입력해주세요." disabled)
 
             .input-wrap.upload-file
                 p.label(style="margin-bottom: 0;") 기타자료
-                template(v-if="readonly")
-
-                template(v-else)
+                template(v-if="!disabled")
                     .btn-add-file(style="margin-top: 12px;")
                         input(type="file" name="additional_data" multiple style="height: initial;")
 
@@ -191,17 +189,15 @@ br
                         template(v-else)
                             li.file-item(v-for="(file, index) in uploadFile" :key="index")
                                 a.file-name(:href="file.path" download) {{ file.filename }}
-                                button.btn-remove(v-if="!readonly" type="button" @click="removeFile(file)")
-                                    template(v-if="file.user_id !== user.user_id")
-                                        
-                                    template(v-else)
+                                button.btn-remove(v-if="!disabled" type="button" @click="removeFile(file)")
+                                    template(v-if="file.user_id == user.user_id")
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
         .modal-footer
-            template(v-if="readonly")
-                button.btn.btn-edit(type="button" @click="editEmp") 수정
+            template(v-if="disabled")
+                button.btn.btn-edit(type="button" @click="disabled=false") 수정
             template(v-else)
-                button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
+                button.btn.bg-gray.btn-cancel(type="button" @click="disabled=true;removeFileList = [];") 취소
                 button.btn.btn-register(type="submit" @click="registerEmp") 등록
 </template>
 
@@ -210,7 +206,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, onScopeDispose } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
-import { divisionNameList } from '@/division'
+import { divisionNameList, getDivisionNames } from '@/division'
 import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
@@ -236,9 +232,14 @@ let selectedEmp = ref(null);
 let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let uploadFile = ref(null);
-let readonly = ref(true);
+let disabled = ref(true);
 let removeFileList = [];
 
+let access_group = {
+    1: '직원',
+    98: '관리자',
+    99: '마스터',
+};
 let callParams = computed(() => {
     switch (searchFor.value) {
         case 'name':
@@ -262,17 +263,7 @@ let callParams = computed(() => {
     }
 });
 
-if(!Object.keys(divisionNameList.value).length) {
-    console.log('dd')
-    skapi.getRecords({
-        table: {
-            name: 'divisionNames',
-            access_group: 1
-        },
-    }).then(r => {
-        divisionNameList.value = r.list[0].data;
-    })
-}
+getDivisionNames();
 
 let empInfo: {[key:string]: any} = ref({});
 
@@ -283,24 +274,24 @@ let getEmpDivision = async() => {
             access_group: 1
         }
     }).then(r => {
-        for(let record of r.list) {
-            let udvs = record.tags.filter(t => t.includes('_udvs_'))[0];
-            let uid = record.tags.filter(t => t.includes('_uid_'))[0];
-            let upst = record.tags.filter(t => !t.includes('_udvs_') && !t.includes('_uid_'))[0];
-            
-            udvs = udvs.replace('_udvs_', '');
-            uid = uid.replace('_uid_', '').replaceAll('_', '-');
-
-            console.log(record)
-
-            // for(let e of employee.value){
-            //     if(e.user_id === uid) {
-            //         e.division = udvs;
-            //         e.position = upst;
-            //     }
-            // }
+        if(r.list.length) {
+            for(let record of r.list) {
+                let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
+                let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
+                let emp_pst = record.tags.filter(t => t.includes('[emp_pst]'))[0];
+                
+                emp_dvs = emp_dvs.replace('[emp_dvs]', '');
+                emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
+                emp_pst = emp_pst.replace('[emp_pst]', '');
+    
+                for(let e of employee.value){
+                    if(e.user_id === emp_id) {
+                        e.division = emp_dvs;
+                        e.position = emp_pst;
+                    }
+                }
+            }
         }
-        // window.sessionStorage.setItem('employee', JSON.stringify(employee.value));
     })
 }
 
@@ -341,15 +332,12 @@ let searchEmp = async() => {
 
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = (emp) => {
-    let empUniqueId = "_unqid_" + emp.user_id;
-
     skapi.getRecords({
         table: {
             name: 'emp_additional_data',
             access_group: 99,
         },
-        // reference: referenceId.private_record_id,
-        reference: empUniqueId,
+        reference: "[emp_additional_data]" + emp.user_id,
     }).then(res => {
         // console.log('=== openModal; getRecords === res : ', res);
 
@@ -386,8 +374,10 @@ let openModal = async(emp: { [key: string]: any }) => {
     uploadFile.value = null;
     removeFileList = [];
 
+    console.log(emp)
+
     if(emp.picture) {
-        skapi.getFile(emp.picture, {
+        await skapi.getFile(emp.picture, {
             dataType: 'endpoint',
         })
         .then((res: any) => {  
@@ -418,7 +408,7 @@ let openModal = async(emp: { [key: string]: any }) => {
 let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
-    readonly.value = true;
+    disabled.value = true;
 };
 
 watch(empListType, async(nv) => {
@@ -433,27 +423,21 @@ watch(empListType, async(nv) => {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
-                    console.log(res.list)
+                    // console.log(res.list)
                     let list = res.list.filter(emp => emp.approved.includes('approved'));
-                    // 0ea3a557-908c-4b2e-9398-b35b391159cf
-                    // 0958b372-802a-4b9a-be93-b1f53c354cdc
-                    // e966fb01-736e-441d-b1f0-7740b56a96cc
-
                     // 8891ac0f-bc24-472b-9807-903bf768a944
                     // df5d3061-aefb-4a8b-8900-89d4dbd6c33f
                     // console.log(list)
                     // getEmpDivision();
 
                     employee.value = list;
+                    await getEmpDivision();
                     displayEmployee(res.list);
+                    loading.value = false;
                 });
             } else {
                 employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved'));
             }
-
-            await getEmpDivision();
-            console.log('here')
-            loading.value = false;
         } else if (nv === '숨김여부') {
             let list = JSON.parse(window.sessionStorage.getItem('employee'))
             let result  = list.filter(emp => emp.approved.includes('suspended'));
@@ -466,8 +450,9 @@ watch(empListType, async(nv) => {
             if (!sessionEmployee) {
                 loading.value = true;
 
-                skapi.getInvitations().then(res => {
+                skapi.getInvitations().then(async(res) => {
                     employee.value = res.list;
+                    await getEmpDivision();
                     displayinviteEmployee(res.list);
                     loading.value = false;
                 });
@@ -476,6 +461,8 @@ watch(empListType, async(nv) => {
                 employee.value = sessionEmployee;
             }
         }
+
+        getEmpDivision();
     }
 }, { immediate: true });
 
@@ -645,10 +632,16 @@ let cancelInvite = (employee_info) => {
 
         alert('초대메일이 취소되었습니다.');
 
-        skapi.getInvitations().then(res => {
-            employee.value = res.list;
-            displayinviteEmployee(res.list);
-        });
+        // skapi.getInvitations().then(res => {
+        //     employee.value = res.list;
+        //     displayinviteEmployee(res.list);
+        // });
+
+        let session = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
+        let newSession = session.filter(emp => emp.user_id !== employee_info.user_id);
+
+        employee.value = newSession;
+        displayinviteEmployee(newSession);
     }).catch(err => {
         alert('초대메일 취소에 실패하였습니다.');
     });
@@ -677,21 +670,12 @@ let removeFile =  (item) => {
     console.log('BB === removeFile === uploadFile : ', uploadFile.value);
 }
 
-let editEmp = () => {
-    readonly.value = false;
-}
-
-let cancelEdit = () => {
-    readonly.value = true;
-    removeFileList = [];
-}
-
 let registerEmp = async(e) => {
     e.preventDefault();
 
     console.log('=== registerEmp === e : ', e);
     console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
-    readonly.value = true;
+    disabled.value = true;
 
     let filebox = document.querySelector('input[name=additional_data]');
     console.log('=== registerEmp === filebox : ', filebox);
@@ -731,7 +715,7 @@ let registerEmp = async(e) => {
     await skapi.updateProfile(e).then(getAdditionalData);
 
     window.alert('등록완료');
-    readonly.value = true;
+    disabled.value = true;
 }
 </script>
 
@@ -896,7 +880,7 @@ let registerEmp = async(e) => {
 .modal {
     .input-wrap {
         input {
-            border-color: var(--primary-color-400);
+            // border-color: var(--primary-color-400);
             cursor: initial;
 
             &:read-only {
@@ -914,7 +898,7 @@ let registerEmp = async(e) => {
         }
 
         select {
-            border-color: var(--primary-color-400);
+            // border-color: var(--primary-color-400);
         }
     }
 }
