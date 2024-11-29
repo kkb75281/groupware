@@ -189,12 +189,13 @@ br
                         template(v-if="!uploadFile")
                             li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
                         template(v-else)
-                            li.file-item(v-for="(file, index) in uploadFile" :key="index")
+                            li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
                                 a.file-name(:href="file.path" download) {{ file.filename }}
-                                button.btn-remove(v-if="!readonly" type="button" @click="removeFile(file)")
-                                    template(v-if="file.user_id !== user.user_id")
-                                        
-                                    template(v-else)
+                                template(v-if="!readonly")
+                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
+                                        svg
+                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+                                    button.btn-remove(v-else type="button" @click="removeFile(file)")
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
         .modal-footer
@@ -238,7 +239,7 @@ let searchValue = ref('');
 let uploadFile = ref(null);
 let backupUploadFile = ref([]);
 let readonly = ref(true);
-let removeFileList = [];
+let removeFileList = ref([]);
 
 let callParams = computed(() => {
     switch (searchFor.value) {
@@ -342,7 +343,8 @@ let searchEmp = async() => {
 
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = (emp) => {
-    let empUniqueId = "_unqid_" + emp.user_id;
+    console.log('=== openModal; getAdditionalData === emp : ', emp);
+    let empUniqueId = "_unqid_" + selectedEmp.value.user_id;
 
     skapi.getRecords({
         table: {
@@ -367,6 +369,7 @@ const getAdditionalData = (emp) => {
                     const result = item.bin.additional_data.map((el) => ({
                         ...el,
                         user_id: getFileUserId(el.path),
+                        // record_id: item.record_id,
                         record_id: item.record_id,
                     }));    
 
@@ -385,7 +388,7 @@ let openModal = async(emp: { [key: string]: any }) => {
     selectedEmp.value = emp;
     isModalOpen.value = true;
     uploadFile.value = null;
-    removeFileList = [];
+    removeFileList.value = [];
 
     if(emp.picture) {
         skapi.getFile(emp.picture, {
@@ -656,26 +659,12 @@ let cancelInvite = (employee_info) => {
 }
 
 // 업로드 파일 삭제
-// let removeFile =  (item) => {
-//     console.log('item : ', item);
-//     let query = {
-//         record_id: [item.record_id]
-//     };
-
-//      skapi.deleteRecords(query).then((res) => {
-//         getAdditionalData();
-//     });
-// }
-
 let removeFile =  (item) => {
-    // console.log('=== removeFile === item : ', item);
-    console.log('AA === removeFile === uploadFile : ', uploadFile.value);
+    removeFileList.value.push(item.record_id);
+}
 
-    removeFileList.push(item.record_id);
-    uploadFile.value = uploadFile.value.filter(file => file.record_id !== item.record_id);
-
-    console.log('=== removeFile === removeFileList : ', removeFileList);
-    console.log('BB === removeFile === uploadFile : ', uploadFile.value);
+let cancelRemoveFile = (item) => {
+    removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
 }
 
 let editEmp = () => {
@@ -685,21 +674,22 @@ let editEmp = () => {
 
 let cancelEdit = () => {
     readonly.value = true;
-    removeFileList = [];
+    removeFileList.value = [];
     uploadFile.value = [...backupUploadFile.value];
-    console.log('=== cancelEdit === uploadFile.value : ', uploadFile.value);
 }
 
 let registerEmp = async(e) => {
     e.preventDefault();
 
-    console.log('=== registerEmp === e : ', e);
-    console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
+    // console.log('=== registerEmp === e : ', e);
+    // console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
     readonly.value = true;
 
     let filebox = document.querySelector('input[name=additional_data]');
-    console.log('=== registerEmp === filebox : ', filebox);
+    // console.log('=== registerEmp === filebox : ', filebox);
     let empUniqueId = "_unqid_" + selectedEmp.value.user_id;
+
+    console.log('=== registerEmp === empUniqueId : ', empUniqueId);
 
     if (filebox && filebox.files.length) {
         console.log('파일 있음');
@@ -719,7 +709,7 @@ let registerEmp = async(e) => {
                 }
             }).then(res => {
                 console.log('=== registerEmp === res : ', res);
-                const newUploadedFile = res.list[0].bin.additional_data[0];
+                const newUploadedFile = res.bin.additional_data[0];
 
                 console.log('=== registerEmp === newUploadedFile : ', newUploadedFile);
             });
@@ -739,11 +729,11 @@ let registerEmp = async(e) => {
         console.log('파일 없음');
     }
 
-    if(removeFileList.length) {
+    if(removeFileList.value.length) {
         console.log('삭제파일 있음');
 
-        skapi.deleteRecords({record_id: removeFileList}).then(r => {
-            removeFileList = [];
+        skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
+            removeFileList.value = [];
         });
     } else {
         console.log('삭제파일 없음');
@@ -937,6 +927,16 @@ let registerEmp = async(e) => {
 
         select {
             border-color: var(--primary-color-400);
+        }
+    }
+}
+
+.upload-file {
+    .file-item {
+        &.remove {
+            background-color: var(--warning-color-50);
+            border: 1px dashed var(--warning-color-400);
+            color: var(--warning-color-500);
         }
     }
 }
