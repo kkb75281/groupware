@@ -236,6 +236,7 @@ let selectedEmp = ref(null);
 let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let uploadFile = ref(null);
+let backupUploadFile = ref([]);
 let readonly = ref(true);
 let removeFileList = [];
 
@@ -679,11 +680,14 @@ let removeFile =  (item) => {
 
 let editEmp = () => {
     readonly.value = false;
+    backupUploadFile.value = [...uploadFile.value];
 }
 
 let cancelEdit = () => {
     readonly.value = true;
     removeFileList = [];
+    uploadFile.value = [...backupUploadFile.value];
+    console.log('=== cancelEdit === uploadFile.value : ', uploadFile.value);
 }
 
 let registerEmp = async(e) => {
@@ -713,7 +717,23 @@ let registerEmp = async(e) => {
                 reference: {
                     unique_id: empUniqueId,
                 }
+            }).then(res => {
+                console.log('=== registerEmp === res : ', res);
+                const newUploadedFile = res.list[0].bin.additional_data[0];
+
+                console.log('=== registerEmp === newUploadedFile : ', newUploadedFile);
             });
+
+            // const newFile = {
+            //     record_id: uploadedFile.record_id,
+            //     file_name: file.name,
+            //     url: uploadedFile.url, // 반환된 파일 URL
+            // };
+            // uploadFile.value.push(newFile);
+
+            backupUploadFile.value = [...uploadFile.value];
+            console.log('=== registerEmp === uploadFile.value : ', uploadFile.value);
+            console.log('=== registerEmp === backupUploadFile.value : ', backupUploadFile.value);
         }
     } else {
         console.log('파일 없음');
@@ -721,6 +741,7 @@ let registerEmp = async(e) => {
 
     if(removeFileList.length) {
         console.log('삭제파일 있음');
+
         skapi.deleteRecords({record_id: removeFileList}).then(r => {
             removeFileList = [];
         });
@@ -728,7 +749,7 @@ let registerEmp = async(e) => {
         console.log('삭제파일 없음');
     }
 
-    // 프로필 정보를 업데이트한다.
+    // 프로필 정보를 업데이트
     await skapi.updateProfile(e).then(getAdditionalData);
 
     window.alert('등록완료');
