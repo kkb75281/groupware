@@ -143,34 +143,47 @@ br
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="" :value="selectedEmp?.position || '-' " readonly)
+                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 권한
-                input(type="text" name="" :value="selectedEmp?.access_group || '-' " readonly)
-
+                template(v-if="readonly")
+                    input(type="text" name="access_group" :value="selectedEmp?.access_group || '-' " :readonly="readonly")
+                template(v-else)
+                    select(name="access_group" :value="selectedEmp?.position || '-' " style="height: 40px;")
+                        option(disabled selected) 권한선택
+                        option(value="1") 직원
+                        option(value="98") 관리자
+                        option(value="99") 마스터
+                
             .input-wrap
                 p.label 이름
-                input(type="text" name="" :value="selectedEmp?.name || '-' " readonly)
+                input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 이메일
-                input(type="email" name="" :value="selectedEmp?.email || '-' " readonly)
+                input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="이메일을 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 생년월일
-                input(type="email" name="" :value="selectedEmp?.birthdate || '-' " readonly)
+                input(type="date" name="birthdate" :value="selectedEmp?.birthdate || '-' " :readonly="readonly")
 
             .input-wrap
                 p.label 전화번호
-                input(type="email" name="" :value="selectedEmp?.phone_number || '-' " readonly)
+                input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="전화번호를 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 주소
-                input(type="email" name="" :value="selectedEmp?.address || '-' " readonly)
+                input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="주소를 입력해주세요." :readonly="readonly")
 
             .input-wrap.upload-file
-                p.label 기타자료
+                p.label(style="margin-bottom: 0;") 기타자료
+                template(v-if="readonly")
+
+                template(v-else)
+                    .btn-add-file(style="margin-top: 12px;")
+                        input(type="file" name="additional_data" multiple style="height: initial;")
+
                 .file-wrap
                     ul.file-list
                         template(v-if="!uploadFile")
@@ -178,14 +191,18 @@ br
                         template(v-else)
                             li.file-item(v-for="(file, index) in uploadFile" :key="index")
                                 a.file-name(:href="file.path" download) {{ file.filename }}
-                                button.btn-remove(type="button" @click="removeFile(file)")
+                                button.btn-remove(v-if="!readonly" type="button" @click="removeFile(file)")
                                     template(v-if="file.user_id !== user.user_id")
                                         
                                     template(v-else)
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-        //- .modal-footer
-        //-     button.btn.bg-gray(@click="closeModal") 닫기
+        .modal-footer
+            template(v-if="readonly")
+                button.btn.btn-edit(type="button" @click="editEmp") 수정
+            template(v-else)
+                button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
+                button.btn.btn-register(type="submit" @click="registerEmp") 등록
 </template>
 
 <script setup lang="ts">
@@ -219,6 +236,8 @@ let selectedEmp = ref(null);
 let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let uploadFile = ref(null);
+let readonly = ref(true);
+let removeFileList = [];
 
 let callParams = computed(() => {
     switch (searchFor.value) {
@@ -320,32 +339,28 @@ let searchEmp = async() => {
     loading.value = false;
 }
 
- // 추가자료 업로드 한 것 가져오기
-const getAdditionalData = () => {
-    // 방어코드
-    if (!selectedEmp || !selectedEmp.value) return;
-
-    const referenceId = JSON.parse(selectedEmp.value?.misc);
-
-    if (!referenceId) return;
+// 추가자료 업로드 한 것 가져오기
+const getAdditionalData = (emp) => {
+    let empUniqueId = "_unqid_" + emp.user_id;
 
     skapi.getRecords({
         table: {
             name: 'emp_additional_data',
             access_group: 99,
         },
-        reference: referenceId.private_record_id,
-    }).then((r) => {
-        console.log('=== openModal; getRecords === r : ', r);
+        // reference: referenceId.private_record_id,
+        reference: empUniqueId,
+    }).then(res => {
+        // console.log('=== openModal; getRecords === res : ', res);
 
-        if(r.list.length === 0) {
+        if(res.list.length === 0) {
             return;
         } else {
             let fileList = [];
 
-            console.log('== getRecords == res : ', r);
+            // console.log('== getRecords == res : ', res);
 
-            r.list.forEach((item) => {
+            res.list.forEach((item) => {
                 if (item.bin.additional_data && item.bin.additional_data.length > 0) {
 
                     const result = item.bin.additional_data.map((el) => ({
@@ -362,43 +377,14 @@ const getAdditionalData = () => {
 
             uploadFile.value = fileList;
         }
-
-        // // uploadFile.value에 값을 추가
-        // if (!uploadFile.value) {
-        //     uploadFile.value = []; // 초기화
-        // }
-
-        // // r.list의 각 요소를 순회
-        // for (let list of r.list) {
-        //     console.log('=== getRecords === list : ', list.bin.additional_data);
-        //     uploadFile.value.push(list.bin.additional_data);
-        // }
-
-        // const objList = JSON.parse(JSON.stringify(uploadFile.value));
-        // const combined = objList.flat().filter(item => typeof item === 'object' && item !== null);
-
-        // console.log('=== objList === : ', objList);
-        // console.log('=== combined === : ', combined);
-
-        // if (r.list.length === 0) {
-        //     return uploadFile.value = null;
-        // }
-
-        // uploadFile.value = combined;
-        
-        // // for(let i of uploadFile.value) {
-        // //     console.log('=== openModal; getRecords === i : ', i);
-        // //     i.user_id = r.list[0].user_id;
-        // // }
-        // console.log('=== getRecords === uploadFile.value : ', uploadFile.value);
-        // console.log('=== getRecords === selectedEmp.value : ', selectedEmp.value);
     })
 }
 
 let openModal = async(emp: { [key: string]: any }) => {
     selectedEmp.value = emp;
     isModalOpen.value = true;
-    uploadFile.value = null
+    uploadFile.value = null;
+    removeFileList = [];
 
     if(emp.picture) {
         skapi.getFile(emp.picture, {
@@ -423,14 +409,16 @@ let openModal = async(emp: { [key: string]: any }) => {
             name: 'user_id',
             value: makeSafe(selectedEmp.value?.user_id)
         },
-    }).then(() => {
-        getAdditionalData();
+    }).then((res) => {
+        console.log('=== openModal; getRecords === res : ', res);
+        getAdditionalData(emp);
     });
 };
 
 let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
+    readonly.value = true;
 };
 
 watch(empListType, async(nv) => {
@@ -667,79 +655,85 @@ let cancelInvite = (employee_info) => {
 }
 
 // 업로드 파일 삭제
-let removeFile =  (item) => {
-    let query = {
-        record_id: [item.record_id]
-    };
+// let removeFile =  (item) => {
+//     console.log('item : ', item);
+//     let query = {
+//         record_id: [item.record_id]
+//     };
 
-     skapi.deleteRecords(query).then(() => {
-        getAdditionalData();
-    });
+//      skapi.deleteRecords(query).then((res) => {
+//         getAdditionalData();
+//     });
+// }
+
+let removeFile =  (item) => {
+    // console.log('=== removeFile === item : ', item);
+    console.log('AA === removeFile === uploadFile : ', uploadFile.value);
+
+    removeFileList.push(item.record_id);
+    uploadFile.value = uploadFile.value.filter(file => file.record_id !== item.record_id);
+
+    console.log('=== removeFile === removeFileList : ', removeFileList);
+    console.log('BB === removeFile === uploadFile : ', uploadFile.value);
 }
 
-// let removeFile = (file) => {
-//     console.log('AA === removeFile === file : ', file);
-//     console.log('AA == removeFile === uploadFile.value : ', uploadFile.value);
+let editEmp = () => {
+    readonly.value = false;
+}
 
-//     // skapi.deleteRecords({
-//     //     table: {
-//     //         name: 'emp_additional_data',
-//     //         access_group: 99,
-//     //     },
-//     //     reference: 
-//     // }).then(res => {
-//     //     console.log('=== deleteRecords === res : ', res);
-//     // }).catch(err => {
-//     //     console.log('=== deleteRecords === err : ', err);
-//     //     throw err;
-//     // });
+let cancelEdit = () => {
+    readonly.value = true;
+    removeFileList = [];
+}
 
-//     // for(let i of uploadFile.value) {
-//     //     console.log('=== removeFile === i : ', i);
-//     //     if(file.path === i.path) {
-//     //         uploadFile.value = uploadFile.value.filter((f) => {
-//     //             return f.path !== file.path;
-//     //         });
-//     //         break;
-//     //     }
-//     // }
+let registerEmp = async(e) => {
+    e.preventDefault();
 
-//     // console.log('BB == removeFile === uploadFile.value : ', uploadFile.value);
+    console.log('=== registerEmp === e : ', e);
+    console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
+    readonly.value = true;
 
-//     // let misc = JSON.parse(selectedEmp.value?.misc || null);
-//     // let miscParse = JSON.parse(selectedEmp.value?.misc);
+    let filebox = document.querySelector('input[name=additional_data]');
+    console.log('=== registerEmp === filebox : ', filebox);
+    let empUniqueId = "_unqid_" + selectedEmp.value.user_id;
 
-//     // skapi.deleteRecords(uploadFile.value).then(res => {
-//     //     console.log('=== deleteRecords === res : ', res);
-//     // }).catch(err => {
-//     //     console.log('=== deleteRecords === err : ', err);
-//     // });
+    if (filebox && filebox.files.length) {
+        console.log('파일 있음');
 
-//     // skapi.postRecord(uploadFile.value, {
-//     //     record_id: miscParse.private_record_id,
-//     //     table: {
-//     //         name: 'emp_additional_data',
-//     //         access_group: 99,
-//     //     },
-//     //     reference: miscParse.private_record_id,
-//     // }).then((res) => {
-//     //     console.log('AA === postRecord === res : ', res)
-//     //     console.log('BB === removeFile === file : ', file)
-//     //     console.log('CC == removeFile === uploadFile.value : ', uploadFile.value);
+        for(let file of filebox.files) {
+            const formData = new FormData();
 
-//     //     // uploadFile.value = uploadFile.value.filter((f) => {
-//     //     //     console.log('=== removeFile === f : ', f);
-//     //     //     return f.filename !== file.filename;
-//     //     // });
+            formData.append('additional_data', file);
+            
+            await skapi.postRecord(formData, {
+                table: {
+                    name: 'emp_additional_data',
+                    access_group: 99
+                },
+                reference: {
+                    unique_id: empUniqueId,
+                }
+            });
+        }
+    } else {
+        console.log('파일 없음');
+    }
 
-//     //     // res.list[0].bin.additional_data = uploadFile.value;
+    if(removeFileList.length) {
+        console.log('삭제파일 있음');
+        skapi.deleteRecords({record_id: removeFileList}).then(r => {
+            removeFileList = [];
+        });
+    } else {
+        console.log('삭제파일 없음');
+    }
 
-//     //     // console.log('CC uploadFile.value : ', uploadFile.value);
-//     //     console.log('BB === postRecord === res : ', res);
-//     // }).catch((err) => {
-//     //     console.log('=== deleteRecords === err : ', err);
-//     // });
-// }
+    // 프로필 정보를 업데이트한다.
+    await skapi.updateProfile(e).then(getAdditionalData);
+
+    window.alert('등록완료');
+    readonly.value = true;
+}
 </script>
 
 <style scoped lang="less">
@@ -896,6 +890,32 @@ let removeFile =  (item) => {
             position: absolute;
             top: 0;
             left: 0;
+        }
+    }
+}
+
+.modal {
+    .input-wrap {
+        input {
+            border-color: var(--primary-color-400);
+            cursor: initial;
+
+            &:read-only {
+                border-color: var(--gray-color-200);
+                cursor: default;
+
+                &:hover {
+                    border-color: var(--gray-color-200);
+                }
+            }
+
+            &:hover {
+                border-color: var(--primary-color-400);
+            }
+        }
+
+        select {
+            border-color: var(--primary-color-400);
         }
     }
 }
