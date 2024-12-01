@@ -172,15 +172,16 @@ let getUserDivision = async() => {
         }
     }).then(r => {
         for(let record of r.list) {
-            let udvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
-            let uid = record.tags.filter(t => t.includes('[emp_id]'))[0];
-            let upst = record.tags.filter(t => !t.includes('[emp_dvs]') && !t.includes('[emp_id]'))[0];
+            let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
+            let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
+            let emp_pst = record.tags.filter(t => t.includes('[emp_pst]'))[0];
             
-            udvs = udvs.replace('[emp_dvs]', '');
-            uid = uid.replace('[emp_id]', '').replaceAll('_', '-');
+            emp_dvs = emp_dvs.replace('[emp_dvs]', '');
+            emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
+            emp_pst = emp_pst.replace('[emp_pst]', '');
     
-            if(user.user_id === uid) {
-                userPosition.value = divisionNameList.value[udvs];
+            if(user.user_id === emp_id) {
+                userPosition.value = divisionNameList.value[emp_dvs];
             }
         }
     })
@@ -188,8 +189,6 @@ let getUserDivision = async() => {
 getUserDivision();
 
 // user additional data 가져오기
-// let uniqueId = "_unqid_" + user.user_id;
-
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = () => {
     skapi.getRecords({
