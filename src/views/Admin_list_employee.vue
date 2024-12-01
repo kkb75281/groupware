@@ -143,12 +143,12 @@ br
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="disabled")
+                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="readonly")
 
             .input-wrap
                 p.label 권한
                 template(v-if="disabled")
-                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " :readonly="disabled")
+                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " :readonly="readonly")
                 template(v-else)
                     select(name="access_group" :value="selectedEmp?.access_group || '-' " style="height: 40px;")
                         option(disabled selected) 권한선택
@@ -413,6 +413,7 @@ let openModal = async(emp: { [key: string]: any }) => {
 let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
+    readonly.value = true;
     disabled.value = true;
 };
 
@@ -678,6 +679,7 @@ let registerEmp = async(e) => {
 
     console.log('=== registerEmp === e : ', e);
     console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
+    readonly.value = true;
     disabled.value = true;
 
     let filebox = document.querySelector('input[name=additional_data]');
@@ -720,6 +722,7 @@ let registerEmp = async(e) => {
     await skapi.updateProfile(e).then(getAdditionalData);
 
     window.alert('등록완료');
+    readonly.value = true;
     disabled.value = true;
 }
 </script>
@@ -885,7 +888,7 @@ let registerEmp = async(e) => {
 .modal {
     .input-wrap {
         input {
-            // border-color: var(--primary-color-400);
+            border-color: var(--primary-color-400);
             cursor: initial;
 
             &:read-only {
@@ -903,7 +906,7 @@ let registerEmp = async(e) => {
         }
 
         select {
-            // border-color: var(--primary-color-400);
+            border-color: var(--primary-color-400);
         }
     }
 }
