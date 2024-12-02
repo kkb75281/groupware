@@ -283,25 +283,33 @@ let callParams = computed(() => {
     }
 });
 
+getDivisionNames();
+
+let displayDivisionOptions = (selectName) => {
+    let divisionList = document.querySelector(`select[name="${selectName}"]`);
+    for(let key in divisionNameList.value) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.innerText = divisionNameList.value[key];
+        if(selectName === 'division' && key === selectedEmp.value.division) {
+            option.selected = true;
+        }
+        divisionList.appendChild(option);
+    }
+    divisionList.disabled = false;
+}
+
 watch(searchFor, (nv) => {
     if (nv) {
         searchValue.value = '';
 
         if(nv === 'division') {
             nextTick(() => {
-                for(let key in divisionNameList.value) {
-                    const option = document.createElement('option');
-                    option.value = key;
-                    option.innerText = divisionNameList.value[key];
-                    document.querySelector('select[name="searchDivision"]').appendChild(option);
-                }
-                document.querySelector('select[name="searchDivision"]').disabled = false;
+                displayDivisionOptions('searchDivision');
             });
         }
     }
 });
-
-getDivisionNames();
 
 function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
@@ -732,11 +740,6 @@ let cancelInvite = (employee_info) => {
 
         alert('초대메일이 취소되었습니다.');
 
-        // skapi.getInvitations().then(res => {
-        //     employee.value = res.list;
-        //     displayinviteEmployee(res.list);
-        // });
-
         let session = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
         let newSession = session.filter(emp => emp.user_id !== employee_info.user_id);
 
@@ -759,18 +762,7 @@ let editEmp = () => {
     readonly.value = false;
     disabled.value = false;
     nextTick(() => {
-        for(let key in divisionNameList.value) {
-            const option = document.createElement('option');
-            const select = document.querySelector('select[name="division"]');
-            option.value = key;
-            option.innerText = divisionNameList.value[key];
-            if(key === selectedEmp.value.division) {
-                option.selected = true;
-            }
-            document.querySelector('select[name="division"]').appendChild(option);
-        }
-        console.log(selectedEmp.value.division)
-        document.querySelector('select[name="division"]').disabled = false;
+        displayDivisionOptions('division');
     });
     if(uploadFile.value){
         backupUploadFile.value = [...uploadFile.value];
