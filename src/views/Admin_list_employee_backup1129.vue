@@ -143,12 +143,12 @@ br
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="readonly")
+                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="disabled")
 
             .input-wrap
                 p.label 권한
                 template(v-if="disabled")
-                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " :readonly="readonly")
+                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " :readonly="disabled")
                 template(v-else)
                     select(name="access_group" :value="selectedEmp?.access_group || '-' " style="height: 40px;")
                         option(disabled selected) 권한선택
@@ -187,20 +187,17 @@ br
                         template(v-if="!uploadFile")
                             li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
                         template(v-else)
-                            li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
+                            li.file-item(v-for="(file, index) in uploadFile" :key="index")
                                 a.file-name(:href="file.path" download) {{ file.filename }}
-                                template(v-if="!disabled")
-                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
-                                        svg
-                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-                                    button.btn-remove(v-else type="button" @click="removeFile(file)")
+                                button.btn-remove(v-if="!disabled" type="button" @click="removeFile(file)")
+                                    template(v-if="file.user_id == user.user_id")
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
         .modal-footer
             template(v-if="disabled")
-                button.btn.btn-edit(type="button" @click="editEmp") 수정
+                button.btn.btn-edit(type="button" @click="disabled=false") 수정
             template(v-else)
-                button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
+                button.btn.bg-gray.btn-cancel(type="button" @click="disabled=true;removeFileList = [];") 취소
                 button.btn.btn-register(type="submit" @click="registerEmp") 등록
 </template>
 
@@ -235,10 +232,8 @@ let selectedEmp = ref(null);
 let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let uploadFile = ref(null);
-let backupUploadFile = ref([]);
-let readonly = ref(true);
 let disabled = ref(true);
-let removeFileList = ref([]);
+let removeFileList = [];
 
 let access_group = {
     1: '직원',
@@ -342,7 +337,7 @@ const getAdditionalData = (emp) => {
             name: 'emp_additional_data',
             access_group: 99,
         },
-        reference: "[emp_additional_data]" + selectedEmp.value.user_id,
+        reference: "[emp_additional_data]" + emp.user_id,
     }).then(res => {
         // console.log('=== openModal; getRecords === res : ', res);
 
@@ -377,7 +372,7 @@ let openModal = async(emp: { [key: string]: any }) => {
     selectedEmp.value = emp;
     isModalOpen.value = true;
     uploadFile.value = null;
-    removeFileList.value = [];
+    removeFileList = [];
 
     console.log(emp)
 
@@ -413,7 +408,6 @@ let openModal = async(emp: { [key: string]: any }) => {
 let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
-    readonly.value = true;
     disabled.value = true;
 };
 
@@ -653,25 +647,27 @@ let cancelInvite = (employee_info) => {
     });
 }
 
+// 업로드 파일 삭제
+// let removeFile =  (item) => {
+//     console.log('item : ', item);
+//     let query = {
+//         record_id: [item.record_id]
+//     };
+
+//      skapi.deleteRecords(query).then((res) => {
+//         getAdditionalData();
+//     });
+// }
+
 let removeFile =  (item) => {
-    removeFileList.value.push(item.record_id);
-}
+    // console.log('=== removeFile === item : ', item);
+    console.log('AA === removeFile === uploadFile : ', uploadFile.value);
 
-let cancelRemoveFile = (item) => {
-    removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
-}
+    removeFileList.push(item.record_id);
+    uploadFile.value = uploadFile.value.filter(file => file.record_id !== item.record_id);
 
-let editEmp = () => {
-    readonly.value = false;
-    disabled.value = false;
-    backupUploadFile.value = [...uploadFile.value];
-}
-
-let cancelEdit = () => {
-    readonly.value = true;
-    disabled.value = true;
-    removeFileList.value = [];
-    uploadFile.value = [...backupUploadFile.value];
+    console.log('=== removeFile === removeFileList : ', removeFileList);
+    console.log('BB === removeFile === uploadFile : ', uploadFile.value);
 }
 
 let registerEmp = async(e) => {
@@ -679,7 +675,6 @@ let registerEmp = async(e) => {
 
     console.log('=== registerEmp === e : ', e);
     console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
-    readonly.value = true;
     disabled.value = true;
 
     let filebox = document.querySelector('input[name=additional_data]');
@@ -702,17 +697,15 @@ let registerEmp = async(e) => {
                     unique_id: "[emp_additional_data]" + selectedEmp.value.user_id,
                 }
             });
-
-            backupUploadFile.value = [...uploadFile.value];
         }
     } else {
         console.log('파일 없음');
     }
 
-    if(removeFileList.value.length) {
+    if(removeFileList.length) {
         console.log('삭제파일 있음');
-        skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
-            removeFileList.value = [];
+        skapi.deleteRecords({record_id: removeFileList}).then(r => {
+            removeFileList = [];
         });
     } else {
         console.log('삭제파일 없음');
@@ -722,7 +715,6 @@ let registerEmp = async(e) => {
     await skapi.updateProfile(e).then(getAdditionalData);
 
     window.alert('등록완료');
-    readonly.value = true;
     disabled.value = true;
 }
 </script>
@@ -888,7 +880,7 @@ let registerEmp = async(e) => {
 .modal {
     .input-wrap {
         input {
-            border-color: var(--primary-color-400);
+            // border-color: var(--primary-color-400);
             cursor: initial;
 
             &:read-only {
@@ -906,17 +898,7 @@ let registerEmp = async(e) => {
         }
 
         select {
-            border-color: var(--primary-color-400);
-        }
-    }
-}
-
-.upload-file {
-    .file-item {
-        &.remove {
-            background-color: var(--warning-color-50);
-            border: 1px dashed var(--warning-color-400);
-            color: var(--warning-color-500);
+            // border-color: var(--primary-color-400);
         }
     }
 }
