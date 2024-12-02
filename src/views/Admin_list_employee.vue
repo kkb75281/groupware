@@ -432,7 +432,7 @@ const getAdditionalData = (emp) => {
             name: 'emp_additional_data',
             access_group: 99,
         },
-        reference: "[emp_additional_data]" + selectedEmp.value.user_id,
+        reference: "[emp_additional_data]" + emp.user_id,
     }).then(res => {
         // console.log('=== openModal; getRecords === res : ', res);
 
@@ -847,12 +847,12 @@ let registerEmp = async(e) => {
         if(e.user_id === selectedEmp.value.user_id) {
             e.division = selectedEmpTags.value.emp_dvs;
             e.position = selectedEmpTags.value.emp_pst;
+            getAdditionalData(e);   // 추가자료 가져오기
             break;
         }
     }
 
     displayEmployee(employee.value);    // 세션에 저장
-    getAdditionalData();    // 추가자료 가져오기
     window.alert('등록완료');
     readonly.value = true;
     disabled.value = true;
