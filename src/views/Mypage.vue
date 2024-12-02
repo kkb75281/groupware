@@ -153,6 +153,10 @@ let disabled = ref(true);
 let onlyEmail = ref(false);
 let showOptions = ref(false);
 
+function makeSafe(str) {
+    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+}
+
 let getUserDivision = async() => {
     // 부서 이름 가져오기
     await skapi.getRecords({
@@ -163,30 +167,30 @@ let getUserDivision = async() => {
     }).then(r => {
         divisionNameList.value = r.list[0].data;
     })
-    
+
     // user position 가져오기
     skapi.getRecords({
         table: {
             name: 'emp_division',
             access_group: 1
-        }
+        },
+        tag: "[emp_id]" + makeSafe(user.user_id),
+    }, {
+        limit: 1,
+        ascending: false,
     }).then(r => {
-        console.log(r.list)
-        for(let record of r.list) {
-            let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
-            let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
-            let emp_pst = record.tags.filter(t => t.includes('[emp_pst]'))[0];
-            
-            emp_dvs = emp_dvs.replace('[emp_dvs]', '');
-            emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
-            emp_pst = emp_pst.replace('[emp_pst]', '');
+        let result = r.list[0];
+
+        if(result) {
+            let emp_dvs = result.tags.filter(t => t.includes('[emp_dvs]'))[0].replace('[emp_dvs]', '');
+            let emp_id = result.tags.filter(t => t.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-');
+            let emp_pst = result.tags.filter(t => t.includes('[emp_pst]'))[0].replace('[emp_pst]', '');
     
-            if(user.user_id === emp_id) {
-                userPosition.value = divisionNameList.value[emp_dvs];
-            }
+            userPosition.value = divisionNameList.value[emp_dvs];
         }
     })
 }
+getUserDivision();
 
 // user additional data 가져오기
 // 추가자료 업로드 한 것 가져오기

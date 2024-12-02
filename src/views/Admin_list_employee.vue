@@ -144,23 +144,21 @@ br
             .input-wrap
                 p.label 직책
                 input(type="text" name="position" v-model="selectedEmpTags.emp_pst" placeholder="직책을 입력해주세요." :readonly="readonly")
-            
-            //- .input-wrap
-            //-     p.label 부서
+
             .input-wrap
                 p.label.essential 부서(회사)
                 template(v-if="disabled")
-                    input(type="text" name="division" v-model="selectedEmpTags.emp_dvs" :readonly="readonly")
+                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :readonly="readonly")
                 template(v-else)
                     select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
-                        option(disabled selected) 부서(회사) 선택
+                        option(disabled) 부서(회사) 선택
             
             .input-wrap
                 p.label 권한
                 template(v-if="disabled")
                     input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " :readonly="readonly")
                 template(v-else)
-                    select(name="access_group" :value="selectedEmp?.access_group || '-' " style="height: 40px;")
+                    select(name="access_group" v-model="selectedEmp.access_group" style="height: 40px;")
                         option(disabled selected) 권한선택
                         option(value="1") 직원
                         option(value="98") 관리자
@@ -176,7 +174,7 @@ br
 
             .input-wrap
                 p.label 생년월일
-                input(type="date" name="birthdate" :value="selectedEmp?.birthdate || '-' " disabled)
+                input(type="date" name="birthdate" :value="selectedEmp?.birthdate" disabled)
 
             .input-wrap
                 p.label 전화번호
@@ -312,32 +310,10 @@ let getEmpDivision = async(userId) => {
         emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
         emp_pst = emp_pst.replace('[emp_pst]', '');
 
-        console.log(employee.value)
         empInfo[emp_id] = {
             division: emp_dvs,
             position: emp_pst
         }
-        // e.division = emp_dvs;
-        // e.position = emp_pst;
-        // if(r.list.length) {
-        //     // console.log(r.list)
-        //     for(let record of r.list) {
-        //         let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
-        //         let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
-        //         let emp_pst = record.tags.filter(t => t.includes('[emp_pst]'))[0];
-                
-        //         emp_dvs = emp_dvs.replace('[emp_dvs]', '');
-        //         emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
-        //         emp_pst = emp_pst.replace('[emp_pst]', '');
-    
-        //         for(let e of employee.value){
-        //             if(e.user_id === emp_id) {
-        //                 e.division = emp_dvs;
-        //                 e.position = emp_pst;
-        //             }
-        //         }
-        //     }
-        // }
     })
 }
 
@@ -415,14 +391,13 @@ const getAdditionalData = (emp) => {
 }
 
 let openModal = async(emp: { [key: string]: any }) => {
+    console.log(emp.division)
     selectedEmp.value = emp;
-    selectedEmpTags.value.emp_dvs = divisionNameList.value[emp.division];
+    selectedEmpTags.value.emp_dvs = emp.division;
     selectedEmpTags.value.emp_pst = emp.position;
     isModalOpen.value = true;
     uploadFile.value = null;
     removeFileList.value = [];
-
-    console.log(emp)
 
     if(emp.picture) {
         await skapi.getFile(emp.picture, {
@@ -468,23 +443,22 @@ watch(empListType, async(nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-            if (sessionEmployee) {
+            if (!sessionEmployee) {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
-                    // console.log(res.list)
                     let list = res.list.filter(emp => emp.approved.includes('approved'));
+                    // 마스터 계정 제외
                     // 8891ac0f-bc24-472b-9807-903bf768a944
                     // df5d3061-aefb-4a8b-8900-89d4dbd6c33f
-                    // console.log(list)
-                    // getEmpDivision();
-                    console.log(list)
+
                     employee.value = list;
                     for(let e of employee.value) {
                         if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
                             await getEmpDivision(e.user_id);
                         }
                         if(empInfo[e.user_id]) {
+                            console.log(empInfo[e.user_id])
                             e.division = empInfo[e.user_id].division;
                             e.position = empInfo[e.user_id].position;
                         }
@@ -725,12 +699,17 @@ let editEmp = () => {
             const select = document.querySelector('select[name="division"]');
             option.value = key;
             option.innerText = divisionNameList.value[key];
+            if(key === selectedEmp.value.division) {
+                option.selected = true;
+            }
             document.querySelector('select[name="division"]').appendChild(option);
         }
         console.log(selectedEmp.value.division)
         document.querySelector('select[name="division"]').disabled = false;
     });
-    backupUploadFile.value = [...uploadFile.value];
+    if(uploadFile.value){
+        backupUploadFile.value = [...uploadFile.value];
+    }
 }
 
 let cancelEdit = () => {
@@ -750,6 +729,7 @@ let registerEmp = async(e) => {
 
     let user_id_safe = makeSafe(selectedEmp.value.user_id);
 
+    // 부서, 직책 업데이트
     skapi.postRecord(null, {
         table: {
             name: 'emp_division',
@@ -757,11 +737,21 @@ let registerEmp = async(e) => {
         },
         tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
     }).then(r => {
-        console.log(r)
+        console.log('부서직책업데이트', r);
     })
 
+    let access_group_value = document.querySelector('select[name=access_group]').value;
+
+    // 권한 업데이트
+    skapi.grantAccess({
+        user_id: selectedEmp.value.user_id,
+        access_group: access_group_value
+    }).then(r => {
+        console.log('권한업데이트' ,r)
+    })
+
+    // 추가자료 업데이트
     let filebox = document.querySelector('input[name=additional_data]');
-    console.log('=== registerEmp === filebox : ', filebox);
 
     if (filebox && filebox.files.length) {
         console.log('파일 있음');
@@ -796,9 +786,16 @@ let registerEmp = async(e) => {
         console.log('삭제파일 없음');
     }
 
-    // 프로필 정보를 업데이트한다.
-    await skapi.updateProfile(e).then(getAdditionalData);
+    for(let e of employee.value) {
+        if(e.user_id === selectedEmp.value.user_id) {
+            e.division = selectedEmpTags.value.emp_dvs;
+            e.position = selectedEmpTags.value.emp_pst;
+            break;
+        }
+    }
 
+    displayEmployee(employee.value);    // 세션에 저장
+    getAdditionalData();    // 추가자료 가져오기
     window.alert('등록완료');
     readonly.value = true;
     disabled.value = true;
