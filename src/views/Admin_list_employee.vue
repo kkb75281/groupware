@@ -260,6 +260,7 @@ let access_group = {
     98: '관리자',
     99: '마스터',
 };
+
 let callParams = computed(() => {
     switch (searchFor.value) {
         case 'name':
@@ -304,7 +305,13 @@ watch(searchFor, (nv) => {
         searchValue.value = '';
 
         if(nv === 'division') {
+            searchValue.value = '부서(회사) 선택';
+
+            // console.log('AA === watch === searchValue.value : ', searchValue.value);
+            
             nextTick(() => {
+                // console.log('BB === watch === searchValue.value : ', searchValue.value);
+
                 displayDivisionOptions('searchDivision');
             });
         }
@@ -357,6 +364,7 @@ let searchEmp = async() => {
 
     if (!searchValue.value) {
         searchFor.value = 'name';
+        searchValue.value = '';
         callParams.value.searchFor = 'timestamp';
         callParams.value.value = new Date().getTime();
         callParams.value.condition = '<=';
@@ -372,25 +380,32 @@ let searchEmp = async() => {
                 access_group: 1
             },
             tag: "[emp_dvs]" + searchValue.value
-        }).then(r => {
-            console.log(r.list)
-            let list = r.list.map(emp => emp.tags.filter(t => t.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-'));
+        }).then(res => {
+            console.log('=== searchEmp; getRecords === res.list : ', res.list);
+            console.log('=== searchEmp; getRecords === searchValue.value : ', searchValue.value);
+
+            let list = res.list.map(emp => emp.tags.filter(t => t.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-'));
             let result = [...new Set(list)];
             let empList:any = [];
-            console.log(result);
 
-            for(r of result) {
+            console.log('=== searchEmp; getRecords === result : ', result);
+
+            for(list of result) {
                 skapi.getUsers({
                     searchFor: 'user_id',
-                    value: r,
+                    value: list,
                     condition: '='
-                }).then(u => {
-                    console.log(u.list[0])
-                    empList.push(u.list[0]);
+                }).then(user => {
+                    console.log('=== searchEmp; getRecords === user : ', user.list[0]);
+
+                    if(user.list && user.list.length > 0) {
+                        empList.push(user.list[0]);
+                        console.log('=== searchEmp; getRecords === empList : ', empList);
+                    }
                 })
             }
 
-            console.log(empList)
+            console.log('=== searchEmp; getRecords === empList : ', empList);
         });
         return;
     }
