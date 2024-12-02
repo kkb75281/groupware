@@ -97,7 +97,8 @@
                     ul.file-list
                         template(v-if="uploadFile.length > 0")
                             li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
-                                a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
+                                //- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
+                                a.file-name(:href="file.url" download) {{ file.filename }}
                                 template(v-if="!disabled && file.user_id === user.user_id")
                                     button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
                                         svg
@@ -140,6 +141,7 @@ let optionsBtn = ref(null);
 let getFileInfo = ref(null);
 let userPosition = ref(null);
 let uploadFile = ref({});
+let backupUploadFile = ref([]);
 let removeFileList = ref([]);
 let originUserProfile = {};
 let access_group = {
@@ -201,7 +203,7 @@ const getAdditionalData = () => {
         } else {
             let fileList = [];
 
-            // console.log('== getRecords == res : ', res);
+            console.log('== getRecords == res : ', res);
 
             res.list.forEach((item) => {
                 if (item.bin.additional_data && item.bin.additional_data.length > 0) {
@@ -217,7 +219,6 @@ const getAdditionalData = () => {
                         user_id: getFileUserId(el.path),
                         record_id: item.record_id,
                     }));    
-
                     fileList.push(...result);
                 }
             })
@@ -346,6 +347,7 @@ let startEdit = () => {
     }
 
     disabled.value = false;
+    backupUploadFile.value = [...uploadFile.value];
 }
 
 let cancelEdit = () => {
@@ -358,6 +360,8 @@ let cancelEdit = () => {
     }
 
     disabled.value = true;
+    removeFileList.value = [];
+    uploadFile.value = [...backupUploadFile.value];
 }
 
 let registerMypage = async(e) => {
@@ -419,6 +423,8 @@ let registerMypage = async(e) => {
                     unique_id: "[emp_additional_data]" + user.user_id,
                 }
             });
+
+            backupUploadFile.value = [...uploadFile.value];
         }
     }
 
@@ -428,7 +434,7 @@ let registerMypage = async(e) => {
         });
     }
 
-    // 프로필 정보를 업데이트한다.
+    // 프로필 정보를 업데이트
     await skapi.updateProfile(e).then(getAdditionalData)
 
     // if(user.email !== originUserProfile.email) {
@@ -438,7 +444,6 @@ let registerMypage = async(e) => {
     window.alert('등록완료');
     onlyEmail.value = false;
     disabled.value = true;
-    // router.push('/');
 }
 
 // 업로드 파일 삭제
