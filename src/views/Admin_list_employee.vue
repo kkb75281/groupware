@@ -143,8 +143,18 @@ br
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="position" :value="selectedEmp?.position || '-' " placeholder="직책을 입력해주세요." :readonly="readonly")
-
+                input(type="text" name="position" v-model="selectedEmpTags.emp_pst" placeholder="직책을 입력해주세요." :readonly="readonly")
+            
+            //- .input-wrap
+            //-     p.label 부서
+            .input-wrap
+                p.label.essential 부서(회사)
+                template(v-if="disabled")
+                    input(type="text" name="division" v-model="selectedEmpTags.emp_dvs" :readonly="readonly")
+                template(v-else)
+                    select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
+                        option(disabled selected) 부서(회사) 선택
+            
             .input-wrap
                 p.label 권한
                 template(v-if="disabled")
@@ -206,7 +216,7 @@ br
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, computed, watch, onMounted, onScopeDispose } from 'vue';
+import { ref, computed, watch, onMounted, onScopeDispose, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
@@ -232,6 +242,10 @@ let employee = ref([]);
 let suspendedLength = ref(0);
 let isModalOpen = ref(false);
 let selectedEmp = ref(null);
+let selectedEmpTags = ref({
+    emp_dvs: '',
+    emp_pst: '',
+});
 let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let uploadFile = ref(null);
@@ -270,33 +284,60 @@ let callParams = computed(() => {
 
 getDivisionNames();
 
+function makeSafe(str) {
+    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+}
+
 let empInfo: {[key:string]: any} = ref({});
 
-let getEmpDivision = async() => {
+let getEmpDivision = async(userId) => {
+    if(!userId) return;
+
     await skapi.getRecords({
         table: {
             name: 'emp_division',
             access_group: 1
-        }
+        },
+        tag: "[emp_id]" + makeSafe(userId)
+    },{
+        limit: 1,
+        ascending: false
     }).then(r => {
-        if(r.list.length) {
-            for(let record of r.list) {
-                let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
-                let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
-                let emp_pst = record.tags.filter(t => t.includes('[emp_pst]'))[0];
-                
-                emp_dvs = emp_dvs.replace('[emp_dvs]', '');
-                emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
-                emp_pst = emp_pst.replace('[emp_pst]', '');
-    
-                for(let e of employee.value){
-                    if(e.user_id === emp_id) {
-                        e.division = emp_dvs;
-                        e.position = emp_pst;
-                    }
-                }
-            }
+        let record = r.list[0];
+        let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
+        let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
+        let emp_pst = record.tags.filter(t => t.includes('[emp_pst]'))[0];
+
+        emp_dvs = emp_dvs.replace('[emp_dvs]', '');
+        emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
+        emp_pst = emp_pst.replace('[emp_pst]', '');
+
+        console.log(employee.value)
+        empInfo[emp_id] = {
+            division: emp_dvs,
+            position: emp_pst
         }
+        // e.division = emp_dvs;
+        // e.position = emp_pst;
+        // if(r.list.length) {
+        //     // console.log(r.list)
+        //     for(let record of r.list) {
+        //         let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
+        //         let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
+        //         let emp_pst = record.tags.filter(t => t.includes('[emp_pst]'))[0];
+                
+        //         emp_dvs = emp_dvs.replace('[emp_dvs]', '');
+        //         emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
+        //         emp_pst = emp_pst.replace('[emp_pst]', '');
+    
+        //         for(let e of employee.value){
+        //             if(e.user_id === emp_id) {
+        //                 e.division = emp_dvs;
+        //                 e.position = emp_pst;
+        //             }
+        //         }
+        //     }
+        // }
     })
 }
 
@@ -375,6 +416,8 @@ const getAdditionalData = (emp) => {
 
 let openModal = async(emp: { [key: string]: any }) => {
     selectedEmp.value = emp;
+    selectedEmpTags.value.emp_dvs = divisionNameList.value[emp.division];
+    selectedEmpTags.value.emp_pst = emp.position;
     isModalOpen.value = true;
     uploadFile.value = null;
     removeFileList.value = [];
@@ -425,7 +468,7 @@ watch(empListType, async(nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-            if (!sessionEmployee) {
+            if (sessionEmployee) {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
@@ -435,9 +478,17 @@ watch(empListType, async(nv) => {
                     // df5d3061-aefb-4a8b-8900-89d4dbd6c33f
                     // console.log(list)
                     // getEmpDivision();
-
+                    console.log(list)
                     employee.value = list;
-                    await getEmpDivision();
+                    for(let e of employee.value) {
+                        if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+                            await getEmpDivision(e.user_id);
+                        }
+                        if(empInfo[e.user_id]) {
+                            e.division = empInfo[e.user_id].division;
+                            e.position = empInfo[e.user_id].position;
+                        }
+                    }
                     displayEmployee(res.list);
                     loading.value = false;
                 });
@@ -458,7 +509,15 @@ watch(empListType, async(nv) => {
 
                 skapi.getInvitations().then(async(res) => {
                     employee.value = res.list;
-                    await getEmpDivision();
+                    for(let e of employee.value) {
+                        if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+                            await getEmpDivision(e.user_id);
+                        }
+                        if(empInfo[e.user_id]) {
+                            e.division = empInfo[e.user_id].division;
+                            e.position = empInfo[e.user_id].position;
+                        }
+                    }
                     displayinviteEmployee(res.list);
                     loading.value = false;
                 });
@@ -581,10 +640,6 @@ let resendInvite = (email) => {
     });
 }
 
-function makeSafe(str) {
-    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
-}
-
 let cancelInvite = (employee_info) => {
     let safeEmail = makeSafe(employee_info.email);
     let safeUserId = makeSafe(employee_info.user_id);
@@ -664,6 +719,17 @@ let cancelRemoveFile = (item) => {
 let editEmp = () => {
     readonly.value = false;
     disabled.value = false;
+    nextTick(() => {
+        for(let key in divisionNameList.value) {
+            const option = document.createElement('option');
+            const select = document.querySelector('select[name="division"]');
+            option.value = key;
+            option.innerText = divisionNameList.value[key];
+            document.querySelector('select[name="division"]').appendChild(option);
+        }
+        console.log(selectedEmp.value.division)
+        document.querySelector('select[name="division"]').disabled = false;
+    });
     backupUploadFile.value = [...uploadFile.value];
 }
 
@@ -681,6 +747,18 @@ let registerEmp = async(e) => {
     console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
     readonly.value = true;
     disabled.value = true;
+
+    let user_id_safe = makeSafe(selectedEmp.value.user_id);
+
+    skapi.postRecord(null, {
+        table: {
+            name: 'emp_division',
+            access_group: 1
+        },
+        tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
+    }).then(r => {
+        console.log(r)
+    })
 
     let filebox = document.querySelector('input[name=additional_data]');
     console.log('=== registerEmp === filebox : ', filebox);
