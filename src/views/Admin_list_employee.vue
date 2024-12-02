@@ -287,15 +287,32 @@ getDivisionNames();
 
 let displayDivisionOptions = (selectName) => {
     let divisionList = document.querySelector(`select[name="${selectName}"]`);
-    for(let key in divisionNameList.value) {
+
+    // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
+    divisionList.innerHTML = ''; // 기존 옵션 초기화
+
+    // 기본 옵션 추가
+    const defaultOption = document.createElement('option');
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    defaultOption.innerText = '부서(회사) 선택';
+    divisionList.appendChild(defaultOption);
+
+    // 동적으로 부서 옵션 추가
+    for (let key in divisionNameList.value) {
         const option = document.createElement('option');
         option.value = key;
         option.innerText = divisionNameList.value[key];
-        if(selectName === 'division' && key === selectedEmp.value.division) {
+
+        // 선택된 부서 처리
+        if (selectName === 'division' && key === selectedEmp.value.division) {
             option.selected = true;
         }
+
         divisionList.appendChild(option);
     }
+
+    // 선택박스 활성화
     divisionList.disabled = false;
 }
 
@@ -306,6 +323,7 @@ watch(searchFor, (nv) => {
         if(nv === 'division') {
             nextTick(() => {
                 displayDivisionOptions('searchDivision');
+                console.log(searchValue.value)
             });
         }
     }
@@ -366,32 +384,46 @@ let searchEmp = async() => {
         // callParams.value.searchFor = 'timestamp';
         // callParams.value.value = new Date().getTime();
         // callParams.value.condition = '<=';
-        skapi.getRecords({
+        employee.value = {};
+        await skapi.getRecords({
             table: {
                 name: 'emp_division',
                 access_group: 1
             },
             tag: "[emp_dvs]" + searchValue.value
-        }).then(r => {
+        }).then(async(r) => {
             console.log(r.list)
             let list = r.list.map(emp => emp.tags.filter(t => t.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-'));
             let result = [...new Set(list)];
-            let empList:any = [];
-            console.log(result);
 
             for(r of result) {
-                skapi.getUsers({
+                await skapi.getUsers({
                     searchFor: 'user_id',
                     value: r,
                     condition: '='
-                }).then(u => {
+                }).then(async(u) => {
                     console.log(u.list[0])
-                    empList.push(u.list[0]);
+                    if(u.list.length) {
+                        employee.value[u.list[0].user_id] = u.list[0];
+                    }
+                    // employee.value = u.list;
+                    // for(let e of employee.value) {
+                    //     if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+                    //         await getEmpDivision(e.user_id);
+                    //     }
+                    //     if(empInfo[e.user_id]) {
+                    //         // console.log(empInfo[e.user_id])
+                    //         e.division = empInfo[e.user_id].division;
+                    //         e.position = empInfo[e.user_id].position;
+                    //     }
+                    // }
                 })
             }
 
-            console.log(empList)
         });
+
+        console.log(employee.value)
+        loading.value = false;
         return;
     }
 
@@ -426,15 +458,15 @@ let searchEmp = async() => {
 }
 
 // 추가자료 업로드 한 것 가져오기
-const getAdditionalData = (emp) => {
+const getAdditionalData = () => {
     skapi.getRecords({
         table: {
             name: 'emp_additional_data',
             access_group: 99,
         },
-        reference: "[emp_additional_data]" + emp.user_id,
+        reference: "[emp_additional_data]" + selectedEmp.value.user_id,
     }).then(res => {
-        // console.log('=== openModal; getRecords === res : ', res);
+        console.log('=== openModal; getRecords === res : ', res);
 
         if(res.list.length === 0) {
             return;
@@ -486,19 +518,20 @@ let openModal = async(emp: { [key: string]: any }) => {
     }
     
     // user additional data 가져오기
-    skapi.getRecords({
-        table: {
-            name: 'ref_ids',
-            access_group: 1
-        },
-        index: {
-            name: 'user_id',
-            value: makeSafe(selectedEmp.value?.user_id)
-        },
-    }).then((res) => {
-        console.log('=== openModal; getRecords === res : ', res);
-        getAdditionalData(emp);
-    });
+    // skapi.getRecords({
+    //     table: {
+    //         name: 'ref_ids',
+    //         access_group: 1
+    //     },
+    //     index: {
+    //         name: 'user_id',
+    //         value: makeSafe(selectedEmp.value?.user_id)
+    //     },
+    // }).then((res) => {
+    //     console.log('=== openModal; getRecords === res : ', res);
+    //     getAdditionalData();
+    // });
+    getAdditionalData();
 };
 
 let closeModal = () => {
@@ -786,7 +819,7 @@ let registerEmp = async(e) => {
 
     let user_id_safe = makeSafe(selectedEmp.value.user_id);
 
-    // 부서, 직책 업데이트
+    // 부서, 직책 업데이트 (history용)
     skapi.postRecord(null, {
         table: {
             name: 'emp_division',
@@ -796,6 +829,26 @@ let registerEmp = async(e) => {
     }).then(r => {
         console.log('부서직책업데이트', r);
     })
+
+    // 기존 현재 부서,직책 삭제 후 새로운 부서,직책 추가 (current용)
+    // skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
+    //     // current
+    //     skapi.postRecord({
+    //         user_id: selectedEmp.value.user_id,
+    //     }, {
+    //         unique_id: "[emp_position_current]" + user_id_safe,
+    //         table: {
+    //             name: 'emp_position_current',
+    //             access_group: 1
+    //         },
+    //         index: {
+    //             name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
+    //             value: selectedEmp.value.name
+    //         }
+    //     }).then(r => {
+    //         console.log('부서직책업데이트', r);
+    //     })
+    // })
 
     let access_group_value = document.querySelector('select[name=access_group]').value;
 
@@ -847,12 +900,12 @@ let registerEmp = async(e) => {
         if(e.user_id === selectedEmp.value.user_id) {
             e.division = selectedEmpTags.value.emp_dvs;
             e.position = selectedEmpTags.value.emp_pst;
-            getAdditionalData(e);   // 추가자료 가져오기
             break;
         }
     }
 
     displayEmployee(employee.value);    // 세션에 저장
+    getAdditionalData();   // 추가자료 가져오기
     window.alert('등록완료');
     readonly.value = true;
     disabled.value = true;
