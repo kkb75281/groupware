@@ -171,6 +171,7 @@ let getUserDivision = async() => {
             access_group: 1
         }
     }).then(r => {
+        console.log(r.list)
         for(let record of r.list) {
             let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
             let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
@@ -186,7 +187,6 @@ let getUserDivision = async() => {
         }
     })
 }
-getUserDivision();
 
 // user additional data 가져오기
 // 추가자료 업로드 한 것 가져오기
@@ -227,9 +227,14 @@ const getAdditionalData = () => {
 
             uploadFile.value = fileList;
         }
-    })
+    }).catch(err => {
+        console.log('== getRecords == err : ', err)
+    });
 }
-getAdditionalData();
+
+if(user.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && user.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+    getAdditionalData();
+}
 
 console.log('== user == user : ', user);
 
