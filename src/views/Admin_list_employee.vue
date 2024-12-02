@@ -15,11 +15,14 @@ hr
             .input-wrap
                 select(v-model="searchFor" :disabled="empListType !== '직원목록'")
                     option(value="name") 이름
-                    option(value="access_group") 부서
+                    option(value="division") 부서
                     option(value="email") 이메일
-            .input-wrap.search
+            .input-wrap.search(v-if="searchFor !== 'division'")
                 input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요" :disabled="empListType !== '직원목록'")
                 button.btn-search
+            .input-wrap(v-else)
+                select(name="searchDivision" v-model="searchValue" :disabled="empListType !== '직원목록'" @change="searchEmp")
+                    option(disabled selected) 부서(회사) 선택
 
         template(v-if="user.access_group > 98")
             .tb-toolbar
@@ -214,7 +217,7 @@ br
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, computed, watch, onMounted, onScopeDispose, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
@@ -244,7 +247,7 @@ let selectedEmpTags = ref({
     emp_dvs: '',
     emp_pst: '',
 });
-let searchFor: Ref<"name" | "access_group" | "email" | "timestamp"> = ref('name');
+let searchFor: Ref<"name" | "division" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let uploadFile = ref(null);
 let backupUploadFile = ref([]);
@@ -265,11 +268,11 @@ let callParams = computed(() => {
                 value: searchValue.value,
                 condition: '>='
             };
-        case 'access_group':
+        case 'division':
             return {
-                searchFor: 'access_group',
-                value: searchValue.value,
-                condition: '='
+                searchFor: 'timestamp',
+                value: new Date().getTime(),
+                condition: '<='
             };
         case 'email':
             return {
@@ -277,6 +280,24 @@ let callParams = computed(() => {
                 value: searchValue.value,
                 condition: '='
             };
+    }
+});
+
+watch(searchFor, (nv) => {
+    if (nv) {
+        searchValue.value = '';
+
+        if(nv === 'division') {
+            nextTick(() => {
+                for(let key in divisionNameList.value) {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.innerText = divisionNameList.value[key];
+                    document.querySelector('select[name="searchDivision"]').appendChild(option);
+                }
+                document.querySelector('select[name="searchDivision"]').disabled = false;
+            });
+        }
     }
 });
 
@@ -333,6 +354,39 @@ let searchEmp = async() => {
         callParams.value.condition = '<=';
     }
 
+    if(searchFor.value === 'division') {
+        // callParams.value.searchFor = 'timestamp';
+        // callParams.value.value = new Date().getTime();
+        // callParams.value.condition = '<=';
+        skapi.getRecords({
+            table: {
+                name: 'emp_division',
+                access_group: 1
+            },
+            tag: "[emp_dvs]" + searchValue.value
+        }).then(r => {
+            console.log(r.list)
+            let list = r.list.map(emp => emp.tags.filter(t => t.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-'));
+            let result = [...new Set(list)];
+            let empList:any = [];
+            console.log(result);
+
+            for(r of result) {
+                skapi.getUsers({
+                    searchFor: 'user_id',
+                    value: r,
+                    condition: '='
+                }).then(u => {
+                    console.log(u.list[0])
+                    empList.push(u.list[0]);
+                })
+            }
+
+            console.log(empList)
+        });
+        return;
+    }
+
     let fetchedData = await skapi.getUsers(callParams.value, { ascending: !searchValue.value ? false : true }).catch((err) => {
         loading.value = false;
         alert(err);
@@ -347,6 +401,17 @@ let searchEmp = async() => {
         //     employee.value = fetchedData.list;
         // }
         employee.value = fetchedData.list;
+        for(let e of employee.value) {
+            if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+                await getEmpDivision(e.user_id);
+            }
+            if(empInfo[e.user_id]) {
+                // console.log(empInfo[e.user_id])
+                e.division = empInfo[e.user_id].division;
+                e.position = empInfo[e.user_id].position;
+            }
+        }
+        // console.log(fetchedData.list)
     }
     
     loading.value = false;
