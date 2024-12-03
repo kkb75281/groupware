@@ -286,8 +286,8 @@ let callParams = computed(() => {
 
 getDivisionNames();
 
-let displayDivisionOptions = (selectName) => {
-    let divisionList = document.querySelector(`select[name="${selectName}"]`);
+let displayDivisionOptions = (selectName: string) => {
+    let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
 
     // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
     divisionList.innerHTML = ''; // 기존 옵션 초기화
@@ -323,14 +323,9 @@ watch(searchFor, (nv) => {
 
         if(nv === 'division') {
             searchValue.value = '부서(회사) 선택';
-
-            // console.log('AA === watch === searchValue.value : ', searchValue.value);
             
             nextTick(() => {
-                // console.log('BB === watch === searchValue.value : ', searchValue.value);
-
                 displayDivisionOptions('searchDivision');
-                console.log(searchValue.value)
             });
         }
     }
@@ -355,6 +350,8 @@ let getEmpDivision = async(userId) => {
         limit: 1,
         ascending: false
     }).then(r => {
+        if (r.list.length === 0) return;
+        
         let record = r.list[0];
         let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
         let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
@@ -393,44 +390,52 @@ let searchEmp = async() => {
         // callParams.value.value = new Date().getTime();
         // callParams.value.condition = '<=';
         employee.value = {};
+
         await skapi.getRecords({
             table: {
                 name: 'emp_division',
                 access_group: 1
             },
             tag: "[emp_dvs]" + searchValue.value
-        }).then(async(r) => {
-            console.log(r.list)
-            let list = r.list.map(emp => emp.tags.filter(t => t.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-'));
-            let result = [...new Set(list)];
+        }).then(async(res) => {
+            const list = res.list.map(emp => emp.tags.filter(tag => tag.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-'));
+            const result = [...new Set(list)];
 
-            for(r of result) {
-                await skapi.getUsers({
+            const userList = await Promise.all(result.map(async (user) => {
+                return await skapi.getUsers({
                     searchFor: 'user_id',
-                    value: list,
+                    value: user,
                     condition: '='
-                }).then(async(u) => {
-                    console.log(u.list[0])
-                    if(u.list.length) {
-                        employee.value[u.list[0].user_id] = u.list[0];
-                    }
-                    // employee.value = u.list;
-                    // for(let e of employee.value) {
-                    //     if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
-                    //         await getEmpDivision(e.user_id);
-                    //     }
-                    //     if(empInfo[e.user_id]) {
-                    //         // console.log(empInfo[e.user_id])
-                    //         e.division = empInfo[e.user_id].division;
-                    //         e.position = empInfo[e.user_id].position;
-                    //     }
-                    // }
                 })
-            }
+            }));
 
+            const arr = [];
+
+            userList.forEach((user) => {
+                if (user.list.length < 1) return;
+
+                arr.push(user.list[0])
+            })
+
+            
+            arr.forEach((el) => {
+                if (el.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && el.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+                    getEmpDivision(el.user_id);
+                }
+
+                if (empInfo[el.user_id]) {
+                    el.division = empInfo[el.user_id].division;
+                    el.position = empInfo[el.user_id].position;
+                }
+            })
+
+            employee.value = arr;
+
+            console.log('=== searchEmp === employee.value : ', employee.value);
         });
 
-        console.log(employee.value)
+        console.log('현재 직원목록 : ', employee.value);
+
         loading.value = false;
         return;
     }
