@@ -1,6 +1,6 @@
 <template lang="pug">
 .title
-    h1 부서(회사) 수정
+    h1 부서 수정
 
 hr
 
@@ -18,7 +18,7 @@ hr
         br
 
         .input-wrap
-            p.label.essential 부서(회사)명
+            p.label.essential 부서명
             input(v-model="record.data.division_name" type="text" name="division_name" required)
         
         br

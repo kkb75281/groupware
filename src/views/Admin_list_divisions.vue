@@ -1,5 +1,5 @@
 <template lang="pug">
-h1 부서(회사) 목록
+h1 부서 목록
 
 hr
 
@@ -30,7 +30,7 @@ hr
                             input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
                             span.label-checkbox
                     th(scope="col") NO
-                    th.left(scope="col") 회사명
+                    th.left(scope="col") 부서명
                     th(scope="col") 미결
                     th(scope="col") 수신참조
 
@@ -177,9 +177,9 @@ let deleteDivision = async () => {
     });
 
     if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}개의 부서(회사)가 삭제되었습니다.`);
+        alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);
     } else {
-        alert('부서(회사) 삭제에 실패하였습니다.');
+        alert('부서 삭제에 실패하였습니다.');
     }
 }
 </script>
