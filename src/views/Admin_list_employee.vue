@@ -308,7 +308,7 @@ watch(empListType, async(nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-            if (!sessionEmployee) {
+            if (sessionEmployee) {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
@@ -408,30 +408,24 @@ let getEmpDivision = async(userId) => {
 
     await skapi.getRecords({
         table: {
-            name: 'emp_division',
+            name: 'emp_position_current',
             access_group: 1
         },
-        tag: "[emp_id]" + makeSafe(userId)
-    },{
-        limit: 1,
-        ascending: false
+        unique_id: "[emp_position_current]" + makeSafe(userId)
     }).then(r => {
+        console.log(r.list)
         if (r.list.length === 0) return;
-        
+    
         let record = r.list[0];
-        let emp_dvs = record.tags.filter(t => t.includes('[emp_dvs]'))[0];
-        let emp_id = record.tags.filter(t => t.includes('[emp_id]'))[0];
-        let emp_pst = record.tags.filter(t => t.includes('[emp_pst]'))[0];
-
-        emp_dvs = emp_dvs.replace('[emp_dvs]', '');
-        emp_id = emp_id.replace('[emp_id]', '').replaceAll('_', '-');
-        emp_pst = emp_pst.replace('[emp_pst]', '');
+        let emp_dvs = record.index.name.split('.')[0];
+        let emp_id = record.unique_id.replace('[emp_position_current]', '').replaceAll('_', '-');
+        let emp_pst = record.index.name.split('.')[1];
 
         empInfo[emp_id] = {
             division: emp_dvs,
             position: emp_pst
         }
-    })
+    });
 }
 
 let searchEmp = async() => {
@@ -451,16 +445,19 @@ let searchEmp = async() => {
         try {
             const res = await skapi.getRecords({
                 table: {
-                    name: 'emp_division',
+                    name: 'emp_position_current',
                     access_group: 1
                 },
-                tag: "[emp_dvs]" + searchValue.value
+                index: {
+                    name: searchValue.value + '.',
+                    value: '',
+                    condition: '>='
+                }
             });
 
             const list = res.list.map(emp =>
-                emp.tags
-                    .filter(tag => tag.includes('[emp_id]'))[0]
-                    .replace('[emp_id]', '')
+                emp.unique_id
+                    .replace('[emp_position_current]', '')
                     .replaceAll('_', '-')
             );
 
@@ -485,13 +482,8 @@ let searchEmp = async() => {
             for (let user of filterUserList) {
                 if (!user) continue;
 
-                // 특정 사용자 제외
-                if (
-                    user.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' &&
-                    user.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f'
-                ) {
-                    await getEmpDivision(user.user_id); // 부서 정보 가져오기
-                }
+                // 부서 정보 가져오기
+                await getEmpDivision(user.user_id);
 
                 // empInfo에서 부서와 직책 정보 추가
                 if (empInfo[user.user_id]) {
@@ -522,12 +514,7 @@ let searchEmp = async() => {
             const arr = fetchedData.list;
 
             for (const e of arr) {
-                if (
-                    e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' &&
-                    e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f'
-                ) {
-                    await getEmpDivision(e.user_id);
-                }
+                await getEmpDivision(e.user_id);
 
                 if (empInfo[e.user_id]) {
                     e.division = empInfo[e.user_id].division;
