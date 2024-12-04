@@ -12,6 +12,8 @@ export async function getDivisionNames() {
             access_group: 1
         },
     }).then(r => {
-        divisionNameList.value = r.list[0].data;
+        if(r.list.length) {
+            divisionNameList.value = r.list[0].data;
+        }
     })
 }
