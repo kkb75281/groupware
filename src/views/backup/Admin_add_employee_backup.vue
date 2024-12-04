@@ -19,9 +19,9 @@ hr
 
     form#_el_emp_form(@submit.prevent="resigterEmp")
         .input-wrap
-            p.label.essential 부서(회사)
+            p.label.essential 부서
             select(name="division" required disabled)
-                option(disabled selected) 부서(회사) 선택
+                option(disabled selected) 부서 선택
         
         br
         
@@ -196,7 +196,7 @@ let resigterEmp = (e) => {
             let user_id = added.split(' ').pop().slice(0, -1).replaceAll('-', '_'); // tag는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
 
 
-            // 직원의 부서(회사)를 등록한다. user_id는 불편하니까 tag로 사용한다.
+            // 직원의 부서를 등록한다. user_id는 불편하니까 tag로 사용한다.
 
             console.log('user_id : ', user_id);
             // 과거 기록 확인
@@ -215,7 +215,7 @@ let resigterEmp = (e) => {
                     name: 'emp_division',
                     access_group: 1
                 },
-                reference: document.querySelector('select[name=division]').value, // 부서(회사) record_id. 레퍼런스 해놓으면 referenced_count 에서 몇명이 속해있는지 알 수 있다. https://docs.skapi.com/api-reference/data-types/README.html#recorddata
+                reference: document.querySelector('select[name=division]').value, // 부서 record_id. 레퍼런스 해놓으면 referenced_count 에서 몇명이 속해있는지 알 수 있다. https://docs.skapi.com/api-reference/data-types/README.html#recorddata
                 tags: [user_id],
             }
             if(previous_emp.list.length > 0) {
