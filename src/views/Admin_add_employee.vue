@@ -148,16 +148,21 @@ skapi.getRecords({
         access_group: 1
     }
 }).then(r => {
-    let divisionNames = r.list[0].data;
-
-    for(let key in divisionNames) {
-        const option = document.createElement('option');
-        option.value = key;
-        option.innerText = divisionNames[key];
-        document.querySelector('select[name="division"]').appendChild(option);
+    if(!r.list.length) {
+        alert('부서(회사)가 등록되어 있지 않습니다. 부서(회사)를 먼저 등록해주세요.');
+        router.push('/admin/list-employee');
+    } else {
+        let divisionNames = r.list[0].data;
+    
+        for(let key in divisionNames) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.innerText = divisionNames[key];
+            document.querySelector('select[name="division"]').appendChild(option);
+        }
+    
+        document.querySelector('select[name="division"]').disabled = false;
     }
-
-    document.querySelector('select[name="division"]').disabled = false;
 });
 
 let openModal = ref(false);
@@ -242,6 +247,7 @@ let resigterEmp = (e) => {
             let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
             let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
 
+            let user_name = document.querySelector('input[name=name]').value;
             let user_division_name = document.querySelector('select[name=division]').value;
 
             // 직원의 부서(회사)를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
@@ -259,7 +265,7 @@ let resigterEmp = (e) => {
 
             // 현재 직원 부서 등록 (current용)
             skapi.postRecord({
-                user_id: selectedEmp.value.user_id,
+                user_id: user_id,
             }, {
                 unique_id: "[emp_position_current]" + user_id_safe,
                 table: {
@@ -267,8 +273,8 @@ let resigterEmp = (e) => {
                     access_group: 1
                 },
                 index: {
-                    name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
-                    value: selectedEmp.value.name
+                    name: user_division_name + '.' + _el_position.value,
+                    value: user_name
                 }
             }).then(r => {
                 console.log('current부서직책업데이트', r);
