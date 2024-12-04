@@ -248,7 +248,7 @@ let resigterEmp = (e) => {
             skapi.postRecord(
                 null,
                 {
-                    unique_id: "[emp_division]" + user_id,
+                    unique_id: "[emp_division]" + user_id_safe,
                     table: {
                         name: 'emp_division',
                         access_group: 1
@@ -258,7 +258,21 @@ let resigterEmp = (e) => {
             )
 
             // 현재 직원 부서 등록 (current용)
-            // .....
+            skapi.postRecord({
+                user_id: selectedEmp.value.user_id,
+            }, {
+                unique_id: "[emp_position_current]" + user_id_safe,
+                table: {
+                    name: 'emp_position_current',
+                    access_group: 1
+                },
+                index: {
+                    name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
+                    value: selectedEmp.value.name
+                }
+            }).then(r => {
+                console.log('current부서직책업데이트', r);
+            })
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
             await skapi.postRecord(null, {

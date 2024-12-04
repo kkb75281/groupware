@@ -338,7 +338,7 @@ function makeSafe(str) {
 let empInfo: {[key:string]: any} = ref({});
 
 let getEmpDivision = async(userId) => {
-    if(!userId) return;
+    if(!userId || userId === '8891ac0f-bc24-472b-9807-903bf768a944' || userId === 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') return;
 
     await skapi.getRecords({
         table: {
@@ -567,15 +567,11 @@ watch(empListType, async(nv) => {
 
                 skapi.getUsers().then(async(res) => {
                     let list = res.list.filter(emp => emp.approved.includes('approved'));
-                    // 마스터 계정 제외
-                    // 8891ac0f-bc24-472b-9807-903bf768a944
-                    // df5d3061-aefb-4a8b-8900-89d4dbd6c33f
 
                     employee.value = list;
                     for(let e of employee.value) {
-                        if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
-                            await getEmpDivision(e.user_id);
-                        }
+                        await getEmpDivision(e.user_id);
+
                         if(empInfo[e.user_id]) {
                             console.log(empInfo[e.user_id])
                             e.division = empInfo[e.user_id].division;
@@ -619,8 +615,6 @@ watch(empListType, async(nv) => {
                 employee.value = sessionEmployee;
             }
         }
-
-        getEmpDivision();
     }
 }, { immediate: true });
 
@@ -840,28 +834,29 @@ let registerEmp = async(e) => {
         },
         tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
     }).then(r => {
-        console.log('부서직책업데이트', r);
+        console.log('history부서직책업데이트', r);
     })
 
     // 기존 현재 부서,직책 삭제 후 새로운 부서,직책 추가 (current용)
-    // skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
-    //     // current
-    //     skapi.postRecord({
-    //         user_id: selectedEmp.value.user_id,
-    //     }, {
-    //         unique_id: "[emp_position_current]" + user_id_safe,
-    //         table: {
-    //             name: 'emp_position_current',
-    //             access_group: 1
-    //         },
-    //         index: {
-    //             name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
-    //             value: selectedEmp.value.name
-    //         }
-    //     }).then(r => {
-    //         console.log('부서직책업데이트', r);
-    //     })
-    // })
+    skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
+        console.log(r)
+        // current
+        skapi.postRecord({
+            user_id: selectedEmp.value.user_id,
+        }, {
+            unique_id: "[emp_position_current]" + user_id_safe,
+            table: {
+                name: 'emp_position_current',
+                access_group: 1
+            },
+            index: {
+                name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
+                value: selectedEmp.value.name
+            }
+        }).then(r => {
+            console.log('current부서직책업데이트', r);
+        })
+    })
 
     let access_group_value = document.querySelector('select[name=access_group]').value;
 
