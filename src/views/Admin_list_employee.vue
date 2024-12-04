@@ -308,7 +308,7 @@ watch(empListType, async(nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-            if (sessionEmployee) {
+            if (!sessionEmployee) {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
@@ -892,10 +892,10 @@ let registerEmp = async(e) => {
             console.log('history부서직책업데이트', r);
         })
 
-        skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
+        await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(async(r) => {
             console.log(r)
             // current
-            skapi.postRecord({
+            await skapi.postRecord({
                 user_id: selectedEmp.value.user_id,
             }, {
                 unique_id: "[emp_position_current]" + user_id_safe,
@@ -915,11 +915,9 @@ let registerEmp = async(e) => {
 
     // 권한 업데이트
     if(selectedEmpOriginal.access_group !== selectedEmp.value.access_group) {
-        let access_group_value = document.querySelector('select[name=access_group]').value;
-        
         skapi.grantAccess({
             user_id: selectedEmp.value.user_id,
-            access_group: access_group_value
+            access_group: selectedEmp.value.access_group
         }).then(r => {
             console.log('권한업데이트' ,r)
         })
@@ -942,7 +940,7 @@ let registerEmp = async(e) => {
                 reference: {
                     unique_id: "[emp_additional_data]" + selectedEmp.value.user_id,
                 }
-            });
+            })
         }
 
         if(uploadFile.value && uploadFile.value.length) {
@@ -951,7 +949,9 @@ let registerEmp = async(e) => {
     }
 
     if(removeFileList.value.length) {
-        skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
+        await skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
+            uploadFile.value = uploadFile.value.filter(file => !removeFileList.value.includes(file.record_id));
+            
             removeFileList.value = [];
         });
     }
