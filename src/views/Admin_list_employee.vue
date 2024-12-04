@@ -152,12 +152,12 @@ br
                 input(type="text" name="position" v-model="selectedEmpTags.emp_pst" placeholder="직책을 입력해주세요." :readonly="disabled")
 
             .input-wrap
-                p.label.essential 부서(회사)
+                p.label.essential 부서
                 template(v-if="disabled")
                     input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" readonly)
                 template(v-else)
                     select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
-                        option(disabled) 부서(회사) 선택
+                        option(disabled) 부서 선택
             
             .input-wrap
                 p.label 권한
@@ -405,7 +405,7 @@ let displayDivisionOptions = (selectName: string) => {
         const defaultOption = document.createElement('option');
         defaultOption.disabled = true;
         defaultOption.selected = true;
-        defaultOption.innerText = '부서(회사) 선택';
+        defaultOption.innerText = '부서 선택';
         divisionList.appendChild(defaultOption);
     }
 

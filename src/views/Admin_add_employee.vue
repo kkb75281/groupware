@@ -19,9 +19,9 @@ hr
 
     form#_el_emp_form(@submit.prevent="resigterEmp")
         .input-wrap
-            p.label.essential 부서(회사)
+            p.label.essential 부서
             select(name="division" required disabled)
-                option(disabled selected) 부서(회사) 선택
+                option(disabled selected) 부서 선택
         
         br
         
@@ -149,7 +149,7 @@ skapi.getRecords({
     }
 }).then(r => {
     if(!r.list.length) {
-        alert('부서(회사)가 등록되어 있지 않습니다. 부서(회사)를 먼저 등록해주세요.');
+        alert('부서가 등록되어 있지 않습니다. 부서를 먼저 등록해주세요.');
         router.push('/admin/list-employee');
     } else {
         let divisionNames = r.list[0].data;
@@ -250,7 +250,7 @@ let resigterEmp = (e) => {
             let user_name = document.querySelector('input[name=name]').value;
             let user_division_name = document.querySelector('select[name=division]').value;
 
-            // 직원의 부서(회사)를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
+            // 직원의 부서를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
             skapi.postRecord(
                 null,
                 {
