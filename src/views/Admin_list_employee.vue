@@ -23,6 +23,7 @@ hr
             .input-wrap(v-else)
                 select(name="searchDivision" v-model="searchValue" :disabled="empListType !== '직원목록'" @change="searchEmp")
                     option(disabled selected) 부서(회사) 선택
+                    option(value="전체") 전체
 
         template(v-if="user.access_group > 98")
             .tb-toolbar
@@ -406,8 +407,6 @@ let searchEmp = async () => {
 
             const result = [...new Set(list)]; // 중복 제거
 
-            console.log('=== searchEmp; getRecords === result : ', result);
-
             const userList = await Promise.all(
                 result.map(async user => {
                     const userResponse = await skapi.getUsers({
@@ -419,9 +418,12 @@ let searchEmp = async () => {
                 })
             );
 
+            // 숨긴 직원은 제외
+            const filterUserList = userList.filter(list => list !== null && !list.approved.includes('suspended'));
+
             const arr = [];
 
-            for (const user of userList) {
+            for (let user of filterUserList) {
                 if (!user) continue;
 
                 // 특정 사용자 제외
