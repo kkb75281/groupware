@@ -30,7 +30,7 @@ hr
                             input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
                             span.label-checkbox
                     th(scope="col") NO
-                    th.left(scope="col") 회사명
+                    th.left(scope="col") 부서명
                     th(scope="col") 미결
                     th(scope="col") 수신참조
 
