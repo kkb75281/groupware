@@ -1,6 +1,6 @@
 <template lang="pug">
 .title
-    h1 부서(회사) 등록
+    h1 부서 등록
     //- span 직원을 등록하면 초대 이메일이 발송됩니다.
 
 hr
@@ -19,14 +19,14 @@ hr
         br
 
         .input-wrap
-            p.label.essential 부서(회사)명
-            input(type="text" name="division_name" placeholder="부서(회사)명을 입력해주세요." required)
+            p.label.essential 부서명
+            input(type="text" name="division_name" placeholder="부서명을 입력해주세요." required)
         
         br
 
         .input-wrap
             p.label 설명
-            input(type="text" name="division_description" placeholder="부서(회사) 설명을 입력해주세요.")
+            input(type="text" name="division_description" placeholder="부서 설명을 입력해주세요.")
 
         br
 

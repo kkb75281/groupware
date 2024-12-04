@@ -19,9 +19,9 @@ hr
 
     form#_el_emp_form(@submit.prevent="resigterEmp")
         .input-wrap
-            p.label.essential 부서(회사)
+            p.label.essential 부서
             select(name="division" required disabled)
-                option(disabled selected) 부서(회사) 선택
+                option(disabled selected) 부서 선택
         
         br
         
@@ -174,7 +174,7 @@ let resigterEmp = (e) => {
 			// extract user id
 			let user_id = added.split(' ').pop().slice(0, -1).replaceAll('-', '_'); // tag는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
 
-			// 직원의 부서(회사)를 등록한다. user_id는 tag로 사용한다.
+			// 직원의 부서를 등록한다. user_id는 tag로 사용한다.
 
 			console.log('=== user_id ===', user_id);
 

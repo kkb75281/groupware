@@ -1,5 +1,5 @@
 <template lang="pug">
-h1 부서(회사) 목록
+h1 부서 목록
 
 hr
 
@@ -177,9 +177,9 @@ let deleteDivision = async () => {
     });
 
     if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}개의 부서(회사)가 삭제되었습니다.`);
+        alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);
     } else {
-        alert('부서(회사) 삭제에 실패하였습니다.');
+        alert('부서 삭제에 실패하였습니다.');
     }
 }
 </script>
