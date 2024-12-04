@@ -566,6 +566,7 @@ watch(empListType, async(nv) => {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
+                    console.log(res)
                     let list = res.list.filter(emp => emp.approved.includes('approved'));
 
                     employee.value = list;
@@ -816,6 +817,17 @@ let cancelEdit = () => {
     uploadFile.value = [...backupUploadFile.value];
 }
 
+skapi.getRecords({
+    table:{
+        name: 'emp_position_current',
+        access_group: 1
+    },
+    // unique_id: "[emp_position_current]" + user_id_safe
+    record_id: 'UVuSSSNOhhU2i6sk'
+}).then(r =>{
+    console.log(r.list[0])
+})
+
 let registerEmp = async(e) => {
     e.preventDefault();
 
@@ -825,6 +837,7 @@ let registerEmp = async(e) => {
     disabled.value = true;
 
     let user_id_safe = makeSafe(selectedEmp.value.user_id);
+    console.log(user_id_safe)
 
     // 부서, 직책 업데이트 (history용)
     skapi.postRecord(null, {
@@ -911,6 +924,8 @@ let registerEmp = async(e) => {
             break;
         }
     }
+
+    console.log(employee.value);
 
     displayEmployee(employee.value);    // 세션에 저장
     getAdditionalData();   // 추가자료 가져오기
