@@ -22,7 +22,7 @@ function getChanges(before, after) {
   return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
 }
 
-export let loginCheck = async(profile: object | null, router: any) => {
+export let loginCheck = async(profile: object | null) => {
   if (profile) {
     let originalUser = { ...user }
 

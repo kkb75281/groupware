@@ -28,13 +28,13 @@ hr
             .tb-toolbar
                 .btn-wrap
                     template(v-if="empListType === '직원목록'")
-                        button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="blockEmployee") 숨김
+                        button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김
                         button.btn.outline(@click="router.push('/admin/add-employee')") 등록
                     template(v-else-if="empListType === '초청여부'")
                         button.btn.outline(@click="router.push('/admin/add-employee')") 등록
                     template(v-else-if="empListType === '숨김여부'")
-                        button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="unblockEmployee") 숨김 해제
-                        button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="deleteEmployee") 삭제
+                        button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('unblock')") 숨김 해제
+                        button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="employeeState('delete')") 삭제
 
     .tb-overflow
         template(v-if="loading")
@@ -146,12 +146,12 @@ br
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="position" v-model="selectedEmpTags.emp_pst" placeholder="직책을 입력해주세요." :readonly="readonly")
+                input(type="text" name="position" v-model="selectedEmpTags.emp_pst" placeholder="직책을 입력해주세요." :readonly="disabled")
 
             .input-wrap
                 p.label.essential 부서(회사)
                 template(v-if="disabled")
-                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :readonly="readonly")
+                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" readonly)
                 template(v-else)
                     select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
                         option(disabled) 부서(회사) 선택
@@ -159,7 +159,7 @@ br
             .input-wrap
                 p.label 권한
                 template(v-if="disabled")
-                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " :readonly="readonly")
+                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " readonly)
                 template(v-else)
                     select(name="access_group" v-model="selectedEmp.access_group" style="height: 40px;")
                         option(disabled selected) 권한선택
@@ -201,10 +201,10 @@ br
                             li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
                                 a.file-name(:href="file.path" download) {{ file.filename }}
                                 template(v-if="!disabled")
-                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
+                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-                                    button.btn-remove(v-else type="button" @click="removeFile(file)")
+                                    button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
         .modal-footer
@@ -243,6 +243,7 @@ let employee = ref([]);
 let suspendedLength = ref(0);
 let isModalOpen = ref(false);
 let selectedEmp = ref(null);
+let selectedEmpOriginal = {};
 let selectedEmpTags = ref({
     emp_dvs: '',
     emp_pst: '',
@@ -251,9 +252,9 @@ let searchFor: Ref<"name" | "division" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let uploadFile = ref(null);
 let backupUploadFile = ref([]);
-let readonly = ref(true);
 let disabled = ref(true);
 let removeFileList = ref([]);
+let empInfo: {[key:string]: any} = ref({});
 
 let access_group = {
     1: '직원',
@@ -284,7 +285,91 @@ let callParams = computed(() => {
     }
 });
 
+watch(searchFor, (nv) => {
+    if (nv) {
+        searchValue.value = '';
+
+        if(nv === 'division') {
+            searchValue.value = '부서(회사) 선택';
+            
+            nextTick(() => {
+                displayDivisionOptions('searchDivision');
+            });
+        }
+    }
+});
+
+watch(empListType, async(nv) => {
+    if(nv) {
+        // checkbox reset
+        selectedList.value = [];
+
+        if (nv === '직원목록') {
+            sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
+
+            if (!sessionEmployee) {
+                loading.value = true;
+
+                skapi.getUsers().then(async(res) => {
+                    let list = res.list.filter(emp => emp.approved.includes('approved') && emp.email !== 'admin@email.com');
+
+                    employee.value = list;
+
+                    for(let e of employee.value) {
+                        await getEmpDivision(e.user_id);
+
+                        if(empInfo[e.user_id]) {
+                            console.log(empInfo[e.user_id])
+                            e.division = empInfo[e.user_id].division;
+                            e.position = empInfo[e.user_id].position;
+                        }
+                    }
+
+                    displayEmployee(res.list);
+                    loading.value = false;
+                });
+            } else {
+                employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved') && emp.email !== 'admin@email.com');
+            }
+        } else if (nv === '숨김여부') {
+            let list = JSON.parse(window.sessionStorage.getItem('employee'))
+            let result  = list.filter(emp => emp.approved.includes('suspended'));
+
+            employee.value = result;
+            suspendedLength.value = result.length;
+        } else if (nv === '초청여부') {
+            sessionEmployee = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
+
+            if (!sessionEmployee) {
+                loading.value = true;
+
+                skapi.getInvitations().then(async(res) => {
+                    employee.value = res.list;
+                    for(let e of employee.value) {
+                        if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+                            await getEmpDivision(e.user_id);
+                        }
+                        if(empInfo[e.user_id]) {
+                            e.division = empInfo[e.user_id].division;
+                            e.position = empInfo[e.user_id].position;
+                        }
+                    }
+                    displayinviteEmployee(res.list);
+                    loading.value = false;
+                });
+
+            } else {
+                employee.value = sessionEmployee;
+            }
+        }
+    }
+}, { immediate: true });
+
 getDivisionNames();
+
+function makeSafe(str) {
+    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+}
 
 let displayDivisionOptions = (selectName: string) => {
     let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
@@ -317,28 +402,8 @@ let displayDivisionOptions = (selectName: string) => {
     divisionList.disabled = false;
 }
 
-watch(searchFor, (nv) => {
-    if (nv) {
-        searchValue.value = '';
-
-        if(nv === 'division') {
-            searchValue.value = '부서(회사) 선택';
-            
-            nextTick(() => {
-                displayDivisionOptions('searchDivision');
-            });
-        }
-    }
-});
-
-function makeSafe(str) {
-    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
-}
-
-let empInfo: {[key:string]: any} = ref({});
-
 let getEmpDivision = async(userId) => {
-    if(!userId || userId === '8891ac0f-bc24-472b-9807-903bf768a944' || userId === 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') return;
+    if(!userId) return;
 
     await skapi.getRecords({
         table: {
@@ -366,12 +431,6 @@ let getEmpDivision = async(userId) => {
             position: emp_pst
         }
     })
-}
-
-function getFileUserId(str: string) {
-    if (!str) return '';
-
-    return str.split('/')[3]
 }
 
 let searchEmp = async() => {
@@ -417,7 +476,6 @@ let searchEmp = async() => {
                 arr.push(user.list[0])
             })
 
-            
             arr.forEach((el) => {
                 if (el.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && el.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
                     getEmpDivision(el.user_id);
@@ -446,32 +504,24 @@ let searchEmp = async() => {
     });
 
     if(fetchedData) {
-        // if(empListType.value === '직원목록') {
-        //     employee.value = fetchedData.list.filter(emp => emp.approved.includes('approved'));
-        // } else if(empListType.value === '숨김여부') {
-        //     employee.value = fetchedData.list.filter(emp => emp.approved.includes('suspended'));
-        // } else if(empListType.value === '초청여부') {
-        //     employee.value = fetchedData.list;
-        // }
         employee.value = fetchedData.list;
+
         for(let e of employee.value) {
-            if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
-                await getEmpDivision(e.user_id);
-            }
+            await getEmpDivision(e.user_id);
+
             if(empInfo[e.user_id]) {
                 // console.log(empInfo[e.user_id])
                 e.division = empInfo[e.user_id].division;
                 e.position = empInfo[e.user_id].position;
             }
         }
-        // console.log(fetchedData.list)
     }
     
     loading.value = false;
 }
 
 // 추가자료 업로드 한 것 가져오기
-const getAdditionalData = () => {
+let getAdditionalData = () => {
     skapi.getRecords({
         table: {
             name: 'emp_additional_data',
@@ -481,16 +531,19 @@ const getAdditionalData = () => {
     }).then(res => {
         console.log('=== openModal; getRecords === res : ', res);
 
-        if(res.list.length === 0) {
-            return;
-        } else {
+        if(res.list.length > 0) {
             let fileList = [];
 
             // console.log('== getRecords == res : ', res);
 
-            res.list.forEach((item) => {
-                if (item.bin.additional_data && item.bin.additional_data.length > 0) {
+            function getFileUserId(str: string) {
+                if (!str) return '';
 
+                return str.split('/')[3]
+            }
+
+            res.list.forEach((item) => {
+                if (item.bin.additional_data && item.bin.additional_data.length > 0) {       
                     const result = item.bin.additional_data.map((el) => ({
                         ...el,
                         user_id: getFileUserId(el.path),
@@ -501,16 +554,15 @@ const getAdditionalData = () => {
                 }
             })
 
-            console.log('== getRecords == fileList : ', fileList);
-
             uploadFile.value = fileList;
         }
     })
 }
 
 let openModal = async(emp: { [key: string]: any }) => {
-    console.log(emp.division)
     selectedEmp.value = emp;
+    selectedEmpOriginal = { ...emp };
+    console.log(selectedEmpOriginal)
     selectedEmpTags.value.emp_dvs = emp.division;
     selectedEmpTags.value.emp_pst = emp.position;
     isModalOpen.value = true;
@@ -529,95 +581,15 @@ let openModal = async(emp: { [key: string]: any }) => {
             throw err;
         });
     }
-    
-    // user additional data 가져오기
-    // skapi.getRecords({
-    //     table: {
-    //         name: 'ref_ids',
-    //         access_group: 1
-    //     },
-    //     index: {
-    //         name: 'user_id',
-    //         value: makeSafe(selectedEmp.value?.user_id)
-    //     },
-    // }).then((res) => {
-    //     console.log('=== openModal; getRecords === res : ', res);
-    //     getAdditionalData();
-    // });
+
     getAdditionalData();
 };
 
 let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
-    readonly.value = true;
     disabled.value = true;
 };
-
-watch(empListType, async(nv) => {
-    if(nv) {
-        // checkbox reset
-        selectedList.value = [];
-
-        if (nv === '직원목록') {
-            sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
-
-            if (!sessionEmployee) {
-                loading.value = true;
-
-                skapi.getUsers().then(async(res) => {
-                    console.log(res)
-                    let list = res.list.filter(emp => emp.approved.includes('approved'));
-
-                    employee.value = list;
-                    for(let e of employee.value) {
-                        await getEmpDivision(e.user_id);
-
-                        if(empInfo[e.user_id]) {
-                            console.log(empInfo[e.user_id])
-                            e.division = empInfo[e.user_id].division;
-                            e.position = empInfo[e.user_id].position;
-                        }
-                    }
-                    displayEmployee(res.list);
-                    loading.value = false;
-                });
-            } else {
-                employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved'));
-            }
-        } else if (nv === '숨김여부') {
-            let list = JSON.parse(window.sessionStorage.getItem('employee'))
-            let result  = list.filter(emp => emp.approved.includes('suspended'));
-
-            employee.value = result;
-            suspendedLength.value = result.length;
-        } else if (nv === '초청여부') {
-            sessionEmployee = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
-
-            if (!sessionEmployee) {
-                loading.value = true;
-
-                skapi.getInvitations().then(async(res) => {
-                    employee.value = res.list;
-                    for(let e of employee.value) {
-                        if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
-                            await getEmpDivision(e.user_id);
-                        }
-                        if(empInfo[e.user_id]) {
-                            e.division = empInfo[e.user_id].division;
-                            e.position = empInfo[e.user_id].position;
-                        }
-                    }
-                    displayinviteEmployee(res.list);
-                    loading.value = false;
-                });
-
-            } else {
-                employee.value = sessionEmployee;
-            }
-        }
-    }
-}, { immediate: true });
 
 let getEmployee = () => {
     skapi.getUsers().then(res => {        
@@ -654,69 +626,50 @@ let toggleSelect = (el) => {
     }
 }
 
-let blockEmployee = async () => {
+let employeeState = async(state) => {
     let userId = Object.values(selectedList.value);
-
+    let alertMsg = '';
     let isSuccess = [];
     let isFail = [];
+    
+    if(state == 'block') {
+        alertMsg = '숨김 처리';
 
-    await Promise.all(userId.map(el => {
-        return skapi.blockAccount({ user_id: el }).then(res => {
-            isSuccess.push(el);
-            getEmployee();
-        }).catch(err => {
-            isFail.push(el);
-        });
-    }));
+        await Promise.all(userId.map(el => {
+            return skapi.blockAccount({ user_id: el }).then(res => {
+                isSuccess.push(el);
+            }).catch(err => {
+                isFail.push(el);
+            });
+        }));
+    } else if(state == 'unblock') {
+        alertMsg = '숨김 해제';
 
-    if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}명의 직원이 숨김 처리되었습니다.`);
-    } else {
-        alert('숨김 처리에 실패하였습니다.');
+        await Promise.all(userId.map(el => {
+            return skapi.unblockAccount({ user_id: el }).then(res => {
+                isSuccess.push(el);
+            }).catch(err => {
+                isFail.push(el);
+            });
+        }));
+    } else if(state == 'delete') {
+        alertMsg = '삭제';
+
+        await Promise.all(userId.map(el => {
+            return skapi.deleteAccount({ user_id: el }).then(res => {
+                isSuccess.push(el);
+            }).catch(err => {
+                isFail.push(el);
+            });
+        }));
     }
-}
 
-let unblockEmployee = async () => {
-    let userId = Object.values(selectedList.value);
+    getEmployee();
 
-    let isSuccess = [];
-    let isFail = [];
-
-    await Promise.all(userId.map(el => {
-        return skapi.unblockAccount({ user_id: el }).then(res => {
-            isSuccess.push(el);
-            getEmployee();
-        }).catch(err => {
-            isFail.push(el);
-        });
-    }));
-
-    if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}명의 직원이 숨김 해제되었습니다.`);
+    if(isSuccess.length > 0) {
+        alert(`${isSuccess.length}명의 직원이 ${alertMsg}되었습니다.`);
     } else {
-        alert('숨김 해제에 실패하였습니다.');
-    }
-}
-
-let deleteEmployee = async () => {
-    let userId = Object.values(selectedList.value);
-
-    let isSuccess = [];
-    let isFail = [];
-
-    await Promise.all(userId.map(el => {
-        return skapi.deleteAccount({ user_id: el }).then(res => {
-            isSuccess.push(el);
-            getEmployee();
-        }).catch(err => {
-            isFail.push(el);
-        });
-    }));
-
-    if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}명의 직원이 삭제되었습니다.`);
-    } else {
-        alert('직원 삭제에 실패하였습니다.');
+        alert(`${alertMsg}에 실패하였습니다.`);
     }
 }
 
@@ -791,16 +744,7 @@ let cancelInvite = (employee_info) => {
     });
 }
 
-let removeFile =  (item) => {
-    removeFileList.value.push(item.record_id);
-}
-
-let cancelRemoveFile = (item) => {
-    removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
-}
-
 let editEmp = () => {
-    readonly.value = false;
     disabled.value = false;
     nextTick(() => {
         displayDivisionOptions('division');
@@ -811,82 +755,69 @@ let editEmp = () => {
 }
 
 let cancelEdit = () => {
-    readonly.value = true;
     disabled.value = true;
     removeFileList.value = [];
     uploadFile.value = [...backupUploadFile.value];
 }
 
-skapi.getRecords({
-    table:{
-        name: 'emp_position_current',
-        access_group: 1
-    },
-    // unique_id: "[emp_position_current]" + user_id_safe
-    record_id: 'UVuSSSNOhhU2i6sk'
-}).then(r =>{
-    console.log(r.list[0])
-})
-
 let registerEmp = async(e) => {
     e.preventDefault();
 
-    console.log('=== registerEmp === e : ', e);
-    console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
-    readonly.value = true;
+    // console.log('=== registerEmp === e : ', e);
+    // console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
     disabled.value = true;
 
     let user_id_safe = makeSafe(selectedEmp.value.user_id);
-    console.log(user_id_safe)
 
-    // 부서, 직책 업데이트 (history용)
-    skapi.postRecord(null, {
-        table: {
-            name: 'emp_division',
-            access_group: 1
-        },
-        tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
-    }).then(r => {
-        console.log('history부서직책업데이트', r);
-    })
-
-    // 기존 현재 부서,직책 삭제 후 새로운 부서,직책 추가 (current용)
-    skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
-        console.log(r)
-        // current
-        skapi.postRecord({
-            user_id: selectedEmp.value.user_id,
-        }, {
-            unique_id: "[emp_position_current]" + user_id_safe,
+    // 부서, 직책 업데이트 (history/current)
+    if(selectedEmpOriginal.division !== selectedEmpTags.value.emp_dvs || selectedEmpOriginal.position !== selectedEmpTags.value.emp_pst) {
+        skapi.postRecord(null, {
             table: {
-                name: 'emp_position_current',
+                name: 'emp_division',
                 access_group: 1
             },
-            index: {
-                name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
-                value: selectedEmp.value.name
-            }
+            tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
         }).then(r => {
-            console.log('current부서직책업데이트', r);
+            console.log('history부서직책업데이트', r);
         })
-    })
 
-    let access_group_value = document.querySelector('select[name=access_group]').value;
+        skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
+            console.log(r)
+            // current
+            skapi.postRecord({
+                user_id: selectedEmp.value.user_id,
+            }, {
+                unique_id: "[emp_position_current]" + user_id_safe,
+                table: {
+                    name: 'emp_position_current',
+                    access_group: 1
+                },
+                index: {
+                    name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
+                    value: selectedEmp.value.name
+                }
+            }).then(r => {
+                console.log('current부서직책업데이트', r);
+            })
+        });
+    }
 
     // 권한 업데이트
-    skapi.grantAccess({
-        user_id: selectedEmp.value.user_id,
-        access_group: access_group_value
-    }).then(r => {
-        console.log('권한업데이트' ,r)
-    })
+    if(selectedEmpOriginal.access_group !== selectedEmp.value.access_group) {
+        let access_group_value = document.querySelector('select[name=access_group]').value;
+        
+        skapi.grantAccess({
+            user_id: selectedEmp.value.user_id,
+            access_group: access_group_value
+        }).then(r => {
+            console.log('권한업데이트' ,r)
+        })
+    }
 
     // 추가자료 업데이트
     let filebox = document.querySelector('input[name=additional_data]');
 
     if (filebox && filebox.files.length) {
-        console.log('파일 있음');
-
         for(let file of filebox.files) {
             const formData = new FormData();
 
@@ -901,36 +832,31 @@ let registerEmp = async(e) => {
                     unique_id: "[emp_additional_data]" + selectedEmp.value.user_id,
                 }
             });
+        }
 
+        if(uploadFile.value && uploadFile.value.length) {
             backupUploadFile.value = [...uploadFile.value];
         }
-    } else {
-        console.log('파일 없음');
     }
 
     if(removeFileList.value.length) {
-        console.log('삭제파일 있음');
         skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
             removeFileList.value = [];
         });
-    } else {
-        console.log('삭제파일 없음');
     }
 
     for(let e of employee.value) {
         if(e.user_id === selectedEmp.value.user_id) {
             e.division = selectedEmpTags.value.emp_dvs;
             e.position = selectedEmpTags.value.emp_pst;
+            selectedEmpOriginal = { ...e };
             break;
         }
     }
 
-    console.log(employee.value);
-
     displayEmployee(employee.value);    // 세션에 저장
     getAdditionalData();   // 추가자료 가져오기
     window.alert('등록완료');
-    readonly.value = true;
     disabled.value = true;
 }
 </script>
