@@ -449,7 +449,7 @@ let getEmpDivision = async(userId) => {
         },
         unique_id: "[emp_position_current]" + makeSafe(userId)
     }).then(r => {
-        console.log(r.list)
+        // console.log(r.list)
         if (r.list.length === 0) return;
     
         let record = r.list[0];
