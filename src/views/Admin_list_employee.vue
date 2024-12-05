@@ -152,9 +152,9 @@ br
                 input(type="text" name="position" v-model="selectedEmpTags.emp_pst" placeholder="직책을 입력해주세요." :readonly="disabled")
 
             .input-wrap
-                p.label.essential 부서
+                p.label 부서
                 template(v-if="disabled")
-                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" readonly)
+                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :placeholder="divisionNameList[selectedEmp?.division] === '' ? '부서를 선택해주세요.' : ''" readonly)
                 template(v-else)
                     select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
                         option(disabled) 부서 선택
@@ -390,19 +390,23 @@ function makeSafe(str) {
 
 let displayDivisionOptions = (selectName: string) => {
     let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
+    console.log(divisionNameList.value)
 
     // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
     divisionList.innerHTML = ''; // 기존 옵션 초기화
 
+    const allOption = document.createElement('option');
+    const defaultOption = document.createElement('option');
+
+    let matchFound = false;
+
     // 기본 옵션 추가
     if(selectName == 'searchDivision') {
-        const allOption = document.createElement('option');
         allOption.value = '전체';
         allOption.innerText = '전체';
         allOption.selected = true;
         divisionList.appendChild(allOption);
     } else {
-        const defaultOption = document.createElement('option');
         defaultOption.disabled = true;
         defaultOption.selected = true;
         defaultOption.innerText = '부서 선택';
@@ -411,16 +415,24 @@ let displayDivisionOptions = (selectName: string) => {
 
     // 동적으로 부서 옵션 추가
     for (let key in divisionNameList.value) {
-        const option = document.createElement('option');
-        option.value = key;
-        option.innerText = divisionNameList.value[key];
-
-        // 선택된 부서 처리
-        if (selectName === 'division' && key === selectedEmp.value.division) {
-            option.selected = true;
+        if(divisionNameList.value[key] !== '') {
+            const option = document.createElement('option');
+            option.value = key;
+            option.innerText = divisionNameList.value[key];
+    
+            // 선택된 부서 처리
+            if (selectName === 'division' && key === selectedEmp.value.division) {
+                option.selected = true;
+                matchFound = true;
+            }
+    
+            divisionList.appendChild(option);
         }
+    }
 
-        divisionList.appendChild(option);
+    // 일치하는 키가 없으면 기본 옵션에 selected 추가
+    if (selectName === 'division' && !matchFound) {
+        defaultOption.selected = true;
     }
 
     // 선택박스 활성화
@@ -441,9 +453,9 @@ let getEmpDivision = async(userId) => {
         if (r.list.length === 0) return;
     
         let record = r.list[0];
-        let emp_dvs = record.index.name.split('.')[0];
-        let emp_id = record.unique_id.replace('[emp_position_current]', '').replaceAll('_', '-');
-        let emp_pst = record.index.name.split('.')[1];
+        let emp_dvs = record?.index?.name?.split('.')[0];
+        let emp_id = record?.unique_id?.replace('[emp_position_current]', '').replaceAll('_', '-');
+        let emp_pst = record?.index?.name?.split('.')[1];
 
         empInfo[emp_id] = {
             division: emp_dvs,

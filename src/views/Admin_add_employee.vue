@@ -156,10 +156,12 @@ skapi.getRecords({
         let divisionNames = r.list[0].data;
     
         for(let key in divisionNames) {
-            const option = document.createElement('option');
-            option.value = key;
-            option.innerText = divisionNames[key];
-            document.querySelector('select[name="division"]').appendChild(option);
+            if(divisionNames[key] !== '') {
+                const option = document.createElement('option');
+                option.value = key;
+                option.innerText = divisionNames[key];
+                document.querySelector('select[name="division"]').appendChild(option);
+            }
         }
     
         document.querySelector('select[name="division"]').disabled = false;
