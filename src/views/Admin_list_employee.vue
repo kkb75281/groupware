@@ -548,7 +548,7 @@ let searchEmp = async() => {
     // division이 아닌 다른 검색 조건일 경우 처리
     try {
         const fetchedData = await skapi.getUsers(callParams.value, {
-            ascending: !!searchValue.value
+            // ascending: !!searchValue.value
         });
 
         if (fetchedData) {
