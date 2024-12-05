@@ -157,87 +157,70 @@ let deleteDivision = async () => {
     let userId = Object.keys(selectedList.value);
     let name = Object.values(selectedList.value);
 
-    console.log(name)
+    let isSuccess = [];
+    let isFail = [];
 
-    // let isSuccess = [];
-    // let isFail = [];
-
-    // // 회사 자체 레코드 삭제
-    // await Promise.all(userId.map(el => {
-    //     return skapi.deleteRecords({record_id: el}).then(res => {
-    //         isSuccess.push(el);
-    //     }).catch(err => {
-    //         // console.log('== err == : ', err)
-    //         isFail.push(el);
-    //     });
-    // }));
+    // 회사 자체 레코드 삭제
+    await Promise.all(userId.map(el => {
+        return skapi.deleteRecords({record_id: el}).then(res => {
+            isSuccess.push(el);
+        }).catch(err => {
+            // console.log('== err == : ', err)
+            isFail.push(el);
+        });
+    }));
 
     // 회사 이름 레코드 삭제
     skapi.getRecords({
         unique_id: '[division_name_list]'
     }).then(r => {
-        let data = r.list[0].data;
+        let data = r.list[0].data;  // { 'DF1': '부서명1', 'DF2': '부서명2', ... }
+        let keys = Object.keys(data);
         let values = Object.values(data); // '부서명1', '부서명2', ...
-        let index = 0;
 
-        // for(let v of values) {
-        //     // console.log(v)
-        //     for(let n of name) {
-        //         if(v === n) {
-        //             index.push(values.indexOf(v));
-        //             // break;
-        //             console.log(index)
-        //         }
-        //     }
-        //     // if(v === originalDivisionName) {
-        //     //     index = values.indexOf(v);
-        //     //     break;
-        //     // }
-        // }
+        // Set으로 변환 (빠른 검색)
+        let nameSet = new Set(name);
 
-        // data = data.filter((el, i) => i !== index);
-        data.filter((el, i) => {
-            for(let v of values) {
-                for(let n of name) {
-                    if(v === n) {
-                        index= values.indexOf(v);
-                        return i !== index;
-                    }
-                }
+        let filteredData = {};
+
+        // 값 비교 및 제외 로직
+        for (let i = 0; i < values.length; i++) {
+            if (!nameSet.has(values[i])) {
+                filteredData[keys[i]] = values[i]; // 제외되지 않은 항목만 추가
+            } else {
+                filteredData[keys[i]] = '';
             }
-        });
+        }
 
-        console.log(data)
-
-        // skapi.deleteRecords({
-        //     unique_id: '[division_name_list]'
-        // }).then(r => {
-        //     skapi.postRecord(data, {
-        //         unique_id: '[division_name_list]',
-        //         table: {
-        //             name: 'divisionNames',
-        //             access_group: 1
-        //         }
-        //     })
-        // })
+        skapi.deleteRecords({
+            unique_id: '[division_name_list]'
+        }).then(r => {
+            skapi.postRecord(filteredData, {
+                unique_id: '[division_name_list]',
+                table: {
+                    name: 'divisionNames',
+                    access_group: 1
+                }
+            })
+        })
     })
 
-    // skapi.getRecords({
-    //     table: {
-    //         name: 'divisions',
-    //         access_group: 99
-    //     }
-    // },
-    // ).then(response => {
-    //     divisions.value = response.list;
-    //     displayDivisions(response.list);
-    // });
+    skapi.getRecords({
+        table: {
+            name: 'divisions',
+            access_group: 99
+        }
+    },
+    ).then(response => {
+        divisions.value = response.list;
+        displayDivisions(response.list);
+    });
 
-    // if (isSuccess.length > 0) {
-    //     alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);
-    // } else {
-    //     alert('부서 삭제에 실패하였습니다.');
-    // }
+    if (isSuccess.length > 0) {
+        alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);
+    } else {
+        alert('부서 삭제에 실패하였습니다.');
+    }
 }
 </script>
 
