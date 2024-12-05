@@ -36,7 +36,8 @@ nav#navbar
                         span 자료 (임시)
             template(v-if="user.access_group > 98")
                 li.item(:class="{'active': route.path.startsWith('/admin')}")
-                    .router(@click="toggleSubMenu")
+                    //- .router(@click="toggleSubMenu")
+                    router-link.router(to="/admin")
                         .icon
                             svg
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
@@ -111,6 +112,13 @@ watch(() => route.path, (newPath, oldPath) => {
                 adminSubMenu.value.classList.remove('show');
                 showSubMenu.value = false;
             }
+        } else {
+            // adminSubMenu.value.classList.toggle('show');
+            // showSubMenu.value = !showSubMenu.value;
+            if(!adminSubMenu.value.classList.contains('show')) {
+                adminSubMenu.value.classList.add('show');
+            }
+            showSubMenu.value = true;
         }
     }
 })
