@@ -27,7 +27,7 @@ nav#navbar
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                     .text 
                         span 마이페이지
-            li.item(:class="{'active': route.name === 'list-data'}")
+            //- li.item(:class="{'active': route.name === 'list-data'}")
                 router-link.router(to="/list-data")
                     .icon
                         svg
@@ -36,7 +36,8 @@ nav#navbar
                         span 자료 (임시)
             template(v-if="user.access_group > 98")
                 li.item(:class="{'active': route.path.startsWith('/admin')}")
-                    .router(@click="toggleSubMenu")
+                    //- .router(@click="toggleSubMenu")
+                    router-link.router(to="/admin")
                         .icon
                             svg
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
@@ -46,9 +47,9 @@ nav#navbar
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
                 ul.sub-menu-item(ref="adminSubMenu")
                     li(:class="{'active': route.name === 'list-divisions'}")
-                        router-link(to="/admin/list-divisions") 부서 목록
+                        router-link(to="/admin/list-divisions") 부서 관리
                     li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
-                        router-link(to="/admin/list-employee") 직원 목록
+                        router-link(to="/admin/list-employee") 직원 관리
             template(v-else)
                 li.item(:class="{'active': route.name === 'list-employee'}")
                     router-link.router(to="/admin/list-employee")
@@ -57,7 +58,7 @@ nav#navbar
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
                         .text 
                             span 직원 목록
-            li.item(:class="{'active': route.name === 'component'}")
+            //- li.item(:class="{'active': route.name === 'component'}")
                 router-link.router(to="/component") 
                     .icon
                         svg
@@ -85,6 +86,7 @@ const route = useRoute();
 
 let adminSubMenu = ref(null);
 let showSubMenu = ref(false);
+let isadmin = user.access_group > 98;
 
 let toggleSubMenu = (e) => {
     adminSubMenu.value.classList.toggle('show');
@@ -111,6 +113,13 @@ watch(() => route.path, (newPath, oldPath) => {
                 adminSubMenu.value.classList.remove('show');
                 showSubMenu.value = false;
             }
+        } else {
+            // adminSubMenu.value.classList.toggle('show');
+            // showSubMenu.value = !showSubMenu.value;
+            if(isadmin && !adminSubMenu.value.classList.contains('show')) {
+                adminSubMenu.value.classList.add('show');
+            }
+            showSubMenu.value = true;
         }
     }
 })

@@ -5,8 +5,9 @@ import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
 import Mypage from '@/views/Mypage.vue';
 import Mypage_list_data from '@/views/Mypage_list_data.vue';
-import Admin from '@/views/Admin.vue';
 import Profile from '@/views/Profile.vue';
+import Admin from '@/views/Admin.vue';
+import Admin_main from '@/views/Admin_main.vue';
 import Admin_add_employee from '@/views/Admin_add_employee.vue';
 import Admin_add_divisions from '@/views/Admin_add_divisions.vue';
 import Admin_edit_divisions from '@/views/Admin_edit_divisions.vue';
@@ -57,15 +58,19 @@ const router = createRouter({
           component: Mypage,
         },
         {
-          path: 'list-data',
+          path: '/list-data',
           name: 'list-data',
           component: Mypage_list_data,
         },
         {
-          path: 'admin',
-          name: 'admin',
-          component: Admin,
+          path: '/admin',
+          component: Admin_main,
           children: [
+            {
+              path: '/admin',
+              name: 'admin-home',
+              component: Admin
+            },
             {
               path: 'add-employee',
               name: 'add-employee',

@@ -98,7 +98,7 @@
                         template(v-if="uploadFile.length > 0")
                             li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
                                 //- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
-                                a.file-name(:href="file.url" download) {{ file.filename }}
+                                a.file-name(:href="file.url" target="_blank") {{ file.filename }}
                                 template(v-if="!disabled && file.user_id === user.user_id")
                                     button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
                                         svg
@@ -446,7 +446,9 @@ let registerMypage = async(e) => {
     }
 
     // 프로필 정보를 업데이트
-    await skapi.updateProfile(e).then(getAdditionalData)
+    await skapi.updateProfile(e).then(r => {
+        getAdditionalData();
+    })
 
     // if(user.email !== originUserProfile.email) {
     //     verifiedEmail.value = true;
