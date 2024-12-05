@@ -207,7 +207,7 @@ br
                             li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
                         template(v-else)
                             li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
-                                a.file-name(:href="file.path" download) {{ file.filename }}
+                                a.file-name(:href="file.url" target="_blank") {{ file.filename }}
                                 template(v-if="!disabled")
                                     button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
                                         svg
