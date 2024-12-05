@@ -1,5 +1,5 @@
 <template lang="pug">
-h1 부서 목록
+h1 부서 관리
 
 hr
 

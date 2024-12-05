@@ -1,6 +1,7 @@
 <template lang="pug">
 div(style="display: flex; gap: 1rem")
-    h1.title 직원 목록
+    h1.title(v-if="user.access_group > 98") 직원 관리
+    h1.title(v-else) 직원 목록
     .input-wrap(v-if="user.access_group > 98")
         select(v-model="empListType")
             option(value="직원목록") 직원목록
@@ -925,6 +926,7 @@ let registerEmp = async(e) => {
     disabled.value = true;
 
     let user_id_safe = makeSafe(selectedEmp.value.user_id);
+    let needUpdate = false;
 
     // 부서, 직책 업데이트 (history/current)
     if(selectedEmpOriginal.division !== selectedEmpTags.value.emp_dvs || selectedEmpOriginal.position !== selectedEmpTags.value.emp_pst) {
@@ -957,6 +959,7 @@ let registerEmp = async(e) => {
                 console.log('current부서직책업데이트', r);
             })
         });
+        needUpdate = true;
     }
 
     // 권한 업데이트
@@ -1015,7 +1018,9 @@ let registerEmp = async(e) => {
     getAdditionalData();   // 추가자료 가져오기
     window.alert('등록완료');
 
-    searchEmp();
+    if(needUpdate) {
+        searchEmp();
+    }
     disabled.value = true;
 }
 </script>
