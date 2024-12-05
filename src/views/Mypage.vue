@@ -160,6 +160,7 @@ function makeSafe(str) {
 let getUserDivision = async() => {
     // 부서 이름 가져오기
     await skapi.getRecords({
+        unique_id: '[division_name_list]',
         table: {
             name: 'divisionNames',
             access_group: 1

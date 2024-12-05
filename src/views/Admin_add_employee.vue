@@ -143,6 +143,7 @@ const route = useRoute();
 // }
 
 skapi.getRecords({
+    unique_id: '[division_name_list]',
     table: {
         name: 'divisionNames',
         access_group: 1
