@@ -24,6 +24,7 @@ function getChanges(before, after) {
 
 export let loginCheck = async(profile: object | null) => {
   if (profile) {
+    console.log(profile)
     let originalUser = { ...user }
 
     Object.assign(user, profile);

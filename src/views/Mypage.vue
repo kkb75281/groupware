@@ -446,7 +446,9 @@ let registerMypage = async(e) => {
     }
 
     // 프로필 정보를 업데이트
-    await skapi.updateProfile(e).then(getAdditionalData)
+    await skapi.updateProfile(e).then(r => {
+        getAdditionalData();
+    })
 
     // if(user.email !== originUserProfile.email) {
     //     verifiedEmail.value = true;
