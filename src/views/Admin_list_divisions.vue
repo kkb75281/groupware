@@ -107,7 +107,7 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
 if(Object.keys(divisions.value)) {
     Object.keys(divisions.value).forEach((key, index) => {
         let specialKey = `DVS_${index}`;
-        divisionNameList.value[specialKey] = divisions.value[key].data.division_name;
+        // divisionNameList.value[specialKey] = divisions.value[key].data.division_name;
     });
 }
 
