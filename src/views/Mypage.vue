@@ -107,7 +107,7 @@
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
                         template(v-if="uploadFile.length === 0")
-                            p.text 업로드 된 자료가 없습니다.
+                            li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
 
             br
 
@@ -140,7 +140,7 @@ const route = useRoute();
 let optionsBtn = ref(null);
 let getFileInfo = ref(null);
 let userPosition = ref(null);
-let uploadFile = ref({});
+let uploadFile = ref([]);
 let backupUploadFile = ref([]);
 let removeFileList = ref([]);
 let originUserProfile = {};
@@ -357,6 +357,7 @@ let startEdit = () => {
     }
 
     disabled.value = false;
+    
     backupUploadFile.value = [...uploadFile.value];
 }
 
