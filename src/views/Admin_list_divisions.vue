@@ -11,7 +11,7 @@ hr
 
         .tb-toolbar
             .btn-wrap
-                button.btn.outline.warning(:disabled="!selectedList.length" @click="deleteDivision") 삭제
+                button.btn.outline.warning(:disabled="!Object.keys(selectedList).length" @click="deleteDivision") 삭제
                 button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
         template(v-if="loading")
@@ -44,7 +44,7 @@ hr
                     tr(v-for="(division, index) in Object.values(divisions)" :key="division.record_id")
                         td 
                             label.checkbox
-                                input(type="checkbox" name="checkbox" :checked="selectedList.includes(division.record_id)" @click="toggleSelect(division.record_id)")
+                                input(type="checkbox" name="checkbox" :checked="Object.keys(selectedList).includes(division.record_id)" @click="toggleSelect(division.record_id, division.data.division_name)")
                                 span.label-checkbox
                         td.list-num {{ index + 1 }}
                         td.left 
@@ -104,12 +104,13 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
     }
 }
 
-if(Object.keys(divisions.value)) {
-    Object.keys(divisions.value).forEach((key, index) => {
-        let specialKey = `DVS_${index}`;
-        // divisionNameList.value[specialKey] = divisions.value[key].data.division_name;
-    });
-}
+// if(Object.keys(divisions.value)) {
+//     Object.keys(divisions.value).forEach((key, index) => {
+//         let specialKey = `DVS_${index}`;
+//         divisionNameList.value[specialKey] = divisions.value[key].data.division_name;
+
+//     });
+// }
 
 let displayDivisions = (divisions) => {
     let saveSession = {};
@@ -128,59 +129,115 @@ let displayDivisions = (divisions) => {
 }
 
 let currentPage = ref(1);
-let selectedList = ref([]);
+let selectedList = ref({});
 let isAllSelected = computed(() => {
     let keys = Object.keys(divisions.value);
-    return keys.length > 0 && keys.every(key => selectedList.value.includes(key));
+    return keys.length > 0 && keys.every(key => Object.keys(selectedList.value).includes(key));
 });
 
 let toggleSelectAll = () => {
     if (isAllSelected.value) {
-        selectedList.value = [];
+        selectedList.value = {};
     } else {
-        selectedList.value = Object.keys(divisions.value);
+        for (let key in divisions.value) {
+            selectedList.value[key] = divisions.value[key].data.division_name;
+        }
     }
 }
 
-let toggleSelect = (id) => {
-    if (selectedList.value.includes(id)) {
-        selectedList.value = selectedList.value.filter(itemId => itemId !== id);
+let toggleSelect = (id, name) => {
+    if(selectedList.value[id]) {
+        delete selectedList.value[id];
     } else {
-        selectedList.value.push(id);
+        selectedList.value[id] = name;
     }
 }
 
 let deleteDivision = async () => {
-    let userId = Object.values(selectedList.value);
+    let userId = Object.keys(selectedList.value);
+    let name = Object.values(selectedList.value);
 
-    let isSuccess = [];
-    let isFail = [];
+    console.log(name)
 
-    await Promise.all(userId.map(el => {
-        return skapi.deleteRecords({record_id: el}).then(res => {
-            isSuccess.push(el);
-        }).catch(err => {
-            // console.log('== err == : ', err)
-            isFail.push(el);
-        });
-    }));
+    // let isSuccess = [];
+    // let isFail = [];
 
+    // // 회사 자체 레코드 삭제
+    // await Promise.all(userId.map(el => {
+    //     return skapi.deleteRecords({record_id: el}).then(res => {
+    //         isSuccess.push(el);
+    //     }).catch(err => {
+    //         // console.log('== err == : ', err)
+    //         isFail.push(el);
+    //     });
+    // }));
+
+    // 회사 이름 레코드 삭제
     skapi.getRecords({
-        table: {
-            name: 'divisions',
-            access_group: 99
-        }
-    },
-    ).then(response => {
-        divisions.value = response.list;
-        displayDivisions(response.list);
-    });
+        unique_id: '[division_name_list]'
+    }).then(r => {
+        let data = r.list[0].data;
+        let values = Object.values(data); // '부서명1', '부서명2', ...
+        let index = 0;
 
-    if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);
-    } else {
-        alert('부서 삭제에 실패하였습니다.');
-    }
+        // for(let v of values) {
+        //     // console.log(v)
+        //     for(let n of name) {
+        //         if(v === n) {
+        //             index.push(values.indexOf(v));
+        //             // break;
+        //             console.log(index)
+        //         }
+        //     }
+        //     // if(v === originalDivisionName) {
+        //     //     index = values.indexOf(v);
+        //     //     break;
+        //     // }
+        // }
+
+        // data = data.filter((el, i) => i !== index);
+        data.filter((el, i) => {
+            for(let v of values) {
+                for(let n of name) {
+                    if(v === n) {
+                        index= values.indexOf(v);
+                        return i !== index;
+                    }
+                }
+            }
+        });
+
+        console.log(data)
+
+        // skapi.deleteRecords({
+        //     unique_id: '[division_name_list]'
+        // }).then(r => {
+        //     skapi.postRecord(data, {
+        //         unique_id: '[division_name_list]',
+        //         table: {
+        //             name: 'divisionNames',
+        //             access_group: 1
+        //         }
+        //     })
+        // })
+    })
+
+    // skapi.getRecords({
+    //     table: {
+    //         name: 'divisions',
+    //         access_group: 99
+    //     }
+    // },
+    // ).then(response => {
+    //     divisions.value = response.list;
+    //     displayDivisions(response.list);
+    // });
+
+    // if (isSuccess.length > 0) {
+    //     alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);
+    // } else {
+    //     alert('부서 삭제에 실패하였습니다.');
+    // }
 }
 </script>
 
