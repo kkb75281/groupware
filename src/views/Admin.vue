@@ -5,7 +5,7 @@ ul.card-wrap
             .icon.img
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-view-list")
-            h4.name 부서 목록
+            h4.name 부서 관리
             .btn-wrap
                 p.btn-go 바로가기
                 .icon
@@ -16,7 +16,7 @@ ul.card-wrap
             .icon.img
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
-            h4.name 직원 목록
+            h4.name 직원 관리
             .btn-wrap
                 p.btn-go 바로가기
                 .icon
