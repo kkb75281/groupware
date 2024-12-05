@@ -7,6 +7,7 @@ export let loading = ref(false);
 
 export async function getDivisionNames() {
     await skapi.getRecords({
+        unique_id: '[division_name_list]',
         table: {
             name: 'divisionNames',
             access_group: 1

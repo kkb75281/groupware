@@ -147,6 +147,7 @@ if (!record_id) {
 
 let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 let record = sessionDivisions[record_id];
+let originalDivisionName = record.data.division_name;
 let loading = ref(true);
 let bin = {};
 
@@ -160,6 +161,7 @@ if (!record) {
             bin[k] = record?.bin[k];
         }
     }
+    console.log(record)
     loading.value = false;
 }
 
@@ -233,35 +235,49 @@ let post_params = {
 }
 
 let editDivision = (e) => {
-    document.querySelectorAll('form input').forEach(el => el.disabled = true);
-    document.querySelectorAll('form button').forEach(el => el.disabled = true);
+    // document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    // document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
     let ext = skapi.util.extractFormData(e); // { data: {}, files: {} }
 
-    const formData = new FormData();
+    // const formData = new FormData();
 
-    // 기존 form data 추가
-    for(let key in ext.data) {
-        formData.append(key, ext.data[key]);
-    }
+    // // 기존 form data 추가
+    // for(let key in ext.data) {
+    //     formData.append(key, ext.data[key]);
+    // }
 
-    // 이미지 파일을 form data에 추가
-    if(Object.keys(croppedImages.value).length > 0) {
-        Object.keys(croppedImages.value).forEach((key) => {
-            formData.append(key, croppedImages.value[key], `${key}.jpg`);
-        });
-    }
+    // // 이미지 파일을 form data에 추가
+    // if(Object.keys(croppedImages.value).length > 0) {
+    //     Object.keys(croppedImages.value).forEach((key) => {
+    //         formData.append(key, croppedImages.value[key], `${key}.jpg`);
+    //     });
+    // }
     
-    console.log('post_params', post_params)
-    skapi.postRecord(formData, post_params).then((r) => {
-        let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+    // console.log('post_params', post_params)
 
-        sessionDivisions[r.record_id] = r;
-        window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
+    if(originalDivisionName !== ext.data.division_name) {
+        // post_params.record_id = record_id;
+        skapi.getRecords({
+            unique_id: '[division_name_list]'
+        }).then(r => {
+            let data = r.list[0].data;
+            let keys = Object.keys(data); // 'DVS_0', 'DVS_1', ...
+            let values = Object.values(data); // '부서명1', '부서명2', ...
 
-        window.alert('등록되었습니다.');
-        router.push('/admin/list-divisions');
-    });
+            console.log('keys', keys);
+            console.log('values', values);
+        })
+    }
+    // skapi.postRecord(formData, post_params).then((r) => {
+    //     let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+
+    //     sessionDivisions[r.record_id] = r;
+    //     window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
+
+    //     window.alert('등록되었습니다.');
+    //     router.push('/admin/list-divisions');
+    // });
 }
 </script>
 
