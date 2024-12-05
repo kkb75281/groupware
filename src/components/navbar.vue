@@ -256,7 +256,7 @@ watch(() => route.path, (newPath, oldPath) => {
         }
 
         .menu-item {
-            a {
+            .router {
                 .text {
                     display: none !important;
                 }
