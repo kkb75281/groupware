@@ -185,14 +185,16 @@ watch(() => route.path, (newPath, oldPath) => {
                 }
 
                 &:hover {
-                    a {
+                    a,
+                    .router {
                         background-color: var(--primary-color-400);
                     }
                 }
             }
 
             &:hover {
-                a {
+                a,
+                .router {
                     background-color: var(--primary-color-100);
                 }
             }
@@ -243,6 +245,10 @@ watch(() => route.path, (newPath, oldPath) => {
             &.active {
                 color: var(--primary-color-400);
                 font-weight: bold;
+            }
+
+            &:hover {
+                color: var(--primary-color-400);
             }
         }
 
