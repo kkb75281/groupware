@@ -27,7 +27,7 @@ nav#navbar
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                     .text 
                         span 마이페이지
-            li.item(:class="{'active': route.name === 'list-data'}")
+            //- li.item(:class="{'active': route.name === 'list-data'}")
                 router-link.router(to="/list-data")
                     .icon
                         svg
@@ -58,7 +58,7 @@ nav#navbar
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
                         .text 
                             span 직원 목록
-            li.item(:class="{'active': route.name === 'component'}")
+            //- li.item(:class="{'active': route.name === 'component'}")
                 router-link.router(to="/component") 
                     .icon
                         svg
@@ -86,6 +86,7 @@ const route = useRoute();
 
 let adminSubMenu = ref(null);
 let showSubMenu = ref(false);
+let isadmin = user.access_group > 98;
 
 let toggleSubMenu = (e) => {
     adminSubMenu.value.classList.toggle('show');
@@ -115,7 +116,7 @@ watch(() => route.path, (newPath, oldPath) => {
         } else {
             // adminSubMenu.value.classList.toggle('show');
             // showSubMenu.value = !showSubMenu.value;
-            if(!adminSubMenu.value.classList.contains('show')) {
+            if(isadmin && !adminSubMenu.value.classList.contains('show')) {
                 adminSubMenu.value.classList.add('show');
             }
             showSubMenu.value = true;
