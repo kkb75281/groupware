@@ -205,25 +205,19 @@ let resigterComp = (e) => {
             formData.append(key, croppedImages.value[key], `${key}.jpg`);
         });
     }
+    
+    let currentData = {};
 
-    // 부서명 저장
-    skapi.getRecords({
-        table: {
-            name: 'divisionNames',
-            access_group: 1
-        }
-    }).then(r => {
-        if(r.list.length === 0) {
-            skapi.postRecord({
-                'DVS_0': ext.data.division_name,
-            }, {
-                table: {
-                    name: 'divisionNames',
-                    access_group: 1
-                }
-            })
-        } else {
-            let currentData = r.list[0].data;
+    let deleteDivisionName = async() => {
+        await skapi.deleteRecords({
+            unique_id: '[division_name_list]'
+        }).then(r => {
+            createDivisionName();
+        })
+    }
+
+    let createDivisionName = async() => {
+        if(Object.keys(currentData).length) {
             let keys = Object.keys(currentData);
             let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
             let newNumber = 1;
@@ -233,16 +227,75 @@ let resigterComp = (e) => {
             let newKey = `DVS_${newNumber}`;
 
             currentData[newKey] = ext.data.division_name;
+        } else {
+            currentData = {
+                'DVS_0': ext.data.division_name
+            }
+        }
 
-            skapi.postRecord(currentData, {
-                record_id: r.list[0].record_id,
-                table: {
-                    name: 'divisionNames',
-                    access_group: 1
-                }
-            })
+        skapi.postRecord(currentData, {
+            unique_id: '[division_name_list]',
+            table: {
+                name: 'divisionNames',
+                access_group: 1
+            }
+        })
+    }
+
+    // 부서명 저장
+    skapi.getRecords({
+        unique_id: '[division_name_list]'
+    }).then(r => {
+        if(r.list.length) {
+            let data = r.list[0].data;
+            if(data) {
+                currentData = data;
+            }
+            deleteDivisionName();
+        }
+    }).catch(e => {
+        if(e.message === 'Unique ID does not exists.') {
+            createDivisionName();
         }
     })
+
+    // skapi.getRecords({
+    //     unique_id: '[division_name_list]',
+    //     table: {
+    //         name: 'divisionNames',
+    //         access_group: 1
+    //     }
+    // }).then(r => {
+    //     if(r.list.length === 0) {
+    //         skapi.postRecord({
+    //             'DVS_0': ext.data.division_name,
+    //         }, {
+    //             table: {
+    //                 name: 'divisionNames',
+    //                 access_group: 1
+    //             }
+    //         })
+    //     } else {
+    //         let currentData = r.list[0].data;
+    //         let keys = Object.keys(currentData);
+    //         let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
+    //         let newNumber = 1;
+    //         while (numbers.includes(newNumber)) {
+    //             newNumber++; // 겹치지 않는 숫자를 찾을 때까지 증가
+    //         }
+    //         let newKey = `DVS_${newNumber}`;
+
+    //         currentData[newKey] = ext.data.division_name;
+
+    //         skapi.postRecord(currentData, {
+    //             record_id: r.list[0].record_id,
+    //             table: {
+    //                 name: 'divisionNames',
+    //                 access_group: 1
+    //             }
+    //         })
+    //     }
+    // })
 
     //form data에 이미지 파일 추가
     skapi.postRecord(formData, {
