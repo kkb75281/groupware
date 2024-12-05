@@ -54,7 +54,7 @@
 
             .input-wrap
                 p.label 비밀번호
-                button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || !disabled" @click="router.push('change-password')") 비밀번호 변경
+                button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('change-password')") 비밀번호 변경
 
             br
 
@@ -90,9 +90,14 @@
                 .file-wrap
                     template(v-if="!disabled")
                         .btn-upload-file
-                            input(type="file" name="additional_data" multiple :disabled="disabled")
-                            //- input(type="file" id="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-                            //- label.btn.outline(for="file") 파일 업로드
+                            //- input(type="file" name="additional_data" multiple :disabled="disabled")
+
+                            //- input#file(type="file" @change="updateFileName")
+                            //- input.upload-name(type="text" v-model="fileName" readonly)
+
+                            input(type="file" id="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                            label.btn.outline.btn-upload(for="file") 파일 추가
+                            //- input.upload-name(type="text" v-model="fileName" readonly)
                     
                     ul.file-list
                         template(v-if="uploadFile.length > 0")
@@ -467,6 +472,15 @@ let removeFile =  (item) => {
 let cancelRemoveFile = (item) => {
     removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
 }
+
+// const fileName = ref(''); // 파일명을 저장할 상태
+
+// // 파일 이름 업데이트 함수
+// let updateFileName = (e) => {
+//   const target = e.target;
+//   const filePath = target.value;
+//   fileName.value = filePath.split('\\').pop() || ''; // 경로에서 파일 이름만 추출
+// };
 
 onMounted(async() => {
     document.addEventListener('click', closeOptions);
