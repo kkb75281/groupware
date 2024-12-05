@@ -44,7 +44,8 @@ hr
             Loading#loading
         table.table#employee_list
             colgroup
-                col(style="width: 3rem;")
+                template(v-if="user.access_group > 98")
+                    col(style="width: 3rem;")
                 col(style="width: 3rem;")
                 col(style="width: 5rem;")
                 col(style="width: 10%;")
@@ -59,10 +60,11 @@ hr
                 col(style="min-width: 15rem;")
             thead
                 tr
-                    th(scope="col")
-                        label.checkbox
-                            input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
-                            span.label-checkbox
+                    template(v-if="user.access_group > 98")
+                        th(scope="col")
+                            label.checkbox
+                                input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
+                                span.label-checkbox
                     th(scope="col") NO
                     th(scope="col") 직책(직급)
                     th(scope="col") 부서
@@ -85,10 +87,11 @@ hr
                     tr(v-for="(emp, index) in employee")
                         //- 직원목록/숨김여부
                         template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
-                            td
-                                label.checkbox
-                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
-                                    span.label-checkbox
+                            template(v-if="user.access_group > 98")
+                                td
+                                    label.checkbox
+                                        input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
+                                        span.label-checkbox
                             td.list-num {{ index + 1 }}
                             td {{ emp?.position }}
                             td {{ divisionNameList[emp?.division] }}
@@ -104,10 +107,11 @@ hr
                         
                         //- 초청여부
                         template(v-else-if="empListType === '초청여부'")
-                            td
-                                label.checkbox
-                                    input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
-                                    span.label-checkbox
+                            template(v-if="user.access_group > 98")
+                                td
+                                    label.checkbox
+                                        input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
+                                        span.label-checkbox
                             td.list-num {{ index + 1 }}
                             td {{ emp?.position }}
                             td {{ divisionNameList[emp?.division] }}
