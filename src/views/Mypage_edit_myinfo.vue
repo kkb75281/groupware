@@ -16,7 +16,7 @@
                 ul.options(v-if="showOptions" @click.stop)
                     li(@click="selectFile") 사진 변경
                     li(@click="setToDefault" :class="{'disabled': uploadSrc.profile_pic === null}") 기본 이미지로 변경
-                input#profile_pic(ref="profile_pic" type="file" name="profile_pic" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                input#profile_pic(ref="profile_pic_input" type="file" name="profile_pic" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
                 //- input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
 
         br
@@ -335,9 +335,11 @@ let sendEmail = async() => {
     router.push('/verification');
 }
 
+let profile_pic_input = ref(null);
+
 let selectFile = () => {
     showOptions.value = false;
-    document.getElementById('profile_pic').click();
+    profile_pic_input.value.click();
     console.log(showOptions.value);
     console.log(document.getElementById('profile_pic').value)
 }
