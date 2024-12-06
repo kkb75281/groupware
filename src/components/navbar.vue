@@ -20,13 +20,22 @@ nav#navbar(ref="navbar" @click.stop)
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
                     .text 
                         span 대시보드
-            li.item(:class="{'active': route.name === 'mypage'}")
-                router-link.router(to="/mypage")
+
+            li.item(:class="{'active': route.path.startsWith('/mypage')}")
+                router-link.router(to="/mypage" @click="toggleSubMenu('mypage')") 
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                     .text 
                         span 마이페이지
+                        svg.arrow(:class="{'down': activeMenu === 'mypage'}")
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+                ul.sub-menu-item(v-if="activeMenu === 'mypage'")
+                    li(:class="{'active': route.name === 'edit-myinfo'}")
+                        router-link(to="/mypage/edit-myinfo") 회원정보 수정
+                    li(:class="{'active': route.name === 'change-password'}")
+                        router-link(to="/change-password") 비밀번호 변경
+
             //- li.item(:class="{'active': route.name === 'list-data'}")
                 router-link.router(to="/list-data")
                     .icon
@@ -34,18 +43,23 @@ nav#navbar(ref="navbar" @click.stop)
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                     .text 
                         span 자료 (임시)
+
             template(v-if="user.access_group > 98")
                 li.item(:class="{'active': route.path.startsWith('/admin')}")
-                    //- .router(@click="toggleSubMenu")
-                    router-link.router(to="/admin")
+                    router-link.router(to="/admin" @click="toggleSubMenu('admin')") 
                         .icon
                             svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
                         .text 
                             span 마스터 페이지
-                            svg.arrow(:class="{'down': showSubMenu}")
+                            svg.arrow(:class="{'down': activeMenu === 'admin'}")
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-                ul.sub-menu-item(ref="adminSubMenu")
+                    ul.sub-menu-item(v-if="activeMenu === 'admin'")
+                        li(:class="{'active': route.name === 'list-divisions'}")
+                            router-link(to="/admin/list-divisions") 부서 관리
+                        li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
+                            router-link(to="/admin/list-employee") 직원 관리
+                ul.sub-menu-item(v-if="activeMenu === 'admin'")
                     li(:class="{'active': route.name === 'list-divisions'}")
                         router-link(to="/admin/list-divisions") 부서 관리
                     li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
@@ -58,6 +72,7 @@ nav#navbar(ref="navbar" @click.stop)
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
                         .text 
                             span 직원 목록
+
             //- li.item(:class="{'active': route.name === 'component'}")
                 router-link.router(to="/component") 
                     .icon
@@ -88,11 +103,20 @@ let navbar = ref(null);
 let adminSubMenu = ref(null);
 let showSubMenu = ref(false);
 let isadmin = user.access_group > 98;
+let activeMenu = ref(null);
 
-let toggleSubMenu = (e) => {
-    adminSubMenu.value.classList.toggle('show');
-    showSubMenu.value = !showSubMenu.value;
-}   
+let toggleSubMenu = (menu) => {
+  activeMenu.value = activeMenu.value === menu ? null : menu;
+};   
+
+watch(() => route.path, (newPath) => {
+  if (!newPath.startsWith('/mypage')) {
+    if (activeMenu.value === 'mypage') activeMenu.value = null;
+  }
+  if (!newPath.startsWith('/admin')) {
+    if (activeMenu.value === 'admin') activeMenu.value = null;
+  }
+});
 
 let checkNavbarClose = (e) => {
     if (window.innerWidth > 768 || window.innerWidth <= 1200) {
@@ -113,28 +137,6 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkScreenWidth); // 컴포넌트가 언마운트될 때 이벤트 해제
   window.removeEventListener('click', checkNavbarClose);
 });
-
-watch(() => route.path, (newPath, oldPath) => {
-    if(newPath) {
-        if (isOpen.value) {
-            isOpen.value = !isOpen.value;
-            document.body.classList.toggle('open', isOpen.value);
-        }
-        if (newPath !== oldPath && !newPath.startsWith('/admin')) {
-            if (adminSubMenu.value && adminSubMenu.value.classList.contains('show')) {
-                adminSubMenu.value.classList.remove('show');
-                showSubMenu.value = false;
-            }
-        } else {
-            // adminSubMenu.value.classList.toggle('show');
-            // showSubMenu.value = !showSubMenu.value;
-            if(isadmin && !adminSubMenu.value.classList.contains('show')) {
-                adminSubMenu.value.classList.add('show');
-            }
-            showSubMenu.value = true;
-        }
-    }
-})
 </script>
 
 <style scoped lang="less">
@@ -172,7 +174,6 @@ watch(() => route.path, (newPath, oldPath) => {
     }
 
     .menu-item {
-        // padding: 0 20px;
         padding: 20px 20px 0;
 
         .item {
@@ -198,7 +199,6 @@ watch(() => route.path, (newPath, oldPath) => {
                 }
 
                 &:hover {
-                    a,
                     .router {
                         background-color: var(--primary-color-400);
                     }
@@ -206,7 +206,6 @@ watch(() => route.path, (newPath, oldPath) => {
             }
 
             &:hover {
-                a,
                 .router {
                     background-color: var(--primary-color-100);
                 }
@@ -244,7 +243,6 @@ watch(() => route.path, (newPath, oldPath) => {
     }
 
     .sub-menu-item {
-        display: none;
         padding-top: 1.5rem;
         padding-left: 3rem;
 

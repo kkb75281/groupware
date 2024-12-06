@@ -74,22 +74,16 @@ hr
         br
 
         .input-wrap.upload-file
-            p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-            input(type="file" name="additional_data" multiple)
+            p.label 기타자료
+            .file-wrap
+                //- template(v-if="!disabled")
+                .btn-upload-file
+                    input#file(type="file" name="additional_data" multiple @change="updateFileList" hidden)
+                    label.btn.outline.btn-upload(for="file") 파일 추가
+                    ul.upload-file-list
+                        li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
-        //- .input-wrap.upload-file
-        //-     p.label 추가자료 #[span.text (ex. 계약서, 이력서)]
-        //-     //- .btn-upload-file(@click="uploadFile" :class="{'nonClickable' : loading}")
-        //-     .btn-upload-file
-        //-         input(type="file" id="file" name="additional_data" multiple @change="updateFileList")
-        //-         label.btn.outline(for="file") 파일찾기
-        //-     ul.file-list
-        //-         li.file-item
-        //-             a.file-link(href="#" target="_blank") 파일명
-        //-             button.btn-remove(@click="removeFile")
-        //-                 svg
-        //-                     use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-
+        br
         br
 
         input(type="checkbox" name="email_public" checked hidden)
@@ -119,6 +113,8 @@ import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+let fileNames = ref([]);
 
 // let selectedFiles = [];
 
@@ -214,6 +210,14 @@ let setCroppedImage = async(croppedImage) => {
         }
     }
 }
+
+// 파일 추가시 파일명 표시
+let updateFileList = (e) => {
+  let target = e.target;
+  if (target.files) {
+    fileNames.value = Array.from(target.files).map(file => file.name);
+  }
+};
 
 function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
