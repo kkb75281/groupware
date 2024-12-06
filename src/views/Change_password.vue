@@ -143,7 +143,6 @@ let changePassword = async () => {
     max-width: 500px;
     margin: 0 auto;
     padding: 0 1rem;
-
     height: 100vh;
     min-height: calc(100vh - 4.7244rem);
     display: flex;
