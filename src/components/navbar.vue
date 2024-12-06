@@ -49,7 +49,7 @@ nav#navbar(ref="navbar" @click.stop)
                     li(:class="{'active': route.name === 'list-divisions'}")
                         router-link(to="/admin/list-divisions") 부서 관리
                     li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
-                        router-link(to="/admin/list-employee") 직원 관리
+                        router-link(to="/list-employee") 직원 관리
             template(v-else)
                 li.item(:class="{'active': route.name === 'list-employee'}")
                     router-link.router(to="/list-employee")
