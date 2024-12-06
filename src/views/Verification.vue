@@ -12,10 +12,12 @@
             .input-wrap
                 p.label 6자리 인증 코드
                 .input
-                    input(type="text" name="code" ref="codeField" :value="code" @input="e => {code = e.target.value; e.target.setCustomValidity('');}" @change="validateCode" placeholder="6자리 코드" required)
-                    button.btn.outline.btn-resend(:disabled="resending" @click="resend") 코드 다시 받기
+                    input(type="text" name="code" ref="codeField" @input="e => {e.target.setCustomValidity('');}" placeholder="6자리 코드" required)
+                    button.btn.outline.btn-resend(:disabled="resending" @click="resend") 코드 재전송
 
-            button.btn.btn-request-code(type="submit") 인증하기
+            .button-wrap
+                button.btn.bg-gray.btn-back(type="button" @click="router.push('/mypage/edit-myinfo')") 이전
+                button.btn.btn-request-code(type="submit") 인증하기
 
     template(v-else)
         h2.title 이메일 인증 완료
@@ -29,7 +31,7 @@
         br
         br
 
-        button.btn.btn-go-login(@click="router.push('/mypage')") 마이페이지 화면으로
+        button.btn.btn-go-login(@click="router.push('/mypage/edit-myinfo')") 마이페이지 화면으로
 </template>
 
 <script setup>
@@ -145,8 +147,8 @@ let verifyEmail = (e) => {
     }
 
     .btn-request-code {
-        margin-top: 3rem;
-        margin-left: auto;
+        // margin-top: 3rem;
+        // margin-left: auto;
     }
 
     .btn-resend {

@@ -295,11 +295,27 @@
             }
 
             .btn {
+                display: inline-flex;
                 width: fit-content;
                 min-width: 120px;
                 height: 36px;
                 font-size: 0.8rem;
                 cursor: pointer;
+                margin-right: 12px;
+            }
+
+            .upload-file-list {
+                display: inline-block;
+            
+                .file-name {
+                    display: inline-block;
+                    font-size: 16px;
+                    font-weight: 400;
+                    color: var(--gray-color-500);
+                    line-height: 1.2;
+                    margin-right: 12px;
+                    word-break: break-all;
+                }
             }
         }
 
@@ -948,6 +964,7 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         position: relative;
         min-width: 544px;
+        max-width: 544px;
         height: calc(100% - 16px);
     }
 

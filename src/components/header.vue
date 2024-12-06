@@ -79,7 +79,6 @@ header#header
 			.user
 				h4 {{ user.name }}
 				span {{ user.access_group === 99 ? '마스터' : user.access_group === 98 ? '관리자' : '직원' }}
-			//- p.ip 현재 접속 IP : {{ user.email }}
 			p {{ user.email }}
 	.popup-main
 		ul
@@ -87,15 +86,15 @@ header#header
 				router-link.router(to="/mypage")
 					.icon
 						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
 					p 마이페이지
 			
 			li(v-if="user.access_group > 98")
-				router-link.router(to="/admin/list-divisions")
+				router-link.router(to="/admin")
 					.icon
 						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-business-center")
-					p 회사 정보
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
+					p 마스터 페이지
 
 			li(v-if="user.access_group < 99")
 				router-link.router(to="/list-employee")
