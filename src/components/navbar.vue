@@ -45,7 +45,7 @@ nav#navbar(ref="navbar" @click.stop)
                         span 자료 (임시)
 
             template(v-if="user.access_group > 98")
-                li.item(:class="{'active': route.path.startsWith('/admin')}")
+                li.item(:class="{'active': route.name === 'list-employee' || route.path.startsWith('/admin')}")
                     router-link.router(to="/admin" @click="toggleSubMenu('admin')") 
                         .icon
                             svg
@@ -58,12 +58,7 @@ nav#navbar(ref="navbar" @click.stop)
                         li(:class="{'active': route.name === 'list-divisions'}")
                             router-link(to="/admin/list-divisions") 부서 관리
                         li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
-                            router-link(to="/admin/list-employee") 직원 관리
-                ul.sub-menu-item(v-if="activeMenu === 'admin'")
-                    li(:class="{'active': route.name === 'list-divisions'}")
-                        router-link(to="/admin/list-divisions") 부서 관리
-                    li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
-                        router-link(to="/list-employee") 직원 관리
+                            router-link(to="/list-employee") 직원 관리
             template(v-else)
                 li.item(:class="{'active': route.name === 'list-employee'}")
                     router-link.router(to="/list-employee")
@@ -111,10 +106,18 @@ let toggleSubMenu = (menu) => {
 
 watch(() => route.path, (newPath) => {
   if (!newPath.startsWith('/mypage')) {
-    if (activeMenu.value === 'mypage') activeMenu.value = null;
+    if (activeMenu.value === 'mypage') {
+        if(route.name !== 'change-password') {
+            activeMenu.value = null;
+        }
+    }
   }
   if (!newPath.startsWith('/admin')) {
-    if (activeMenu.value === 'admin') activeMenu.value = null;
+    if (activeMenu.value === 'admin') {
+        if(route.name !== 'list-employee' && route.name !== 'employee-data') {
+            activeMenu.value = null;
+        }
+    }
   }
 });
 
