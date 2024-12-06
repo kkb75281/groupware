@@ -1,6 +1,6 @@
 <template lang="pug">
 header#header
-	button.btn-mo-navbar(@click="toggleOpen")
+	button.btn-mo-navbar(@click="toggleOpen" @click.stop)
 		.icon
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
@@ -117,7 +117,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
-import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/navbar'
+import { toggleOpen } from '@/components/navbar'
 
 const router = useRouter();
 const route = useRoute();
