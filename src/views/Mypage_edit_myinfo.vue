@@ -9,7 +9,7 @@
         form#_el_pictureForm
             .image
                 img#profile-img(:src="uploadSrc.profile_pic" alt="profile image")
-                .label(ref="optionsBtn" :class="{'disabled': disabled}" @click="showOptions = !showOptions")
+                .label(ref="optionsBtn" :class="{'disabled': verifiedEmail || disabled}" @click="showOptions = !showOptions")
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
@@ -38,16 +38,16 @@
 
             .input-wrap
                 p.label.essential 이름
-                input(:value="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="disabled" required)
+                input(:value="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="verifiedEmail || disabled" required)
             
             br
 
             .input-wrap
                 p.label.essential 이메일
-                input(v-model="user.email" type="email" name="email" placeholder="이메일을 입력해주세요." :disabled="disabled && !onlyEmail" required)
+                input(v-model="user.email" type="email" name="email" placeholder="이메일을 입력해주세요." :disabled="(verifiedEmail || disabled) && !onlyEmail" required)
 
             template(v-if="verifiedEmail && !onlyEmail")
-                //- button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
+                button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
                 button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
 
             br
@@ -60,16 +60,16 @@
 
             .input-wrap
                 p.label 생년월일
-                input(v-model="user.birthdate" type="date" name="birthdate" :disabled="disabled")
-                label.checkbox.public(:class="{'disabled': disabled}")
-                    input(v-model="user.birthdate_public" type="checkbox" name="birthdate_public" checked hidden :disabled="disabled")
+                input(v-model="user.birthdate" type="date" name="birthdate" :disabled="verifiedEmail || disabled")
+                label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
+                    input(v-model="user.birthdate_public" type="checkbox" name="birthdate_public" checked hidden :disabled="verifiedEmail || disabled")
                     span.label-checkbox 공개여부
 
             br
 
             .input-wrap
                 p.label 전화번호
-                input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="+82000000000" :disabled="disabled")
+                input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="+82000000000" :disabled="verifiedEmail || disabled")
                 //- label.checkbox.public(:class="{'disabled': disabled}")
                 //- 	input(v-model="user.phone_number_public" type="checkbox" name="phone_number_public" checked hidden :disabled="disabled")
                 //- 	span.label-checkbox 공개여부
@@ -78,9 +78,9 @@
 
             .input-wrap
                 p.label 주소
-                input(v-model="user.address" type="text" name="address" placeholder="주소를 입력해주세요." :disabled="disabled")
-                label.checkbox.public(:class="{'disabled': disabled}")
-                    input(v-model="user.address_public" type="checkbox" name="address_public" checked hidden :disabled="disabled")
+                input(v-model="user.address" type="text" name="address" placeholder="주소를 입력해주세요." :disabled="verifiedEmail || disabled")
+                label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
+                    input(v-model="user.address_public" type="checkbox" name="address_public" checked hidden :disabled="verifiedEmail || disabled")
                     span.label-checkbox 공개여부
 
             br
@@ -90,7 +90,7 @@
                 .file-wrap
                     //- template(v-if="!disabled")
                     .btn-upload-file
-                        input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                        input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
                         label.btn.outline.btn-upload(for="file") 파일 추가
                         ul.upload-file-list
                             li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
@@ -100,7 +100,7 @@
                             li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
                                 //- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
                                 a.file-name(:href="file.url" target="_blank") {{ file.filename }}
-                                template(v-if="!disabled && file.user_id === user.user_id")
+                                template(v-if="(!verifiedEmail && !disabled) && file.user_id === user.user_id")
                                     button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
                                         svg
                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
@@ -113,7 +113,7 @@
             br
             br
 
-            .button-wrap
+            .button-wrap(v-if="(verifiedEmail && !onlyEmail) ? false : true")
                 //- template(v-if="disabled && !onlyEmail")
                 //-     button#startEdit.btn(type="button" :disabled="verifiedEmail" @click="startEdit") 수정
                 //- template(v-else)
@@ -236,7 +236,7 @@ const getAdditionalData = () => {
             uploadFile.value = fileList;
         }
     }).catch(err => {
-        console.log('== getRecords == err : ', err)
+        // console.log('== getRecords == err : ', err)
     });
 }
 
@@ -244,7 +244,7 @@ if(user.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && user.user_id !== '
     getAdditionalData();
 }
 
-console.log('== user == user : ', user);
+// console.log('== user == user : ', user);
 
 let openModal = ref(false);
 let croppedImages = ref({});
@@ -372,6 +372,11 @@ let cancelEdit = () => {
     //     user[k] = originUserProfile[k];
     // }
 
+    if(verifiedEmail.value && onlyEmail.value) {
+        onlyEmail.value = false;
+        return;
+    }
+
     removeFileList.value = [];
     uploadFile.value = [...backupUploadFile.value];
     router.push('/mypage');
@@ -470,11 +475,7 @@ let registerMypage = async(e) => {
         getAdditionalData();
     })
 
-    // if(user.email !== originUserProfile.email) {
-    //     verifiedEmail.value = true;
-    // }
-
-    window.alert('등록완료');
+    window.alert('회원정보가 수정되었습니다.');
     onlyEmail.value = false;
     disabled.value = false;
 }
