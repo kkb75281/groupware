@@ -90,10 +90,6 @@
                 .file-wrap
                     template(v-if="!disabled")
                         .btn-upload-file
-                            //- input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-                            //- label.btn.outline.btn-upload(for="file") 파일 추가
-                            //- input.upload-name(type="text" v-model="fileName" readonly)
-
                             input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
                             label.btn.outline.btn-upload(for="file") 파일 추가
                             ul.upload-file-list
@@ -496,7 +492,7 @@ let cancelRemoveFile = (item) => {
     removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
 }
 
-// 파일 이름 업데이트 함수
+// 파일 추가시 파일명 표시
 let updateFileList = (e) => {
   let target = e.target;
   if (target.files) {
@@ -697,20 +693,6 @@ onUnmounted(() => {
                 color: var(--warning-color-500);
             }
         }
-    }
-}
-
-.upload-file-list {
-    display: inline-block;
-    margin-left: 12px;
-
-    .file-name {
-        display: inline-block;
-        font-size: 16px;
-        font-weight: 400;
-        color: var(--gray-color-500);
-        line-height: 1.2;
-        margin-right: 12px;
     }
 }
 
