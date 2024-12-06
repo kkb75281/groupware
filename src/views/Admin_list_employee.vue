@@ -369,6 +369,7 @@ watch(empListType, async(nv) => {
 
                     for(let e of employee.value) {
                         await getEmpDivision(e.user_id);
+                        console.log('초청여부에서 부서정보 가져오는 부분')
 
                         if(empInfo[e.user_id]) {
                             e.division = empInfo[e.user_id].division;
