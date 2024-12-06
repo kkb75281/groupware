@@ -12,10 +12,9 @@ const router = useRouter();
 const route = useRoute();
 
 watch(loaded, (nv) => {
-    if(route.name !== 'mailing') {
+    if(route.name === 'mailing') {
         return;
-    }
-    if(nv && !iwaslogged.value && !Object.keys(user).length) {
+    } else if(nv && !iwaslogged.value && !Object.keys(user).length) {
         router.push('/login');
     }
 }, { immediate: true });
