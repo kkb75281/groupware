@@ -1,8 +1,7 @@
 <template lang="pug">
 div(style="display: flex; gap: 1rem")
-    h1.title(v-if="user.access_group > 98") 직원 관리
-    h1.title(v-else) 직원 목록
-    .input-wrap(v-if="user.access_group > 98")
+    h1.title 직원 관리
+    .input-wrap
         select(v-model="empListType")
             option(value="직원목록") 직원목록
             option(value="초청여부") 초청여부
