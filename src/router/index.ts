@@ -13,6 +13,7 @@ import Admin_add_divisions from '@/views/Admin_add_divisions.vue';
 import Admin_edit_divisions from '@/views/Admin_edit_divisions.vue';
 import Admin_list_divisions from '@/views/Admin_list_divisions.vue';
 import Admin_list_employee from '@/views/Admin_list_employee.vue';
+import Employee_list_employee from '@/views/Employee_list_employee.vue';
 import Login from '@/views/Login.vue';
 
 const router = createRouter({
@@ -61,6 +62,11 @@ const router = createRouter({
           path: '/list-data',
           name: 'list-data',
           component: Mypage_list_data,
+        },
+        {
+          path: '/list-employee',
+          name: 'emp-list-employee',
+          component: Employee_list_employee,
         },
         {
           path: '/admin',
