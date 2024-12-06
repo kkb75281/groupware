@@ -224,6 +224,22 @@ let resigterEmp = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
+    // let ext = skapi.util.extractFormData(e);
+
+    // const formData = new FormData();
+
+    // // 기존 form data 추가
+    // for(let key in ext.data) {
+    //     formData.append(key, ext.data[key]);
+    // }
+
+    // // 이미지 파일을 form data에 추가
+    // if(Object.keys(croppedImages.value).length > 0) {
+    //     Object.keys(croppedImages.value).forEach((key) => {
+    //         formData.append(key, croppedImages.value[key], `${key}.jpg`);
+    //     });
+    // }
+
     async function post() {
         // 사용자를 등록(초대)한다. try catch는 아래와는 달리 작게 만들도록 한다.
         try {

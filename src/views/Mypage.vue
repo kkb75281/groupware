@@ -387,6 +387,26 @@ let registerMypage = async(e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
+    // let ext = skapi.util.extractFormData(e);
+
+    // const formData = new FormData();
+
+    // // 기존 form data 추가
+    // for(let key in ext.data) {
+    //     if(key === 'address_public' || key === 'birthdate_public' || key === 'phone_number_public') {
+    //         formData.append(key, new Blob([JSON.stringify(ext.data[key])], {type: 'application/json'}) );
+    //     } else {
+    //         formData.append(key, ext.data[key]);
+    //     }
+    // }
+
+    // // 이미지 파일을 form data에 추가
+    // if(Object.keys(croppedImages.value).length > 0) {
+    //     Object.keys(croppedImages.value).forEach((key) => {
+    //         formData.append(key, croppedImages.value[key], `${key}.jpg`);
+    //     });
+    // }
+
     // 올린 사람과 수정하는 사람이 같지 않으면 table 정보로
     // 같으면 record_id로 사진 수정
     let profile_pic_postParams = {};
