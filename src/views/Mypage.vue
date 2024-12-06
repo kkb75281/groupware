@@ -90,14 +90,14 @@
                 .file-wrap
                     template(v-if="!disabled")
                         .btn-upload-file
-                            //- input(type="file" name="additional_data" multiple :disabled="disabled")
-
-                            //- input#file(type="file" @change="updateFileName")
+                            //- input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                            //- label.btn.outline.btn-upload(for="file") 파일 추가
                             //- input.upload-name(type="text" v-model="fileName" readonly)
 
-                            input(type="file" id="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                            input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
                             label.btn.outline.btn-upload(for="file") 파일 추가
-                            //- input.upload-name(type="text" v-model="fileName" readonly)
+                            ul.upload-file-list
+                                li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
                     
                     ul.file-list
                         template(v-if="uploadFile.length > 0")
@@ -157,6 +157,7 @@ let access_group = {
 let disabled = ref(true);
 let onlyEmail = ref(false);
 let showOptions = ref(false);
+let fileNames = ref([]);
 
 function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
@@ -362,6 +363,8 @@ let startEdit = () => {
     }
 
     disabled.value = false;
+
+    fileNames.value = [];
     
     backupUploadFile.value = [...uploadFile.value];
 }
@@ -493,14 +496,13 @@ let cancelRemoveFile = (item) => {
     removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
 }
 
-// const fileName = ref(''); // 파일명을 저장할 상태
-
-// // 파일 이름 업데이트 함수
-// let updateFileName = (e) => {
-//   const target = e.target;
-//   const filePath = target.value;
-//   fileName.value = filePath.split('\\').pop() || ''; // 경로에서 파일 이름만 추출
-// };
+// 파일 이름 업데이트 함수
+let updateFileList = (e) => {
+  let target = e.target;
+  if (target.files) {
+    fileNames.value = Array.from(target.files).map(file => file.name);
+  }
+};
 
 onMounted(async() => {
     document.addEventListener('click', closeOptions);
@@ -695,6 +697,20 @@ onUnmounted(() => {
                 color: var(--warning-color-500);
             }
         }
+    }
+}
+
+.upload-file-list {
+    display: inline-block;
+    margin-left: 12px;
+
+    .file-name {
+        display: inline-block;
+        font-size: 16px;
+        font-weight: 400;
+        color: var(--gray-color-500);
+        line-height: 1.2;
+        margin-right: 12px;
     }
 }
 
