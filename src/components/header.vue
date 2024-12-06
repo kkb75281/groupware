@@ -1,6 +1,6 @@
 <template lang="pug">
 header#header
-	button.btn-mo-navbar(@click="toggleOpen")
+	button.btn-mo-navbar(@click="toggleOpen" @click.stop)
 		.icon
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
@@ -97,7 +97,7 @@ header#header
 					p 마스터 페이지
 
 			li(v-if="user.access_group < 99")
-				router-link.router(to="/admin/list-employee")
+				router-link.router(to="/list-employee")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
@@ -116,7 +116,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
-import { checkScreenWidth, toggleNavbarFold, toggleOpen } from '@/components/navbar'
+import { toggleOpen } from '@/components/navbar'
 
 const router = useRouter();
 const route = useRoute();

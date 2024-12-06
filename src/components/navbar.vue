@@ -1,5 +1,5 @@
 <template lang="pug">
-nav#navbar
+nav#navbar(ref="navbar" @click.stop)
     .navbar-wrap
         .logo
             router-link.img-logo(to="/") 로고 부분
@@ -59,9 +59,14 @@ nav#navbar
                             router-link(to="/admin/list-divisions") 부서 관리
                         li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
                             router-link(to="/admin/list-employee") 직원 관리
+                ul.sub-menu-item(v-if="activeMenu === 'admin'")
+                    li(:class="{'active': route.name === 'list-divisions'}")
+                        router-link(to="/admin/list-divisions") 부서 관리
+                    li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
+                        router-link(to="/list-employee") 직원 관리
             template(v-else)
                 li.item(:class="{'active': route.name === 'list-employee'}")
-                    router-link.router(to="/admin/list-employee")
+                    router-link.router(to="/list-employee")
                         .icon
                             svg
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
@@ -94,6 +99,7 @@ import { user } from '@/user'
 const router = useRouter();
 const route = useRoute();
 
+let navbar = ref(null);
 let adminSubMenu = ref(null);
 let showSubMenu = ref(false);
 let isadmin = user.access_group > 98;
@@ -112,13 +118,24 @@ watch(() => route.path, (newPath) => {
   }
 });
 
+let checkNavbarClose = (e) => {
+    if (window.innerWidth > 768 || window.innerWidth <= 1200) {
+        if(isOpen.value && !navbar.value.contains(e.target)) {
+            isOpen.value = !isOpen.value;
+            document.body.classList.toggle('open', isOpen.value);
+        }
+    }
+}
+
 onMounted(() => {
   checkScreenWidth(); // 컴포넌트가 마운트될 때 한 번 실행
   window.addEventListener('resize', checkScreenWidth); // 리사이즈 이벤트 등록
+  window.addEventListener('click', checkNavbarClose);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreenWidth); // 컴포넌트가 언마운트될 때 이벤트 해제
+  window.removeEventListener('click', checkNavbarClose);
 });
 </script>
 

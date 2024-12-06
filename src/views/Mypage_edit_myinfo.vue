@@ -16,7 +16,7 @@
                 ul.options(v-if="showOptions" @click.stop)
                     li(@click="selectFile") 사진 변경
                     li(@click="setToDefault" :class="{'disabled': uploadSrc.profile_pic === null}") 기본 이미지로 변경
-                input#profile_pic(ref="profile_pic" type="file" name="profile_pic" @change="openCropImageDialog" style="display:none")
+                input#profile_pic(ref="profile_pic_input" type="file" name="profile_pic" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
                 //- input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
 
         br
@@ -51,7 +51,7 @@
                 button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
 
             br
-
+            
             //- .input-wrap
             //-     p.label 비밀번호
             //-     button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('change-password')") 비밀번호 변경
@@ -251,7 +251,7 @@ let croppedImages = ref({});
 let currentTargetId = ref('');
 let currnetImageSrc = ref('');
 let uploadSrc = ref({
-    profile_pic: '',
+    profile_pic: null,
 });
 
 let getProfileImage = async() => {
@@ -333,9 +333,13 @@ let sendEmail = async() => {
     router.push('/verification');
 }
 
+let profile_pic_input = ref(null);
+
 let selectFile = () => {
     showOptions.value = false;
-    document.getElementById('profile_pic').click();
+    profile_pic_input.value.click();
+    console.log(showOptions.value);
+    console.log(document.getElementById('profile_pic').value)
 }
 
 let setToDefault = () => {
@@ -387,27 +391,7 @@ let registerMypage = async(e) => {
 
     disabled.value = true;
 
-    // let ext = skapi.util.extractFormData(e);
-
-    // const formData = new FormData();
-
-    // // 기존 form data 추가
-    // for(let key in ext.data) {
-    //     if(key === 'address_public' || key === 'birthdate_public' || key === 'phone_number_public') {
-    //         formData.append(key, new Blob([JSON.stringify(ext.data[key])], {type: 'application/json'}) );
-    //     } else {
-    //         formData.append(key, ext.data[key]);
-    //     }
-    // }
-
-    // // 이미지 파일을 form data에 추가
-    // if(Object.keys(croppedImages.value).length > 0) {
-    //     Object.keys(croppedImages.value).forEach((key) => {
-    //         formData.append(key, croppedImages.value[key], `${key}.jpg`);
-    //     });
-    // }
-
-    // 올린 사람과 수정하는 사람이 같지 않으면 table 정보로
+    // 올린 사람과 수정하는 사람이 같지 않거나 올린 기록이 없으면 table 정보로
     // 같으면 record_id로 사진 수정
     let profile_pic_postParams = {};
     let samePerson = false;
@@ -425,20 +409,29 @@ let registerMypage = async(e) => {
     }
 
     if(profile_pic.files.length > 0) {
-        // 새로 선택한 사진이 있을시 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
-        profile_pic_postParams.remove_bin = null;
+        // 새로 선택한 사진이 있고 본인이 이전에 올린 사진이 있을 경우 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
+        if(samePerson) {
+            profile_pic_postParams.remove_bin = null;
+        }
+
+        const croppedFile = new File([croppedImages.value['profile_pic']], 'profile_pic.png', {
+            type: croppedImages.value['profile_pic'].type,
+        });
+
+        const imgFormData = new FormData();
+        imgFormData.append('profile_pic', croppedFile);
         
         // 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
-        let picRec = await skapi.postRecord(document.getElementById('profile_pic'), profile_pic_postParams);
+        let picRec = await skapi.postRecord(imgFormData, profile_pic_postParams);
         _el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
     }
 
+    // 기본 이미지로 변경했을 경우
     if(uploadSrc.value.profile_pic === null && samePerson) {
         _el_picture_input.value = null;
         await skapi.deleteRecords({record_id: getFileInfo.value.record_id});
     } else if(uploadSrc.value.profile_pic === null && !samePerson) {
         _el_picture_input.value = null;
-        profile_pic_postParams.remove_bin = null;
         await skapi.postRecord(document.getElementById('profile_pic'), profile_pic_postParams);
     }
 
@@ -446,11 +439,11 @@ let registerMypage = async(e) => {
 
     if(files.length) {
         for(let file of files) {
-            const formData = new FormData();
+            const additionalFormData = new FormData();
 
-            formData.append('additional_data', file);
+            additionalFormData.append('additional_data', file);
             
-            await skapi.postRecord(formData, {
+            await skapi.postRecord(additionalFormData, {
                 table: {
                     name: 'emp_additional_data',
                     access_group: 99

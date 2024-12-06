@@ -93,7 +93,7 @@ hr
         input(type="checkbox" name="birthdate_public" checked hidden)
 
         .button-wrap
-            button.btn.bg-gray(type="button" @click="$router.push('/admin/list-employee')") 취소
+            button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 취소
             button.btn(type="submit") 등록
 
 CropImage(:open="openModal" :imageSrc="currnetImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
@@ -147,7 +147,7 @@ skapi.getRecords({
 }).then(r => {
     if(!r.list.length) {
         alert('부서가 등록되어 있지 않습니다. 부서를 먼저 등록해주세요.');
-        router.push('/admin/list-employee');
+        router.push('/list-employee');
     } else {
         let divisionNames = r.list[0].data;
     
@@ -228,22 +228,6 @@ let resigterEmp = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
-    // let ext = skapi.util.extractFormData(e);
-
-    // const formData = new FormData();
-
-    // // 기존 form data 추가
-    // for(let key in ext.data) {
-    //     formData.append(key, ext.data[key]);
-    // }
-
-    // // 이미지 파일을 form data에 추가
-    // if(Object.keys(croppedImages.value).length > 0) {
-    //     Object.keys(croppedImages.value).forEach((key) => {
-    //         formData.append(key, croppedImages.value[key], `${key}.jpg`);
-    //     });
-    // }
-
     async function post() {
         // 사용자를 등록(초대)한다. try catch는 아래와는 달리 작게 만들도록 한다.
         try {
@@ -256,7 +240,14 @@ let resigterEmp = (e) => {
                     },
                 };
 
-                let userInitProfilePic = await skapi.postRecord(document.getElementById('profPic'), initPicParams);
+                const croppedFile = new File([croppedImages.value['init_profile_pic']], 'init_profile_pic.png', {
+                    type: croppedImages.value['init_profile_pic'].type,
+                });
+
+                const imgFormData = new FormData();
+                imgFormData.append('init_profile_pic', croppedFile);
+
+                let userInitProfilePic = await skapi.postRecord(imgFormData, initPicParams);
                 _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
             }
 
@@ -380,7 +371,7 @@ let resigterEmp = (e) => {
             throw error;
         }
 
-        router.push('/admin/list-employee');
+        router.push('/list-employee');
     }
 
     post();
