@@ -3,7 +3,7 @@ import { user } from '@/user';
 
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
-import Mypage from '@/views/Mypage.vue';
+import Mypage from '@/views/Mypage_edit_myinfo.vue';
 import Mypage_list_data from '@/views/Mypage_list_data.vue';
 import Profile from '@/views/Profile.vue';
 import Admin from '@/views/Admin.vue';
