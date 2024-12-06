@@ -3,8 +3,11 @@ import { user } from '@/user';
 
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
+import Mypage_main from '@/views/Mypage_main.vue';
 import Mypage from '@/views/Mypage.vue';
+import Mypage_edit_myinfo from '@/views/Mypage_edit_myinfo.vue';
 import Mypage_list_data from '@/views/Mypage_list_data.vue';
+import Change_password from '@/views/Change_password.vue';
 import Profile from '@/views/Profile.vue';
 import Admin from '@/views/Admin.vue';
 import Admin_main from '@/views/Admin_main.vue';
@@ -54,8 +57,19 @@ const router = createRouter({
         },
         {
           path: '/mypage',
-          name: 'mypage',
-          component: Mypage,
+          component: Mypage_main,
+          children: [
+            {
+              path: '/mypage',
+              name: 'mypage-home',
+              component: Mypage
+            },
+            {
+              path: 'edit-myinfo',
+              name: 'edit-myinfo',
+              component: Mypage_edit_myinfo,
+            },
+          ]
         },
         {
           path: '/list-data',
