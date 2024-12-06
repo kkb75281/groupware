@@ -12,7 +12,7 @@ ul.card-wrap
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
     li.card
-        router-link.router(to="/admin/list-employee")
+        router-link.router(to="/list-employee")
             .icon.img
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
