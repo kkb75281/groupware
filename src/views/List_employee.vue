@@ -364,8 +364,8 @@ watch(empListType, async(nv) => {
                 skapi.getUsers().then(async(res) => {
                     let list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
 
-                    getEmpsDvs(list);
-                    displayEmployee(res.list);
+                    const result = await getEmpsDvs(list);
+                    displayEmployee(result);
 
                     loading.value = false;
                 });
@@ -384,19 +384,21 @@ watch(empListType, async(nv) => {
             employee.value = result;
             suspendedLength.value = result.length;
         } else if (nv === '초청여부') {
-            sessionEmployee = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
-
             if (!sessionEmployee) {
                 loading.value = true;
 
                 skapi.getInvitations().then(async(res) => {
-                    getEmpsDvs(res.list);
-                    displayinviteEmployee(res.list);
+                    const result = await getEmpsDvs(res.list);
+                    displayinviteEmployee(result);
 
                     loading.value = false;
                 });
 
             } else {
+                const empLists = window.sessionStorage.getItem('inviteEmployee');
+
+                sessionEmployee = JSON.parse(empLists);
+
                 employee.value = sessionEmployee;
             }
         }
@@ -409,30 +411,34 @@ function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
 }
 
-let refresh = async() => {
+let refresh = async () => {
     loading.value = true;
 
-    if (empListType.value === '직원목록' || empListType.value === '숨김여부') {
-        let res = await skapi.getUsers();
-        let list;
+    try {
+        if (empListType.value === '직원목록' || empListType.value === '숨김여부') {
+            let res = await skapi.getUsers();
+            let list;
 
-        if(empListType.value === '직원목록') {
-            list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
-        } else if(empListType.value === '숨김여부') {
-            list = res.list.filter(emp => emp.approved.includes('suspended'));
-            suspendedLength.value = list.length;
+            if(empListType.value === '직원목록') {
+                list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
+            } else if(empListType.value === '숨김여부') {
+                list = res.list.filter(emp => emp.approved.includes('suspended'));
+                suspendedLength.value = list.length;
+            }
+
+            const result = await getEmpsDvs(list);
+            displayEmployee(result);
+        } else if (empListType.value === '초청여부') {
+            let res = await skapi.getInvitations();
+
+            const result = await getEmpsDvs(res.list);
+            displayinviteEmployee(result);
         }
-
-        await getEmpsDvs(list);
-        displayEmployee(res.list);
-    } else if (empListType.value === '초청여부') {
-        let res = await skapi.getInvitations();
-
-        await getEmpsDvs(res.list);
-        displayinviteEmployee(res.list);
+    } catch (error) {
+        console.error('== refresh : error == ', error);
+    } finally {
+        loading.value = false;
     }
-    
-    loading.value = false;
 }
 
 let displayDivisionOptions = (selectName: string) => {
@@ -486,47 +492,51 @@ let displayDivisionOptions = (selectName: string) => {
     divisionList.disabled = false;
 }
 
-let getEmpsDvs = async(list) => {
-    employee.value = list;
-
-    console.log('=== getEmpsDvs === list : ', list);
-    console.log('=== getEmpsDvs === employee.value : ', employee.value);
-
-    let promiseList = [];
-
-    for(let e of employee.value) {
-        promiseList.push(getEmpDivision(e.user_id));
+const getEmpsDvs = async (list) => {
+    if (!list) {
+        console.log('=== getEmpsDvs === list is empty');
+        return
     }
 
-    await Promise.all(promiseList.map(p => p.catch(e => e)));
+    try {
+        employee.value = list;
 
-    console.log('=== getEmpsDvs === promiseList : ', promiseList);
+        let promiseList = [];
 
-    for(let e of employee.value) {
-        if(empInfo[e.user_id]) {
-            e.division = empInfo[e.user_id].division;
-            e.position = empInfo[e.user_id].position;
+        for(let e of employee.value) {
+            promiseList.push(getEmpDivision(e.user_id));
         }
+
+        await Promise.all(promiseList);
+
+        for(let e of employee.value) {
+            if(empInfo[e.user_id]) {
+                e.division = empInfo[e.user_id].division;
+                e.position = empInfo[e.user_id].position;
+            }
+        }
+
+        return employee.value;
+    } catch (error) {
+        console.log('== getEmpsDvs == error : ', error);
     }
 }
 
-let getEmpDivision = (userId) => {
-    console.log('=== getEmpDivision === userId : ', userId);
-
+let getEmpDivision = async (userId) => {
     if(!userId) return;
 
-    return skapi.getRecords({
-        table: {
-            name: 'emp_position_current',
-            access_group: 1
-        },
-        unique_id: "[emp_position_current]" + makeSafe(userId)
-    }).then(r => {
-        console.log('=== getEmpDivision === r : ', r);
-
-        if (r.list.length === 0) return;
+    try {
+        const res = await skapi.getRecords({
+            table: {
+                name: 'emp_position_current',
+                access_group: 1
+            },
+            unique_id: "[emp_position_current]" + makeSafe(userId)
+        })
     
-        let record = r.list[0];
+        if (!res || !res.list || res.list.length === 0) return;    
+    
+        let record = res.list[0];
         let emp_dvs = record?.index?.name?.split('.')[0];
         let emp_id = record?.unique_id?.replace('[emp_position_current]', '').replaceAll('_', '-');
         let emp_pst = record?.index?.name?.split('.')[1];
@@ -535,9 +545,9 @@ let getEmpDivision = (userId) => {
             division: emp_dvs,
             position: emp_pst
         }
-    }).catch(err => {
-        console.log('=== getEmpDivision === err : ', err);
-    });
+    } catch (error) {
+        console.error('== getEmpDivision == error == ', error);
+    }
 }
 
 let searchEmp = async() => {
