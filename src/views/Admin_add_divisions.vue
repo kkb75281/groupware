@@ -14,7 +14,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_logo(type="file" name="division_logo" @change="openCropImageDialog" style="display:none")
+                input#division_logo(type="file" name="division_logo" accept="image/*" @change="openCropImageDialog" style="display:none")
 
         br
 
@@ -104,7 +104,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_used_seal(type="file" name="division_used_seal" @change="openCropImageDialog" style="display:none")
+                input#division_used_seal(type="file" name="division_used_seal" accept="image/*" @change="openCropImageDialog" style="display:none")
 
             .image.seal
                 img#official-img(:src="uploadSrc.division_official_seal" alt="Company Used Seal")
@@ -112,7 +112,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_official_seal(type="file" name="division_official_seal" @change="openCropImageDialog" style="display:none")
+                input#division_official_seal(type="file" name="division_official_seal" accept="image/*" @change="openCropImageDialog" style="display:none")
 
         br
 
