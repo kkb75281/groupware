@@ -489,6 +489,9 @@ let displayDivisionOptions = (selectName: string) => {
 let getEmpsDvs = async(list) => {
     employee.value = list;
 
+    console.log('=== getEmpsDvs === list : ', list);
+    console.log('=== getEmpsDvs === employee.value : ', employee.value);
+
     let promiseList = [];
 
     for(let e of employee.value) {
@@ -496,6 +499,8 @@ let getEmpsDvs = async(list) => {
     }
 
     await Promise.all(promiseList.map(p => p.catch(e => e)));
+
+    console.log('=== getEmpsDvs === promiseList : ', promiseList);
 
     for(let e of employee.value) {
         if(empInfo[e.user_id]) {
@@ -506,6 +511,8 @@ let getEmpsDvs = async(list) => {
 }
 
 let getEmpDivision = (userId) => {
+    console.log('=== getEmpDivision === userId : ', userId);
+
     if(!userId) return;
 
     return skapi.getRecords({
@@ -515,7 +522,8 @@ let getEmpDivision = (userId) => {
         },
         unique_id: "[emp_position_current]" + makeSafe(userId)
     }).then(r => {
-        // console.log(r.list)
+        console.log('=== getEmpDivision === r : ', r);
+
         if (r.list.length === 0) return;
     
         let record = r.list[0];
@@ -527,6 +535,8 @@ let getEmpDivision = (userId) => {
             division: emp_dvs,
             position: emp_pst
         }
+    }).catch(err => {
+        console.log('=== getEmpDivision === err : ', err);
     });
 }
 
@@ -560,6 +570,8 @@ let searchEmp = async() => {
                     // condition: searchNameValue.value ? '>=' : '>'
                 }
             });
+
+            console.log('=== searchEmp === res : ', res);
 
             const list = res.list.map(emp =>
                 emp.unique_id
@@ -866,12 +878,12 @@ let cancelInvite = (employee_info) => {
 
 let editEmp = () => {
     disabled.value = false;
-
     fileNames.value = [];
 
     nextTick(() => {
         displayDivisionOptions('division');
     });
+
     if(uploadFile.value){
         backupUploadFile.value = [...uploadFile.value];
     }
