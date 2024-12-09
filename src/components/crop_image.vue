@@ -38,8 +38,8 @@ const startCropper = () => {
     cropper = new Cropper(image.value, {
         viewMode: 1,
         autoCrop: true,
-        scalable: true,
-        zoomable: true,
+        scalable: false,
+        zoomable: false,
         movable: true,
         background: false,
         aspectRatio: 1,
@@ -88,7 +88,13 @@ const updatePreview = () => {
 
         // Preview 캔버스에 크롭된 이미지를 그리기
         ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
-        ctx.drawImage(croppedCanvas, 0, 0);
+        
+        if (croppedCanvas.width > 0 && croppedCanvas.height > 0) {
+            ctx.drawImage(croppedCanvas, 0, 0);
+        } else {
+            // console.error('Source canvas has no size!');
+            return null;            
+        }
     }
 };
 
