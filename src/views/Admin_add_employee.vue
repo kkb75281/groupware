@@ -13,7 +13,7 @@ hr
                 .icon.white
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-            input#init_profile_pic(type="file" name="init_profile_pic" @change="openCropImageDialog" style="display:none")
+            input#init_profile_pic(type="file" name="init_profile_pic" accept="image/*" @change="openCropImageDialog" style="display:none")
 
     br
 
