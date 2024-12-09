@@ -13,7 +13,7 @@ hr
                 .icon.white
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-            input#init_profile_pic(type="file" name="init_profile_pic" accept="image/*" @change="openCropImageDialog" style="display:none")
+            input#init_profile_pic(ref="init_profile_pic_input" type="file" name="init_profile_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
     br
 
@@ -115,6 +115,7 @@ const router = useRouter();
 const route = useRoute();
 
 let fileNames = ref([]);
+let init_profile_pic_input = ref(null);
 
 // let selectedFiles = [];
 
@@ -181,6 +182,9 @@ let openCropImageDialog = (e) => {
         currentTargetId.value = e.target.id;
         uploadSrc.value[currentTargetId.value] = fileURL;
         openModal.value = true;
+    }
+    if(init_profile_pic_input) {
+        init_profile_pic_input.value.value = '';
     }
 }
 

@@ -32,8 +32,8 @@
             template(v-if="user.access_group > 98")
                 .tb-toolbar
                     .btn-wrap
-                        button.btn.outline.refresh-icon(@click="refresh")
-                            svg(:class="{'rotate' : loading}" style="width: 25px; fill: var(--primary-color-400-dark)")
+                        button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
+                            svg(:class="{'rotate' : loading}")
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
                         template(v-if="empListType === '직원목록'")
                             button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김

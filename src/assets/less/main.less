@@ -1039,7 +1039,16 @@
         border: 1px solid var(--primary-color-400) !important;
     }
 
+    &:disabled {
+        svg {
+            fill: var(--primary-color-200);
+        }
+    }
+
     svg {
+        width: 25px;
+        fill: var(--primary-color-400-dark);
+
         &.rotate {
             animation: spin 2s linear infinite;
         }
