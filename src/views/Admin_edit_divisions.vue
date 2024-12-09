@@ -13,7 +13,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_logo(type="file" name="division_logo" @change="openCropImageDialog" style="display:none")
+                input#division_logo(ref="division_logo_input" type="file" name="division_logo" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
         br
 
@@ -103,7 +103,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_used_seal(type="file" name="division_used_seal" @change="openCropImageDialog" style="display:none")
+                input#division_used_seal(ref="division_used_seal_input" type="file" name="division_used_seal" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
             .image.seal
                 img#official-img(:src="uploadSrc.division_official_seal" alt="Company Used Seal")
@@ -111,7 +111,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_official_seal(type="file" name="division_official_seal" @change="openCropImageDialog" style="display:none")
+                input#division_official_seal(ref="division_official_seal_input" type="file" name="division_official_seal" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
         br
 
@@ -174,9 +174,18 @@ let uploadSrc = ref({
     division_used_seal: bin?.division_used_seal?.[0]?.url || '',
     division_official_seal: bin?.division_official_seal?.[0]?.url || ''
 });
+let division_logo_input = ref(null);
+let division_used_seal_input = ref(null);
+let division_official_seal_input = ref(null);
+let imgInputs = {
+    division_logo_input,
+    division_used_seal_input,
+    division_official_seal_input
+}
 
 let openCropImageDialog = (e) => {
     const file = e.target.files[0];
+    let targetInput = imgInputs[`${e.target.id}_input`];
     
     if (file) {
         const fileURL = URL.createObjectURL(file);
@@ -191,6 +200,10 @@ let openCropImageDialog = (e) => {
         record.bin[currentTargetId.value].forEach(el => {
             post_params.remove_bin.push(el);
         })
+    }
+
+    if(targetInput) {
+        targetInput.value.value = ''; // 초기화
     }
 }
 
