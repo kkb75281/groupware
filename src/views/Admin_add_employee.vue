@@ -296,7 +296,7 @@ let resigterEmp = (e) => {
             
             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
             await skapi.postRecord(null, {
-                unique_id: "[emp_additional_data]" + user_id,
+                unique_id: "[emp_additional_data]" + user_id_safe,
                 table: {
                     name: 'emp_access_ref',
                     access_group: 99
@@ -334,7 +334,7 @@ let resigterEmp = (e) => {
                                 access_group: 99
                             },
                             reference: {
-                                unique_id: "[emp_additional_data]" + user_id,
+                                unique_id: "[emp_additional_data]" + user_id_safe,
                             }
                         });
                     }
