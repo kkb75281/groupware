@@ -38,7 +38,7 @@ hr
 
         .input-wrap
             p.label 주소
-            input(type="text" name="division_address" placeholder="주소를 입력해주세요.")
+            input(type="text" name="division_address" placeholder="예) 서울시 마포구")
 
         br
 
@@ -68,19 +68,19 @@ hr
 
         .input-wrap
             p.label 설립일
-            input(type="text" name="division_establishment_date" placeholder="설립일을 입력해주세요.")
+            input(type="text" name="division_establishment_date" placeholder="예) 2024. 01. 01")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(type="text" name="division_phone_number" placeholder="전화번호를 입력해주세요. (++82000000000)")
+            input(type="text" name="division_phone_number" placeholder="예) +821012345678")
 
         br
 
         .input-wrap
             p.label 이메일
-            input(type="text" name="division_email" placeholder="이메일을 입력해주세요.")
+            input(type="text" name="division_email" placeholder="예) user@email.com")
 
         br
 
@@ -92,7 +92,7 @@ hr
 
         .input-wrap
             p.label 홈페이지
-            input(type="text" name="division_homepage" placeholder="홈페이지를 입력해주세요.")
+            input(type="text" name="division_homepage" placeholder="예) https://www.sitename.com/")
 
         br
 
