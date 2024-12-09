@@ -16,7 +16,7 @@
                 ul.options(v-if="showOptions" @click.stop)
                     li(@click="selectFile") 사진 변경
                     li(@click="setToDefault" :class="{'disabled': uploadSrc.profile_pic === null}") 기본 이미지로 변경
-                input#profile_pic(ref="profile_pic_input" type="file" name="profile_pic" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                input#profile_pic(ref="profile_pic_input" type="file" name="profile_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
                 //- input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
 
         br
@@ -204,7 +204,7 @@ const getAdditionalData = () => {
             name: 'emp_additional_data',
             access_group: 99
         },
-        reference: "[emp_additional_data]" + user.user_id,
+        reference: "[emp_additional_data]" + makeSafe(user.user_id),
     }).then(res => {
         if(res.list.length === 0) {
             return;
@@ -236,11 +236,11 @@ const getAdditionalData = () => {
             uploadFile.value = fileList;
         }
     }).catch(err => {
-        // console.log('== getRecords == err : ', err)
+        // console.log('== getRecords == err : ', err);
     });
 }
 
-if(user.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && user.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+if(!user.approved.includes('by_master')) {
     getAdditionalData();
 }
 
