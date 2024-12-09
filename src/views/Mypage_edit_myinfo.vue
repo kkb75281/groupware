@@ -240,7 +240,7 @@ const getAdditionalData = () => {
     });
 }
 
-if(user.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && user.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
+if(!user.approved.includes('by_master')) {
     getAdditionalData();
 }
 

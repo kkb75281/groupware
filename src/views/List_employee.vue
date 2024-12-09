@@ -101,7 +101,7 @@
                                 td {{ emp.email }}
                                 template(v-if='user.access_group > 98')
                                     td
-                                        .btn-wrap(v-if="emp.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && emp.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f'")
+                                        .btn-wrap(v-if="!emp.approved.includes('by_master')")
                                             button.btn.bg-gray.sm(@click="openModal(emp)") 상세보기
                                 td {{ emp.birthdate }}
                                 td {{ emp.phone_number }}
@@ -534,7 +534,7 @@ let searchEmp = async() => {
             );
 
             // 숨긴 직원은 제외
-            const filterUserList = userList.filter(list => list !== null && !list.approved.includes('suspended') && list.user_id !== '0170b6d0-3a49-4257-954a-8216ee98f3d8');
+            const filterUserList = userList.filter(list => list !== null && !list.approved.includes('suspended') && !list.approved.includes('by_master'));
             console.log(filterUserList)
 
             const arr = [];
@@ -592,105 +592,6 @@ let searchEmp = async() => {
 
     loading.value = false;
 };
-
-
-// let searchEmp = async() => {
-//     loading.value = true;
-
-//     if (!searchValue.value) {
-//         searchFor.value = 'name';
-//         searchValue.value = '';
-//         callParams.value.searchFor = 'timestamp';
-//         callParams.value.value = new Date().getTime();
-//         callParams.value.condition = '<=';
-//     }
-
-//     if(searchFor.value === 'division') {
-//         // callParams.value.searchFor = 'timestamp';
-//         // callParams.value.value = new Date().getTime();
-//         // callParams.value.condition = '<=';
-//         employee.value = {};
-
-//         await skapi.getRecords({
-//             table: {
-//                 name: 'emp_division',
-//                 access_group: 1
-//             },
-//             tag: "[emp_dvs]" + searchValue.value
-//         }).then(async(res) => {
-//             const list = res.list.map(emp => emp.tags.filter(tag => tag.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-'));
-//             const result = [...new Set(list)];
-
-//             console.log('=== searchEmp; getRecords === result : ', result);
-
-//             const userList = await Promise.all(result.map(async (user) => {
-//                 return await skapi.getUsers({
-//                     searchFor: 'user_id',
-//                     value: user,
-//                     condition: '='
-//                 })
-//             }));
-
-//             const arr = [];
-
-//             userList.forEach((user) => {
-//                 if (user.list.length < 1) return;
-
-//                 arr.push(user.list[0])
-//             })
-
-            
-//             arr.forEach((el) => {
-//                 if (el.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && el.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
-//                     getEmpDivision(el.user_id);
-//                 }
-
-//                 if (empInfo[el.user_id]) {
-//                     el.division = empInfo[el.user_id].division;
-//                     el.position = empInfo[el.user_id].position;
-//                 }
-//             })
-
-//             employee.value = arr;
-
-//             console.log('=== searchEmp === employee.value : ', employee.value);
-//         });
-
-//         console.log('현재 직원목록 : ', employee.value);
-
-//         loading.value = false;
-//         return;
-//     }
-
-//     let fetchedData = await skapi.getUsers(callParams.value, { ascending: !searchValue.value ? false : true }).catch((err) => {
-//         loading.value = false;
-//         alert(err);
-//     });
-
-//     if(fetchedData) {
-//         // if(empListType.value === '직원목록') {
-//         //     employee.value = fetchedData.list.filter(emp => emp.approved.includes('approved'));
-//         // } else if(empListType.value === '숨김여부') {
-//         //     employee.value = fetchedData.list.filter(emp => emp.approved.includes('suspended'));
-//         // } else if(empListType.value === '초청여부') {
-//         //     employee.value = fetchedData.list;
-//         // }
-//         employee.value = fetchedData.list;
-//         for(let e of employee.value) {
-//             if(e.user_id !== '8891ac0f-bc24-472b-9807-903bf768a944' && e.user_id !== 'df5d3061-aefb-4a8b-8900-89d4dbd6c33f') {
-//                 await getEmpDivision(e.user_id);
-//             }
-//             if(empInfo[e.user_id]) {
-//                 // console.log(empInfo[e.user_id])
-//                 e.division = empInfo[e.user_id].division;
-//                 e.position = empInfo[e.user_id].position;
-//             }
-//         }
-//         // console.log(fetchedData.list)
-//     }
-    
-//     loading.value = false;
-// }
 
 // 추가자료 업로드 한 것 가져오기
 let getAdditionalData = () => {
