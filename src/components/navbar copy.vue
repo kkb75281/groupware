@@ -1,5 +1,5 @@
 <template lang="pug">
-nav#navbar(ref="navbar")
+nav#navbar(ref="navbar" @click.stop)
     .navbar-wrap
         .logo
             router-link.img-logo(to="/") 로고 부분
@@ -13,25 +13,81 @@ nav#navbar(ref="navbar")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 
         ul.menu-item
-            template(v-for="item in menuList" :key="item.name")
-                li.item(v-if="item.show" :class="{'active': activeMenu == item.name}")
-                    router-link.router(:to="item.to" @click="toggleSubMenu(item.name)")
+            li.item(:class="{'active': route.name === 'home'}")
+                router-link.router(to="/")
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
+                    .text 
+                        span 대시보드
+
+            li.item(:class="{'active': route.path.startsWith('/mypage')}")
+                router-link.router(to="/mypage" @click="toggleSubMenu('mypage')") 
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
+                    .text 
+                        span 마이페이지
+                        svg.arrow(:class="{'down': activeMenu === 'mypage'}")
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+                ul.sub-menu-item(v-if="activeMenu === 'mypage'")
+                    li(:class="{'active': route.name === 'edit-myinfo'}")
+                        router-link(to="/mypage/edit-myinfo") 회원정보 수정
+                    li(:class="{'active': route.name === 'change-password'}")
+                        router-link(to="/change-password") 비밀번호 변경
+
+            //- li.item(:class="{'active': route.name === 'list-data'}")
+                router-link.router(to="/list-data")
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
+                    .text 
+                        span 자료 (임시)
+
+            template(v-if="user.access_group > 98")
+                li.item(:class="{'active': route.name === 'list-employee' || route.path.startsWith('/admin')}")
+                    router-link.router(to="/admin" @click="toggleSubMenu('admin')") 
                         .icon
                             svg
-                                use(:xlink:href="`@/assets/icon/material-icon.svg#icon-${item.icon}`")
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
                         .text 
-                            span {{ item.text }}
-                            svg.arrow(v-if="item.child" :class="{'down': item.child.name === activeMenu}")
+                            span 마스터 페이지
+                            svg.arrow(:class="{'down': activeMenu === 'admin'}")
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-                    ul.sub-menu-item(v-if="item.child && item.child.name === activeMenu")
-                        li(v-for="child in item.child.list" :key="child.name" :class="{'active': route.name === child.name}")
-                            router-link(:to="child.to") {{ child.text }}
+                    ul.sub-menu-item(v-if="activeMenu === 'admin'")
+                        li(:class="{'active': route.name === 'list-divisions'}")
+                            router-link(to="/admin/list-divisions") 부서 관리
+                        li(:class="{'active': route.name === 'list-employee' || route.name === 'employee-data'}")
+                            router-link(to="/list-employee") 직원 관리
+            template(v-else)
+                li.item(:class="{'active': route.name === 'list-employee'}")
+                    router-link.router(to="/list-employee")
+                        .icon
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
+                        .text 
+                            span 직원 목록
+
+            //- li.item(:class="{'active': route.name === 'component'}")
+                router-link.router(to="/component") 
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-component")
+                    .text
+                        span component
+            //- li.item(:class="{'active': route.name === 'mailing'}")
+                router-link(to="/mailing") 
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+                    .text
+                        span mailing
 
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { watch, onMounted, onUnmounted, ref, computed } from 'vue'
+import { watch, onMounted, onUnmounted, ref } from 'vue'
 import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar'
 import { user } from '@/user'
 
@@ -39,100 +95,31 @@ const router = useRouter();
 const route = useRoute();
 
 let navbar = ref(null);
-let isadmin = user.access_group > 98;
-
-let menuList = [
-    {
-        show: true,
-        name: 'home',
-        to: '/',
-        icon: 'dashboard',
-        text: '대시보드',
-    },
-    {
-        show: true,
-        name: 'mypage',
-        to: '/mypage',
-        icon: 'account-circle-fill',
-        text: '마이페이지',
-        child: {
-            name: 'mypage',
-            list: [
-                {
-                    name: 'edit-myinfo',
-                    to: '/mypage/edit-myinfo',
-                    text: '회원정보 수정',
-                },
-                {
-                    name: 'change-password',
-                    to: '/change-password',
-                    text: '비밀번호 변경',
-                }
-            ]
-        }
-    },
-    {
-        show: isadmin,
-        name: 'admin',
-        to: '/admin',
-        icon: 'settings',
-        text: '마스터 페이지',
-        child: {
-            name: 'admin',
-            list: [
-                {
-                    name: 'list-divisions',
-                    to: '/admin/list-divisions',
-                    text: '부서 관리',
-                },
-                {
-                    name: 'list-employee',
-                    to: '/list-employee',
-                    text: '직원 관리',
-                }
-            ]
-        }
-    },
-    {
-        show: !isadmin,
-        name: 'list-employee',
-        to: '/list-employee',
-        icon: 'groups',
-        text: '직원 목록',
-    },
-    // {
-    //     name: 'component',
-    //     to: '/component',
-    //     icon: 'component',
-    //     text: 'component',
-    // },
-    // {
-    //     name: 'mailing',
-    //     to: '/mailing',
-    //     icon: 'mail',
-    //     text: 'mailing',
-    // }
-];
 let adminSubMenu = ref(null);
 let showSubMenu = ref(false);
+let isadmin = user.access_group > 98;
 let activeMenu = ref(null);
-let closeNavbar = computed(() => {
-    let arr = [];
-    menuList.forEach(item => {
-        if(item.child) {
-            arr.push(item.child.list.map(child => child.name));
-        } else {
-            arr.push(item.name);
-        }
-    });
-    let newArr = new Set(arr.flat());
-
-    return [...newArr];
-});
 
 let toggleSubMenu = (menu) => {
   activeMenu.value = activeMenu.value === menu ? null : menu;
-};
+};   
+
+watch(() => route.path, (newPath) => {
+  if (!newPath.startsWith('/mypage')) {
+    if (activeMenu.value === 'mypage') {
+        if(route.name !== 'change-password') {
+            activeMenu.value = null;
+        }
+    }
+  }
+  if (!newPath.startsWith('/admin')) {
+    if (activeMenu.value === 'admin') {
+        if(route.name !== 'list-employee' && route.name !== 'employee-data') {
+            activeMenu.value = null;
+        }
+    }
+  }
+});
 
 let checkNavbarClose = (e) => {
     if (window.innerWidth > 768 || window.innerWidth <= 1200) {
@@ -153,15 +140,6 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkScreenWidth); // 컴포넌트가 언마운트될 때 이벤트 해제
   window.removeEventListener('click', checkNavbarClose);
 });
-
-watch(route, (nv) => {
-    if(nv) {
-        if(closeNavbar.includes(nv.name)) {
-            isOpen.value = !isOpen.value;
-            document.body.classList.toggle('open', isOpen.value);
-        }
-    }
-})
 </script>
 
 <style scoped lang="less">
