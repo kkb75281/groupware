@@ -181,7 +181,7 @@ watch(empListType, async(nv) => {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
-                    let list = res.list.filter(emp => emp.approved.includes('approved') && emp.user_id !== '0170b6d0-3a49-4257-954a-8216ee98f3d8');
+                    let list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
 
                     employee.value = list;
 
@@ -199,7 +199,7 @@ watch(empListType, async(nv) => {
                     loading.value = false;
                 });
             } else {
-                employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved') && emp.user_id !== '0170b6d0-3a49-4257-954a-8216ee98f3d8');
+                employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
             }
         }
     }
@@ -358,7 +358,7 @@ let searchEmp = async() => {
         });
 
         if (fetchedData) {
-            const arr = fetchedData.list.filter(emp => emp.user_id !== '0170b6d0-3a49-4257-954a-8216ee98f3d8');
+            const arr = fetchedData.list.filter(emp => !emp.approved.includes('by_master'));
 
             for (const e of arr) {
                 console.log(e)
