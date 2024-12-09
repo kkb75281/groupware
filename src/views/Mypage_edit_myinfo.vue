@@ -44,7 +44,7 @@
 
             .input-wrap
                 p.label.essential 이메일
-                input(v-model="user.email" type="email" name="email" placeholder="이메일을 입력해주세요." :disabled="(verifiedEmail || disabled) && !onlyEmail" required)
+                input(v-model="user.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(verifiedEmail || disabled) && !onlyEmail" required)
 
             template(v-if="verifiedEmail && !onlyEmail")
                 button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
@@ -69,7 +69,7 @@
 
             .input-wrap
                 p.label 전화번호
-                input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="+82000000000" :disabled="verifiedEmail || disabled")
+                input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="예) +821012345678" :disabled="verifiedEmail || disabled")
                 //- label.checkbox.public(:class="{'disabled': disabled}")
                 //- 	input(v-model="user.phone_number_public" type="checkbox" name="phone_number_public" checked hidden :disabled="disabled")
                 //- 	span.label-checkbox 공개여부
@@ -78,7 +78,7 @@
 
             .input-wrap
                 p.label 주소
-                input(v-model="user.address" type="text" name="address" placeholder="주소를 입력해주세요." :disabled="verifiedEmail || disabled")
+                input(v-model="user.address" type="text" name="address" placeholder="예) 서울시 마포구" :disabled="verifiedEmail || disabled")
                 label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
                     input(v-model="user.address_public" type="checkbox" name="address_public" checked hidden :disabled="verifiedEmail || disabled")
                     span.label-checkbox 공개여부

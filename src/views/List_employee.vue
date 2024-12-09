@@ -163,7 +163,7 @@
                         input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :placeholder="divisionNameList[selectedEmp?.division] === '' ? '부서를 선택해주세요.' : ''" readonly)
                     template(v-else)
                         select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
-                            option(disabled) 부서 선택
+                            option(value="" disabled) 부서 선택
                 
                 .input-wrap
                     p.label 권한
@@ -171,7 +171,7 @@
                         input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " readonly)
                     template(v-else)
                         select(name="access_group" v-model="selectedEmp.access_group" style="height: 40px;")
-                            option(disabled selected) 권한선택
+                            option(value="" disabled selected) 권한선택
                             option(value="1") 직원
                             option(value="98") 관리자
                             option(value="99") 마스터
@@ -182,7 +182,7 @@
 
                 .input-wrap
                     p.label 이메일
-                    input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="이메일을 입력해주세요." disabled)
+                    input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="예) user@email.com" disabled)
 
                 .input-wrap
                     p.label 생년월일
@@ -190,11 +190,11 @@
 
                 .input-wrap
                     p.label 전화번호
-                    input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="전화번호를 입력해주세요." disabled)
+                    input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
 
                 .input-wrap
                     p.label 주소
-                    input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="주소를 입력해주세요." disabled)
+                    input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
 
                 //- .input-wrap.upload-file
                 //-     p.label(style="margin-bottom: 0;") 기타자료
@@ -251,7 +251,7 @@ let route = useRoute();
 let loading = ref(false);
 let currentPage = ref(1);
 let selectedList = ref([]);
-let empListType = ref("직원목록");
+let empListType = ref(route.query.empListType || '직원목록');
 let blockList = ref([]);
 let isAllSelected = computed(() => {
     return selectedList.value.length > 0 && employee.value.every(emp => selectedList.value.includes(emp.user_id));
@@ -307,6 +307,15 @@ let callParams = computed(() => {
     }
 });
 
+watch(
+    () => route.query.empListType,
+    (newType) => {
+        if (newType) {
+            empListType.value = newType;
+        }
+    }
+);
+
 watch(searchFor, (nv) => {
     if (nv) {
         searchValue.value = '';
@@ -341,6 +350,11 @@ watch(empListType, async(nv) => {
         if (nv === '직원목록') {
             sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
+            router.replace({
+                path: '/list-employee',
+                query: {},
+            });
+
             if (!sessionEmployee) {
                 loading.value = true;
 
@@ -368,6 +382,11 @@ watch(empListType, async(nv) => {
         } else if (nv === '숨김여부') {
             let list = JSON.parse(window.sessionStorage.getItem('employee'))
             let result  = list.filter(emp => emp.approved.includes('suspended'));
+
+            router.replace({
+                path: '/list-employee',
+                query: {},
+            });
 
             employee.value = result;
             suspendedLength.value = result.length;
