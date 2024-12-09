@@ -204,7 +204,7 @@ const getAdditionalData = () => {
             name: 'emp_additional_data',
             access_group: 99
         },
-        reference: "[emp_additional_data]" + user.user_id,
+        reference: "[emp_additional_data]" + makeSafe(user.user_id),
     }).then(res => {
         if(res.list.length === 0) {
             return;
@@ -236,7 +236,7 @@ const getAdditionalData = () => {
             uploadFile.value = fileList;
         }
     }).catch(err => {
-        // console.log('== getRecords == err : ', err)
+        // console.log('== getRecords == err : ', err);
     });
 }
 

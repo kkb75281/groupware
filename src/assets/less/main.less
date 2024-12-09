@@ -1030,6 +1030,29 @@
     }
 }
 
+.refresh-icon {
+    &:focus {
+        border: 1px solid var(--primary-color-400) !important;
+    }
+
+    svg {
+        &.rotate {
+            animation: spin 2s linear infinite;
+        }
+    }
+}
+
+
+
+@keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+}
+
 @media (max-width: 682px) {
     .input-wrap {
         &.upload-file {

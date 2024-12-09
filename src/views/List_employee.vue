@@ -32,6 +32,9 @@
             template(v-if="user.access_group > 98")
                 .tb-toolbar
                     .btn-wrap
+                        button.btn.outline.refresh-icon(@click="refresh")
+                            svg(:class="{'rotate' : loading}" style="width: 25px; fill: var(--primary-color-400-dark)")
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
                         template(v-if="empListType === '직원목록'")
                             button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김
                             button.btn.outline(@click="router.push('/admin/add-employee')") 등록
@@ -347,19 +350,9 @@ watch(empListType, async(nv) => {
                 skapi.getUsers().then(async(res) => {
                     let list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
 
-                    employee.value = list;
-
-                    for(let e of employee.value) {
-                        await getEmpDivision(e.user_id);
-
-                        if(empInfo[e.user_id]) {
-                            console.log(empInfo[e.user_id])
-                            e.division = empInfo[e.user_id].division;
-                            e.position = empInfo[e.user_id].position;
-                        }
-                    }
-
+                    getEmpsDvs(list);
                     displayEmployee(res.list);
+
                     loading.value = false;
                 });
             } else {
@@ -378,19 +371,9 @@ watch(empListType, async(nv) => {
                 loading.value = true;
 
                 skapi.getInvitations().then(async(res) => {
-                    employee.value = res.list;
-
-                    for(let e of employee.value) {
-                        await getEmpDivision(e.user_id);
-                        console.log('초청여부에서 부서정보 가져오는 부분')
-
-                        if(empInfo[e.user_id]) {
-                            e.division = empInfo[e.user_id].division;
-                            e.position = empInfo[e.user_id].position;
-                        }
-                    }
-
+                    getEmpsDvs(res.list);
                     displayinviteEmployee(res.list);
+
                     loading.value = false;
                 });
 
@@ -405,6 +388,32 @@ getDivisionNames();
 
 function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+}
+
+let refresh = async() => {
+    loading.value = true;
+
+    if (empListType.value === '직원목록' || empListType.value === '숨김여부') {
+        let res = await skapi.getUsers();
+        let list;
+
+        if(empListType.value === '직원목록') {
+            list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
+        } else if(empListType.value === '숨김여부') {
+            list = res.list.filter(emp => emp.approved.includes('suspended'));
+            suspendedLength.value = list.length;
+        }
+
+        await getEmpsDvs(list);
+        displayEmployee(res.list);
+    } else if (empListType.value === '초청여부') {
+        let res = await skapi.getInvitations();
+
+        await getEmpsDvs(res.list);
+        displayinviteEmployee(res.list);
+    }
+    
+    loading.value = false;
 }
 
 let displayDivisionOptions = (selectName: string) => {
@@ -458,10 +467,29 @@ let displayDivisionOptions = (selectName: string) => {
     divisionList.disabled = false;
 }
 
-let getEmpDivision = async(userId) => {
+let getEmpsDvs = async(list) => {
+    employee.value = list;
+
+    let promiseList = [];
+
+    for(let e of employee.value) {
+        promiseList.push(getEmpDivision(e.user_id));
+    }
+
+    await Promise.all(promiseList.map(p => p.catch(e => e)));
+
+    for(let e of employee.value) {
+        if(empInfo[e.user_id]) {
+            e.division = empInfo[e.user_id].division;
+            e.position = empInfo[e.user_id].position;
+        }
+    }
+}
+
+let getEmpDivision = (userId) => {
     if(!userId) return;
 
-    await skapi.getRecords({
+    return skapi.getRecords({
         table: {
             name: 'emp_position_current',
             access_group: 1
@@ -600,7 +628,7 @@ let getAdditionalData = () => {
             name: 'emp_additional_data',
             access_group: 99,
         },
-        reference: "[emp_additional_data]" + selectedEmp.value.user_id,
+        reference: "[emp_additional_data]" + makeSafe(selectedEmp.value.user_id),
     }).then(res => {
         console.log('=== openModal; getRecords === res : ', res);
 
