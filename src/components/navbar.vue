@@ -156,8 +156,8 @@ onUnmounted(() => {
 
 watch(route, (nv) => {
     if(nv) {
-        if(closeNavbar.value.includes(nv.name)) {
-            isOpen.value = !isOpen.value;
+        if(closeNavbar.value.includes(nv.name) && isOpen.value) {
+            isOpen.value = false;
             document.body.classList.toggle('open', isOpen.value);
         }
     }
