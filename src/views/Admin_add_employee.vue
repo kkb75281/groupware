@@ -21,14 +21,14 @@ hr
         .input-wrap
             p.label.essential 부서
             select(name="division" required disabled)
-                option(disabled selected) 부서 선택
+                option(value="" disabled selected) 부서 선택
         
         br
         
         .input-wrap
             p.label.essential 권한
             select(name="access_group" required)
-                option(disabled selected) 권한선택
+                option(value="" disabled selected) 권한선택
                 option(value="1") 직원
                 option(value="98") 관리자
                 option(value="99") 마스터
@@ -51,25 +51,25 @@ hr
 
         .input-wrap
             p.label.essential 이메일
-            input(type="email" name="email" placeholder="이메일을 입력해주세요." required)
+            input(type="email" name="email" placeholder="예) user@email.com" required)
 
         br
 
         .input-wrap
             p.label 생년월일
-            input(type="date" name="birthdate" placeholder="생년월일을 입력해주세요.")
+            input(type="date" name="birthdate")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(type="tel" name="phone_number" placeholder="전화번호를 입력해주세요. (+82000000000)")
+            input(type="tel" name="phone_number" placeholder="예) +821012345678")
 
         br
 
         .input-wrap
             p.label 주소
-            input(type="text" name="address"  placeholder="주소를 입력해주세요.")
+            input(type="text" name="address"  placeholder="예) 서울시 마포구")
 
         br
 
@@ -371,7 +371,10 @@ let resigterEmp = (e) => {
             throw error;
         }
 
-        router.push('/list-employee');
+        router.push({
+            path: '/list-employee',
+            query: { empListType: '초청여부' }
+        });
     }
 
     post();
