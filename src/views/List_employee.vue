@@ -196,11 +196,22 @@
                     p.label 주소
                     input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="주소를 입력해주세요." disabled)
 
+                //- .input-wrap.upload-file
+                //-     p.label(style="margin-bottom: 0;") 기타자료
+                //-     template(v-if="!disabled")
+                //-         .btn-add-file(style="margin-top: 12px;")
+                //-             input(type="file" name="additional_data" multiple style="height: initial;")
+
                 .input-wrap.upload-file
                     p.label(style="margin-bottom: 0;") 기타자료
                     template(v-if="!disabled")
-                        .btn-add-file(style="margin-top: 12px;")
-                            input(type="file" name="additional_data" multiple style="height: initial;")
+                        //- .btn-add-file(style="margin-top: 12px;")
+                        //-     input(type="file" name="additional_data" multiple style="height: initial;")
+                        .btn-upload-file
+                            input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                            label.btn.outline.btn-upload(for="file") 파일 추가
+                            ul.upload-file-list
+                                li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
                     .file-wrap
                         ul.file-list
@@ -265,6 +276,7 @@ let backupUploadFile = ref([]);
 let disabled = ref(true);
 let removeFileList = ref([]);
 let empInfo: {[key:string]: any} = ref({});
+let fileNames = ref([]);
 
 let access_group = {
     1: '직원',
@@ -906,6 +918,9 @@ let cancelInvite = (employee_info) => {
 
 let editEmp = () => {
     disabled.value = false;
+
+    fileNames.value = [];
+
     nextTick(() => {
         displayDivisionOptions('division');
     });
@@ -1025,6 +1040,14 @@ let registerEmp = async(e) => {
     }
     disabled.value = true;
 }
+
+// 파일 추가시 파일명 표시
+let updateFileList = (e) => {
+  let target = e.target;
+  if (target.files) {
+    fileNames.value = Array.from(target.files).map(file => file.name);
+  }
+};
 </script>
 
 <style scoped lang="less">
@@ -1219,5 +1242,9 @@ let registerEmp = async(e) => {
             color: var(--warning-color-500);
         }
     }
+}
+
+.btn-upload-file {
+    margin-top: 12px;
 }
 </style>
