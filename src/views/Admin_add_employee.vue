@@ -17,7 +17,7 @@ hr
 
     br
 
-    form#_el_emp_form(@submit.prevent="resigterEmp")
+    form#_el_emp_form(@submit.prevent="registerEmp")
         .input-wrap
             p.label.essential 부서
             select(name="division" required disabled)
@@ -223,388 +223,384 @@ function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
 }
 
-let resigterEmp = (e) => {
-    // 입력창을 비활성화한다.
-    document.querySelectorAll('form input').forEach(el => el.disabled = true);
-    document.querySelectorAll('form button').forEach(el => el.disabled = true);
-
-    async function post() {
-        // 사용자를 등록(초대)한다. try catch는 아래와는 달리 작게 만들도록 한다.
-        try {
-            if(init_profile_pic.files.length > 0) {
-                let initPicParams = {
-                    table: {
-                        name: 'init_profile_pic' + makeSafe(document.querySelector('input[name=email]').value), // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
-                        // name: 'init_profile_pic' + makeSafe(uploadSrc.value.init_profile_pic), // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
-                        access_group: 1
-                    },
-                };
-
-                const croppedFile = new File([croppedImages.value['init_profile_pic']], 'init_profile_pic.png', {
-                    type: croppedImages.value['init_profile_pic'].type,
-                });
-
-                const imgFormData = new FormData();
-                imgFormData.append('init_profile_pic', croppedFile);
-
-                let userInitProfilePic = await skapi.postRecord(imgFormData, initPicParams);
-                _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
-            }
-
-            // 직원을 초대한다.
-            let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'}).catch(err => {
-                throw new err;
-            });
-            // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
-
-            // extract user id
-            let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
-            let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
-
-            let user_name = document.querySelector('input[name=name]').value;
-            let user_division_name = document.querySelector('select[name=division]').value;
-
-            // 직원의 부서를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
-            skapi.postRecord(
-                null,
-                {
-                    unique_id: "[emp_division]" + user_id_safe,
-                    table: {
-                        name: 'emp_division',
-                        access_group: 1
-                    },
-                    tags: ["[emp_pst]" + _el_position.value, "[emp_id]" + user_id_safe, "[emp_dvs]" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
-                }
-            )
-
-            // 현재 직원 부서 등록 (current용)
-            skapi.postRecord({
-                user_id: user_id,
-            }, {
-                unique_id: "[emp_position_current]" + user_id_safe,
-                table: {
-                    name: 'emp_position_current',
-                    access_group: 1
-                },
-                index: {
-                    name: user_division_name + '.' + _el_position.value,
-                    value: user_name
-                }
-            }).then(r => {
-                console.log('current부서직책업데이트', r);
-            })
-            
-            // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
-            await skapi.postRecord(null, {
-                unique_id: "[emp_additional_data]" + user_id_safe,
-                table: {
-                    name: 'emp_access_ref',
-                    access_group: 99
-                },
-                index: {
-                    name: 'user_id',
-                    value: user_id_safe
-                },
-                reference: {
-                    can_remove_reference: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
-                }
-            }).then(async(res) => {
-                let access_group_value = document.querySelector('select[name=access_group]').value;
-
-                // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
-                if(access_group_value !== '99') {
-                    // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
-                    skapi.grantPrivateRecordAccess({
-                        record_id: res.record_id,
-                        user_id: user_id
-                    });
-                }
-
-                const files = document.querySelector('input[name=additional_data]').files;
-
-                if (files.length) {
-                    for(let file of files) {
-                        const formData = new FormData();
-
-                        formData.append('additional_data', file);
-                        
-                        await skapi.postRecord(formData, {
-                            table: {
-                                name: 'emp_additional_data',
-                                access_group: 99
-                            },
-                            reference: {
-                                unique_id: "[emp_additional_data]" + user_id_safe,
-                            }
-                        });
-                    }
-                }
-            });
-
-            await skapi.getInvitations().then(res => {
-                // let result = res.list;
-                // for(let r of result) {
-                //     if(r.user_id === user_id) {
-                //         r.position = _el_position.value;
-                //         r.division = user_division_name;
-                //     }
-                // }
-                window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
-            });
-
-            window.alert('등록완료');
-        }
-        catch (error) {
-            window.alert('직원 등록에 실패하였습니다. 다시 시도해주세요.' + error.message);
-            document.querySelector('form #profile-img').src = '';
-            document.querySelectorAll('form select').forEach(el => {
-                el.selectedIndex = 0;
-            });
-            document.querySelectorAll('form input').forEach(el => {
-                el.disabled = false;
-                el.value = '';
-            });
-            document.querySelectorAll('form button').forEach(el => {
-                el.disabled = false;
-            });
-            
-            throw error;
-        }
-
-        router.push({
-            path: '/list-employee',
-            query: { empListType: '초청여부' }
-        });
-    }
-
-    post();
-}
-
-// const inviteUserMail = async (e) => {
-//   return await skapi.inviteUser(e, {confirmation_url: '/mailing'});
-// }
-
-// const getInvitations = async () => {
-//   return await skapi.getInvitations();
-// }
-
-// const postRecord = async (data, params) => {
-//   return await skapi.postRecord(data, params);
-// }
-
-// const empProfileUpload = async () => {
-//   if (init_profile_pic.files.length === 0) return;
-
-//   try {
-//     const email = document.querySelector('input[name=email]').value;
-//     const makeSafeEmail = makeSafe(email);
-//     const tableName = 'init_profile_pic' + makeSafeEmail;
-
-//     let initPicParams = {
-//         table: {
-//             name: tableName,
-//             access_group: 1
-//         },
-//     };
-
-//     const croppedImage = croppedImages.value['init_profile_pic']
-//     const profileName = 'init_profile_pic.png';
-//     const fileType = croppedImage.type
-
-//     const croppedFile = new File([croppedImage], profileName, {
-//         type: fileType,
-//     });
-
-//     const imgFormData = new FormData();
-//     imgFormData.append('init_profile_pic', croppedFile);
-
-//     const userInitProfilePic = await postRecord(imgFormData, initPicParams)
-//     _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
-//   } catch (error) {
-//     console.log('== empProfileUpload : error == : ', error)
-//   }
-// }
-
-// // 직원의 부서를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
-// const registerEmpDivision = async (data) => {
-//   if (!data) return;
-
-//   try {
-//     const { user_id_safe, user_division_name } = data;
-
-//     const params = {
-//       unique_id: "[emp_division]" + user_id_safe,
-//       table: {
-//           name: 'emp_division',
-//           access_group: 1
-//       },
-//       tags: ["[emp_pst]" + _el_position.value, "[emp_id]" + user_id_safe, "[emp_dvs]" + user_division_name] 
-//     }
-
-
-//     return await postRecord(null, params);
-//   } catch (error) {
-//     console.log('== registerEmpDivision : error == : ', error)
-//   }
-// } 
-
-// // 현재 직원 부서 등록 (current용)
-// const currentEmpDivision = async (data) => {
-//   if (!data) return;
-
-//   try {
-//     const { user_id, user_id_safe, user_division_name, user_name } = data;
-
-//     const params = {
-//       unique_id: "[emp_position_current]" + user_id_safe,
-//       table: {
-//           name: 'emp_position_current',
-//           access_group: 1
-//       },
-//       index: {
-//           name: user_division_name + '.' + _el_position.value,
-//           value: user_name
-//       }
-//     }
-
-//     return await postRecord({ user_id }, params)
-//   } catch (error) {
-//     console.log('== currentEmpDivision : error == : ', error)
-//   }
-// }
-
-// const grantPrivateRecordAccess = (data) => {
-//   if (!data) return;
-
-//   return skapi.grantPrivateRecordAccess(data);
-// }
-
-// // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
-// const createReference = async (data) => {
-//   if (!data) return;
-
-//   try {
-//     const { user_id_safe, user_division_name } = data;
-
-//     const params = {
-//       unique_id: "[emp_additional_data]" + user_id_safe,
-//       table: {
-//           name: 'emp_access_ref',
-//           access_group: 99
-//       },
-//       index: {
-//           name: 'user_id',
-//           value: user_id_safe
-//       },
-//       reference: {
-//           can_remove_reference: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
-//       }
-//     }
-
-//     const res = await postRecord(null, params);
-
-//     const access_group_value = document.querySelector('select[name=access_group]').value;
-//     const files = document.querySelector('input[name=additional_data]').files;
-
-//     // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
-//     if(access_group_value !== '99') {
-//       // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
-//       grantPrivateRecordAccess({
-//           record_id: res.record_id,
-//           user_id: user_id
-//       });
-//     }
-
-    
-
-//     if (files.length) {
-//       for(let file of files) {
-//         const formData = new FormData();
-
-//         formData.append('additional_data', file);
-          
-//         const params = {
-//           table: {
-//               name: 'emp_additional_data',
-//               access_group: 99
-//           },
-//           reference: {
-//               unique_id: "[emp_additional_data]" + user_id_safe,
-//           }
-//         }
-
-//         await postRecord(formData, );
-//       }
-//     }
-
-
-//   } catch (error) {
-//     console.log('== createReference : error == : ', error)
-//   }
-// }
-
-// // 직원등록 함수
-// const registerEmp = async (e) => {  
-//   try {
+// let registerEmp = (e) => {
 //     // 입력창을 비활성화한다.
 //     document.querySelectorAll('form input').forEach(el => el.disabled = true);
 //     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
-//     if(init_profile_pic.files.length > 0) {
-//       empProfileUpload()
+//     async function post() {
+//         // 사용자를 등록(초대)한다. try catch는 아래와는 달리 작게 만들도록 한다.
+//         try {
+//             if(init_profile_pic.files.length > 0) {
+//                 let initPicParams = {
+//                     table: {
+//                         name: 'init_profile_pic' + makeSafe(document.querySelector('input[name=email]').value), // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
+//                         // name: 'init_profile_pic' + makeSafe(uploadSrc.value.init_profile_pic), // 관리자가 올리는 초기 프로필 사진을 저장하는 테이블
+//                         access_group: 1
+//                     },
+//                 };
+
+//                 const croppedFile = new File([croppedImages.value['init_profile_pic']], 'init_profile_pic.png', {
+//                     type: croppedImages.value['init_profile_pic'].type,
+//                 });
+
+//                 const imgFormData = new FormData();
+//                 imgFormData.append('init_profile_pic', croppedFile);
+
+//                 let userInitProfilePic = await skapi.postRecord(imgFormData, initPicParams);
+//                 _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
+//             }
+
+//             // 직원을 초대한다.
+//             let added = await skapi.inviteUser(e, {confirmation_url: '/mailing'}).catch(err => {
+//                 throw new err;
+//             });
+//             // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
+
+//             // extract user id
+//             let user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
+//             let user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
+
+//             let user_name = document.querySelector('input[name=name]').value;
+//             let user_division_name = document.querySelector('select[name=division]').value;
+
+//             // 직원의 부서를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
+//             skapi.postRecord(
+//                 null,
+//                 {
+//                     unique_id: "[emp_division]" + user_id_safe,
+//                     table: {
+//                         name: 'emp_division',
+//                         access_group: 1
+//                     },
+//                     tags: ["[emp_pst]" + _el_position.value, "[emp_id]" + user_id_safe, "[emp_dvs]" + user_division_name] // 여러개의 태그를 사용할 수 있다. 태그를 사용하면 태그된 레코드의 갯수를 알수있다.
+//                 }
+//             )
+
+//             // 현재 직원 부서 등록 (current용)
+//             skapi.postRecord({
+//                 user_id: user_id,
+//             }, {
+//                 unique_id: "[emp_position_current]" + user_id_safe,
+//                 table: {
+//                     name: 'emp_position_current',
+//                     access_group: 1
+//                 },
+//                 index: {
+//                     name: user_division_name + '.' + _el_position.value,
+//                     value: user_name
+//                 }
+//             }).then(r => {
+//                 console.log('current부서직책업데이트', r);
+//             })
+            
+//             // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
+//             await skapi.postRecord(null, {
+//                 unique_id: "[emp_additional_data]" + user_id_safe,
+//                 table: {
+//                     name: 'emp_access_ref',
+//                     access_group: 99
+//                 },
+//                 index: {
+//                     name: 'user_id',
+//                     value: user_id_safe
+//                 },
+//                 reference: {
+//                     can_remove_reference: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
+//                 }
+//             }).then(async(res) => {
+//                 let access_group_value = document.querySelector('select[name=access_group]').value;
+
+//                 // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
+//                 if(access_group_value !== '99') {
+//                     // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
+//                     skapi.grantPrivateRecordAccess({
+//                         record_id: res.record_id,
+//                         user_id: user_id
+//                     });
+//                 }
+
+//                 const files = document.querySelector('input[name=additional_data]').files;
+
+//                 if (files.length) {
+//                     for(let file of files) {
+//                         const formData = new FormData();
+
+//                         formData.append('additional_data', file);
+                        
+//                         await skapi.postRecord(formData, {
+//                             table: {
+//                                 name: 'emp_additional_data',
+//                                 access_group: 99
+//                             },
+//                             reference: {
+//                                 unique_id: "[emp_additional_data]" + user_id_safe,
+//                             }
+//                         });
+//                     }
+//                 }
+//             });
+
+//             await skapi.getInvitations().then(res => {
+//                 // let result = res.list;
+//                 // for(let r of result) {
+//                 //     if(r.user_id === user_id) {
+//                 //         r.position = _el_position.value;
+//                 //         r.division = user_division_name;
+//                 //     }
+//                 // }
+//                 window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
+//             });
+
+//             window.alert('등록완료');
+//         }
+//         catch (error) {
+//             window.alert('직원 등록에 실패하였습니다. 다시 시도해주세요.' + error.message);
+//             document.querySelector('form #profile-img').src = '';
+//             document.querySelectorAll('form select').forEach(el => {
+//                 el.selectedIndex = 0;
+//             });
+//             document.querySelectorAll('form input').forEach(el => {
+//                 el.disabled = false;
+//                 el.value = '';
+//             });
+//             document.querySelectorAll('form button').forEach(el => {
+//                 el.disabled = false;
+//             });
+            
+//             throw error;
+//         }
+
+//         router.push({
+//             path: '/list-employee',
+//             query: { empListType: '초청여부' }
+//         });
 //     }
 
-//     // 직원을 초대한다.
-//     const added = await inviteUserMail(e);
-//     // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
-
-//     if (!added) {
-//       console.log('직원 초대에 실패하였습니다.');
-//     }
-
-//     // extract user id
-//     const user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
-//     const user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
-
-//     const user_name = document.querySelector('input[name=name]').value;
-//     const user_division_name = document.querySelector('select[name=division]').value;
-
-    
-//     // 직원의 부서를 등록한다.
-//     await registerEmpDivision({ user_id_safe, user_division_name });
-    
-//     // 현재 직원 부서 등록
-//     await currentEmpDivision({ user_id, user_id_safe, user_division_name, user_name });
-    
-//     // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
-//     await createReference({ user_id_safe, user_division_name });
-
-//     const res = getInvitations();
-
-//     if (!res) {
-//       return console.log('실패');
-//     }
-
-//     window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
-//     window.alert('직원 등록이 완료되었습니다.');
-//   } catch (error) {
-//     window.alert('직원 등록에 실패하였습니다. 다시 시도해주세요.' + error.message);
-//     document.querySelector('form #profile-img').src = '';
-//     document.querySelectorAll('form select').forEach(el => el.selectedIndex = 0);
-//     document.querySelectorAll('form button').forEach(el => el.disabled = false);
-//     document.querySelectorAll('form input').forEach(el => {
-//         el.disabled = false;
-//         el.value = '';
-//     });
-    
-//     throw error;
-//   } finally {
-//     router.push({
-//       path: '/list-employee',
-//       query: { empListType: '초청여부' }
-//     });
-//   }
+//     post();
 // }
+
+const inviteUserMail = async (e) => {
+  return await skapi.inviteUser(e, {confirmation_url: '/mailing'});
+}
+
+const getInvitations = async () => {
+  return await skapi.getInvitations();
+}
+
+const postRecord = async (data, params) => {
+  return await skapi.postRecord(data, params);
+}
+
+const empProfileUpload = async () => {
+  if (init_profile_pic.files.length === 0) return;
+
+  try {
+    const email = document.querySelector('input[name=email]').value;
+    const makeSafeEmail = makeSafe(email);
+    const tableName = 'init_profile_pic' + makeSafeEmail;
+
+    let initPicParams = {
+        table: {
+            name: tableName,
+            access_group: 1
+        },
+    };
+
+    const croppedImage = croppedImages.value['init_profile_pic']
+    const profileName = 'init_profile_pic.png';
+    const fileType = croppedImage.type
+
+    const croppedFile = new File([croppedImage], profileName, {
+        type: fileType,
+    });
+
+    const imgFormData = new FormData();
+    imgFormData.append('init_profile_pic', croppedFile);
+
+    const userInitProfilePic = await postRecord(imgFormData, initPicParams)
+    _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
+  } catch (error) {
+    console.log('== empProfileUpload : error == : ', error)
+  }
+}
+
+// 직원의 부서를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
+const registerEmpDivision = async (data) => {
+  if (!data) return;
+
+  try {
+    const { user_id_safe, user_division_name } = data;
+
+    const params = {
+      unique_id: "[emp_division]" + user_id_safe,
+      table: {
+          name: 'emp_division',
+          access_group: 1
+      },
+      tags: ["[emp_pst]" + _el_position.value, "[emp_id]" + user_id_safe, "[emp_dvs]" + user_division_name] 
+    }
+
+
+    return await postRecord(null, params);
+  } catch (error) {
+    console.log('== registerEmpDivision : error == : ', error)
+  }
+} 
+
+// 현재 직원 부서 등록 (current용)
+const currentEmpDivision = async (data) => {
+  if (!data) return;
+
+  try {
+    const { user_id, user_id_safe, user_division_name, user_name } = data;
+
+    const params = {
+      unique_id: "[emp_position_current]" + user_id_safe,
+      table: {
+          name: 'emp_position_current',
+          access_group: 1
+      },
+      index: {
+          name: user_division_name + '.' + _el_position.value,
+          value: user_name
+      }
+    }
+
+    return await postRecord({ user_id }, params)
+  } catch (error) {
+    console.log('== currentEmpDivision : error == : ', error)
+  }
+}
+
+const grantPrivateRecordAccess = (data) => {
+  if (!data) return;
+
+  return skapi.grantPrivateRecordAccess(data);
+}
+
+// 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
+const createReference = async (data) => {
+  if (!data) return;
+
+  try {
+    const { user_id_safe, user_division_name, user_id } = data;
+
+    const params = {
+      unique_id: "[emp_additional_data]" + user_id_safe,
+      table: {
+          name: 'emp_access_ref',
+          access_group: 99
+      },
+      index: {
+          name: 'user_id',
+          value: user_id_safe
+      },
+      reference: {
+          can_remove_reference: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
+      }
+    }
+
+    const res = await postRecord(null, params);
+
+    const access_group_value = document.querySelector('select[name=access_group]').value;
+    const files = document.querySelector('input[name=additional_data]').files;
+
+    // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
+    if(access_group_value !== '99') {
+      // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
+      grantPrivateRecordAccess({
+          record_id: res.record_id,
+          user_id
+      });
+    }
+
+    if (files.length) {
+      for(let file of files) {
+        const formData = new FormData();
+
+        formData.append('additional_data', file);
+          
+        const params = {
+          table: {
+              name: 'emp_additional_data',
+              access_group: 99
+          },
+          reference: {
+              unique_id: "[emp_additional_data]" + user_id_safe,
+          }
+        }
+
+        await postRecord(formData, params);
+      }
+    }
+  } catch (error) {
+    console.log('== createReference : error == : ', error)
+  }
+}
+
+// 직원등록 함수
+const registerEmp = async (e) => {  
+  try {
+    // 입력창을 비활성화한다.
+    document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    document.querySelectorAll('form button').forEach(el => el.disabled = true);
+
+    if(init_profile_pic.files.length > 0) {
+      empProfileUpload()
+    }
+
+    // 직원을 초대한다.
+    const added = await inviteUserMail(e);
+    // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
+
+    if (!added) {
+      console.log('직원 초대에 실패하였습니다.');
+    }
+
+    // extract user id
+    const user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
+    const user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
+
+    const user_name = document.querySelector('input[name=name]').value;
+    const user_division_name = document.querySelector('select[name=division]').value;
+
+    
+    // 직원의 부서를 등록한다.
+    await registerEmpDivision({ user_id_safe, user_division_name });
+    
+    // 현재 직원 부서 등록
+    await currentEmpDivision({ user_id, user_id_safe, user_division_name, user_name });
+    
+    // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
+    await createReference({ user_id_safe, user_division_name, user_id });
+
+    const res = getInvitations();
+
+    if (!res) {
+      return console.log('실패');
+    }
+
+    window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
+    window.alert('직원 등록이 완료되었습니다.');
+  } catch (error) {
+    window.alert('직원 등록에 실패하였습니다. 다시 시도해주세요.' + error.message);
+    document.querySelector('form #profile-img').src = '';
+    document.querySelectorAll('form select').forEach(el => el.selectedIndex = 0);
+    document.querySelectorAll('form button').forEach(el => el.disabled = false);
+    document.querySelectorAll('form input').forEach(el => {
+        el.disabled = false;
+        el.value = '';
+    });
+    
+    throw error;
+  } finally {
+    router.push({
+      path: '/list-employee',
+      query: { empListType: '초청여부' }
+    });
+  }
+}
 </script>
 
 <style scoped lang="less">
