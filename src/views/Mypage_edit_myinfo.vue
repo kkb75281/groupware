@@ -380,10 +380,12 @@ let registerMypage = async(e) => {
         await skapi.postRecord(document.getElementById('profile_pic'), profile_pic_postParams);
     }
 
-    const files = document.querySelector('input[name="additional_data"]').files;
+    // const files = document.querySelector('input[name="additional_data"]').files;
+    let filebox = document.querySelector('input[name=additional_data]');
 
-    if(files.length) {
-        for(let file of files) {
+    if(filebox && filebox.files.length) {
+        console.log(filebox.files.length)
+        for(let file of filebox.files) {
             const additionalFormData = new FormData();
 
             additionalFormData.append('additional_data', file);
@@ -397,11 +399,14 @@ let registerMypage = async(e) => {
                     unique_id: "[emp_additional_data]" + makeSafe(user.user_id),
                 }
             });
-            
-            backupUploadFile.value = [...uploadFile.value];
-            document.querySelector('input[name="additional_data"]').value = '';
-            fileNames.value = [];
+
+            if(uploadFile.value && uploadFile.value.length) {
+                backupUploadFile.value = [...uploadFile.value];
+            }
         }
+        
+        document.querySelector('input[name="additional_data"]').value = '';
+        fileNames.value = [];
     } else {
         console.log('false == registerMypage == uploadFile.value : ', uploadFile.value);
     }
