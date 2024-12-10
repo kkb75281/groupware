@@ -449,7 +449,7 @@ let registerMypage = async(e) => {
                     access_group: 99
                 },
                 reference: {
-                    unique_id: "[emp_additional_data]" + user.user_id,
+                    unique_id: "[emp_additional_data]" + makeSafe(user.user_id),
                 }
             });
 
