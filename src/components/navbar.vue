@@ -116,6 +116,9 @@ let menuList = [
 let adminSubMenu = ref(null);
 let showSubMenu = ref(false);
 let activeMenu = ref(null);
+let parentRouteNames = computed(() => {
+    return menuList.map(item => item.name);
+});
 let closeNavbar = computed(() => {
     let arr = [];
     menuList.forEach(item => {
@@ -162,6 +165,33 @@ watch(route, (nv) => {
         }
     }
 })
+
+watch(() => route.fullPath, (nv) => {
+    let currentPath = nv.split('/');
+    let currentPathName = currentPath[currentPath.length - 1];
+
+    for(let menu of menuList) {
+        let menuTo = menu.to.split('/');
+        let menuName = menuTo[menuTo.length - 1];
+
+        if(menuName === currentPathName) {
+            activeMenu.value = menu.name;
+            return;
+        }
+
+        if(menu.child) {
+            for(let child of menu.child.list) {
+                let childTo = child.to.split('/');
+                let childName = childTo[childTo.length - 1];
+
+                if(childName === currentPathName) {
+                    activeMenu.value = menu.name;
+                    return;
+                }
+            }
+        }
+    }
+},{ immediate: true });
 </script>
 
 <style scoped lang="less">
