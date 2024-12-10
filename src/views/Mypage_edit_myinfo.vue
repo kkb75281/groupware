@@ -207,7 +207,7 @@ const getAdditionalData = () => {
         reference: "[emp_additional_data]" + makeSafe(user.user_id),
     }).then(res => {
         let fileList = [];
-
+        
         if(res.list.length === 0) {
             fileList = [];
             uploadFile.value = fileList;
@@ -447,8 +447,10 @@ let registerMypage = async(e) => {
                     unique_id: "[emp_additional_data]" + makeSafe(user.user_id),
                 }
             });
-
+            
             backupUploadFile.value = [...uploadFile.value];
+            document.querySelector('input[name="additional_data"]').value = '';
+            fileNames.value = [];
         }
     } else {
         console.log('false == registerMypage == uploadFile.value : ', uploadFile.value);
@@ -458,13 +460,15 @@ let registerMypage = async(e) => {
     fileNames.value = [];
 
     if(removeFileList.value.length) {
-        skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
+        await skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
             removeFileList.value = [];
         });
     }
 
     // 프로필 정보를 업데이트
-    await skapi.updateProfile(e).then(getAdditionalData);
+    await skapi.updateProfile(e);
+
+    getAdditionalData();
 
     window.alert('회원정보가 수정되었습니다.');
     onlyEmail.value = false;
