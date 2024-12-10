@@ -15,7 +15,7 @@ nav#navbar(ref="navbar")
         ul.menu-item
             template(v-for="item in menuList" :key="item.name")
                 li.item(v-if="item.show" :class="{'active': activeMenu == item.name}")
-                    router-link.router(:to="item.to" @click="toggleSubMenu(item.name)")
+                    router-link.router(:to="item.to")
                         .icon
                             svg
                                 use(:xlink:href="`@/assets/icon/material-icon.svg#icon-${item.icon}`")
@@ -39,6 +39,7 @@ const router = useRouter();
 const route = useRoute();
 
 let navbar = ref(null);
+let activeMenu = ref(null);
 let isadmin = user.access_group > 98;
 
 let menuList = [
@@ -113,12 +114,7 @@ let menuList = [
     //     text: 'mailing',
     // }
 ];
-let adminSubMenu = ref(null);
-let showSubMenu = ref(false);
-let activeMenu = ref(null);
-let parentRouteNames = computed(() => {
-    return menuList.map(item => item.name);
-});
+
 let closeNavbar = computed(() => {
     let arr = [];
     menuList.forEach(item => {
@@ -132,10 +128,6 @@ let closeNavbar = computed(() => {
 
     return [...newArr];
 });
-
-let toggleSubMenu = (menu) => {
-  activeMenu.value = activeMenu.value === menu ? null : menu;
-};
 
 let checkNavbarClose = (e) => {
     if (window.innerWidth > 768 || window.innerWidth <= 1200) {
@@ -157,22 +149,30 @@ onUnmounted(() => {
   window.removeEventListener('click', checkNavbarClose);
 });
 
-watch(route, (nv) => {
-    if(nv) {
-        if(closeNavbar.value.includes(nv.name) && isOpen.value) {
-            isOpen.value = false;
-            document.body.classList.toggle('open', isOpen.value);
-        }
-    }
-})
+// watch(route, (nv) => {
+//     if(nv) {
+//         if(closeNavbar.value.includes(nv.name) && isOpen.value) {
+//             isOpen.value = false;
+//             document.body.classList.toggle('open', isOpen.value);
+//         }
+//     }
+// })
 
 watch(() => route.fullPath, (nv) => {
     let currentPath = nv.split('/');
     let currentPathName = currentPath[currentPath.length - 1];
 
+    currentPathName === '' ? currentPathName = 'home' : currentPathName;
+
+    if(closeNavbar.value.includes(currentPathName) && isOpen.value) {
+        isOpen.value = false;
+        document.body.classList.toggle('open', isOpen.value);
+    }
+
     for(let menu of menuList) {
-        let menuTo = menu.to.split('/');
-        let menuName = menuTo[menuTo.length - 1];
+        // let menuTo = menu.to.split('/');
+        // let menuName = menuTo[menuTo.length - 1];
+        let menuName = menu.name;
 
         if(menuName === currentPathName) {
             activeMenu.value = menu.name;
@@ -181,8 +181,9 @@ watch(() => route.fullPath, (nv) => {
 
         if(menu.child) {
             for(let child of menu.child.list) {
-                let childTo = child.to.split('/');
-                let childName = childTo[childTo.length - 1];
+                // let childTo = child.to.split('/');
+                // let childName = childTo[childTo.length - 1];
+                let childName = child.name;
 
                 if(childName === currentPathName) {
                     activeMenu.value = menu.name;

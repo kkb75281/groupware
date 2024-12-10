@@ -119,7 +119,7 @@ hr
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
 
-CropImage(:open="openModal" :imageSrc="currnetImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+CropImage(:open="openModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
 br  
 br  
@@ -130,6 +130,7 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { skapi } from '@/main';
+import { openModal, croppedImages, uploadSrc, currentImageSrc, deleteList, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
 
@@ -160,81 +161,12 @@ if (!record) {
         for (let k in record?.bin) {
             bin[k] = record?.bin[k];
         }
+        uploadSrc.value.division_logo = record?.bin.division_logo ? record?.bin.division_logo[0].url : '';
+        uploadSrc.value.division_used_seal = record?.bin.division_used_seal ? record?.bin.division_used_seal[0].url : '';
+        uploadSrc.value.division_official_seal = record?.bin.division_official_seal ? record?.bin.division_official_seal[0].url : '';
     }
     console.log(record)
     loading.value = false;
-}
-
-let openModal = ref(false);
-let croppedImages = ref({});
-let currentTargetId = ref('');
-let currnetImageSrc = ref('');
-let uploadSrc = ref({
-    division_logo: bin?.division_logo?.[0]?.url || '',
-    division_used_seal: bin?.division_used_seal?.[0]?.url || '',
-    division_official_seal: bin?.division_official_seal?.[0]?.url || ''
-});
-let division_logo_input = ref(null);
-let division_used_seal_input = ref(null);
-let division_official_seal_input = ref(null);
-let imgInputs = {
-    division_logo_input,
-    division_used_seal_input,
-    division_official_seal_input
-}
-
-let openCropImageDialog = (e) => {
-    const file = e.target.files[0];
-    let targetInput = imgInputs[`${e.target.id}_input`];
-    
-    if (file) {
-        const fileURL = URL.createObjectURL(file);
-        currnetImageSrc.value = fileURL;
-        currentTargetId.value = e.target.id;
-        uploadSrc.value[currentTargetId.value] = fileURL;
-        openModal.value = true;
-    }
-
-    // 이미지 변경시 예전 이미지 모두 삭제
-    if(currentTargetId.value && record.bin[currentTargetId.value]) {
-        record.bin[currentTargetId.value].forEach(el => {
-            post_params.remove_bin.push(el);
-        })
-    }
-
-    if(targetInput) {
-        targetInput.value.value = ''; // 초기화
-    }
-}
-
-let closeCropImageDialog = () => {
-    uploadSrc.value[currentTargetId.value] = null;
-    openModal.value = false;
-}
-
-let setCroppedImage = async(croppedImage) => {
-    if(currentTargetId.value) {
-        try {
-            // 미리보기 이미지 경로 업데이트
-            uploadSrc.value[currentTargetId.value] = croppedImage;
-
-            // Blob URL에서 Blob 객체를 가져오기
-            const response = await fetch(croppedImage);
-            const blob = await response.blob();
-
-            console.log("Cropped Image Blob:", blob); // Blob 확인
-            console.log("Cropped Images Store:", croppedImages.value);
-
-            // Blob 객체를 저장 (서버 전송용)
-            croppedImages.value[currentTargetId.value] = blob;
-
-            openModal.value = false;
-            currnetImageSrc.value = '';
-            currentTargetId.value = '';
-        } catch (error) {
-            console.error('Error processing Blob URL:', error);
-        }
-    }
 }
 
 let post_params = {
@@ -251,69 +183,79 @@ let editDivision = (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
-    let ext = skapi.util.extractFormData(e); // { data: {}, files: {} }
-
-    const formData = new FormData();
-
-    // 기존 form data 추가
-    for(let key in ext.data) {
-        formData.append(key, ext.data[key]);
+    // 이미지 변경시 예전 이미지 모두 삭제
+    if(deleteList.value.length > 0) {
+        console.log('deleteList', deleteList.value)
+        // deleteList.value.forEach(id => {
+        //     record.bin[id].forEach(el => {
+        //         post_params.remove_bin.push(el);
+        //     })
+        // })
     }
 
-    // 이미지 파일을 form data에 추가
-    if(Object.keys(croppedImages.value).length > 0) {
-        Object.keys(croppedImages.value).forEach((key) => {
-            formData.append(key, croppedImages.value[key], `${key}.jpg`);
-        });
-    }
+    // let ext = skapi.util.extractFormData(e); // { data: {}, files: {} }
+
+    // const formData = new FormData();
+
+    // // 기존 form data 추가
+    // for(let key in ext.data) {
+    //     formData.append(key, ext.data[key]);
+    // }
+
+    // // 이미지 파일을 form data에 추가
+    // if(Object.keys(croppedImages.value).length > 0) {
+    //     Object.keys(croppedImages.value).forEach((key) => {
+    //         formData.append(key, croppedImages.value[key], `${key}.jpg`);
+    //     });
+    // }
     
-    console.log('post_params', post_params)
+    // console.log('post_params', post_params)
 
-    if(originalDivisionName !== ext.data.division_name) {
-        let changeDivisionName = {};
+    // if(originalDivisionName !== ext.data.division_name) {
+    //     let changeDivisionName = {};
 
-        skapi.getRecords({
-            unique_id: '[division_name_list]'
-        }).then(r => {
-            let data = r.list[0].data;
-            let keys = Object.keys(data); // 'DVS_0', 'DVS_1', ...
-            let values = Object.values(data); // '부서명1', '부서명2', ...
-            let index = 0;
+    //     skapi.getRecords({
+    //         unique_id: '[division_name_list]'
+    //     }).then(r => {
+    //         let data = r.list[0].data;
+    //         let keys = Object.keys(data); // 'DVS_0', 'DVS_1', ...
+    //         let values = Object.values(data); // '부서명1', '부서명2', ...
+    //         let index = 0;
 
-            for(let v of values) {
-                if(v === originalDivisionName) {
-                    index = values.indexOf(v);
-                    break;
-                }
-            }
+    //         for(let v of values) {
+    //             if(v === originalDivisionName) {
+    //                 index = values.indexOf(v);
+    //                 break;
+    //             }
+    //         }
 
-            data[keys[index]] = ext.data.division_name;
+    //         data[keys[index]] = ext.data.division_name;
 
-            changeDivisionName = data;
+    //         changeDivisionName = data;
 
-            skapi.deleteRecords({
-                unique_id: '[division_name_list]'
-            }).then(r => {
-                skapi.postRecord(changeDivisionName, {
-                    unique_id: '[division_name_list]',
-                    table: {
-                        name: 'divisionNames',
-                        access_group: 1
-                    }
-                })
-            })
-        })
-    }
+    //         skapi.deleteRecords({
+    //             unique_id: '[division_name_list]'
+    //         }).then(r => {
+    //             skapi.postRecord(changeDivisionName, {
+    //                 unique_id: '[division_name_list]',
+    //                 table: {
+    //                     name: 'divisionNames',
+    //                     access_group: 1
+    //                 }
+    //             })
+    //         })
+    //     })
+    // }
 
-    skapi.postRecord(formData, post_params).then((r) => {
-        let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+    // skapi.postRecord(formData, post_params).then((r) => {
+    //     let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 
-        sessionDivisions[r.record_id] = r;
-        window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
+    //     sessionDivisions[r.record_id] = r;
+    //     window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
 
-        window.alert('등록되었습니다.');
-        router.push('/admin/list-divisions');
-    });
+    //     window.alert('등록되었습니다.');
+    //     router.push('/admin/list-divisions');
+    // });
 }
 </script>
 
