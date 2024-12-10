@@ -60,7 +60,7 @@ header#header
 				| 새로운 알림이 없습니다.
 
 	.popup-bottom
-		router-link.router.view-all(to="/")
+		router-link.router.view-all(to="/" @click.native="closePopup")
 			p 전체보기
 			.icon
 				svg
@@ -83,21 +83,21 @@ header#header
 	.popup-main
 		ul
 			li
-				router-link.router(to="/mypage")
+				router-link.router(to="/mypage" @click.native="closePopup")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
 					p 마이페이지
 			
 			li(v-if="user.access_group > 98")
-				router-link.router(to="/admin")
+				router-link.router(to="/admin" @click.native="closePopup")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
 					p 마스터 페이지
 
 			li(v-if="user.access_group < 99")
-				router-link.router(to="/list-employee")
+				router-link.router(to="/list-employee" @click.native="closePopup")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
@@ -157,12 +157,18 @@ let closeProfileRouter = () => {
 	isProfileOpen.value = false;
 };
 
+let closePopup = () => {
+	isNotiOpen.value = false;
+	isProfileOpen.value = false;
+};
+
 onMounted(() => {
 	document.addEventListener('click', closeNotification);
 	document.addEventListener('click', closeProfile);
 	router.beforeEach((to, from, next) => {
 		closeNotificatiRouter();
 		closeProfileRouter();
+		closePopup();
 		next();
 	});
 });
