@@ -185,77 +185,75 @@ let editDivision = (e) => {
 
     // 이미지 변경시 예전 이미지 모두 삭제
     if(deleteList.value.length > 0) {
-        console.log('deleteList', deleteList.value)
-        // deleteList.value.forEach(id => {
-        //     record.bin[id].forEach(el => {
-        //         post_params.remove_bin.push(el);
-        //     })
-        // })
+        deleteList.value.forEach(id => {
+            let deleteBinObj = record.bin[id][0];
+            post_params.remove_bin.push(deleteBinObj);
+        })
     }
 
-    // let ext = skapi.util.extractFormData(e); // { data: {}, files: {} }
+    let ext = skapi.util.extractFormData(e); // { data: {}, files: {} }
 
-    // const formData = new FormData();
+    const formData = new FormData();
 
-    // // 기존 form data 추가
-    // for(let key in ext.data) {
-    //     formData.append(key, ext.data[key]);
-    // }
+    // 기존 form data 추가
+    for(let key in ext.data) {
+        formData.append(key, ext.data[key]);
+    }
 
-    // // 이미지 파일을 form data에 추가
-    // if(Object.keys(croppedImages.value).length > 0) {
-    //     Object.keys(croppedImages.value).forEach((key) => {
-    //         formData.append(key, croppedImages.value[key], `${key}.jpg`);
-    //     });
-    // }
+    // 이미지 파일을 form data에 추가
+    if(Object.keys(croppedImages.value).length > 0) {
+        Object.keys(croppedImages.value).forEach((key) => {
+            formData.append(key, croppedImages.value[key], `${key}.jpg`);
+        });
+    }
     
-    // console.log('post_params', post_params)
+    console.log('post_params', post_params)
 
-    // if(originalDivisionName !== ext.data.division_name) {
-    //     let changeDivisionName = {};
+    if(originalDivisionName !== ext.data.division_name) {
+        let changeDivisionName = {};
 
-    //     skapi.getRecords({
-    //         unique_id: '[division_name_list]'
-    //     }).then(r => {
-    //         let data = r.list[0].data;
-    //         let keys = Object.keys(data); // 'DVS_0', 'DVS_1', ...
-    //         let values = Object.values(data); // '부서명1', '부서명2', ...
-    //         let index = 0;
+        skapi.getRecords({
+            unique_id: '[division_name_list]'
+        }).then(r => {
+            let data = r.list[0].data;
+            let keys = Object.keys(data); // 'DVS_0', 'DVS_1', ...
+            let values = Object.values(data); // '부서명1', '부서명2', ...
+            let index = 0;
 
-    //         for(let v of values) {
-    //             if(v === originalDivisionName) {
-    //                 index = values.indexOf(v);
-    //                 break;
-    //             }
-    //         }
+            for(let v of values) {
+                if(v === originalDivisionName) {
+                    index = values.indexOf(v);
+                    break;
+                }
+            }
 
-    //         data[keys[index]] = ext.data.division_name;
+            data[keys[index]] = ext.data.division_name;
 
-    //         changeDivisionName = data;
+            changeDivisionName = data;
 
-    //         skapi.deleteRecords({
-    //             unique_id: '[division_name_list]'
-    //         }).then(r => {
-    //             skapi.postRecord(changeDivisionName, {
-    //                 unique_id: '[division_name_list]',
-    //                 table: {
-    //                     name: 'divisionNames',
-    //                     access_group: 1
-    //                 }
-    //             })
-    //         })
-    //     })
-    // }
+            skapi.deleteRecords({
+                unique_id: '[division_name_list]'
+            }).then(r => {
+                skapi.postRecord(changeDivisionName, {
+                    unique_id: '[division_name_list]',
+                    table: {
+                        name: 'divisionNames',
+                        access_group: 1
+                    }
+                })
+            })
+        })
+    }
 
-    // skapi.postRecord(formData, post_params).then((r) => {
-    //     let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+    skapi.postRecord(formData, post_params).then((r) => {
+        let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 
-    //     sessionDivisions[r.record_id] = r;
-    //     window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
+        sessionDivisions[r.record_id] = r;
+        window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
 
-    //     window.alert('등록되었습니다.');
-    //     router.push('/admin/list-divisions');
-    // });
+        window.alert('등록되었습니다.');
+        router.push('/admin/list-divisions');
+    });
 }
 </script>
 
