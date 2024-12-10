@@ -341,8 +341,6 @@ let registerMypage = async(e) => {
     let profile_pic_postParams = {};
     let samePerson = false;
 
-    console.log(getFileInfo.value);
-
     if(user.user_id === getFileInfo.value?.uploader) {
         samePerson = true;
         profile_pic_postParams.record_id = getFileInfo.value.record_id;
