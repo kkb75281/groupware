@@ -218,7 +218,7 @@
 
                     .file-wrap
                         ul.file-list
-                            template(v-if="!uploadFile")
+                            template(v-if="uploadFile.length === 0")
                                 li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
                             template(v-else)
                                 li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")

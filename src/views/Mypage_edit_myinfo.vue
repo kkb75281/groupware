@@ -464,9 +464,9 @@ let registerMypage = async(e) => {
     }
 
     // 프로필 정보를 업데이트
-    await skapi.updateProfile(e).then(r => {
-        getAdditionalData();
-    })
+    await skapi.updateProfile(e).then(getAdditionalData);
+
+    // fileNames.value = [];
 
     window.alert('회원정보가 수정되었습니다.');
     onlyEmail.value = false;
@@ -485,6 +485,7 @@ let cancelRemoveFile = (item) => {
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
   let target = e.target;
+  
   if (target.files) {
     fileNames.value = Array.from(target.files).map(file => file.name);
   }
