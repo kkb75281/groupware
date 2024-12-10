@@ -120,7 +120,7 @@
                 button.btn.bg-gray(type="button" :disabled="disabled" @click="cancelEdit") 취소
                 button.btn(type="submit" :disabled="disabled") 저장
 
-    CropImage(:open="openModal" :imageSrc="currnetImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+    CropImage(:open="openModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
     br  
     br  
@@ -133,6 +133,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
 import { divisionNameList } from '@/division'
+import { openModal, croppedImages, uploadSrc, currentImageSrc, deleteList, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
 
@@ -239,16 +240,6 @@ if(!user.approved.includes('by_master')) {
     getAdditionalData();
 }
 
-// console.log('== user == user : ', user);
-
-let openModal = ref(false);
-let croppedImages = ref({});
-let currentTargetId = ref('');
-let currnetImageSrc = ref('');
-let uploadSrc = ref({
-    profile_pic: null,
-});
-
 let getProfileImage = async() => {
     await skapi.getFile(user.picture, {
         dataType: 'endpoint',
@@ -280,45 +271,6 @@ if(user.picture) {
     });
 }
 
-let openCropImageDialog = (e) => {
-    const file = e.target.files[0];
-    
-    if (file) {
-        const fileURL = URL.createObjectURL(file);
-        currnetImageSrc.value = fileURL;
-        currentTargetId.value = e.target.id;
-        uploadSrc.value[currentTargetId.value] = fileURL;
-        openModal.value = true;
-    }
-}
-
-let closeCropImageDialog = () => {
-    uploadSrc.value[currentTargetId.value] = null;
-    openModal.value = false;
-}
-
-let setCroppedImage = async(croppedImage) => {
-    if(currentTargetId.value) {
-        try {
-            // 미리보기 이미지 경로 업데이트
-            uploadSrc.value[currentTargetId.value] = croppedImage;
-
-            // Blob URL에서 Blob 객체를 가져오기
-            const response = await fetch(croppedImage);
-            const blob = await response.blob();
-
-            // Blob 객체를 저장 (서버 전송용)
-            croppedImages.value[currentTargetId.value] = blob;
-
-            openModal.value = false;
-            currnetImageSrc.value = '';
-            currentTargetId.value = '';
-        } catch (error) {
-            console.error('Error processing Blob URL:', error);
-        }
-    }
-}
-
 let sendEmail = async() => {
     try {
         await skapi.verifyEmail();
@@ -333,8 +285,6 @@ let profile_pic_input = ref(null);
 let selectFile = () => {
     showOptions.value = false;
     profile_pic_input.value.click();
-    console.log(showOptions.value);
-    console.log(document.getElementById('profile_pic').value)
 }
 
 let setToDefault = () => {
@@ -391,6 +341,8 @@ let registerMypage = async(e) => {
     let profile_pic_postParams = {};
     let samePerson = false;
 
+    console.log(getFileInfo.value);
+
     if(user.user_id === getFileInfo.value?.uploader) {
         samePerson = true;
         profile_pic_postParams.record_id = getFileInfo.value.record_id;
@@ -403,9 +355,9 @@ let registerMypage = async(e) => {
         };
     }
 
-    if(profile_pic.files.length > 0) {
+    if(croppedImages.value['profile_pic']) {
         // 새로 선택한 사진이 있고 본인이 이전에 올린 사진이 있을 경우 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
-        if(samePerson) {
+        if(samePerson && getFileInfo.value?.uploader === user.user_id) {
             profile_pic_postParams.remove_bin = null;
         }
 
