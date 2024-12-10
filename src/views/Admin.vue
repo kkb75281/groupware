@@ -29,8 +29,6 @@ import { useRoute, useRouter } from 'vue-router';
 
 const router = useRouter();
 const route = useRoute();
-
-console.log('dd')
 </script>
 
 <style scoped lang="less">

@@ -206,19 +206,16 @@ const getAdditionalData = () => {
         },
         reference: "[emp_additional_data]" + makeSafe(user.user_id),
     }).then(res => {
+        let fileList = [];
+
         if(res.list.length === 0) {
-            return;
+            fileList = [];
+            uploadFile.value = fileList;
         } else {
-            let fileList = [];
-
-            // console.log('== getRecords == res : ', res);
-
             res.list.forEach((item) => {
                 if (item.bin.additional_data && item.bin.additional_data.length > 0) {
-
                     function getFileUserId(str) {
                         if (!str) return '';
-
                         return str.split('/')[3]
                     }
 
@@ -227,16 +224,14 @@ const getAdditionalData = () => {
                         user_id: getFileUserId(el.path),
                         record_id: item.record_id,
                     }));    
+
                     fileList.push(...result);
                 }
-            })
-
-            // console.log('== getRecords == fileList : ', fileList);
-
+            });
             uploadFile.value = fileList;
         }
     }).catch(err => {
-        // console.log('== getRecords == err : ', err);
+        console.log('== getRecords == err : ', err);
     });
 }
 
@@ -455,7 +450,12 @@ let registerMypage = async(e) => {
 
             backupUploadFile.value = [...uploadFile.value];
         }
+    } else {
+        console.log('false == registerMypage == uploadFile.value : ', uploadFile.value);
     }
+
+    document.querySelector('input[name="additional_data"]').value = '';
+    fileNames.value = [];
 
     if(removeFileList.value.length) {
         skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
@@ -466,15 +466,13 @@ let registerMypage = async(e) => {
     // 프로필 정보를 업데이트
     await skapi.updateProfile(e).then(getAdditionalData);
 
-    // fileNames.value = [];
-
     window.alert('회원정보가 수정되었습니다.');
     onlyEmail.value = false;
     disabled.value = false;
 }
 
 // 업로드 파일 삭제
-let removeFile =  (item) => {
+let removeFile = (item) => {
     removeFileList.value.push(item.record_id);
 }
 

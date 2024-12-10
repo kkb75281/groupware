@@ -260,7 +260,7 @@ let isAllSelected = computed(() => {
     return selectedList.value.length > 0 && employee.value.every(emp => selectedList.value.includes(emp.user_id));
 });
 
-let originalEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
+let originalEmployee = ref([]);
 let sessionEmployee;
 let employee = ref([]);
 let suspendedLength = ref(0);
@@ -274,7 +274,7 @@ let selectedEmpTags = ref({
 let searchFor: Ref<"name" | "division" | "email" | "timestamp"> = ref('name');
 let searchValue = ref('');
 let searchPositionValue = ref('');
-let uploadFile = ref(null);
+let uploadFile = ref([]);
 let backupUploadFile = ref([]);
 let disabled = ref(true);
 let removeFileList = ref([]);
@@ -362,10 +362,15 @@ watch(empListType, async(nv) => {
                 loading.value = true;
 
                 skapi.getUsers().then(async(res) => {
-                    let list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
+                    const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
+                    const result = await getEmpsDvs(userList);
+                    
+                    let list = result.filter(emp => emp.approved.includes('approved'));
 
-                    const result = await getEmpsDvs(list);
+                    originalEmployee.value = result || [];
                     displayEmployee(result);
+
+                    employee.value = list;
 
                     loading.value = false;
                 });
@@ -384,7 +389,9 @@ watch(empListType, async(nv) => {
             employee.value = result;
             suspendedLength.value = result.length;
         } else if (nv === '초청여부') {
-            if (!sessionEmployee) {
+            const empLists = window.sessionStorage.getItem('inviteEmployee');
+
+            if (!empLists) {
                 loading.value = true;
 
                 skapi.getInvitations().then(async(res) => {
@@ -395,8 +402,6 @@ watch(empListType, async(nv) => {
                 });
 
             } else {
-                const empLists = window.sessionStorage.getItem('inviteEmployee');
-
                 sessionEmployee = JSON.parse(empLists);
 
                 employee.value = sessionEmployee;
@@ -417,7 +422,7 @@ let refresh = async () => {
     try {
         if (empListType.value === '직원목록' || empListType.value === '숨김여부') {
             let res = await skapi.getUsers();
-            let list;
+            let list = [];
 
             if(empListType.value === '직원목록') {
                 list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
@@ -499,22 +504,22 @@ const getEmpsDvs = async (list) => {
     }
 
     try {
-        employee.value = list;
-
         let promiseList = [];
 
-        for(let e of employee.value) {
+        for(let e of list) {
             promiseList.push(getEmpDivision(e.user_id));
         }
 
         await Promise.all(promiseList);
 
-        for(let e of employee.value) {
+        for(let e of list) {
             if(empInfo[e.user_id]) {
                 e.division = empInfo[e.user_id].division;
                 e.position = empInfo[e.user_id].position;
             }
         }
+        
+        employee.value = list;
 
         return employee.value;
     } catch (error) {
@@ -671,7 +676,6 @@ let getAdditionalData = () => {
         },
         reference: "[emp_additional_data]" + makeSafe(selectedEmp.value.user_id),
     }).then(res => {
-        console.log('=== openModal; getRecords === res : ', res);
 
         if(res.list.length > 0) {
             let fileList = [];
@@ -702,13 +706,13 @@ let getAdditionalData = () => {
 }
 
 let openModal = async(emp: { [key: string]: any }) => {
+    isModalOpen.value = true;
     selectedEmp.value = emp;
     selectedEmpOriginal = { ...emp };
     console.log(selectedEmpOriginal)
     selectedEmpTags.value.emp_dvs = emp.division;
     selectedEmpTags.value.emp_pst = emp.position;
-    isModalOpen.value = true;
-    uploadFile.value = null;
+    uploadFile.value = [];
     removeFileList.value = [];
 
     if(emp.picture) {
@@ -734,13 +738,19 @@ let closeModal = () => {
 };
 
 let getEmployee = () => {
-    skapi.getUsers().then(res => {        
+    skapi.getUsers().then(async(res) => {        
         empListType.value = '직원목록';
 
         selectedList.value = [];
 
-        employee.value = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
-        displayEmployee(res.list);
+
+        const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
+        const result = await getEmpsDvs(userList);
+        
+        const list = result.filter(emp => emp.approved.includes('approved'));
+        
+        employee.value = list;
+        displayEmployee(result);
     });
 }
 
