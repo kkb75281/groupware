@@ -179,7 +179,7 @@ let post_params = {
     remove_bin: []
 }
 
-let editDivision = (e) => {
+let editDivision = async(e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
@@ -245,15 +245,18 @@ let editDivision = (e) => {
         })
     }
 
-    skapi.postRecord(formData, post_params).then((r) => {
-        let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+    try {
+        let result = await skapi.postRecord(formData, post_params);
 
-        sessionDivisions[r.record_id] = r;
+        sessionDivisions[result.record_id] = result;
         window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
 
-        window.alert('등록되었습니다.');
+        window.alert('부서 수정이 완료되었습니다.');
         router.push('/admin/list-divisions');
-    });
+    } catch (error) {
+        window.alert('부서 수정이 실패하였습니다.');
+        throw error;
+    }
 }
 </script>
 
