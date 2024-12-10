@@ -206,6 +206,7 @@ const getAdditionalData = () => {
         },
         reference: "[emp_additional_data]" + makeSafe(user.user_id),
     }).then(res => {
+        console.log('== getAdditionalData == res : ', res);
         if(res.list.length === 0) {
             return;
         } else {
@@ -452,19 +453,23 @@ let registerMypage = async(e) => {
                     unique_id: "[emp_additional_data]" + makeSafe(user.user_id),
                 }
             });
-
+            
             backupUploadFile.value = [...uploadFile.value];
+            document.querySelector('input[name="additional_data"]').value = '';
+            fileNames.value = [];
         }
     }
 
     if(removeFileList.value.length) {
-        skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
+        await skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
             removeFileList.value = [];
         });
     }
 
     // 프로필 정보를 업데이트
-    await skapi.updateProfile(e).then(getAdditionalData);
+    await skapi.updateProfile(e);
+
+    getAdditionalData();
 
     // fileNames.value = [];
 
