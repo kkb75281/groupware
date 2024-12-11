@@ -442,18 +442,18 @@ const createReference = async (data) => {
     const { user_id_safe, user_division_name, user_id } = data;
 
     const params = {
-      unique_id: "[emp_additional_data]" + user_id_safe,
-      table: {
-          name: 'emp_access_ref',
-          access_group: 99
-      },
-      index: {
-          name: 'user_id',
-          value: user_id_safe
-      },
-      reference: {
-          can_remove_reference: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
-      }
+        unique_id: "[emp_additional_data]" + user_id_safe,
+        table: {
+            name: 'emp_access_ref',
+            access_group: 99
+        },
+        index: {
+            name: 'user_id',
+            value: user_id_safe
+        },
+        source: {
+            can_remove_referencing_records: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
+        }
     }
 
     const res = await postRecord(null, params);
@@ -481,9 +481,7 @@ const createReference = async (data) => {
               name: 'emp_additional_data',
               access_group: 99
           },
-          reference: {
-              unique_id: "[emp_additional_data]" + user_id_safe,
-          }
+          reference: "[emp_additional_data]" + user_id_safe,
         }
 
         await postRecord(formData, params);
