@@ -11,6 +11,9 @@ import { watch } from 'vue';
 const router = useRouter();
 const route = useRoute();
 
+let isadmin = user.access_group > 98;
+let onlyAdminRoute = ['admin', 'add-employee', 'add-divisions', 'edit-divisions', 'list-divisions']
+
 watch(loaded, async(nv) => {
     if (!nv) return;
 
@@ -19,6 +22,10 @@ watch(loaded, async(nv) => {
     if(route.name === 'mailing' && (iwaslogged.value || !iwaslogged.value)) {
         return;
     }
+
+    // if(nv && iwaslogged.value && onlyAdminRoute.includes(route.name) && !isadmin) {
+    //     await router.push('/');
+    // }
 
     if(!iwaslogged.value && Object.keys(user).length === 0) {
         await router.push('/login');
