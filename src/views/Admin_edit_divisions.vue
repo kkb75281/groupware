@@ -9,89 +9,89 @@ hr
         div(style="text-align:center;")
             .image
                 img#profile-img(:src="uploadSrc.division_logo" alt="Company Logo")
-                label(for="division_logo")
+                label(v-if="isMyRecord" for="division_logo")
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_logo(ref="division_logo_input" type="file" name="division_logo" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                input#division_logo(ref="division_logo_input" type="file" name="division_logo" accept="image/*" :disabled="!isMyRecord" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
         br
 
         .input-wrap
             p.label.essential 부서명
-            input(v-model="record.data.division_name" type="text" name="division_name" placeholder="부서명을 입력해주세요." required)
+            input(v-model="record.data.division_name" :disabled="!isMyRecord" type="text" name="division_name" required)
         
         br
 
         .input-wrap
             p.label 설명
-            input(v-model="record.data.division_description" type="text" name="division_description" placeholder="부서 설명을 입력해주세요.")
+            input(v-model="record.data.division_description" :disabled="!isMyRecord" type="text" name="division_description")
 
         br
 
         .input-wrap
             p.label 대표자명
-            input(v-model="record.data.division_ceo_name" type="text" name="division_ceo_name" placeholder="대표자명을 입력해주세요.")
+            input(v-model="record.data.division_ceo_name" :disabled="!isMyRecord" type="text" name="division_ceo_name")
 
         br
 
         .input-wrap
             p.label 주소
-            input(v-model="record.data.division_address" type="text" name="division_address" placeholder="예) 서울시 마포구")
+            input(v-model="record.data.division_address" :disabled="!isMyRecord" type="text" name="division_address")
 
         br
 
         .input-wrap
             p.label 사업자번호
-            input(v-model="record.data.division_business_code" type="text" name="division_business_code" placeholder="예) 012-34-56789")
+            input(v-model="record.data.division_business_code" :disabled="!isMyRecord" type="text" name="division_business_code")
 
         br
 
         .input-wrap
             p.label 법인번호
-            input(v-model="record.data.division_corporate_number" type="text" name="division_corporate_number" placeholder="예) 012345-6789012")
+            input(v-model="record.data.division_corporate_number" :disabled="!isMyRecord" type="text" name="division_corporate_number")
 
         br
 
         .input-wrap
             p.label 업태
-            input(v-model="record.data.division_business_type" type="text" name="division_business_type" placeholder="업태를 입력해주세요.")
+            input(v-model="record.data.division_business_type" :disabled="!isMyRecord" type="text" name="division_business_type")
 
         br
 
         .input-wrap
             p.label 종목
-            input(v-model="record.data.division_business_item" type="text" name="division_business_item" placeholder="종목을 입력해주세요.")
+            input(v-model="record.data.division_business_item" :disabled="!isMyRecord" type="text" name="division_business_item")
 
         br
 
         .input-wrap
             p.label 설립일
-            input(v-model="record.data.division_establishment_date" type="text" name="division_establishment_date" placeholder="예) 2024. 01. 01")
+            input(v-model="record.data.division_establishment_date" :disabled="!isMyRecord" type="text" name="division_establishment_date")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(v-model="record.data.division_phone_number" type="text" name="division_phone_number" placeholder="예) +821012345678")
+            input(v-model="record.data.division_phone_number" :disabled="!isMyRecord" type="text" name="division_phone_number")
 
         br
 
         .input-wrap
             p.label 이메일
-            input(v-model="record.data.division_email" type="text" name="division_email" placeholder="예) user@email.com")
+            input(v-model="record.data.division_email" :disabled="!isMyRecord" type="text" name="division_email")
 
         br
 
         .input-wrap
             p.label 팩스번호
-            input(v-model="record.data.division_fax" type="text" name="division_fax" placeholder="예) 070-1234-5678")
+            input(v-model="record.data.division_fax" :disabled="!isMyRecord" type="text" name="division_fax")
 
         br
 
         .input-wrap
             p.label 홈페이지
-            input(v-model="record.data.division_homepage" type="text" name="division_homepage" placeholder="예) https://www.sitename.com/")
+            input(v-model="record.data.division_homepage" :disabled="!isMyRecord" type="text" name="division_homepage")
 
         br
 
@@ -99,23 +99,23 @@ hr
         .image-wrap(style="text-align:center;")
             .image.seal
                 img#used-img(:src="uploadSrc.division_used_seal" alt="Company Used Seal")
-                label(for="division_used_seal")
+                label(v-if="isMyRecord" for="division_used_seal")
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_used_seal(ref="division_used_seal_input" type="file" name="division_used_seal" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                input#division_used_seal(ref="division_used_seal_input" type="file" name="division_used_seal" accept="image/*" :disabled="!isMyRecord" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
             .image.seal
                 img#official-img(:src="uploadSrc.division_official_seal" alt="Company Used Seal")
-                label(for="division_official_seal")
+                label(v-if="isMyRecord" for="division_official_seal")
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_official_seal(ref="division_official_seal_input" type="file" name="division_official_seal" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                input#division_official_seal(ref="division_official_seal_input" type="file" name="division_official_seal" accept="image/*" :disabled="!isMyRecord" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
         br
 
-        .button-wrap
+        .button-wrap(v-if="isMyRecord")
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
 
@@ -130,6 +130,7 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { skapi } from '@/main';
+import { user } from '@/user';
 import { openModal, croppedImages, uploadSrc, currentImageSrc, deleteList, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
@@ -148,6 +149,7 @@ if (!record_id) {
 
 let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
 let record = sessionDivisions[record_id];
+let isMyRecord = record.user_id === user.user_id;
 let originalDivisionName = record.data.division_name;
 let loading = ref(true);
 let bin = {};
@@ -210,8 +212,6 @@ let editDivision = async(e) => {
         });
     }
     
-    console.log('post_params', post_params)
-
     if(originalDivisionName !== ext.data.division_name) {
         let changeDivisionName = {};
 
