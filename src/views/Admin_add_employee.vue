@@ -96,7 +96,7 @@ hr
             button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 취소
             button.btn(type="submit") 등록
 
-CropImage(:open="openModal" :imageSrc="currnetImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+CropImage(:open="openModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
 br  
 br  
@@ -107,6 +107,7 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { skapi } from '@/main';
+import { openModal, croppedImages, uploadSrc, currentImageSrc, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
 import Loading from '@/components/loading.vue';
@@ -164,56 +165,6 @@ skapi.getRecords({
         document.querySelector('select[name="division"]').disabled = false;
     }
 });
-
-let openModal = ref(false);
-let croppedImages = ref({});
-let currentTargetId = ref('');
-let currnetImageSrc = ref('');
-let uploadSrc = ref({
-    init_profile_pic: '',
-});
-
-let openCropImageDialog = (e) => {
-    const file = e.target.files[0];
-    
-    if (file) {
-        const fileURL = URL.createObjectURL(file);
-        currnetImageSrc.value = fileURL;
-        currentTargetId.value = e.target.id;
-        uploadSrc.value[currentTargetId.value] = fileURL;
-        openModal.value = true;
-    }
-    if(init_profile_pic_input) {
-        init_profile_pic_input.value.value = '';
-    }
-}
-
-let closeCropImageDialog = () => {
-    uploadSrc.value[currentTargetId.value] = null;
-    openModal.value = false;
-}
-
-let setCroppedImage = async(croppedImage) => {
-    if(currentTargetId.value) {
-        try {
-            // 미리보기 이미지 경로 업데이트
-            uploadSrc.value[currentTargetId.value] = croppedImage;
-
-            // Blob URL에서 Blob 객체를 가져오기
-            const response = await fetch(croppedImage);
-            const blob = await response.blob();
-
-            // Blob 객체를 저장 (서버 전송용)
-            croppedImages.value[currentTargetId.value] = blob;
-
-            openModal.value = false;
-            currnetImageSrc.value = '';
-            currentTargetId.value = '';
-        } catch (error) {
-            console.error('Error processing Blob URL:', error);
-        }
-    }
-}
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {

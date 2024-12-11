@@ -85,17 +85,7 @@ let sessionDivisions = window.sessionStorage.getItem('divisions');
 if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
     loading.value = true;
 
-    skapi.getRecords({
-        table: {
-            name: 'divisions',
-            access_group: 99
-        }
-    },
-    ).then(response => {
-        divisions.value = response.list;
-        displayDivisions(response.list);
-        loading.value = false;
-    });
+    getDivisions();
 } else {
     if(sessionDivisions === 'no data') {
         divisions.value = 'no data';
@@ -104,13 +94,24 @@ if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
     }
 }
 
-// if(Object.keys(divisions.value)) {
-//     Object.keys(divisions.value).forEach((key, index) => {
-//         let specialKey = `DVS_${index}`;
-//         divisionNameList.value[specialKey] = divisions.value[key].data.division_name;
+async function getDivisions() {
+    try {
+        let res = await skapi.getRecords({
+            table: {
+                name: 'divisions',
+                access_group: 99
+            }
+        });
 
-//     });
-// }
+        divisions.value = res.list;
+        displayDivisions(res.list);
+    } catch (error) {
+        alert('부서 정보를 불러오는데 실패하였습니다. 관리자에게 문의해주세요.');
+        throw error;
+    } finally {
+        loading.value = false;
+    }
+}
 
 let displayDivisions = (divisions) => {
     let saveSession = {};
@@ -205,16 +206,7 @@ let deleteDivision = async () => {
         })
     })
 
-    skapi.getRecords({
-        table: {
-            name: 'divisions',
-            access_group: 99
-        }
-    },
-    ).then(response => {
-        divisions.value = response.list;
-        displayDivisions(response.list);
-    });
+    getDivisions();
 
     if (isSuccess.length > 0) {
         alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);

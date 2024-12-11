@@ -63,7 +63,7 @@ const router = createRouter({
           children: [
             {
               path: '/mypage',
-              name: 'mypage-home',
+              name: 'mypage',
               component: Mypage
             },
             {
@@ -96,7 +96,7 @@ const router = createRouter({
           children: [
             {
               path: '/admin',
-              name: 'admin-home',
+              name: 'admin',
               component: Admin
             },
             {
