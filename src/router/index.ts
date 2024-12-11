@@ -6,7 +6,7 @@ import Dashboard from '@/views/Dashboard.vue';
 import Mypage_main from '@/views/Mypage_main.vue';
 import Mypage from '@/views/Mypage.vue';
 import Mypage_edit_myinfo from '@/views/Mypage_edit_myinfo.vue';
-import Mypage_list_data from '@/views/Mypage_list_data.vue';
+import Mypage_list_data from '@/views/backup/Mypage_list_data.vue';
 import Change_password from '@/views/Change_password.vue';
 import Profile from '@/views/Profile.vue';
 import Admin from '@/views/Admin.vue';
@@ -124,12 +124,12 @@ const router = createRouter({
             //   name: 'list-employee',
             //   component: Admin_list_employee,
             // },
-            {
-              path: 'employee-data/:userId',
-              name: 'employee-data',
-              component: () => import('@/views/Employee_data.vue'),
-              props: true,
-            },
+            // {
+            //   path: 'employee-data/:userId',
+            //   name: 'employee-data',
+            //   component: () => import('@/views/Employee_data.vue'),
+            //   props: true,
+            // },
           ],
         },
         {

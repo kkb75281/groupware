@@ -270,7 +270,7 @@ if(user.picture) {
         console.log('== getFile == err : ', err)
     });
 } else {
-    uploadSrc.value.profile_pic = null;
+    // uploadSrc.value.profile_pic = null;
 }
 
 let sendEmail = async() => {
@@ -343,6 +343,10 @@ let registerMypage = async(e) => {
     let profile_pic_postParams = {};
     let samePerson = false;
 
+    console.log(uploadSrc.value.profile_pic);
+    console.log(croppedImages.value['profile_pic'])
+    console.log(_el_picture_input.value)
+
     if(user.user_id === getFileInfo.value?.uploader) {
         samePerson = true;
         profile_pic_postParams.record_id = getFileInfo.value.record_id;
@@ -355,7 +359,12 @@ let registerMypage = async(e) => {
         };
     }
 
-    if(croppedImages.value['profile_pic']) {
+    if(uploadSrc.value.profile_pic) {
+        _el_picture_input.value = uploadSrc.value.profile_pic.split('?')[0];  // 사진 수정 안할때 기존 사진을 그대로 넣어줌
+    }
+
+    if(croppedImages.value['profile_pic']) {    // 사진 수정할때 새로운 사진을 넣어줌
+        console.log('here')
         // 새로 선택한 사진이 있고 본인이 이전에 올린 사진이 있을 경우 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
         if(samePerson && getFileInfo.value?.uploader === user.user_id) {
             profile_pic_postParams.remove_bin = null;
@@ -371,9 +380,11 @@ let registerMypage = async(e) => {
         // 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
         let picRec = await skapi.postRecord(imgFormData, profile_pic_postParams);
         _el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
+        console.log(picRec)
+        console.log(_el_picture_input.value)
     }
 
-    // 기본 이미지로 변경했을 경우
+    // 기존 사진을 기본 이미지로 변경했을 경우
     if(uploadSrc.value.profile_pic === null && samePerson) {
         _el_picture_input.value = null;
         await skapi.deleteRecords({record_id: getFileInfo.value.record_id});
@@ -411,8 +422,8 @@ let registerMypage = async(e) => {
         console.log('false == registerMypage == uploadFile.value : ', uploadFile.value);
     }
 
-    document.querySelector('input[name="additional_data"]').value = '';
-    fileNames.value = [];
+    // document.querySelector('input[name="additional_data"]').value = '';
+    // fileNames.value = [];
 
     if(removeFileList.value.length) {
         await skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
