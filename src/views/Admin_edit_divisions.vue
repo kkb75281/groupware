@@ -19,79 +19,79 @@ hr
 
         .input-wrap
             p.label.essential 부서명
-            input(v-model="record.data.division_name" :disabled="!isMyRecord" type="text" name="division_name" required)
+            input(v-model="record.data.division_name" :disabled="!isMyRecord" type="text" name="division_name" :placeholder="isMyRecord ? '부서명을 입력해주세요.' : ''" required)
         
         br
 
         .input-wrap
             p.label 설명
-            input(v-model="record.data.division_description" :disabled="!isMyRecord" type="text" name="division_description")
+            input(v-model="record.data.division_description" :disabled="!isMyRecord" type="text" name="division_description" :placeholder="isMyRecord ? '부서 설명을 입력해주세요.' : ''")
 
         br
 
         .input-wrap
             p.label 대표자명
-            input(v-model="record.data.division_ceo_name" :disabled="!isMyRecord" type="text" name="division_ceo_name")
+            input(v-model="record.data.division_ceo_name" :disabled="!isMyRecord" type="text" name="division_ceo_name" :placeholder="isMyRecord ? '대표자명을 입력해주세요.' : ''")
 
         br
 
         .input-wrap
             p.label 주소
-            input(v-model="record.data.division_address" :disabled="!isMyRecord" type="text" name="division_address")
+            input(v-model="record.data.division_address" :disabled="!isMyRecord" type="text" name="division_address" :placeholder="isMyRecord ? '예) 서울시 마포구' : ''")
 
         br
 
         .input-wrap
             p.label 사업자번호
-            input(v-model="record.data.division_business_code" :disabled="!isMyRecord" type="text" name="division_business_code")
+            input(v-model="record.data.division_business_code" :disabled="!isMyRecord" type="text" name="division_business_code" :placeholder="isMyRecord ? '예) 012-34-56789' : ''")
 
         br
 
         .input-wrap
             p.label 법인번호
-            input(v-model="record.data.division_corporate_number" :disabled="!isMyRecord" type="text" name="division_corporate_number")
+            input(v-model="record.data.division_corporate_number" :disabled="!isMyRecord" type="text" name="division_corporate_number" :placeholder="isMyRecord ? '예) 012345-6789012' : ''")
 
         br
 
         .input-wrap
             p.label 업태
-            input(v-model="record.data.division_business_type" :disabled="!isMyRecord" type="text" name="division_business_type")
+            input(v-model="record.data.division_business_type" :disabled="!isMyRecord" type="text" name="division_business_type" :placeholder="isMyRecord ? '예) 업태를 입력해주세요.' : ''")
 
         br
 
         .input-wrap
             p.label 종목
-            input(v-model="record.data.division_business_item" :disabled="!isMyRecord" type="text" name="division_business_item")
+            input(v-model="record.data.division_business_item" :disabled="!isMyRecord" type="text" name="division_business_item" :placeholder="isMyRecord ? '예) 종목을 입력해주세요.' : ''")
 
         br
 
         .input-wrap
             p.label 설립일
-            input(v-model="record.data.division_establishment_date" :disabled="!isMyRecord" type="text" name="division_establishment_date")
+            input(v-model="record.data.division_establishment_date" :disabled="!isMyRecord" type="text" name="division_establishment_date" :placeholder="isMyRecord ? '예) 2024. 01. 01' : ''")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(v-model="record.data.division_phone_number" :disabled="!isMyRecord" type="text" name="division_phone_number")
+            input(v-model="record.data.division_phone_number" :disabled="!isMyRecord" type="text" name="division_phone_number" :placeholder="isMyRecord ? '예) +821012345678' : ''")
 
         br
 
         .input-wrap
             p.label 이메일
-            input(v-model="record.data.division_email" :disabled="!isMyRecord" type="text" name="division_email")
+            input(v-model="record.data.division_email" :disabled="!isMyRecord" type="text" name="division_email" :placeholder="isMyRecord ? '예) user@email.com' : ''")
 
         br
 
         .input-wrap
             p.label 팩스번호
-            input(v-model="record.data.division_fax" :disabled="!isMyRecord" type="text" name="division_fax")
+            input(v-model="record.data.division_fax" :disabled="!isMyRecord" type="text" name="division_fax" :placeholder="isMyRecord ? '예) 070-1234-5678' : ''")
 
         br
 
         .input-wrap
             p.label 홈페이지
-            input(v-model="record.data.division_homepage" :disabled="!isMyRecord" type="text" name="division_homepage")
+            input(v-model="record.data.division_homepage" :disabled="!isMyRecord" type="text" name="division_homepage" :placeholder="isMyRecord ? '예) https://www.sitename.com/' : ''")
 
         br
 
@@ -115,9 +115,10 @@ hr
 
         br
 
-        .button-wrap(v-if="isMyRecord")
+        .button-wrap
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
-            button.btn(type="submit") 등록
+            template(v-if="isMyRecord")
+                button.btn(type="submit") 등록
 
 CropImage(:open="openModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 

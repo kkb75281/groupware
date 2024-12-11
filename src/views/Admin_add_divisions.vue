@@ -44,13 +44,13 @@ hr
 
         .input-wrap
             p.label 사업자번호
-            input(type="text" name="division_business_code" placeholder="사업자번호를 입력해주세요.")
+            input(type="text" name="division_business_code" placeholder="예) 012-34-56789")
 
         br
 
         .input-wrap
             p.label 법인번호
-            input(type="text" name="division_corporate_number" placeholder="법인번호를 입력해주세요.")
+            input(type="text" name="division_corporate_number" placeholder="예) 012345-6789012")
 
         br
 
@@ -86,7 +86,7 @@ hr
 
         .input-wrap
             p.label 팩스번호
-            input(type="text" name="division_fax" placeholder="팩스번호를 입력해주세요.")
+            input(type="text" name="division_fax" placeholder="예) 070-1234-5678")
 
         br
 
