@@ -399,7 +399,6 @@ watch(empListType, async(nv) => {
                 });
             } else {
                 sessionEmployee = JSON.parse(empLists);
-
                 employee.value = sessionEmployee;
             }
         }
