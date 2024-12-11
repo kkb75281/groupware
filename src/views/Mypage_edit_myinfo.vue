@@ -241,17 +241,17 @@ if(!user.approved.includes('by_master')) {
 }
 
 let getProfileImage = async() => {
-    await skapi.getFile(user.picture, {
-        dataType: 'endpoint',
-    })
-    .then((res) => {  
+    try {
+        let res = await skapi.getFile(user.picture, {
+            dataType: 'endpoint',
+        });
+    
         profileImage.value = res;
         uploadSrc.value.profile_pic = res;
-    })
-    .catch((err) => {
+    } catch (err) {
         window.alert('프로필 사진을 불러오는데 실패했습니다.');
         throw err;
-    });
+    }
 }
 
 if(user.picture) {
@@ -269,6 +269,8 @@ if(user.picture) {
     }).catch(err => {
         console.log('== getFile == err : ', err)
     });
+} else {
+    uploadSrc.value.profile_pic = null;
 }
 
 let sendEmail = async() => {
