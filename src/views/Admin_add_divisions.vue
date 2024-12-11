@@ -131,7 +131,7 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { nextTick, onMounted, ref } from 'vue';
 import { skapi } from '@/main';
-import { openModal, croppedImages, uploadSrc, currentImageSrc, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { openModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
 
@@ -246,9 +246,7 @@ let resigterComp = (e) => {
 }
 
 onMounted(() => {
-    uploadSrc.value.division_logo = '';
-    uploadSrc.value.division_used_seal = '';
-    uploadSrc.value.division_official_seal = '';
+    resetCropImage();
 })
 </script>
 
