@@ -310,14 +310,11 @@ let callParams = computed(() => {
     }
 });
 
-watch(
-    () => route.query.empListType,
-    (newType) => {
-        if (newType) {
-            empListType.value = newType;
-        }
+watch(() => route.query.empListType, (newType) => {
+    if (newType) {
+        empListType.value = newType;
     }
-);
+});
 
 watch(searchFor, (nv) => {
     if (nv) {
@@ -391,7 +388,7 @@ watch(empListType, async(nv) => {
         } else if (nv === '초청여부') {
             const empLists = window.sessionStorage.getItem('inviteEmployee');
 
-            if (!empLists) {
+            if (!empLists || empLists === 'undefined') {
                 loading.value = true;
 
                 skapi.getInvitations().then(async(res) => {
@@ -400,7 +397,6 @@ watch(empListType, async(nv) => {
 
                     loading.value = false;
                 });
-
             } else {
                 sessionEmployee = JSON.parse(empLists);
 
