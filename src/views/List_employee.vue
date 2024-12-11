@@ -391,7 +391,7 @@ watch(empListType, async(nv) => {
         } else if (nv === '초청여부') {
             const empLists = window.sessionStorage.getItem('inviteEmployee');
 
-            if (!empLists) {
+            if (!empLists || empLists === 'undefined') {
                 loading.value = true;
 
                 skapi.getInvitations().then(async(res) => {
@@ -403,7 +403,6 @@ watch(empListType, async(nv) => {
 
             } else {
                 sessionEmployee = JSON.parse(empLists);
-
                 employee.value = sessionEmployee;
             }
         }
