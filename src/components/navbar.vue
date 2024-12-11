@@ -18,7 +18,7 @@ nav#navbar(ref="navbar")
                     router-link.router(:to="item.to")
                         .icon
                             svg
-                                use(:xlink:href="`@/assets/icon/material-icon.svg#icon-${item.icon}`")
+                                use(:xlink:href="`src/assets/icon/material-icon.svg#icon-${item.icon}`")
                         .text 
                             span {{ item.text }}
                             svg.arrow(v-if="item.child" :class="{'down': item.child.name === activeMenu}")
