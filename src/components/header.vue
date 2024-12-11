@@ -326,6 +326,7 @@ watch(() => route.path, (newPath, oldPath) => {
 			background-color: var(--gray-color-100);
 			border-radius: 50%;
 			overflow: hidden;
+			flex: none;
 		}
 
 		.content {
@@ -348,6 +349,7 @@ watch(() => route.path, (newPath, oldPath) => {
 			p {
 				margin-top: 0.5rem;
 				font-size: 0.8rem;
+				word-break: break-all;
 			}
 
 			.ip {
@@ -564,13 +566,13 @@ watch(() => route.path, (newPath, oldPath) => {
 	}
 }
 
-// @media (max-width: 400px) {
-// 	#header {
-// 		.btn-profile {
-// 			.user-name {
-// 				display: none;
-// 			}
-// 		}
-// 	}
-// }
+@media (max-width: 400px) {
+	#popup {
+		&.profile {
+			right: 50%;
+        	transform: translateX(50%);
+			width: calc(100% - 16px);
+		}
+	}
+}
 </style>
