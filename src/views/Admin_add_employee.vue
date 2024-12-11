@@ -107,7 +107,7 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
-import { openModal, croppedImages, uploadSrc, currentImageSrc, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { openModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
 import Loading from '@/components/loading.vue';
@@ -173,10 +173,10 @@ skapi.getRecords({
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
-  let target = e.target;
-  if (target.files) {
-    fileNames.value = Array.from(target.files).map(file => file.name);
-  }
+    let target = e.target;
+    if (target.files) {
+        fileNames.value = Array.from(target.files).map(file => file.name);
+    }
 };
 
 function makeSafe(str) {
@@ -341,228 +341,228 @@ function makeSafe(str) {
 // }
 
 const inviteUserMail = async (e) => {
-  return await skapi.inviteUser(e, {confirmation_url: '/mailing'});
+    return await skapi.inviteUser(e, {confirmation_url: '/mailing'});
 }
 
 const getInvitations = async () => {
-  return await skapi.getInvitations();
+    return await skapi.getInvitations();
 }
 
 const postRecord = async (data, params) => {
-  return await skapi.postRecord(data, params);
+    return await skapi.postRecord(data, params);
 }
 
 const empProfileUpload = async () => {
-  // if (!croppedImages.value['init_profile_pic']) return;
+    // if (!croppedImages.value['init_profile_pic']) return;
 
-  try {
-    const email = document.querySelector('input[name=email]').value;
-    const makeSafeEmail = makeSafe(email);
-    const tableName = 'init_profile_pic' + makeSafeEmail;
+    try {
+        const email = document.querySelector('input[name=email]').value;
+        const makeSafeEmail = makeSafe(email);
+        const tableName = 'init_profile_pic' + makeSafeEmail;
 
-    let initPicParams = {
-        table: {
-            name: 'init_profile_pic' + makeSafe(document.querySelector('input[name=email]').value),
-            access_group: 1
-        },
-    };
+        let initPicParams = {
+            table: {
+                name: 'init_profile_pic' + makeSafe(document.querySelector('input[name=email]').value),
+                access_group: 1
+            },
+        };
 
-    const croppedImage = croppedImages.value['init_profile_pic']
-    const profileName = 'init_profile_pic.png';
-    const fileType = croppedImage.type
+        const croppedImage = croppedImages.value['init_profile_pic']
+        const profileName = 'init_profile_pic.png';
+        const fileType = croppedImage.type
 
-    const croppedFile = new File([croppedImage], profileName, {
-        type: fileType,
-    });
+        const croppedFile = new File([croppedImage], profileName, {
+            type: fileType,
+        });
 
-    const imgFormData = new FormData();
-    imgFormData.append('init_profile_pic', croppedFile);
+        const imgFormData = new FormData();
+        imgFormData.append('init_profile_pic', croppedFile);
 
-    const userInitProfilePic = await postRecord(imgFormData, initPicParams)
-    _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
-    console.log(_el_picture_input.value)
-  } catch (error) {
-    console.log('== empProfileUpload : error == : ', error)
-  }
+        const userInitProfilePic = await postRecord(imgFormData, initPicParams)
+        _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
+        console.log(_el_picture_input.value)
+    } catch (error) {
+        console.log('== empProfileUpload : error == : ', error)
+    }
 }
 
 // 직원의 부서를 등록한다. 직책(직급) 은 여러개일수 있으니 tag로 사용한다. user_id는 index로 사용하여 직원의 직책을 찾을수 있다.
 const registerEmpDivision = async (data) => {
-  if (!data) return;
+    if (!data) return;
 
-  try {
-    const { user_id_safe, user_division_name } = data;
+    try {
+        const { user_id_safe, user_division_name } = data;
 
-    const params = {
-      unique_id: "[emp_division]" + user_id_safe,
-      table: {
-          name: 'emp_division',
-          access_group: 1
-      },
-      tags: ["[emp_pst]" + _el_position.value, "[emp_id]" + user_id_safe, "[emp_dvs]" + user_division_name] 
+        const params = {
+        unique_id: "[emp_division]" + user_id_safe,
+        table: {
+            name: 'emp_division',
+            access_group: 1
+        },
+        tags: ["[emp_pst]" + _el_position.value, "[emp_id]" + user_id_safe, "[emp_dvs]" + user_division_name] 
+        }
+
+
+        return await postRecord(null, params);
+    } catch (error) {
+        console.log('== registerEmpDivision : error == : ', error)
     }
-
-
-    return await postRecord(null, params);
-  } catch (error) {
-    console.log('== registerEmpDivision : error == : ', error)
-  }
 } 
 
 // 현재 직원 부서 등록 (current용)
 const currentEmpDivision = async (data) => {
-  if (!data) return;
+    if (!data) return;
 
-  try {
-    const { user_id, user_id_safe, user_division_name, user_name } = data;
+    try {
+        const { user_id, user_id_safe, user_division_name, user_name } = data;
 
-    const params = {
-      unique_id: "[emp_position_current]" + user_id_safe,
-      table: {
-          name: 'emp_position_current',
-          access_group: 1
-      },
-      index: {
-          name: user_division_name + '.' + _el_position.value,
-          value: user_name
-      }
+        const params = {
+        unique_id: "[emp_position_current]" + user_id_safe,
+        table: {
+            name: 'emp_position_current',
+            access_group: 1
+        },
+        index: {
+            name: user_division_name + '.' + _el_position.value,
+            value: user_name
+        }
+        }
+
+        return await postRecord({ user_id }, params)
+    } catch (error) {
+        console.log('== currentEmpDivision : error == : ', error)
     }
-
-    return await postRecord({ user_id }, params)
-  } catch (error) {
-    console.log('== currentEmpDivision : error == : ', error)
-  }
 }
 
 const grantPrivateRecordAccess = (data) => {
-  if (!data) return;
+    if (!data) return;
 
-  return skapi.grantPrivateRecordAccess(data);
+    return skapi.grantPrivateRecordAccess(data);
 }
 
 // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
 const createReference = async (data) => {
-  if (!data) return;
+    if (!data) return;
 
-  try {
-    const { user_id_safe, user_division_name, user_id } = data;
+    try {
+        const { user_id_safe, user_division_name, user_id } = data;
 
-    const params = {
-        unique_id: "[emp_additional_data]" + user_id_safe,
-        table: {
-            name: 'emp_access_ref',
-            access_group: 99
-        },
-        index: {
-            name: 'user_id',
-            value: user_id_safe
-        },
-        source: {
-            can_remove_referencing_records: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
-        }
-    }
-
-    const res = await postRecord(null, params);
-
-    const access_group_value = document.querySelector('select[name=access_group]').value;
-    const files = document.querySelector('input[name=additional_data]').files;
-
-    // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
-    if(access_group_value !== '99') {
-      // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
-      grantPrivateRecordAccess({
-          record_id: res.record_id,
-          user_id
-      });
-    }
-
-    if (files.length) {
-      for(let file of files) {
-        const formData = new FormData();
-
-        formData.append('additional_data', file);
-          
         const params = {
-          table: {
-              name: 'emp_additional_data',
-              access_group: 99
-          },
-          reference: "[emp_additional_data]" + user_id_safe,
+            unique_id: "[emp_additional_data]" + user_id_safe,
+            table: {
+                name: 'emp_access_ref',
+                access_group: 99
+            },
+            index: {
+                name: 'user_id',
+                value: user_id_safe
+            },
+            source: {
+                can_remove_referencing_records: true // 마스터가 삭제 해당 레코드 삭제시, reference된 모든 레코드들도 지워지도록 한다.
+            }
         }
 
-        await postRecord(formData, params);
-      }
+        const res = await postRecord(null, params);
+
+        const access_group_value = document.querySelector('select[name=access_group]').value;
+        const files = document.querySelector('input[name=additional_data]').files;
+
+        // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
+        if(access_group_value !== '99') {
+        // 생성된 레코드에 대한 접근권한을 부여한다. (레코드를 reference해서 올리면 직원과 마스터만 볼수 있다)
+        grantPrivateRecordAccess({
+            record_id: res.record_id,
+            user_id
+        });
+        }
+
+        if (files.length) {
+        for(let file of files) {
+            const formData = new FormData();
+
+            formData.append('additional_data', file);
+            
+            const params = {
+            table: {
+                name: 'emp_additional_data',
+                access_group: 99
+            },
+            reference: "[emp_additional_data]" + user_id_safe,
+            }
+
+            await postRecord(formData, params);
+        }
+        }
+    } catch (error) {
+        console.log('== createReference : error == : ', error)
     }
-  } catch (error) {
-    console.log('== createReference : error == : ', error)
-  }
 }
 
 // 직원등록 함수
 const registerEmp = async (e) => {  
-  try {
-    // 입력창을 비활성화한다.
-    document.querySelectorAll('form input').forEach(el => el.disabled = true);
-    document.querySelectorAll('form button').forEach(el => el.disabled = true);
+    try {
+        // 입력창을 비활성화한다.
+        document.querySelectorAll('form input').forEach(el => el.disabled = true);
+        document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
-    if(croppedImages.value['init_profile_pic']) {
-      await empProfileUpload();
+        if(croppedImages.value['init_profile_pic']) {
+        await empProfileUpload();
+        }
+
+        // 직원을 초대한다.
+        const added = await inviteUserMail(e);
+        // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
+
+        if (!added) {
+        console.log('직원 초대에 실패하였습니다.');
+        }
+
+        // extract user id
+        const user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
+        const user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
+
+        const user_name = document.querySelector('input[name=name]').value;
+        const user_division_name = document.querySelector('select[name=division]').value;
+
+        
+        // 직원의 부서를 등록한다.
+        await registerEmpDivision({ user_id_safe, user_division_name });
+        
+        // 현재 직원 부서 등록
+        await currentEmpDivision({ user_id, user_id_safe, user_division_name, user_name });
+        
+        // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
+        await createReference({ user_id_safe, user_division_name, user_id });
+
+        const res = getInvitations();
+
+        if (!res) {
+        return console.log('실패');
+        }
+
+        window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
+        window.alert('직원 등록이 완료되었습니다.');
+    } catch (error) {
+        window.alert('직원 등록에 실패하였습니다. 다시 시도해주세요.' + error.message);
+        document.querySelector('form #profile-img').src = '';
+        document.querySelectorAll('form select').forEach(el => el.selectedIndex = 0);
+        document.querySelectorAll('form button').forEach(el => el.disabled = false);
+        document.querySelectorAll('form input').forEach(el => {
+            el.disabled = false;
+            el.value = '';
+        });
+        
+        throw error;
+    } finally {
+        router.push({
+        path: '/list-employee',
+        query: { empListType: '초청여부' }
+        });
     }
-
-    // 직원을 초대한다.
-    const added = await inviteUserMail(e);
-    // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
-
-    if (!added) {
-      console.log('직원 초대에 실패하였습니다.');
-    }
-
-    // extract user id
-    const user_id = added.split(' ').pop().slice(0, -1); // user_id 추출
-    const user_id_safe = makeSafe(user_id); // tag 및 index는 특수문자를 사용할 수 없다. (_ 는 사용할수있다)
-
-    const user_name = document.querySelector('input[name=name]').value;
-    const user_division_name = document.querySelector('select[name=division]').value;
-
-    
-    // 직원의 부서를 등록한다.
-    await registerEmpDivision({ user_id_safe, user_division_name });
-    
-    // 현재 직원 부서 등록
-    await currentEmpDivision({ user_id, user_id_safe, user_division_name, user_name });
-    
-    // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
-    await createReference({ user_id_safe, user_division_name, user_id });
-
-    const res = getInvitations();
-
-    if (!res) {
-      return console.log('실패');
-    }
-
-    window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
-    window.alert('직원 등록이 완료되었습니다.');
-  } catch (error) {
-    window.alert('직원 등록에 실패하였습니다. 다시 시도해주세요.' + error.message);
-    document.querySelector('form #profile-img').src = '';
-    document.querySelectorAll('form select').forEach(el => el.selectedIndex = 0);
-    document.querySelectorAll('form button').forEach(el => el.disabled = false);
-    document.querySelectorAll('form input').forEach(el => {
-        el.disabled = false;
-        el.value = '';
-    });
-    
-    throw error;
-  } finally {
-    router.push({
-      path: '/list-employee',
-      query: { empListType: '초청여부' }
-    });
-  }
 }
 
 onMounted(() => {
-    uploadSrc.value.init_profile_pic = '';
+    resetCropImage();
 })
 </script>
 
