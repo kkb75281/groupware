@@ -500,13 +500,13 @@ const createReference = async (data) => {
 
 // 직원등록 함수
 const registerEmp = async (e) => {  
-    try {
-        // 입력창을 비활성화한다.
-        document.querySelectorAll('form input').forEach(el => el.disabled = true);
-        document.querySelectorAll('form button').forEach(el => el.disabled = true);
+    // 입력창을 비활성화한다.
+    document.querySelectorAll('form input').forEach(el => el.disabled = true);
+    document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
+    try {
         if(croppedImages.value['init_profile_pic']) {
-        await empProfileUpload();
+            await empProfileUpload();
         }
 
         // 직원을 초대한다.
@@ -514,7 +514,7 @@ const registerEmp = async (e) => {
         // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
 
         if (!added) {
-        console.log('직원 초대에 실패하였습니다.');
+            console.log('직원 초대에 실패하였습니다.');
         }
 
         // extract user id
@@ -537,7 +537,7 @@ const registerEmp = async (e) => {
         const res = getInvitations();
 
         if (!res) {
-        return console.log('실패');
+            return console.log('실패');
         }
 
         window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
