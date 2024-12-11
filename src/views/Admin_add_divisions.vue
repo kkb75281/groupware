@@ -161,11 +161,16 @@ let resigterComp = (e) => {
     let currentData = {};
 
     let deleteDivisionName = async() => {
-        await skapi.deleteRecords({
-            unique_id: '[division_name_list]'
-        }).then(r => {
-            createDivisionName();
-        })
+        try {
+            await skapi.deleteRecords({
+                unique_id: '[division_name_list]'
+            });
+        } catch(e) {
+            alert('부서명 삭제 중 오류가 발생했습니다.');
+            throw e;
+        }
+
+        createDivisionName();
     }
 
     let createDivisionName = async() => {
@@ -202,6 +207,7 @@ let resigterComp = (e) => {
     skapi.getRecords({
         unique_id: '[division_name_list]'
     }).then(r => {
+        console.log(r);
         if(r.list.length) {
             let data = r.list[0].data;
             if(data) {
@@ -210,7 +216,8 @@ let resigterComp = (e) => {
             deleteDivisionName();
         }
     }).catch(e => {
-        if(e.message === 'Unique ID does not exists.') {
+        console.log({e})
+        if(e.code === 'NOT_EXISTS') {
             createDivisionName();
         }
     })

@@ -163,6 +163,12 @@ skapi.getRecords({
     
         document.querySelector('select[name="division"]').disabled = false;
     }
+}).catch(err => {
+    if(err.code === 'NOT_EXISTS') {
+        alert('부서가 등록되어 있지 않습니다. 부서를 먼저 등록해주세요.');
+        router.push('/list-employee');
+        return;
+    }
 });
 
 // 파일 추가시 파일명 표시
