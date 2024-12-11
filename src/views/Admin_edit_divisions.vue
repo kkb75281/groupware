@@ -116,7 +116,7 @@ hr
         br
 
         .button-wrap
-            button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
+            button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") {{ isMyRecord ? '취소' : '이전' }}
             template(v-if="isMyRecord")
                 button.btn(type="submit") 등록
 
