@@ -310,14 +310,11 @@ let callParams = computed(() => {
     }
 });
 
-watch(
-    () => route.query.empListType,
-    (newType) => {
-        if (newType) {
-            empListType.value = newType;
-        }
+watch(() => route.query.empListType, (newType) => {
+    if (newType) {
+        empListType.value = newType;
     }
-);
+});
 
 watch(searchFor, (nv) => {
     if (nv) {
@@ -400,7 +397,6 @@ watch(empListType, async(nv) => {
 
                     loading.value = false;
                 });
-
             } else {
                 sessionEmployee = JSON.parse(empLists);
                 employee.value = sessionEmployee;
