@@ -14,7 +14,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_logo(ref="division_logo_input" type="file" name="division_logo" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                input#division_logo(type="file" name="division_logo" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
         br
 
@@ -104,7 +104,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_used_seal(ref="division_used_seal_input" type="file" name="division_used_seal" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                input#division_used_seal(type="file" name="division_used_seal" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
             .image.seal
                 img#official-img(:src="uploadSrc.division_official_seal" alt="Company Used Seal")
@@ -112,7 +112,7 @@ hr
                     .icon.white
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                input#division_official_seal(ref="division_official_seal_input" type="file" name="division_official_seal" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                input#division_official_seal(type="file" name="division_official_seal" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
         br
 
@@ -129,7 +129,7 @@ br
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { nextTick, onMounted, ref } from 'vue';
 import { skapi } from '@/main';
 import { openModal, croppedImages, uploadSrc, currentImageSrc, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
@@ -237,6 +237,12 @@ let resigterComp = (e) => {
         router.push('/admin/list-divisions');
     });
 }
+
+onMounted(() => {
+    uploadSrc.value.division_logo = '';
+    uploadSrc.value.division_used_seal = '';
+    uploadSrc.value.division_official_seal = '';
+})
 </script>
 
 <style scoped lang="less">

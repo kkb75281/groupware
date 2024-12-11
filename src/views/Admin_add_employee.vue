@@ -13,7 +13,7 @@ hr
                 .icon.white
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-            input#init_profile_pic(ref="init_profile_pic_input" type="file" name="init_profile_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+            input#init_profile_pic(type="file" name="init_profile_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
 
     br
 
@@ -105,7 +105,7 @@ br
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
 import { openModal, croppedImages, uploadSrc, currentImageSrc, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
@@ -116,7 +116,6 @@ const router = useRouter();
 const route = useRoute();
 
 let fileNames = ref([]);
-let init_profile_pic_input = ref(null);
 
 // let selectedFiles = [];
 
@@ -557,6 +556,10 @@ const registerEmp = async (e) => {
     });
   }
 }
+
+onMounted(() => {
+    uploadSrc.value.init_profile_pic = '';
+})
 </script>
 
 <style scoped lang="less">
