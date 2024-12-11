@@ -19,79 +19,79 @@ hr
 
         .input-wrap
             p.label.essential 부서명
-            input(v-model="record.data.division_name" type="text" name="division_name" required)
+            input(v-model="record.data.division_name" type="text" name="division_name" placeholder="부서명을 입력해주세요." required)
         
         br
 
         .input-wrap
             p.label 설명
-            input(v-model="record.data.division_description" type="text" name="division_description")
+            input(v-model="record.data.division_description" type="text" name="division_description" placeholder="부서 설명을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 대표자명
-            input(v-model="record.data.division_ceo_name" type="text" name="division_ceo_name")
+            input(v-model="record.data.division_ceo_name" type="text" name="division_ceo_name" placeholder="대표자명을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 주소
-            input(v-model="record.data.division_address" type="text" name="division_address")
+            input(v-model="record.data.division_address" type="text" name="division_address" placeholder="예) 서울시 마포구")
 
         br
 
         .input-wrap
             p.label 사업자번호
-            input(v-model="record.data.division_business_code" type="text" name="division_business_code")
+            input(v-model="record.data.division_business_code" type="text" name="division_business_code" placeholder="예) 012-34-56789")
 
         br
 
         .input-wrap
             p.label 법인번호
-            input(v-model="record.data.division_corporate_number" type="text" name="division_corporate_number")
+            input(v-model="record.data.division_corporate_number" type="text" name="division_corporate_number" placeholder="예) 012345-6789012")
 
         br
 
         .input-wrap
             p.label 업태
-            input(v-model="record.data.division_business_type" type="text" name="division_business_type")
+            input(v-model="record.data.division_business_type" type="text" name="division_business_type" placeholder="업태를 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 종목
-            input(v-model="record.data.division_business_item" type="text" name="division_business_item")
+            input(v-model="record.data.division_business_item" type="text" name="division_business_item" placeholder="종목을 입력해주세요.")
 
         br
 
         .input-wrap
             p.label 설립일
-            input(v-model="record.data.division_establishment_date" type="text" name="division_establishment_date")
+            input(v-model="record.data.division_establishment_date" type="text" name="division_establishment_date" placeholder="예) 2024. 01. 01")
 
         br
 
         .input-wrap
             p.label 전화번호
-            input(v-model="record.data.division_phone_number" type="text" name="division_phone_number")
+            input(v-model="record.data.division_phone_number" type="text" name="division_phone_number" placeholder="예) +821012345678")
 
         br
 
         .input-wrap
             p.label 이메일
-            input(v-model="record.data.division_email" type="text" name="division_email")
+            input(v-model="record.data.division_email" type="text" name="division_email" placeholder="예) user@email.com")
 
         br
 
         .input-wrap
             p.label 팩스번호
-            input(v-model="record.data.division_fax" type="text" name="division_fax")
+            input(v-model="record.data.division_fax" type="text" name="division_fax" placeholder="예) 070-1234-5678")
 
         br
 
         .input-wrap
             p.label 홈페이지
-            input(v-model="record.data.division_homepage" type="text" name="division_homepage")
+            input(v-model="record.data.division_homepage" type="text" name="division_homepage" placeholder="예) https://www.sitename.com/")
 
         br
 
