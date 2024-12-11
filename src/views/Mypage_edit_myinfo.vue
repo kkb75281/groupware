@@ -397,9 +397,7 @@ let registerMypage = async(e) => {
                     name: 'emp_additional_data',
                     access_group: 99
                 },
-                reference: {
-                    unique_id: "[emp_additional_data]" + makeSafe(user.user_id),
-                }
+                reference: "[emp_additional_data]" + makeSafe(user.user_id),
             });
 
             if(uploadFile.value && uploadFile.value.length) {
