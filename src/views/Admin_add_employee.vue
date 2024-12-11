@@ -348,7 +348,7 @@ const postRecord = async (data, params) => {
 }
 
 const empProfileUpload = async () => {
-  if (init_profile_pic.files.length === 0) return;
+  // if (!croppedImages.value['init_profile_pic']) return;
 
   try {
     const email = document.querySelector('input[name=email]').value;
@@ -357,7 +357,7 @@ const empProfileUpload = async () => {
 
     let initPicParams = {
         table: {
-            name: tableName,
+            name: 'init_profile_pic' + makeSafe(document.querySelector('input[name=email]').value),
             access_group: 1
         },
     };
@@ -375,6 +375,7 @@ const empProfileUpload = async () => {
 
     const userInitProfilePic = await postRecord(imgFormData, initPicParams)
     _el_picture_input.value = userInitProfilePic.bin.init_profile_pic[0].url.split('?')[0];
+    console.log(_el_picture_input.value)
   } catch (error) {
     console.log('== empProfileUpload : error == : ', error)
   }
@@ -501,8 +502,8 @@ const registerEmp = async (e) => {
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
-    if(init_profile_pic.files.length > 0) {
-      empProfileUpload()
+    if(croppedImages.value['init_profile_pic']) {
+      await empProfileUpload();
     }
 
     // 직원을 초대한다.
