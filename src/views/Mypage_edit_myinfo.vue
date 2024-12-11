@@ -236,7 +236,7 @@ const getAdditionalData = () => {
     });
 }
 
-if(!user.approved.includes('by_master')) {
+if(user && !user.approved.includes('by_master')) {
     getAdditionalData();
 }
 
