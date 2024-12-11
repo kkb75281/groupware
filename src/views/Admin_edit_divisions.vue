@@ -140,6 +140,23 @@ const route = useRoute();
 
 onMounted(() => {
     resetCropImage();
+
+    if (!record) {
+        // go back to the list if record is not found
+        router.push('/admin/list-divisions');
+    } else {
+        if (record?.bin) {
+            bin = {};
+            for (let k in record?.bin) {
+                bin[k] = record?.bin[k];
+            }
+            uploadSrc.value.division_logo = record?.bin.division_logo ? record?.bin.division_logo[0].url : '';
+            uploadSrc.value.division_used_seal = record?.bin.division_used_seal ? record?.bin.division_used_seal[0].url : '';
+            uploadSrc.value.division_official_seal = record?.bin.division_official_seal ? record?.bin.division_official_seal[0].url : '';
+        }
+        console.log(record)
+        loading.value = false;
+    }
 })
 
 // get record_id value from url parameter
@@ -157,23 +174,6 @@ let isMyRecord = record.user_id === user.user_id;
 let originalDivisionName = record.data.division_name;
 let loading = ref(true);
 let bin = {};
-
-if (!record) {
-    // go back to the list if record is not found
-    router.push('/admin/list-divisions');
-} else {
-    if (record?.bin) {
-        bin = {};
-        for (let k in record?.bin) {
-            bin[k] = record?.bin[k];
-        }
-        uploadSrc.value.division_logo = record?.bin.division_logo ? record?.bin.division_logo[0].url : '';
-        uploadSrc.value.division_used_seal = record?.bin.division_used_seal ? record?.bin.division_used_seal[0].url : '';
-        uploadSrc.value.division_official_seal = record?.bin.division_official_seal ? record?.bin.division_official_seal[0].url : '';
-    }
-    console.log(record)
-    loading.value = false;
-}
 
 let post_params = {
     table: {
