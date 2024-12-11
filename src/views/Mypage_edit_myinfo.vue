@@ -245,6 +245,8 @@ let getProfileImage = async() => {
         let res = await skapi.getFile(user.picture, {
             dataType: 'endpoint',
         });
+
+        console.log(res)
     
         profileImage.value = res;
         uploadSrc.value.profile_pic = res;
@@ -252,25 +254,6 @@ let getProfileImage = async() => {
         window.alert('프로필 사진을 불러오는데 실패했습니다.');
         throw err;
     }
-}
-
-if(user.picture) {
-    if(profileImage.value) {
-        uploadSrc.value.profile_pic = profileImage.value;
-    } else {
-        getProfileImage();
-    }
-
-    // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
-    skapi.getFile(user.picture, {
-        dataType: 'info',
-    }).then(res => {
-        getFileInfo.value = res;
-    }).catch(err => {
-        console.log('== getFile == err : ', err)
-    });
-} else {
-    // uploadSrc.value.profile_pic = null;
 }
 
 let sendEmail = async() => {
@@ -461,7 +444,26 @@ let updateFileList = (e) => {
 
 onMounted(async() => {
     document.addEventListener('click', closeOptions);
+    
     resetCropImage();
+
+    if(user.picture) {
+        console.log(profileImage.value)
+        if(profileImage.value) {
+            uploadSrc.value.profile_pic = profileImage.value;
+        } else {
+            getProfileImage();
+        }
+
+        // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
+        skapi.getFile(user.picture, {
+            dataType: 'info',
+        }).then(res => {
+            getFileInfo.value = res;
+        }).catch(err => {
+            console.log('== getFile == err : ', err)
+        });
+    }
 });
 
 onUnmounted(() => {
