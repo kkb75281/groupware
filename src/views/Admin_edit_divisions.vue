@@ -186,8 +186,11 @@ let editDivision = async(e) => {
     // 이미지 변경시 예전 이미지 모두 삭제
     if(deleteList.value.length > 0) {
         deleteList.value.forEach(id => {
-            let deleteBinObj = record.bin[id][0];   // 파일 객체 전체
-            post_params.remove_bin.push(deleteBinObj);
+            let deleteBinObj = record.bin[id] ? record.bin[id][0] : null;   // 파일 객체 전체
+
+            if(deleteBinObj) {
+                post_params.remove_bin.push(deleteBinObj);
+            }
         })
     }
 

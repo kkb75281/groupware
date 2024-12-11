@@ -978,9 +978,7 @@ let registerEmp = async(e) => {
                     name: 'emp_additional_data',
                     access_group: 99
                 },
-                reference: {
-                    unique_id: "[emp_additional_data]" + makeSafe(selectedEmp.value.user_id),
-                }
+                reference: "[emp_additional_data]" + makeSafe(selectedEmp.value.user_id),
             })
         }
 
