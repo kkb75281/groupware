@@ -11,13 +11,17 @@ import { watch } from 'vue';
 const router = useRouter();
 const route = useRoute();
 
-watch(loaded, (nv) => {
-    if(route.name === 'mailing') {
+watch(loaded, async(nv) => {
+    if (!nv) return;
+
+    await router.isReady();
+
+    if(route.name === 'mailing' && (iwaslogged.value || !iwaslogged.value)) {
         return;
     }
-    
-    if(nv && !iwaslogged.value && !Object.keys(user).length) {
-        router.push('/login');
+
+    if(!iwaslogged.value && Object.keys(user).length === 0) {
+        await router.push('/login');
     }
 }, { immediate: true });
 </script>
