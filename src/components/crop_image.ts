@@ -7,6 +7,15 @@ export let currentImageSrc = ref('');
 export let currentTargetId = ref('');
 export let deleteList = ref([]);    // 한 폼에서 여러 이미지를 업로드할 때, 삭제할 이미지 목록
 
+export let resetCropImage = () => {
+    openModal.value = false;
+    croppedImages.value = {};
+    uploadSrc.value = {};
+    currentImageSrc.value = '';
+    currentTargetId.value = '';
+    deleteList.value = [];
+};
+
 export let openCropImageDialog = (e) => {
     const file = e.target.files[0];
 

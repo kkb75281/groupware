@@ -133,7 +133,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
 import { divisionNameList } from '@/division'
-import { openModal, croppedImages, uploadSrc, currentImageSrc, deleteList, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { openModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
 
@@ -461,6 +461,7 @@ let updateFileList = (e) => {
 
 onMounted(async() => {
     document.addEventListener('click', closeOptions);
+    resetCropImage();
 });
 
 onUnmounted(() => {

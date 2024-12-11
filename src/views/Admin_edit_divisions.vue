@@ -129,15 +129,19 @@ br
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
-import { openModal, croppedImages, uploadSrc, currentImageSrc, deleteList, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { openModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+onMounted(() => {
+    resetCropImage();
+})
 
 // get record_id value from url parameter
 let urlParams = new URLSearchParams(window.location.search);
