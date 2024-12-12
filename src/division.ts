@@ -15,12 +15,13 @@ export async function getDivisionNames() {
                 access_group: 1
             },
         });
+        
+        if(res.list.length) {
+            divisionNameList.value = res.list[0].data;
+        }
     }
     catch(e) {
         alert('부서 이름 정보를 불러오는 중 오류가 발생했습니다.');
         throw e;
-    }
-    if(res.list.length) {
-        divisionNameList.value = res.list[0].data;
     }
 }

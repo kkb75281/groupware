@@ -158,6 +158,7 @@ let deleteDivision = async () => {
     let userId = Object.keys(selectedList.value);
     let name = Object.values(selectedList.value);
 
+    let filteredData = {};
     let isSuccess = [];
     let isFail = [];
 
@@ -166,23 +167,22 @@ let deleteDivision = async () => {
         return skapi.deleteRecords({record_id: el}).then(res => {
             isSuccess.push(el);
         }).catch(err => {
-            // console.log('== err == : ', err)
             isFail.push(el);
+            alert('부서 삭제에 실패하였습니다. 관리자에게 문의해주세요.');
+            throw err;
         });
     }));
 
-    // 회사 이름 레코드 삭제
-    skapi.getRecords({
-        unique_id: '[division_name_list]'
-    }).then(r => {
-        let data = r.list[0].data;  // { 'DF1': '부서명1', 'DF2': '부서명2', ... }
-        let keys = Object.keys(data);
-        let values = Object.values(data); // '부서명1', '부서명2', ...
+    // 부서명 리스트 비교 및 지울 항목 제외한 데이터 생성
+    try {
+        let res = await skapi.getRecords({
+            unique_id: '[division_name_list]'
+        });
 
-        // Set으로 변환 (빠른 검색)
-        let nameSet = new Set(name);
-
-        let filteredData = {};
+        let data = res.list[0].data;          // { 'DF1': '부서명1', 'DF2': '부서명2', ... }
+        let keys = Object.keys(data);       // 'DF1', 'DF2', ...
+        let values = Object.values(data);   // '부서명1', '부서명2', ...
+        let nameSet = new Set(name);        // Set으로 변환 (빠른 검색)
 
         // 값 비교 및 제외 로직
         for (let i = 0; i < values.length; i++) {
@@ -192,19 +192,34 @@ let deleteDivision = async () => {
                 filteredData[keys[i]] = '';
             }
         }
+    } catch (error) {
+        alert('부서명 리스트를 불러오는데 실패하였습니다. 관리자에게 문의해주세요.');
+        throw error;
+    }
 
-        skapi.deleteRecords({
+    // 부서명 리스트 삭제
+    try {
+        await skapi.deleteRecords({
             unique_id: '[division_name_list]'
-        }).then(r => {
-            skapi.postRecord(filteredData, {
-                unique_id: '[division_name_list]',
-                table: {
-                    name: 'divisionNames',
-                    access_group: 1
-                }
-            })
-        })
-    })
+        });
+    } catch (error) {
+        alert('부서명 리스트를 삭제하는데 실패하였습니다. 관리자에게 문의해주세요.');
+        throw error;
+    }
+
+    // 부서명 리스트 업데이트
+    try {
+        await skapi.postRecord(filteredData, {
+            unique_id: '[division_name_list]',
+            table: {
+                name: 'divisionNames',
+                access_group: 1
+            }
+        });
+    } catch (error) {
+        alert('부서명 리스트를 업데이트하는데 실패하였습니다. 관리자에게 문의해주세요.');
+        throw error;
+    }
 
     getDivisions();
 
