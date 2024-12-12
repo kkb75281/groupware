@@ -29,12 +29,13 @@
                         input(v-model="searchPositionValue" type="text" placeholder="직책을 입력하세요" :disabled="searchValue === '전체'")
                         button.btn-search
 
-            template(v-if="user.access_group > 98")
-                .tb-toolbar
-                    .btn-wrap
-                        button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
-                            svg(:class="{'rotate' : loading}")
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+            .tb-toolbar
+                .btn-wrap
+                    button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
+                        svg(:class="{'rotate' : loading}")
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+
+                    template(v-if="user.access_group > 98")
                         template(v-if="empListType === '직원목록'")
                             button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김
                             button.btn.outline(@click="router.push('/admin/add-employee')") 등록

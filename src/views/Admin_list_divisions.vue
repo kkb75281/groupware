@@ -11,6 +11,9 @@ hr
 
         .tb-toolbar
             .btn-wrap
+                button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
+                    svg(:class="{'rotate' : loading}")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
                 button.btn.outline.warning(:disabled="!Object.keys(selectedList).length" @click="deleteDivision") 삭제
                 button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
@@ -80,6 +83,12 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
+let currentPage = ref(1);
+let selectedList = ref({});
+let isAllSelected = computed(() => {
+    let keys = Object.keys(divisions.value);
+    return keys.length > 0 && keys.every(key => Object.keys(selectedList.value).includes(key));
+});
 let sessionDivisions = window.sessionStorage.getItem('divisions');
 
 if(!sessionDivisions || Object.keys(sessionDivisions).length < 1) {
@@ -129,13 +138,6 @@ let displayDivisions = (divisions) => {
     window.sessionStorage.setItem('divisions', JSON.stringify(saveSession));
 }
 
-let currentPage = ref(1);
-let selectedList = ref({});
-let isAllSelected = computed(() => {
-    let keys = Object.keys(divisions.value);
-    return keys.length > 0 && keys.every(key => Object.keys(selectedList.value).includes(key));
-});
-
 let toggleSelectAll = () => {
     if (isAllSelected.value) {
         selectedList.value = {};
@@ -152,6 +154,12 @@ let toggleSelect = (id, name) => {
     } else {
         selectedList.value[id] = name;
     }
+}
+
+let refresh = async () => {
+    loading.value = true;
+
+    getDivisions();
 }
 
 let deleteDivision = async () => {
