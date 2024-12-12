@@ -86,14 +86,15 @@
             br
 
             .input-wrap.upload-file
-                p.label 기타자료
+                p.label 자료 관리
                 .file-wrap
                     //- template(v-if="!disabled")
                     .btn-upload-file
                         input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
-                        label.btn.outline.btn-upload(for="file") 파일 추가
-                        ul.upload-file-list
-                            li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+                        label.btn.outline.btn-upload(for="file") 파일 올리기
+
+                    ul.upload-file-list
+                        li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
                     
                     ul.file-list
                         template(v-if="uploadFile.length > 0")
@@ -111,6 +112,24 @@
                             li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
 
             br
+
+            .input-wrap.upload-file
+                p.label 도장 관리
+                .file-wrap
+                    .btn-upload-file
+                        input#stamp(type="file" name="stamp_data" :disabled="verifiedEmail || disabled" hidden)
+                        label.btn.outline.btn-upload(for="stamp") 파일 올리기
+                        button.btn.outline.btn-upload(type="button" :disabled="verifiedEmail || disabled" @click="openStampDialog") 서명 올리기
+
+                    ul.upload-file-list
+                        li.file-name(v-for="(name, index) in stampNames" :key="index") {{ name }}
+
+                    ul.file-list
+                        template(v-if="uploadStamp.length > 0")
+                        template(v-else)
+                            li.file-item(style="height: 36px;") 등록된 도장이 없습니다.
+
+            br
             br
 
             .button-wrap(v-if="(verifiedEmail && !onlyEmail) ? false : true")
@@ -120,7 +139,8 @@
                 button.btn.bg-gray(type="button" :disabled="disabled" @click="cancelEdit") 취소
                 button.btn(type="submit" :disabled="disabled") 저장
 
-    CropImage(:open="openModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+    CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+    MakeStamp(v-if="openStampModal" @save="handleStampBlob" @close="closeStampDialog")
 
     br  
     br  
@@ -133,9 +153,11 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
 import { divisionNameList } from '@/division'
-import { openModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob } from '@/components/make_stamp';
 
 import CropImage from '@/components/crop_image.vue';
+import MakeStamp from '@/components/make_stamp.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -144,6 +166,7 @@ let optionsBtn = ref(null);
 let getFileInfo = ref(null);
 let userPosition = ref(null);
 let uploadFile = ref([]);
+let uploadStamp = ref([]);
 let backupUploadFile = ref([]);
 let removeFileList = ref([]);
 let originUserProfile = {};
@@ -156,6 +179,7 @@ let disabled = ref(false);
 let onlyEmail = ref(false);
 let showOptions = ref(false);
 let fileNames = ref([]);
+let stampNames = ref([]);
 
 function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
@@ -637,6 +661,17 @@ onUnmounted(() => {
 
 .input-wrap {
     &.upload-file {
+        .btn-upload-file {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+
+            input, label, button {
+                margin: 0;
+            }
+        }
+
         .btn-upload-file + .file-list {
             .file-item {
                 // width: 444px;
@@ -661,6 +696,11 @@ onUnmounted(() => {
 @media (max-width: 682px) {
     .input-wrap {
         &.upload-file {
+            .btn-upload-file {
+                input, label, button {
+                    flex-grow: 1;
+                }
+            }
             .btn-upload-file + .file-list {
                 .file-item {
                     width: 100%;
