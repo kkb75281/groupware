@@ -100,7 +100,20 @@
                                 td.list-num {{ index + 1 }}
                                 td {{ emp?.position }}
                                 td {{ divisionNameList[emp?.division] }}
-                                td {{ emp.name }}
+                                template(v-if='user.access_group > 98')
+                                    td {{ emp.name }}
+                                template(v-else)
+                                    td
+                                        .name-wrap
+                                            .img-wrap(style="width: 36px; height: 36px;")
+                                                template(v-if="emp.picture")
+                                                    img(:src="emp.picture" alt="img-profile")
+                                                template(v-else)
+                                                    .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
+                                                        svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
+                                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+
+                                            span {{ emp.name }}
                                 td {{ emp.email }}
                                 template(v-if='user.access_group > 98')
                                     td
@@ -199,17 +212,9 @@
                     p.label 주소
                     input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
 
-                //- .input-wrap.upload-file
-                //-     p.label(style="margin-bottom: 0;") 기타자료
-                //-     template(v-if="!disabled")
-                //-         .btn-add-file(style="margin-top: 12px;")
-                //-             input(type="file" name="additional_data" multiple style="height: initial;")
-
                 .input-wrap.upload-file
                     p.label(style="margin-bottom: 0;") 기타자료
                     template(v-if="!disabled")
-                        //- .btn-add-file(style="margin-top: 12px;")
-                        //-     input(type="file" name="additional_data" multiple style="height: initial;")
                         .btn-upload-file
                             input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
                             label.btn.outline.btn-upload(for="file") 파일 추가
@@ -360,7 +365,7 @@ watch(empListType, async(nv) => {
 
                 skapi.getUsers().then(async(res) => {
                     const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
-                    const result = await getEmpsDvs(userList);
+                    const result = await getEmpsInfo(userList);
                     
                     let list = result.filter(emp => emp.approved.includes('approved'));
 
@@ -392,7 +397,7 @@ watch(empListType, async(nv) => {
                 loading.value = true;
 
                 skapi.getInvitations().then(async(res) => {
-                    const result = await getEmpsDvs(res.list);
+                    const result = await getEmpsInfo(res.list);
                     displayinviteEmployee(result);
 
                     loading.value = false;
@@ -426,12 +431,12 @@ let refresh = async () => {
                 suspendedLength.value = list.length;
             }
 
-            const result = await getEmpsDvs(list);
+            const result = await getEmpsInfo(list);
             displayEmployee(result);
         } else if (empListType.value === '초청여부') {
             let res = await skapi.getInvitations();
 
-            const result = await getEmpsDvs(res.list);
+            const result = await getEmpsInfo(res.list);
             displayinviteEmployee(result);
         }
     } catch (error) {
@@ -443,7 +448,6 @@ let refresh = async () => {
 
 let displayDivisionOptions = (selectName: string) => {
     let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
-    console.log(divisionNameList.value)
 
     // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
     divisionList.innerHTML = ''; // 기존 옵션 초기화
@@ -492,9 +496,9 @@ let displayDivisionOptions = (selectName: string) => {
     divisionList.disabled = false;
 }
 
-const getEmpsDvs = async (list) => {
+const getEmpsInfo = async (list) => {
     if (!list) {
-        console.log('=== getEmpsDvs === list is empty');
+        console.log('=== getEmpsInfo === list is empty');
         return
     }
 
@@ -503,6 +507,10 @@ const getEmpsDvs = async (list) => {
 
         for(let e of list) {
             promiseList.push(getEmpDivision(e.user_id));
+
+            if(e.picture) {
+                promiseList.push(getProfileImg(e));
+            }
         }
 
         await Promise.all(promiseList);
@@ -518,7 +526,7 @@ const getEmpsDvs = async (list) => {
 
         return employee.value;
     } catch (error) {
-        console.log('== getEmpsDvs == error : ', error);
+        console.log('== getEmpsInfo == error : ', error);
     }
 }
 
@@ -624,7 +632,6 @@ let searchEmp = async() => {
             }
 
             employee.value = arr; // 최종 목록 업데이트
-            console.log('=== searchEmp === employee.value : ', employee.value);
         } catch (error) {
             console.error('searchEmp 에러 발생: ', error);
         }
@@ -675,8 +682,6 @@ let getAdditionalData = () => {
         if(res.list.length > 0) {
             let fileList = [];
 
-            // console.log('== getRecords == res : ', res);
-
             function getFileUserId(str: string) {
                 if (!str) return '';
 
@@ -700,11 +705,26 @@ let getAdditionalData = () => {
     })
 }
 
+const getProfileImg = async (emp) => {
+    if(!emp || !emp.picture) return;
+
+    await skapi.getFile(emp.picture, {
+        dataType: 'endpoint',
+    })
+    .then((res: any) => {  
+        emp.picture = res;
+    })
+    .catch((err: Error) => {
+        console.log('프로필 사진을 불러오는데 실패했습니다.');
+    });
+
+    console.log('dd')
+}
+
 let openModal = async(emp: { [key: string]: any }) => {
     isModalOpen.value = true;
     selectedEmp.value = emp;
     selectedEmpOriginal = { ...emp };
-    console.log(selectedEmpOriginal)
     selectedEmpTags.value.emp_dvs = emp.division;
     selectedEmpTags.value.emp_pst = emp.position;
     uploadFile.value = [];
@@ -740,7 +760,7 @@ let getEmployee = () => {
 
 
         const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
-        const result = await getEmpsDvs(userList);
+        const result = await getEmpsInfo(userList);
         
         const list = result.filter(emp => emp.approved.includes('approved'));
         
@@ -912,9 +932,6 @@ let cancelEdit = () => {
 
 let registerEmp = async(e) => {
     e.preventDefault();
-
-    // console.log('=== registerEmp === e : ', e);
-    // console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
     disabled.value = true;
 
     let user_id_safe = makeSafe(selectedEmp.value.user_id);
@@ -1219,5 +1236,25 @@ let updateFileList = (e) => {
 
 .btn-upload-file {
     margin-top: 12px;
+}
+
+.name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .img-wrap {
+        width: 1.5rem;
+        height: 1.5rem;
+        overflow: hidden;
+        border: 1px solid var(--gray-color-300);
+        border-radius: 50%;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    }
 }
 </style>
