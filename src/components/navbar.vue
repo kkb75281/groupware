@@ -230,7 +230,7 @@ watch(() => route.fullPath, (nv) => {
     }
 
     .menu-item {
-        padding: 20px 20px 0;
+        padding: 20px 16px 0;
 
         .item {
             margin-top: 0.8rem;
@@ -273,13 +273,13 @@ watch(() => route.fullPath, (nv) => {
             flex-wrap: nowrap;
             align-items: center;
             justify-content: center;
-            padding: 1.2rem 0;
-            border-radius: 8px;
+            padding: 1.2rem 1.25rem 1.2rem 0.75rem;
+            // border-radius: 8px;
+            border-radius: 36px;
             cursor: pointer;
 
             .text {
                 display: block;
-                padding-right: 1rem;
                 flex-grow: 1;
                 display: flex;
                 align-items: center;
@@ -300,7 +300,7 @@ watch(() => route.fullPath, (nv) => {
 
     .sub-menu-item {
         padding-top: 1.5rem;
-        padding-left: 3rem;
+        padding-left: 3.5rem;
 
         &.show {
             display: block;
@@ -327,6 +327,14 @@ watch(() => route.fullPath, (nv) => {
 }
 
 .fold {
+    #navbar {
+        .menu-item {
+            .router {
+                padding-left: 0;
+                padding-right: 0;
+            }
+        } 
+    } 
     .navbar-wrap {
         .logo {
             justify-content: center !important;

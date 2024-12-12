@@ -229,7 +229,8 @@ watch(() => route.path, (newPath, oldPath) => {
 		background-color: var(--primary-color-100);
 		position: relative;
 		margin-right: 2rem;
-		border-radius: 0.5rem;
+		// border-radius: 0.5rem;
+		border-radius: 50%;
 
 		&::after {
 			content: attr(data-count);
@@ -258,15 +259,17 @@ watch(() => route.path, (newPath, oldPath) => {
 	.btn-profile {
 		flex: none;
 		height: 3rem;
-		border-radius: 0.5rem;
+		// border-radius: 0.5rem;
+		border-radius: 30px;
 		background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
 		color: #fff;
 		font-size: 1rem;
 		font-weight: 600;
 		padding-left: 1.25rem;
-		padding-right: 2.75rem;
+		// padding-right: 2.75rem;
+		padding-right: 3.75rem;
 		position: relative;
-		margin-right: 1rem;
+		// margin-right: 1rem;
 		user-select: none;
 		cursor: pointer;
 	}
@@ -281,7 +284,8 @@ watch(() => route.path, (newPath, oldPath) => {
 		justify-content: center;
 		position: absolute;
 		top: 0;
-		right: -1rem;
+		// right: -1rem;
+		right: -4px;
 		background: var(--primary-color-100) url(../images/header/thumb_profile_default.png) center/cover no-repeat;
 		overflow: hidden;
 
