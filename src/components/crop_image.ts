@@ -55,7 +55,8 @@ export let setCroppedImage = async(croppedImage) => {
             currentImageSrc.value = '';
             currentTargetId.value = '';
         } catch (error) {
-            console.error('Error processing Blob URL:', error);
+            alert('이미지를 업로드하는 중 오류가 발생했습니다.');
+            throw error;
         }
     }
 }

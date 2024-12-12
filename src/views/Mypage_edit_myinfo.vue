@@ -1,150 +1,153 @@
 <template lang="pug">
-.wrap
-    .title
-        h1 마이페이지
+.title
+    h1 회원 정보 수정
 
-    hr
+hr
 
-    .form-wrap
-        form#_el_pictureForm
-            .image
-                img#profile-img(:src="uploadSrc.profile_pic" alt="profile image")
-                .label(ref="optionsBtn" :class="{'disabled': verifiedEmail || disabled}" @click="showOptions = !showOptions")
-                    .icon.white
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-                ul.options(v-if="showOptions" @click.stop)
-                    li(@click="selectFile") 사진 변경
-                    li(@click="setToDefault" :class="{'disabled': uploadSrc.profile_pic === null}") 기본 이미지로 변경
-                input#profile_pic(ref="profile_pic_input" type="file" name="profile_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
-                //- input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
+.form-wrap
+    form#_el_pictureForm
+        .image
+            img#profile-img(:src="uploadSrc.profile_pic" alt="profile image")
+            .label(ref="optionsBtn" :class="{'disabled': verifiedEmail || disabled}" @click="showOptions = !showOptions")
+                .icon.white
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
+            ul.options(v-if="showOptions" @click.stop)
+                li(@click="selectFile") 사진 변경
+                li(@click="setToDefault" :class="{'disabled': uploadSrc.profile_pic === null}") 기본 이미지로 변경
+            input#profile_pic(ref="profile_pic_input" type="file" name="profile_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+            //- input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
+
+    br
+
+    form#_el_myinfoForm(@submit.prevent="registerMypage")
+        input(type="text" name="picture" id='_el_picture_input' hidden)
+        #position
+            .input-wrap
+                p.label 직책
+                input(v-model="userPosition" type="text" name="position" disabled)
+            
+            br
+
+            .input-wrap
+                p.label 권한
+                input(v-model="access_group[user.access_group]" type="text" name="authority" disabled)
 
         br
 
-        form#_el_mypage_form(@submit.prevent="registerMypage")
-            input(type="text" name="picture" id='_el_picture_input' hidden)
-            #position
-                .input-wrap
-                    p.label 직책
-                    input(v-model="userPosition" type="text" name="position" disabled)
+        .input-wrap
+            p.label.essential 이름
+            input(:value="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="verifiedEmail || disabled" required)
+        
+        br
+
+        .input-wrap
+            p.label.essential 이메일
+            input(v-model="user.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(verifiedEmail || disabled) && !onlyEmail" required)
+
+        template(v-if="verifiedEmail && !onlyEmail")
+            button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
+            button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
+
+        br
+        
+        //- .input-wrap
+        //-     p.label 비밀번호
+        //-     button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('change-password')") 비밀번호 변경
+
+        //- br
+
+        .input-wrap
+            p.label 생년월일
+            input(v-model="user.birthdate" type="date" name="birthdate" :disabled="verifiedEmail || disabled")
+            label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
+                input(v-model="user.birthdate_public" type="checkbox" name="birthdate_public" checked hidden :disabled="verifiedEmail || disabled")
+                span.label-checkbox 공개여부
+
+        br
+
+        .input-wrap
+            p.label 전화번호
+            input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="예) +821012345678" :disabled="verifiedEmail || disabled")
+            //- label.checkbox.public(:class="{'disabled': disabled}")
+            //- 	input(v-model="user.phone_number_public" type="checkbox" name="phone_number_public" checked hidden :disabled="disabled")
+            //- 	span.label-checkbox 공개여부
+
+        br
+
+        .input-wrap
+            p.label 주소
+            input(v-model="user.address" type="text" name="address" placeholder="예) 서울시 마포구" :disabled="verifiedEmail || disabled")
+            label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
+                input(v-model="user.address_public" type="checkbox" name="address_public" checked hidden :disabled="verifiedEmail || disabled")
+                span.label-checkbox 공개여부
+
+        br
+
+        .input-wrap.upload-file
+            p.label 자료 관리
+            .file-wrap
+                //- template(v-if="!disabled")
+                .btn-upload-file
+                    input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
+                    label.btn.outline.btn-upload(for="file") 파일 올리기
+
+                ul.upload-file-list
+                    li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
                 
-                br
+                ul.file-list
+                    template(v-if="uploadedFile.length > 0")
+                        li.file-item(v-for="(file, index) in uploadedFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
+                            //- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
+                            a.file-name(:href="file.url" target="_blank") {{ file.filename }}
+                            template(v-if="(!verifiedEmail && !disabled) && file.user_id === user.user_id")
+                                button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
+                                    svg
+                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+                                button.btn-remove(v-else type="button" @click="removeFile(file)")
+                                    svg
+                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+                    template(v-if="uploadedFile.length === 0")
+                        li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
 
-                .input-wrap
-                    p.label 권한
-                    input(v-model="access_group[user.access_group]" type="text" name="authority" disabled)
+        //- br
+        //- 
+        //- .input-wrap.upload-file
+            p.label 도장 관리
+            .file-wrap
+                //- .btn-upload-file
+                    input#stamp(type="file" name="stamp_data" :disabled="verifiedEmail || disabled" hidden)
+                    label.btn.outline.btn-upload(for="stamp") 파일 올리기
+                    button.btn.outline.btn-upload(type="button" :disabled="verifiedEmail || disabled" @click="openStampDialog") 서명 올리기
 
-            br
+                //- ul.upload-stamp-list
+                    li.stamp-item(v-for="(stamp, index) of uploadingStamp" :key="index")
+                        img(:id="'stamp' + index" :src="stamp.url")
+                        .stamp-name {{ stamp.name }}
 
-            .input-wrap
-                p.label.essential 이름
-                input(:value="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="verifiedEmail || disabled" required)
-            
-            br
+                ul.stamp-list
+                    template(v-if="uploadedStamp.length > 0")
+                        //- li.file-name(v-for="(file, index) in uploadedStamp" :key="index") {{ file.filename }}
+                    template(v-else)
+                        li.stamp-item
+                            img#upload-stamp-img(:src="uploadingSrc.url" alt="stamp image")
 
-            .input-wrap
-                p.label.essential 이메일
-                input(v-model="user.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(verifiedEmail || disabled) && !onlyEmail" required)
+        br
+        br
 
-            template(v-if="verifiedEmail && !onlyEmail")
-                button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
-                button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
+        .button-wrap(v-if="(verifiedEmail && !onlyEmail) ? false : true")
+            //- template(v-if="disabled && !onlyEmail")
+            //-     button#startEdit.btn(type="button" :disabled="verifiedEmail" @click="startEdit") 수정
+            //- template(v-else)
+            button.btn.bg-gray(type="button" :disabled="disabled" @click="cancelEdit") 취소
+            button.btn(type="submit" :disabled="disabled") 저장
 
-            br
-            
-            //- .input-wrap
-            //-     p.label 비밀번호
-            //-     button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('change-password')") 비밀번호 변경
+CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+MakeStamp(v-if="openStampModal" @save="handleStampBlob" @close="closeStampDialog")
 
-            //- br
-
-            .input-wrap
-                p.label 생년월일
-                input(v-model="user.birthdate" type="date" name="birthdate" :disabled="verifiedEmail || disabled")
-                label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
-                    input(v-model="user.birthdate_public" type="checkbox" name="birthdate_public" checked hidden :disabled="verifiedEmail || disabled")
-                    span.label-checkbox 공개여부
-
-            br
-
-            .input-wrap
-                p.label 전화번호
-                input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="예) +821012345678" :disabled="verifiedEmail || disabled")
-                //- label.checkbox.public(:class="{'disabled': disabled}")
-                //- 	input(v-model="user.phone_number_public" type="checkbox" name="phone_number_public" checked hidden :disabled="disabled")
-                //- 	span.label-checkbox 공개여부
-
-            br
-
-            .input-wrap
-                p.label 주소
-                input(v-model="user.address" type="text" name="address" placeholder="예) 서울시 마포구" :disabled="verifiedEmail || disabled")
-                label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
-                    input(v-model="user.address_public" type="checkbox" name="address_public" checked hidden :disabled="verifiedEmail || disabled")
-                    span.label-checkbox 공개여부
-
-            br
-
-            .input-wrap.upload-file
-                p.label 자료 관리
-                .file-wrap
-                    //- template(v-if="!disabled")
-                    .btn-upload-file
-                        input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
-                        label.btn.outline.btn-upload(for="file") 파일 올리기
-
-                    ul.upload-file-list
-                        li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
-                    
-                    ul.file-list
-                        template(v-if="uploadFile.length > 0")
-                            li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
-                                //- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
-                                a.file-name(:href="file.url" target="_blank") {{ file.filename }}
-                                template(v-if="(!verifiedEmail && !disabled) && file.user_id === user.user_id")
-                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
-                                        svg
-                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-                                    button.btn-remove(v-else type="button" @click="removeFile(file)")
-                                        svg
-                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-                        template(v-if="uploadFile.length === 0")
-                            li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
-
-            br
-
-            .input-wrap.upload-file
-                p.label 도장 관리
-                .file-wrap
-                    .btn-upload-file
-                        input#stamp(type="file" name="stamp_data" :disabled="verifiedEmail || disabled" hidden)
-                        label.btn.outline.btn-upload(for="stamp") 파일 올리기
-                        button.btn.outline.btn-upload(type="button" :disabled="verifiedEmail || disabled" @click="openStampDialog") 서명 올리기
-
-                    ul.upload-file-list
-                        li.file-name(v-for="(name, index) in stampNames" :key="index") {{ name }}
-
-                    ul.file-list
-                        template(v-if="uploadStamp.length > 0")
-                        template(v-else)
-                            li.file-item(style="height: 36px;") 등록된 도장이 없습니다.
-
-            br
-            br
-
-            .button-wrap(v-if="(verifiedEmail && !onlyEmail) ? false : true")
-                //- template(v-if="disabled && !onlyEmail")
-                //-     button#startEdit.btn(type="button" :disabled="verifiedEmail" @click="startEdit") 수정
-                //- template(v-else)
-                button.btn.bg-gray(type="button" :disabled="disabled" @click="cancelEdit") 취소
-                button.btn(type="submit" :disabled="disabled") 저장
-
-    CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
-    MakeStamp(v-if="openStampModal" @save="handleStampBlob" @close="closeStampDialog")
-
-    br  
-    br  
-    br  
+br  
+br  
+br
 </template>
 
 <script setup>
@@ -154,7 +157,7 @@ import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
 import { divisionNameList } from '@/division'
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
-import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob } from '@/components/make_stamp';
+import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc } from '@/components/make_stamp';
 
 import CropImage from '@/components/crop_image.vue';
 import MakeStamp from '@/components/make_stamp.vue';
@@ -165,8 +168,8 @@ const route = useRoute();
 let optionsBtn = ref(null);
 let getFileInfo = ref(null);
 let userPosition = ref(null);
-let uploadFile = ref([]);
-let uploadStamp = ref([]);
+let uploadedFile = ref([]);
+let uploadedStamp = ref([]);
 let backupUploadFile = ref([]);
 let removeFileList = ref([]);
 let originUserProfile = {};
@@ -235,7 +238,7 @@ const getAdditionalData = () => {
         
         if(res.list.length === 0) {
             fileList = [];
-            uploadFile.value = fileList;
+            uploadedFile.value = fileList;
         } else {
             res.list.forEach((item) => {
                 if (item.bin.additional_data && item.bin.additional_data.length > 0) {
@@ -253,7 +256,7 @@ const getAdditionalData = () => {
                     fileList.push(...result);
                 }
             });
-            uploadFile.value = fileList;
+            uploadedFile.value = fileList;
         }
     }).catch(err => {
         console.log('== getRecords == err : ', err);
@@ -318,7 +321,7 @@ let closeOptions = (e) => {
 //     }
 
 //     fileNames.value = [];
-//     backupUploadFile.value = [...uploadFile.value];
+//     backupUploadFile.value = [...uploadedFile.value];
 // }
 
 let cancelEdit = () => {
@@ -336,7 +339,7 @@ let cancelEdit = () => {
     }
 
     removeFileList.value = [];
-    uploadFile.value = [...backupUploadFile.value];
+    uploadedFile.value = [...backupUploadFile.value];
     router.push('/mypage');
 }
 
@@ -418,15 +421,15 @@ let registerMypage = async(e) => {
                 reference: "[emp_additional_data]" + makeSafe(user.user_id),
             });
 
-            if(uploadFile.value && uploadFile.value.length) {
-                backupUploadFile.value = [...uploadFile.value];
+            if(uploadedFile.value && uploadedFile.value.length) {
+                backupUploadFile.value = [...uploadedFile.value];
             }
         }
         
         document.querySelector('input[name="additional_data"]').value = '';
         fileNames.value = [];
     } else {
-        console.log('false == registerMypage == uploadFile.value : ', uploadFile.value);
+        console.log('false == registerMypage == uploadedFile.value : ', uploadedFile.value);
     }
 
     // document.querySelector('input[name="additional_data"]').value = '';
@@ -666,18 +669,12 @@ onUnmounted(() => {
             flex-wrap: wrap;
             align-items: center;
             gap: 0.5rem;
-
+        
             input, label, button {
                 margin: 0;
             }
         }
 
-        .btn-upload-file + .file-list {
-            .file-item {
-                // width: 444px;
-            }
-        }
-        
         .file-item {
             width: 651px;
 
@@ -689,6 +686,48 @@ onUnmounted(() => {
                 border: 1px dashed var(--warning-color-400);
                 color: var(--warning-color-500);
             }
+        }
+    }
+}
+
+#upload-stamp-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 30%;
+    display: block;
+    object-fit: contain;
+    position: relative;
+    background-color: #fff;
+    border: 2px dashed var(--gray-color-100);
+    margin-bottom: 0.5rem;
+
+    &::before {
+        content: "도장 등록";
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: #888;
+        background-color: #fff;
+        font-size: 14px;
+        text-align: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+}
+
+#_el_myinfoForm {
+    .upload-stamp-list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1rem;
+
+        .stamp-item {
+            text-align: center;
+            margin-top: 8px;
         }
     }
 }
@@ -710,6 +749,9 @@ onUnmounted(() => {
             .file-item {
                 width: 100%;
             }
+        }
+        &.upload-stamp {
+            
         }
     }
 }

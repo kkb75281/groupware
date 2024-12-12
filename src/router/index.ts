@@ -7,6 +7,7 @@ import Dashboard from '@/views/Dashboard.vue';
 import Mypage_main from '@/views/Mypage_main.vue';
 import Mypage from '@/views/Mypage.vue';
 import Mypage_edit_myinfo from '@/views/Mypage_edit_myinfo.vue';
+import Mypage_edit_mystamp from '@/views/Mypage_edit_mystamp.vue';
 import Mypage_list_data from '@/views/backup/Mypage_list_data.vue';
 import Change_password from '@/views/Change_password.vue';
 import Profile from '@/views/Profile.vue';
@@ -71,6 +72,11 @@ const router = createRouter({
               path: 'edit-myinfo',
               name: 'edit-myinfo',
               component: Mypage_edit_myinfo,
+            },
+            {
+                path: 'edit-mystamp',
+                name: 'edit-mystamp',
+                component: Mypage_edit_mystamp,
             },
           ]
         },

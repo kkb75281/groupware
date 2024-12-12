@@ -100,7 +100,8 @@ let sendStampBlob = () => {
 
     canvas.value.toBlob((blob) => {
         if (blob) {
-            emit("save", blob); // Blob 전달
+            const imageUrl = URL.createObjectURL(blob);
+            emit("save", imageUrl); // Blob 전달
         }
     }, "image/png");
 }
@@ -146,7 +147,8 @@ onUnmounted(() => {
 canvas {
     width: 100%;
     height: 100%;
-    border: 1px solid var(--gray-color-400);
+    border: 1px solid var(--gray-color-200);
+    border-radius: 0.5rem;
 }
 
 .button-wrap {
