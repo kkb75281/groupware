@@ -6,71 +6,173 @@ hr
 
 .form-wrap
     .form-inner
-        //- .upload-button-wrap
-            button.btn.outline.warning(:disabled="!selectedList.length") 삭제
-            button.btn.outline 등록
-
-        br
-        //- form#_el_mystampForm
         .stamp-wrap
+            input#stamp-file(ref="stamp_file_input" name="stamp_data" type="file" accept="image/*" @change="uploadStamp" style="display: none")
+
             .stamp-grid
-                .stamp
-                    #stamp-img.upload
+                .stamp.upload-btn(ref="optionsBtn" :class="{'disabled': uploading}" @click="showOptions = !showOptions")
+                    #stamp-img
                         svg.add-icon
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-add-circle-fill")
-                    .name(style="color:var(--primary-color-400)") 등록하기
-            //- .stamp-grid
-                .stamp
-                    #stamp-img.upload
-                    .name 서명 등록
-            //- .stamp-grid
-                .stamp
-                    button.btn.outline 도장 등록
-                    button.btn.outline 서명 등록
+                    .name 등록하기
+                ul.upload-options(v-if="showOptions" @click.stop)
+                    li.option(@click="selectFile") 파일 등록
+                    li.option(@click="showOptions = false; openStampModal = !openStampModal") 서명 등록
+
             .stamp-grid(v-for="stamp in uploadedStamp")
                 .stamp
-                    label.checkbox
-                        input(type="checkbox" name="checkbox" :checked="selectedList.includes(stamp.url)" @click="toggleSelect(stamp.url)")
-                        span.label-checkbox
                     img#stamp-img(:src="stamp.url" alt="도장 이미지")
-                    .name {{ stamp.name }}
+                    .name {{ stamp.filename }}
+                    svg.delete-icon(@click="deleteStamp(stamp.url)")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
-MakeStamp(v-if="openStampModal" @save="handleStampBlob" @close="closeStampDialog")
+            .stamp-grid(v-if="uploading && uploadingStamp")
+                .stamp.upload-preview
+                    img#stamp-img(:src="uploadingStamp.url" alt="도장 미리보기")
+                    .name {{ uploadingStamp.name }}
+        
+MakeStamp(v-if="openStampModal" @upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { skapi } from '@/main';
+import { user } from '@/user';
 import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc } from '@/components/make_stamp';
 
 import MakeStamp from '@/components/make_stamp.vue';
 
-let uploadedStamp = ref([
-    {
-        name: '개인도장',
-        url: 'https://via.placeholder.com/150',
-    },
-    {
-        name: '회사직인',
-        url: 'https://via.placeholder.com/250',
-    },
-    {
-        name: '개인서명',
-        url: 'https://via.placeholder.com/350',
-    },
-    {
-        name: '회사직인2',
-        url: 'https://via.placeholder.com/450',
-    }
-]);
-let selectedList = ref([]);
+let showOptions = ref(false);
+let stamp_file_input = ref(null);
+let optionsBtn = ref(null);
+let isSignImage = ref(false);
+let uploadedStamp = ref([]);
+let uploadedRecordId = ref(null);
+let uploading = ref(false);
 
-let toggleSelect = (url) => {
-    if (selectedList.value.includes(url)) {
-        selectedList.value = selectedList.value.filter(itemUrl => itemUrl !== url);
-    } else {
-        selectedList.value.push(url);
+function makeSafe(str) {
+    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+}
+
+let closeOptions = (e) => {
+    if (showOptions.value && !optionsBtn.value.contains(e.target)) {
+        showOptions.value = false;
+    }
+};
+let selectFile = () => {
+    showOptions.value = false;
+    stamp_file_input.value.click();
+}
+let getStampList = async () => {
+    try {
+        let res = await skapi.getRecords({
+            unique_id: '[stamp_images]' + makeSafe(user.user_id),
+            table: {
+                name: 'stamp_images',
+                access_group: 1,
+            }
+        });
+
+        console.log(res);
+
+        if(res.list.length) {
+            uploadedStamp.value = res.list[0].bin.stamp_data;
+            uploadedRecordId.value = res.list[0].record_id;
+        }
+    } catch(e) {
+        console.log({e})
+
+        if(e.code === "NOT_EXISTS") {
+            uploadedStamp.value = [];
+            uploadedRecordId.value = null;
+        } else {
+            alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
+        }
     }
 }
+getStampList();
+
+let uploadStampImage = async(imageUrl) => {
+    await handleStampBlob(imageUrl);
+
+    if(!Object.keys(stampImages.value).length) return;
+
+    isSignImage.value = true;
+    uploadStamp();
+}
+let uploadStamp = async () => {
+    uploading.value = true;
+
+    let filebox = document.querySelector('input[name=stamp_data]');
+
+    let stamp_postParams = {
+        table: {
+            name: 'stamp_images',
+            access_group: 1,
+        }
+    }
+
+    if(uploadedRecordId.value) {
+        stamp_postParams.record_id = uploadedRecordId.value;
+    } else {
+        stamp_postParams.unique_id = '[stamp_images]' + makeSafe(user.user_id);
+    }
+    
+    // 파일로 업로드 했을때
+    if(!isSignImage.value && filebox && filebox.files.length) {
+        let fileURL = URL.createObjectURL(filebox.files[0]);
+
+        uploadingStamp.value.name = filebox.files[0].name;
+        uploadingStamp.value.url = fileURL;
+
+        let stampFileData = new FormData();
+
+        stampFileData.append('stamp_data', filebox.files[0]);
+
+        try {
+            await skapi.postRecord(stampFileData, stamp_postParams);
+        } catch(e) {
+            alert('도장 등록 중 오류가 발생했습니다.');
+            throw e;
+        }
+        
+        filebox.value = '';
+        uploadingStamp.value = {};
+        alert('도장 등록이 완료되었습니다.');
+
+        // 이미지 업로드 후 도장 정보 다시 불러오기
+        getStampList();
+        uploading.value = false;
+    } else {
+        // 서명으로 업로드 했을때
+        if (Object.keys(stampImages.value).length) {
+            let stampImageData = new FormData();
+            stampImageData.append('stamp_data', stampImages.value.blob, stampImages.value.name);
+
+            try {
+                await skapi.postRecord(stampImageData, stamp_postParams);
+            } catch(e) {
+                alert('도장 등록 중 오류가 발생했습니다.');
+                throw e;
+            }
+
+            stampImages.value = {};
+            uploadingStamp.value = {};
+            alert('도장 등록이 완료되었습니다.');
+
+            // 이미지 업로드 후 도장 정보 다시 불러오기
+            getStampList();
+            uploading.value = false;
+        }
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', closeOptions);
+});
+onUnmounted(() => {
+    document.removeEventListener('click', closeOptions);
+});
 </script>
 
 <style scoped lang="less">
@@ -92,12 +194,15 @@ let toggleSelect = (url) => {
 .stamp-wrap {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
+    // grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    // grid-template-columns: repeat(4, minmax(220px, 1fr));
     gap: 1rem;
 
     .stamp-grid {
         position: relative;
         width: 100%;
         border: 1px solid var(--gray-color-100);
+        border-radius: 0.5rem;
 
         &::after {
             content: '';
@@ -118,50 +223,6 @@ let toggleSelect = (url) => {
                 position: absolute;
                 top: 0.5rem;
                 left: 0.5rem;
-                z-index: 1;
-                // display: block;
-                // width: 1.5rem;
-                // height: 1.5rem;
-                // border: 1px solid var(--gray-color-100);
-                // border-radius: 50%;
-                // background-color: #fff;
-                // cursor: pointer;
-
-                // input {
-                //     display: none;
-                // }
-
-                // .label-checkbox {
-                //     display: block;
-                //     width: 100%;
-                //     height: 100%;
-                //     background-color: var(--gray-color-100);
-                //     border-radius: 50%;
-                //     position: relative;
-
-                //     &::before {
-                //         content: '';
-                //         display: block;
-                //         width: 0.5rem;
-                //         height: 0.5rem;
-                //         background-color: #fff;
-                //         border-radius: 50%;
-                //         position: absolute;
-                //         top: 50%;
-                //         left: 50%;
-                //         transform: translate(-50%, -50%);
-                //         opacity: 0;
-                //         transition: all 0.2s ease-in-out;
-                //     }
-                // }
-
-                // input:checked + .label-checkbox {
-                //     background-color: var(--primary-color-500);
-
-                //     &::before {
-                //         opacity: 1;
-                //     }
-                // }
             }
 
             .add-icon {
@@ -171,8 +232,129 @@ let toggleSelect = (url) => {
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                // margin-bottom: 0.5rem;
-                fill: var(--primary-color-400)
+                fill: var(--primary-color-400);
+                // transition: all 0.3s;
+                // fill: var(--gray-color-300);
+            }
+
+            .delete-icon {
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                width: 25px;
+                height: 25px;
+                fill: var(--gray-color-300);
+                transition: all 0.3s;
+                cursor: pointer;
+
+                &:hover {
+                    fill: var(--warning-color-400);
+                }
+            }
+
+            &.upload-btn {
+                cursor: pointer;
+
+                #stamp-img {
+                    background-color: unset;
+                    // transition: all 0.3s;
+                    border-color: var(--primary-color-300);
+
+                    &::before {
+                        content: '';
+                        background-color: unset;
+                    }
+                }
+                .name {
+                    // transition: all 0.3s;
+                    // color: var(--gray-color-300);
+                    color:var(--primary-color-400);
+                }
+
+                &.disabled {
+                    cursor: default;
+                    pointer-events: none;
+
+                    #stamp-img {
+                        border-color: var(--gray-color-300);
+                    }
+                    .add-icon {
+                        fill: var(--gray-color-300);
+                    }
+                    .name {
+                        color:var(--gray-color-300);
+                    }
+                }
+
+                // &:hover {
+                //     #stamp-img {
+                //         border-color: var(--primary-color-300);
+                //     }
+                //     .add-icon {
+                //         fill: var(--primary-color-400);
+                //     }
+                //     .name {
+                //         color:var(--primary-color-400);
+                //     }
+                // }
+            }
+
+            &.upload-preview {
+                background-color: var(--primary-color-25);
+
+                #stamp-img {
+                    background-color: var(--primary-color-25);
+                    border-color: var(--gray-color-200);
+                    opacity: 0.3;
+
+                    &::before {
+                        content: '미리보기';
+                        background-color: var(--primary-color-25);
+                    }
+                }
+                .name {
+                    opacity: 0.3;
+                }
+            }
+        }
+
+        .upload-options {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50% + 50px) translateY(-50% + 25px);
+            // right: -113px;
+            // bottom: -40px;
+            z-index: 9;
+            background-color: var(--gray-color-100);
+            border: 1px solid var(--gray-color-300);
+            padding: 5px;
+            border-radius: 4px;
+            
+            li {
+                font-size: 0.8rem;
+                text-align: left;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 4px;
+
+                &:first-child {
+                    margin-bottom: 4px;
+                }
+                &:hover {
+                    background-color: var(--primary-color-400);
+                    color: #fff;
+
+                    &.disabled {
+                        background-color: unset;
+                        color: unset;
+                    }
+                }
+                &.disabled {
+                    opacity: 0.25;
+                    cursor: default;
+                    pointer-events: none;
+                }
             }
         }
     }
@@ -203,19 +385,36 @@ let toggleSelect = (url) => {
         top: 0;
         left: 0;
     }
+}
+#options-modal {
+    .modal-cont {
+        margin: auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
 
-    &.upload {
-        background-color: unset;
+        button {
+            min-width: 150px;
+            flex-grow: 1;
+        }
+    }
+}
 
-        &::before {
-            content: url('@/assets/icon/material-icon.svg#icon-add-circle');
-            background-color: unset;
-            // background-image: url(@/assets/icon/material-icon.svg#icon-add-circle);
-            fill: #000
-        }
-        &::after {
-            
-        }
+@media (max-width: 950px) {
+    .stamp-wrap {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 576px) {
+    .stamp-wrap {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 390px) {
+    .stamp-wrap {
+        grid-template-columns: repeat(1, 1fr);
     }
 }
 </style>
