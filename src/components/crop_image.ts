@@ -1,6 +1,6 @@
 import { ref } from "vue";
 
-export let openModal = ref(false);
+export let openCropModal = ref(false);
 export let croppedImages = ref({});
 export let uploadSrc = ref({});
 export let currentImageSrc = ref('');
@@ -8,7 +8,7 @@ export let currentTargetId = ref('');
 export let deleteList = ref([]);    // 한 폼에서 여러 이미지를 업로드할 때, 삭제할 이미지 목록
 
 export let resetCropImage = () => {
-    openModal.value = false;
+    openCropModal.value = false;
     croppedImages.value = {};
     uploadSrc.value = {};
     currentImageSrc.value = '';
@@ -27,7 +27,7 @@ export let openCropImageDialog = (e) => {
         currentImageSrc.value = fileURL;
         currentTargetId.value = e.target.id;
         uploadSrc.value[currentTargetId.value] = fileURL;
-        openModal.value = true;
+        openCropModal.value = true;
     }
     if(e.currentTarget) {
         e.currentTarget.value = ''; // 초기화
@@ -36,8 +36,8 @@ export let openCropImageDialog = (e) => {
 
 export let closeCropImageDialog = () => {
     uploadSrc.value[currentTargetId.value] = null;
-    openModal.value = false;
     document.querySelector('body').style.overflow = '';
+    openCropModal.value = false;
 }
 
 export let setCroppedImage = async(croppedImage) => {
@@ -53,11 +53,12 @@ export let setCroppedImage = async(croppedImage) => {
             // Blob 객체를 저장 (서버 전송용)
             croppedImages.value[currentTargetId.value] = blob;
 
-            openModal.value = false;
+            openCropModal.value = false;
             currentImageSrc.value = '';
             currentTargetId.value = '';
         } catch (error) {
-            console.error('Error processing Blob URL:', error);
+            alert('이미지를 업로드하는 중 오류가 발생했습니다.');
+            throw error;
         }
     }
 }

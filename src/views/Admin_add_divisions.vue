@@ -120,7 +120,7 @@ hr
             button.btn.bg-gray(type="button" @click="$router.push('/admin/list-divisions')") 취소
             button.btn(type="submit") 등록
 
-CropImage(:open="openModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
 br  
 br  
@@ -131,7 +131,7 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { nextTick, onMounted, ref } from 'vue';
 import { skapi } from '@/main';
-import { openModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
 
