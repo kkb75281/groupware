@@ -1,7 +1,15 @@
 <template lang="pug">
 .modal(ref="dialog" @keydown.esc.prevent="closeDialog")
     .modal-cont
-        //- .modal-inner
+        //- template(v-if="uploadingStamp && Object.keys(uploadingStamp).length")
+            .upload-preview
+                img#stamp-img(:src="uploadingStamp.url" alt="도장 이미지")
+                .name {{ uploadingStamp.name }}
+
+            .button-wrap
+                button.btn.outline(@click="closeDialog") 취소
+                button.btn(@click="upload") 등록
+        //- template(v-else)
         .input-wrap.canvas-wrap
             p.label.essential(style="margin-bottom: 8px;") 서명란
             canvas#stampCanvas(ref="canvas")
@@ -11,16 +19,19 @@
             input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등")
 
         .button-wrap
-            button.btn.outline(@click="closeDialog") 취소
-            button.btn(@click="reset") 지우기
-            button.btn(@click="sendStampBlob") 저장
+            button.btn.bg-gray(@click="closeDialog") 취소
+            button.btn.outline(@click="reset") 초기화
+            button.btn(@click="sendStampBlob") 등록
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { stampName } from '@/components/make_stamp';
+import { openStampModal, uploadingStamp, handleStampBlob, stampName } from '@/components/make_stamp';
 
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save', 'upload']);
+
+let step = ref('options');
+
 let canvas = ref(null);
 let ctx = null;
 let painting = false;
@@ -34,6 +45,18 @@ function getMousePos(canvas, event) {
         y: event.clientY - rect.top
     };
 }
+
+// 캔버스 크기 설정
+const resizeCanvas = () => {
+    const width = canvas.value.offsetWidth;
+    const height = canvas.value.offsetHeight;
+    
+    canvas.value.width = width;
+    canvas.value.height = height;
+
+    // 기존 서명 복원 (리사이즈 시 데이터 손실 방지)
+    if (ctx) ctx.clearRect(0, 0, width, height);
+};
 
 // 서명 시작
 function startPosition(e) {
@@ -64,14 +87,23 @@ function draw(e) {
 }
 
 let reset = () => {
+    stampName.value = '';
+
     if (ctx && canvas.value) {
         ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
     }
 }
 
+let upload = () => {
+    reset();
+    emit('upload');
+    // openStampModal.value = false;
+}
+
 let closeDialog = () => {
     reset();        // stamp maker 초기화
     emit('close');  // 부모 컴포넌트에 닫기 이벤트 전달
+    document.querySelector('body').style.overflow = '';
 };
 
 let sendStampBlob = () => {
@@ -101,7 +133,8 @@ let sendStampBlob = () => {
     canvas.value.toBlob((blob) => {
         if (blob) {
             const imageUrl = URL.createObjectURL(blob);
-            emit("save", imageUrl); // Blob 전달
+            emit("upload", imageUrl); // Blob 전달
+            // handleStampBlob(imageUrl);
         }
     }, "image/png");
 }
@@ -109,35 +142,85 @@ let sendStampBlob = () => {
 onMounted(() =>{
     if (!canvas.value) return;
 
-    // CSS 크기 가져오기
-    let width = canvas.value.offsetWidth;
-    let height = canvas.value.offsetHeight;
+    document.querySelector('body').style.overflow = 'hidden';
 
-    // 실제 크기 동기화
-    canvas.value.width = width;
-    canvas.value.height = height;
+    resizeCanvas();
 
     ctx = canvas.value.getContext("2d");
 
     reset();
+    
+    // Pointer 이벤트로 마우스/터치 통합 처리
+    canvas.value.addEventListener("pointerdown", startPosition);
+    canvas.value.addEventListener("pointermove", draw);
+    canvas.value.addEventListener("pointerup", endPosition);
 
-    canvas.value.addEventListener('mousedown', startPosition);
-    canvas.value.addEventListener('mouseup', endPosition);
-    canvas.value.addEventListener('mousemove', draw);
+    // 윈도우 리사이즈 시 캔버스 크기 재조정
+    window.addEventListener("resize", resizeCanvas);
 })
 
 onUnmounted(() => {
     if (!canvas.value) return;
 
-    canvas.value.removeEventListener('mousedown', startPosition);
-    canvas.value.removeEventListener('mouseup', endPosition);
-    canvas.value.removeEventListener('mousemove', draw);
+    document.querySelector('body').style.overflow = 'auto';
+
+    // Pointer 이벤트로 마우스/터치 통합 처리
+    canvas.value.removeEventListener("pointerdown", startPosition);
+    canvas.value.removeEventListener("pointermove", draw);
+    canvas.value.removeEventListener("pointerup", endPosition);
+
+    window.removeEventListener("resize", resizeCanvas);
 })
 </script>
 
 <style scoped lang="less">
+#stamp-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 30%;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
+    position: relative;
+    background-color: #fff;
+    border: 2px dashed var(--gray-color-100);
+
+    &::before {
+        content: "미리보기";
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: #888;
+        background-color: #fff;
+        font-size: 14px;
+        text-align: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+}
+
 .modal-cont {
     margin: auto;
+}
+
+.option-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+
+    button {
+        min-width: 150px;
+        flex-grow: 1;
+    }
+}
+
+.preview-wrap {
+    text-align: center;
 }
 
 .canvas-wrap {
@@ -164,11 +247,12 @@ canvas {
         height: 100%;
         min-width: 100%;
         border-radius: 0;
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
+        padding-top: 3rem;
+        // display: flex;
+        // flex-wrap: nowrap;
+        // align-items: center;
+        // justify-content: center;
+        // flex-direction: column;
 
         .canvas-wrap {
             width: 100%;
