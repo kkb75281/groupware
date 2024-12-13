@@ -5,12 +5,25 @@ ul.card-wrap
             .icon.img
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
-            h4.name 회원정보 수정
+            h4.name 회원 정보 수정
             .btn-wrap
                 p.btn-go 바로가기
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+    li.card
+        router-link.router(to="/mypage/edit-mystamp")
+            .icon.img
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-stamp")
+            h4.name 도장 관리
+            .btn-wrap
+                p.btn-go 바로가기
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
     li.card
         router-link.router(to="/change-password")
             .icon.img

@@ -62,7 +62,12 @@ let menuList = [
                 {
                     name: 'edit-myinfo',
                     to: '/mypage/edit-myinfo',
-                    text: '회원정보 수정',
+                    text: '회원 정보 수정',
+                },
+                {
+                    name: 'edit-mystamp',
+                    to: '/mypage/edit-mystamp',
+                    text: '도장 관리',
                 },
                 {
                     name: 'change-password',
