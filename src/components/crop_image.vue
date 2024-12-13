@@ -219,8 +219,16 @@ dialog {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     padding: 20px;
     max-width: 80vw;
-    max-height: 80vh;
+    // max-height: 80vh;
     overflow: auto;
+
+    .btn.outline {
+        &:active,
+        &:hover,
+        &:focus {
+            border: 1px solid var(--primary-color-400);
+        }
+    }
 }
 
 @media (max-width: 576px) {

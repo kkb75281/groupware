@@ -18,6 +18,7 @@ export let resetCropImage = () => {
 
 export let openCropImageDialog = (e) => {
     const file = e.target.files[0];
+    document.querySelector('body').style.overflow = 'hidden';
 
     deleteList.value.push(e.target.id);
 
@@ -35,6 +36,7 @@ export let openCropImageDialog = (e) => {
 
 export let closeCropImageDialog = () => {
     uploadSrc.value[currentTargetId.value] = null;
+    document.querySelector('body').style.overflow = '';
     openCropModal.value = false;
 }
 
