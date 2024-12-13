@@ -1,8 +1,9 @@
 <template lang="pug">
-.title
-    h1 부서 수정
+.wrap
+    .title
+        h1 직원 상세
 
-hr
+    hr
 
 .form-wrap(v-if="!loading")
     form#_el_comp_form(@submit.prevent="editDivision")
@@ -144,7 +145,7 @@ onMounted(() => {
 
     if (!record) {
         // go back to the list if record is not found
-        router.push('/admin/list-divisions');
+        router.push('/list-employee');
     } else {
         if (record?.bin) {
             bin = {};
@@ -166,7 +167,7 @@ let record_id = urlParams.get('record_id');
 
 if (!record_id) {
     // go back to the list if record_id is not found
-    router.push('/admin/list-divisions');
+    router.push('/list-employee');
 }
 
 let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
