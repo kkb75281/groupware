@@ -18,6 +18,7 @@ import Admin_add_divisions from '@/views/Admin_add_divisions.vue';
 import Admin_edit_divisions from '@/views/Admin_edit_divisions.vue';
 import Admin_list_divisions from '@/views/Admin_list_divisions.vue';
 import List_employee from '@/views/List_employee.vue';
+import List_detail_employee from '@/views/List_detail_employee.vue';
 // import Admin_list_employee from '@/views/Admin_list_employee.vue';
 // import Employee_list_employee from '@/views/Employee_list_employee.vue';
 import Login from '@/views/Login.vue';
@@ -89,6 +90,11 @@ const router = createRouter({
           path: '/list-employee',
           name: 'list-employee',
           component: List_employee,
+        },
+        {
+          path: '/detail-employee/:userId',
+          name: 'detail-employee',
+          component: List_detail_employee,
         },
         {
           path: '/admin',
