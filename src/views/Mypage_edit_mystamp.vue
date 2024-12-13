@@ -6,16 +6,27 @@ hr
 
 .form-wrap
     .form-inner
-        .upload-button-wrap
-            button.btn.outline.warning 삭제
+        //- .upload-button-wrap
+            button.btn.outline.warning(:disabled="!selectedList.length") 삭제
             button.btn.outline 등록
-            //- button.btn.outline 서명 추가
-            //- button.btn.outline 도장 추가
 
         br
         //- form#_el_mystampForm
-        //- .stamp-wrap
         .stamp-wrap
+            .stamp-grid
+                .stamp
+                    #stamp-img.upload
+                        svg.add-icon
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-add-circle-fill")
+                    .name(style="color:var(--primary-color-400)") 등록하기
+            //- .stamp-grid
+                .stamp
+                    #stamp-img.upload
+                    .name 서명 등록
+            //- .stamp-grid
+                .stamp
+                    button.btn.outline 도장 등록
+                    button.btn.outline 서명 등록
             .stamp-grid(v-for="stamp in uploadedStamp")
                 .stamp
                     label.checkbox
@@ -35,20 +46,20 @@ import MakeStamp from '@/components/make_stamp.vue';
 
 let uploadedStamp = ref([
     {
-        name: '도장1',
-        src: 'https://via.placeholder.com/150',
+        name: '개인도장',
+        url: 'https://via.placeholder.com/150',
     },
     {
-        name: '도장2',
-        src: 'https://via.placeholder.com/150',
+        name: '회사직인',
+        url: 'https://via.placeholder.com/250',
     },
     {
-        name: '도장3',
-        src: 'https://via.placeholder.com/150',
+        name: '개인서명',
+        url: 'https://via.placeholder.com/350',
     },
     {
-        name: '도장4',
-        src: 'https://via.placeholder.com/150',
+        name: '회사직인2',
+        url: 'https://via.placeholder.com/450',
     }
 ]);
 let selectedList = ref([]);
@@ -152,6 +163,17 @@ let toggleSelect = (url) => {
                 //     }
                 // }
             }
+
+            .add-icon {
+                position: absolute;
+                width: 30px;
+                height: 30px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                // margin-bottom: 0.5rem;
+                fill: var(--primary-color-400)
+            }
         }
     }
 }
@@ -180,6 +202,20 @@ let toggleSelect = (url) => {
         position: absolute;
         top: 0;
         left: 0;
+    }
+
+    &.upload {
+        background-color: unset;
+
+        &::before {
+            content: url('@/assets/icon/material-icon.svg#icon-add-circle');
+            background-color: unset;
+            // background-image: url(@/assets/icon/material-icon.svg#icon-add-circle);
+            fill: #000
+        }
+        &::after {
+            
+        }
     }
 }
 </style>
