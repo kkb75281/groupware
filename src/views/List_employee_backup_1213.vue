@@ -51,19 +51,19 @@
             table.table#employee_list
                 colgroup
                     template(v-if="user.access_group > 98")
-                        col(style="width: 5%;")
-                    col(v-show="isDesktop" style="width: 5%;")
+                        col(style="width: 3rem;")
+                    col(style="width: 3rem;")
+                    col(style="width: 5rem;")
                     col(style="width: 10%;")
                     col(style="width: 10%;")
-                    col(style="width: 10%;")
-                    col(v-show="isDesktop" style="width: 25%;")
-                    //- template(v-if='empListType === "초청여부"')
-                    //-     col(style="width: 11%;")
-                    //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
-                    //-     col(style="width: 11%;")
-                    col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
-                    col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
-                    col(v-show="isDesktop" style="min-width: 15rem;")
+                    col(style="width: 25%;")
+                    template(v-if='empListType === "초청여부"')
+                        col(style="width: 11%;")
+                    template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
+                        col(style="width: 11%;")
+                    col(style="width: 10%; min-width: 6rem;")
+                    col(style="width: 10%; min-width: 6rem;")
+                    col(style="min-width: 15rem;")
                 thead
                     tr
                         template(v-if="user.access_group > 98")
@@ -71,18 +71,18 @@
                                 label.checkbox
                                     input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
                                     span.label-checkbox
-                        th(v-show="isDesktop" scope="col") NO
-                        th(scope="col") 직책<br>(직급)
+                        th(scope="col") NO
+                        th(scope="col") 직책(직급)
                         th(scope="col") 부서
                         th(scope="col") 이름
-                        th(v-show="isDesktop" scope="col") 이메일
+                        th(scope="col") 이메일
                         template(v-if='empListType === "초청여부"')
                             th(scope="col") 초청여부
-                        //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
-                        //-     th(scope="col") 상세보기
-                        th(v-show="isDesktop" scope="col") 생년월일
-                        th(v-show="isDesktop" scope="col") 전화번호
-                        th(v-show="isDesktop" scope="col") 주소
+                        template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
+                            th(scope="col") 상세보기
+                        th(scope="col") 생년월일
+                        th(scope="col") 전화번호
+                        th(scope="col") 주소
                 tbody
                     template(v-if="loading")
                         tr(v-for="i in 4")
@@ -90,15 +90,15 @@
                         tr
                             td(colspan="10") 데이터가 없습니다.
                     template(v-else)
-                        tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEditEmp(e, emp.user_id)" style="cursor: pointer;")
+                        tr(v-for="(emp, index) in employee")
                             //- 직원목록/숨김여부
                             template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
                                 template(v-if="user.access_group > 98")
                                     td
                                         label.checkbox
-                                            input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click.stop="toggleSelect(emp.user_id)")
+                                            input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
                                             span.label-checkbox
-                                td.list-num(v-show="isDesktop") {{ index + 1 }}
+                                td.list-num {{ index + 1 }}
                                 td {{ emp?.position }}
                                 td {{ divisionNameList[emp?.division] }}
                                 template(v-if='user.access_group > 98')
@@ -115,15 +115,14 @@
                                                             use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 
                                             span {{ emp.name }}
-                                
-                                td(v-show="isDesktop") {{ emp.email }}
-                                //- template(v-if='user.access_group > 98')
-                                //-     td
-                                //-         .btn-wrap(v-if="!emp.approved.includes('by_master')")
-                                //-             button.btn.bg-gray.sm(@click="openModal(emp)") 상세보기
-                                td(v-show="isDesktop") {{ emp.birthdate }}
-                                td(v-show="isDesktop") {{ emp.phone_number }}
-                                td(v-show="isDesktop") {{ emp.address }}
+                                td {{ emp.email }}
+                                template(v-if='user.access_group > 98')
+                                    td
+                                        .btn-wrap(v-if="!emp.approved.includes('by_master')")
+                                            button.btn.bg-gray.sm(@click="openModal(emp)") 상세보기
+                                td {{ emp.birthdate }}
+                                td {{ emp.phone_number }}
+                                td {{ emp.address }}
                             
                             //- 초청여부
                             template(v-else-if="empListType === '초청여부'")
@@ -132,18 +131,18 @@
                                         label.checkbox
                                             input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
                                             span.label-checkbox
-                                td.list-num(v-show="isDesktop") {{ index + 1 }}
+                                td.list-num {{ index + 1 }}
                                 td {{ emp?.position }}
                                 td {{ divisionNameList[emp?.division] }}
                                 td {{ emp.name }}
-                                td(v-show="isDesktop") {{ emp.email }}
+                                td {{ emp.email }}
                                 td
                                     .btn-wrap
                                         button.btn.bg-gray.sm(@click="resendInvite(emp.email)") 재전송
                                         button.btn.bg-gray.sm(@click="cancelInvite(emp)") 초청취소
-                                td(v-show="isDesktop") {{ emp.birthdate }}
-                                td(v-show="isDesktop") {{ emp.phone_number }}
-                                td(v-show="isDesktop") {{ emp.address }}
+                                td {{ emp.birthdate }}
+                                td {{ emp.phone_number }}
+                                td {{ emp.address }}
 
         //- .pagination
             button.btn-prev.icon(type="button") 
@@ -247,7 +246,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
@@ -1040,26 +1039,6 @@ let updateFileList = (e) => {
     fileNames.value = Array.from(target.files).map(file => file.name);
   }
 };
-
-const goToEditEmp = (e, userId) => {
-    if(e.target.classList.contains('label-checkbox')) return;
-
-    router.push({ name: 'detail-employee', params: { userId } });
-};
-
-const isDesktop = ref(window.innerWidth > 768);
-
-const updateScreenSize = () => {
-  isDesktop.value = window.innerWidth > 768;
-};
-
-onMounted(() => {
-  window.addEventListener('resize', updateScreenSize);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateScreenSize);
-});
 </script>
 
 <style scoped lang="less">
