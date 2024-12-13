@@ -1,7 +1,7 @@
 import { ref } from "vue";
 
 export let openStampModal = ref(false);
-export let uploadingStamp = ref([]);
+export let uploadingStamp = ref({});
 export let stampImages = ref({});
 export let stampName = ref('');
 export let uploadingSrc = ref({});
@@ -16,19 +16,16 @@ export let handleStampBlob = async (makeStampImage) => {
     if (stampName.value) {
         try {
             // 미리보기 이미지 경로
-            // uploadStamp.value[stampName.value] = makeStampImage;
-            let previewObj = {
-                name: stampName.value,
-                url: makeStampImage
-            }
-            uploadingStamp.value.push(previewObj);
+            uploadingStamp.value.name = stampName.value;
+            uploadingStamp.value.url = makeStampImage;
     
             // Blob URL에서 Blob 객체를 가져오기
             const response = await fetch(makeStampImage);
             const blob = await response.blob();
     
             // 서버로 보낼 blob 객체
-            stampImages.value[stampName.value] = blob;
+            stampImages.value.name = stampName.value;
+            stampImages.value.blob = blob;
     
             openStampModal.value = false;
             stampName.value = '';
