@@ -1,97 +1,96 @@
 <template lang="pug">
-.wrap
-    .title
-        h1 직원 상세
+.title
+    h1 직원 상세
 
-    hr
+hr
 
-    .form-wrap
-        form#_el_empDetail_form
-            div(style="text-align: center;")
-                .image
-                    img#profile-img(:src="currentEmp?.picture" alt="profile image")
+.form-wrap
+    form#_el_empDetail_form
+        div(style="text-align: center;")
+            .image
+                img#profile-img(:src="currentEmp?.picture" alt="profile image")
 
-            .input-wrap
-                p.label 직책
-                input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled")
+        .input-wrap
+            p.label 직책
+            input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled")
 
-            .input-wrap
-                p.label 부서
-                template(v-if="disabled")
-                    input(type="text" name="division" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division] === '' ? '' : '부서를 선택해주세요.'" readonly)
-                template(v-else)
-                    select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
-                        option(value="" disabled) 부서 선택
+        .input-wrap
+            p.label 부서
+            template(v-if="disabled")
+                input(type="text" name="division" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division] === '' ? '' : '부서를 선택해주세요.'" readonly)
+            template(v-else)
+                select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
+                    option(value="" disabled) 부서 선택
+        
+        .input-wrap
+            p.label 권한
+            template(v-if="disabled")
+                input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
+            template(v-else)
+                select(name="access_group" v-model="currentEmp.access_group")
+                    option(value="" disabled selected) 권한선택
+                    option(value="1") 직원
+                    option(value="98") 관리자
+                    option(value="99") 마스터
             
-            .input-wrap
-                p.label 권한
-                template(v-if="disabled")
-                    input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
-                template(v-else)
-                    select(name="access_group" v-model="currentEmp.access_group")
-                        option(value="" disabled selected) 권한선택
-                        option(value="1") 직원
-                        option(value="98") 관리자
-                        option(value="99") 마스터
-                
-            .input-wrap
-                p.label 이름
-                input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
+        .input-wrap
+            p.label 이름
+            input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
 
-            .input-wrap
-                p.label 이메일
-                input(type="email" name="email" :value="currentEmp?.email || '-' " placeholder="예) user@email.com" disabled)
+        .input-wrap
+            p.label 이메일
+            input(type="email" name="email" :value="currentEmp?.email || '-' " placeholder="예) user@email.com" disabled)
 
-            .input-wrap
-                p.label 생년월일
-                input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled)
+        .input-wrap
+            p.label 생년월일
+            input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled)
 
-            .input-wrap
-                p.label 전화번호
-                input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
+        .input-wrap
+            p.label 전화번호
+            input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
 
-            .input-wrap
-                p.label 주소
-                input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
+        .input-wrap
+            p.label 주소
+            input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
 
-            .input-wrap.upload-file
-                p.label(style="margin-bottom: 0;") 기타자료
-                template(v-if="!disabled")
-                    .btn-upload-file
-                        input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-                        label.btn.outline.btn-upload(for="file") 파일 추가
-                        ul.upload-file-list
-                            li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+        .input-wrap.upload-file
+            p.label(style="margin-bottom: 0;") 기타자료
+            template(v-if="!disabled")
+                .btn-upload-file
+                    input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                    label.btn.outline.btn-upload(for="file") 파일 추가
+                    ul.upload-file-list
+                        li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
-                .file-wrap
-                    ul.file-list
-                        template(v-if="uploadFile.length === 0")
-                            li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
-                        template(v-else)
-                            li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
-                                a.file-name(:href="file.url" target="_blank") {{ file.filename }}
-                                template(v-if="!disabled")
-                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
-                                        svg
-                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-                                    button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
-                                        svg
-                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-
-            br
-            br
-            br
-
-            .button-wrap
-                template(v-if="user.access_group > 98")
-                    template(v-if="disabled")
-                        button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
-                        button.btn.btn-edit(type="button" @click="startEditEmp") 수정
+            .file-wrap
+                ul.file-list
+                    template(v-if="uploadFile.length === 0")
+                        li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
                     template(v-else)
-                        button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
-                        button.btn.btn-register(type="submit" @click="registerEmp") 저장
-                template(v-else)
+                        li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
+                            a.file-name(:href="file.url" target="_blank") {{ file.filename }}
+                            template(v-if="!disabled")
+                                button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
+                                    svg
+                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+                                button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
+                                    svg
+                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+
+        br
+        br
+        br
+
+        .button-wrap
+            template(v-if="user.access_group > 98")
+                template(v-if="disabled")
                     button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
+                    button.btn.btn-edit(type="button" @click="startEditEmp") 수정
+                template(v-else)
+                    button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
+                    button.btn.btn-register(type="submit" @click="registerEmp") 저장
+            template(v-else)
+                button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
 
 
 br  
