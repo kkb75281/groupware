@@ -18,7 +18,7 @@ nav#navbar(ref="navbar")
                     router-link.router(:to="item.to")
                         .icon
                             svg
-                                use(:xlink:href="`src/assets/icon/material-icon.svg#icon-${item.icon}`")
+                                use(:xlink:href="item.icon")
                         .text 
                             span {{ item.text }}
                             svg.arrow(v-if="item.child" :class="{'down': item.child.name === activeMenu}")
@@ -47,14 +47,14 @@ let menuList = [
         show: true,
         name: 'home',
         to: '/',
-        icon: 'dashboard',
+        icon: 'src/assets/icon/material-icon.svg#icon-dashboard',
         text: '대시보드',
     },
     {
         show: true,
         name: 'mypage',
         to: '/mypage',
-        icon: 'account-circle-fill',
+        icon: 'src/assets/icon/material-icon.svg#icon-account-circle-fill',
         text: '마이페이지',
         child: {
             name: 'mypage',
@@ -81,7 +81,7 @@ let menuList = [
         show: isadmin,
         name: 'admin',
         to: '/admin',
-        icon: 'settings',
+        icon: 'src/assets/icon/material-icon.svg#icon-settings',
         text: '마스터 페이지',
         child: {
             name: 'admin',
@@ -103,19 +103,19 @@ let menuList = [
         show: !isadmin,
         name: 'list-employee',
         to: '/list-employee',
-        icon: 'groups',
+        icon: 'src/assets/icon/material-icon.svg#icon-groups',
         text: '직원 목록',
     },
     // {
     //     name: 'component',
     //     to: '/component',
-    //     icon: 'component',
+    //     icon: 'src/assets/icon/material-icon.svg#icon-component',
     //     text: 'component',
     // },
     // {
     //     name: 'mailing',
     //     to: '/mailing',
-    //     icon: 'mail',
+    //     icon: 'src/assets/icon/material-icon.svg#icon-mail',
     //     text: 'mailing',
     // }
 ];
