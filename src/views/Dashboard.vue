@@ -1,43 +1,38 @@
 <template lang="pug">
-.wrap
-    //- h1.title 대시보드
-
-    //- hr
-
-    ul.card-wrap
-        li.card
-            router-link.router(to="/")
-                .icon.img
+ul.card-wrap
+    li.card
+        router-link.router(to="/")
+            .icon.img
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+            h4.name 메일
+            .btn-wrap
+                p.btn-go 바로가기
+                .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-                h4.name 메일
-                .btn-wrap
-                    p.btn-go 바로가기
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-        li.card
-            router-link.router(to="/")
-                .icon.img
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+    li.card
+        router-link.router(to="/")
+            .icon.img
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+            h4.name 메일
+            .btn-wrap
+                p.btn-go 바로가기
+                .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-                h4.name 메일
-                .btn-wrap
-                    p.btn-go 바로가기
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-        li.card
-            router-link.router(to="/")
-                .icon.img
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+    li.card
+        router-link.router(to="/")
+            .icon.img
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+            h4.name 메일
+            .btn-wrap
+                p.btn-go 바로가기
+                .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-                h4.name 메일
-                .btn-wrap
-                    p.btn-go 바로가기
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
 <script setup lang="ts">

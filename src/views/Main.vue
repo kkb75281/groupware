@@ -2,7 +2,8 @@
 Header
 Navbar
 main#main
-    router-view
+    .wrap
+        router-view
 </template>
 
 <script setup>
