@@ -26,7 +26,7 @@
                     col(style="width: 2.4rem")
                     col(style="width: 3rem")
                     col
-                    //- col(style="width: 10%")
+                    col(style="width: 10%")
                 thead
                     tr
                         th(scope="col") 
@@ -35,7 +35,7 @@
                                 span.label-checkbox
                         th(scope="col") NO
                         th.left(scope="col") 결재 서류
-                        //- th(scope="col") 대표명
+                        th(scope="col") 결재 현황
 
                 tbody
                     tr(v-for="(audit, index) of auditList")
@@ -45,7 +45,7 @@
                                 span.label-checkbox
                         td {{ index + 1 }}
                         td.left {{ audit.data.to_audit }}
-                        //- td 이름
+                        td {{ audit.data.approved }}
 
 </template>
 
@@ -100,13 +100,15 @@ onMounted(async () => {
             record_id: a.data.audit_id
         })).list[0];
 
-        console.log('audit_doc : ', audit_doc);
+        // console.log('audit_doc : ', audit_doc);
 
-        auditList.value.push(audit_doc);
+        
 
-        audit_doc_list[audit_doc.record_id] = audit_doc; // 결제 서류 저장
+        // console.log('auditList.value : ', auditList.value);
 
-        console.log('audit_doc_list : ', audit_doc_list);
+        // audit_doc_list[audit_doc.record_id] = audit_doc; // 결제 서류 저장
+
+        // console.log('audit_doc_list : ', audit_doc_list);
 
         // 다른 사람 결제 여부 확인
         let approvals = (await skapi.getRecords({
@@ -117,6 +119,14 @@ onMounted(async () => {
             reference: a.data.audit_id
         })).list;
 
+        console.log('approvals : ', approvals);
+
+        audit_doc.approved = approvals;
+
+        auditList.value.push(audit_doc); // 결제 서류 저장
+
+        console.log('audit_doc : ', audit_doc);
+
         let oa_has_audited_str = '';
 
         for (let auditor of audit_doc.tags.map(a => a.replaceAll('_', '-'))) { // audit_doc.tags: 결제자 목록
@@ -124,7 +134,7 @@ onMounted(async () => {
 
             let oa_has_audited_str = null;
 
-            console.log('approvals : ', approvals);
+            // console.log('approvals : ', approvals);
 
             for (let approval of approvals) {
                 // console.log('approval : ', approval);
