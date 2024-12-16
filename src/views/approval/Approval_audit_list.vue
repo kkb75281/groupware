@@ -38,13 +38,13 @@
                         //- th(scope="col") 대표명
 
                 tbody
-                    tr
+                    tr(v-for="(audit, index) of auditList")
                         td 
                             label.checkbox
                                 input(type="checkbox" name="checkbox")
                                 span.label-checkbox
-                        td 01
-                        td.left {{ auditList }}
+                        td {{ index + 1 }}
+                        td.left {{ audit.data.to_audit }}
                         //- td 이름
 
 </template>
@@ -58,7 +58,7 @@ import { user, profileImage, verifiedEmail } from '@/user';
 const router = useRouter();
 const route = useRoute();
 
-const auditList = ref('');
+const auditList = ref([]);
 
 const audit_doc_list = {};
 
@@ -78,7 +78,10 @@ onMounted(async () => {
         }
     );
 
-    console.log('audits : ', audits.list);
+    console.log('audits.list : ', audits.list);
+
+    // auditList.value = audits.list;
+
 
     for (let a of audits.list) {
         console.log('a : ', a);
@@ -89,6 +92,8 @@ onMounted(async () => {
         })).list[0];
 
         console.log('audit_doc : ', audit_doc);
+
+        auditList.value.push(audit_doc);
 
         audit_doc_list[audit_doc.record_id] = audit_doc; // 결제 서류 저장
 
@@ -107,24 +112,24 @@ onMounted(async () => {
 
         for (let auditor of audit_doc.tags.map(a => a.replaceAll('_', '-'))) { // audit_doc.tags: 결제자 목록
             console.log('auditor : ', auditor);
-            console.log('a : ', a);
 
             let oa_has_audited_str = null;
 
             console.log('approvals : ', approvals);
 
             for (let approval of approvals) {
-                console.log('approval : ', approval);
+                // console.log('approval : ', approval);
 
                 if (approval.user_id === auditor) {
                     oa_has_audited_str = approval.data.approved ? '결제함' : '반려함';
                     // auditList.value += `---${auditor}:${oa_has_audited_str}---\n`; // 결제 서류 화면에 보여주기
-                    auditList.value += audit_doc.data.to_audit;
+                    // auditList.value += audit_doc.data.to_audit;
                     break;
                 }
             }
+
             if (!oa_has_audited_str) {
-                auditList.value += `---${auditor}:결제대기중---\n`; // 결제 서류 화면에 보여주기
+                // auditList.value += `---${auditor}:결제대기중---\n`; // 결제 서류 화면에 보여주기
             }
         }
 
