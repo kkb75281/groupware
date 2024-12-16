@@ -9,7 +9,7 @@
         form#_el_empDetail_form
             #_el_pictureForm(style="text-align: center;")
                 .image
-                    img#profile-img( alt="profile image")
+                    img#profile-img(:src="selectedEmp?.picture" alt="profile image")
 
             .input-wrap
                 p.label 직책
@@ -18,7 +18,7 @@
             .input-wrap
                 p.label 부서
                 template(v-if="disabled")
-                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :placeholder="divisionNameList[selectedEmp?.division] === '' ? '부서를 선택해주세요.' : ''" readonly)
+                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :placeholder="divisionNameList[selectedEmp?.division] === '' ? '' : '부서를 선택해주세요.'" readonly)
                 template(v-else)
                     select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
                         option(value="" disabled) 부서 선택
@@ -113,9 +113,6 @@ const router = useRouter();
 const route = useRoute();
 
 let loading = ref(false);
-let selectedList = ref([]);
-let blockList = ref([]);
-
 let originalEmployee = ref([]);
 let employee = ref([]);
 let suspendedLength = ref(0);
@@ -139,18 +136,6 @@ let access_group = {
 
 const userId = route.params.userId;
 const sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
-
-for (let key in sessionEmployee) {
-    if (sessionEmployee[key].user_id === userId) {
-        selectedEmp.value = sessionEmployee[key];
-        selectedEmpOriginal = { ...selectedEmp.value };
-        selectedEmpTags.value.emp_dvs = selectedEmp.value.division;
-        selectedEmpTags.value.emp_pst = selectedEmp.value.position;
-        break;
-    }
-}
-
-console.log('selectedEmp', selectedEmp.value);
 
 function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
@@ -240,6 +225,8 @@ const getEmpsInfo = async (list) => {
     }
 }
 
+let emp_position_current_record = null;
+
 let getEmpDivision = async (userId) => {
     if(!userId) return;
 
@@ -252,7 +239,10 @@ let getEmpDivision = async (userId) => {
             unique_id: "[emp_position_current]" + makeSafe(userId)
         })
     
-        if (!res || !res.list || res.list.length === 0) return;    
+        if (!res || !res.list || res.list.length === 0) {
+            emp_position_current_record = null;
+            return;
+        };    
     
         let record = res.list[0];
         let emp_dvs = record?.index?.name?.split('.')[0];
@@ -263,6 +253,8 @@ let getEmpDivision = async (userId) => {
             division: emp_dvs,
             position: emp_pst
         }
+
+        emp_position_current_record = record;
     } catch (error) {
         console.error('== getEmpDivision == error == ', error);
     }
@@ -315,26 +307,21 @@ const getProfileImg = async (emp) => {
     .catch((err: Error) => {
         console.log('프로필 사진을 불러오는데 실패했습니다.');
     });
-
-    console.log('dd')
 }
 
-let getEmployee = () => {
-    skapi.getUsers().then(async(res) => {        
-        // empListType.value = '직원목록';
+// let getEmployee = () => {
+//     skapi.getUsers().then(async(res) => {        
+//         selectedList.value = [];
 
-        // selectedList.value = [];
-
-
-        // const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
-        // const result = await getEmpsInfo(userList);
+//         const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
+//         const result = await getEmpsInfo(userList);
         
-        // const list = result.filter(emp => emp.approved.includes('approved'));
+//         const list = result.filter(emp => emp.approved.includes('approved'));
         
-        employee.value = res.list;
-        // displayEmployee(result);
-    });
-}
+//         employee.value = res.list;
+//         displayEmployee(result);
+//     });
+// }
 
 let displayEmployee = (employee) => {
     window.sessionStorage.setItem('employee', JSON.stringify(employee));
@@ -343,27 +330,11 @@ let displayEmployee = (employee) => {
 let startEditEmp = async(emp) => {
     disabled.value = false;
     fileNames.value = [];
-    uploadFile.value = [];
     removeFileList.value = [];
 
     nextTick(() => {
         displayDivisionOptions('division');
     });
-
-    if(emp.picture) {
-        await skapi.getFile(emp.picture, {
-            dataType: 'endpoint',
-        })
-        .then((res: any) => {  
-            emp.picture = res;
-        })
-        .catch((err: Error) => {
-            window.alert('프로필 사진을 불러오는데 실패했습니다.');
-            throw err;
-        });
-    }
-
-    getAdditionalData();
 
     if(uploadFile.value){
         backupUploadFile.value = [...uploadFile.value];
@@ -392,28 +363,36 @@ let registerEmp = async(e) => {
             },
             tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
         }).then(r => {
-            console.log('history부서직책업데이트', r);
+            console.log('history 부서직책업데이트', r);
         })
 
-        await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(async(r) => {
-            console.log(r)
-            // current
-            await skapi.postRecord({
-                user_id: selectedEmp.value.user_id,
-            }, {
-                unique_id: "[emp_position_current]" + user_id_safe,
-                table: {
-                    name: 'emp_position_current',
-                    access_group: 1
-                },
-                index: {
-                    name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
-                    value: selectedEmp.value.name
-                }
-            }).then(r => {
-                console.log('current부서직책업데이트', r);
-            })
-        });
+        if(emp_position_current_record) {
+            await skapi.deleteRecords({record_id: emp_position_current_record.record_id}).then(r => {
+                console.log(r)
+            });
+        }
+
+        // await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(async(r) => {
+        //     console.log(r)
+        //     // current
+
+        await skapi.postRecord({
+            user_id: selectedEmp.value.user_id,
+        }, {
+            unique_id: "[emp_position_current]" + user_id_safe,
+            table: {
+                name: 'emp_position_current',
+                access_group: 1
+            },
+            index: {
+                name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
+                value: selectedEmp.value.name
+            }
+        }).then(r => {
+            console.log('current 부서직책업데이트', r);
+        })
+        
+        // });
         needUpdate = true;
     }
 
@@ -458,6 +437,8 @@ let registerEmp = async(e) => {
         });
     }
 
+    console.log('AA === registerEmp === employee.value : ', employee.value);
+
     for(let e of employee.value) {
         if(e.user_id === selectedEmp.value.user_id) {
             e.division = selectedEmpTags.value.emp_dvs;
@@ -467,8 +448,11 @@ let registerEmp = async(e) => {
         }
     }
 
-    displayEmployee(employee.value);    // 세션에 저장
-    getAdditionalData();   // 추가자료 가져오기
+    console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
+    console.log('BB === registerEmp === employee.value : ', employee.value);
+
+    // displayEmployee(employee.value);    // 세션에 저장
+    getAdditionalData();
     window.alert('직원 정보 수정이 완료되었습니다.');
 
     disabled.value = true;
@@ -482,7 +466,38 @@ let updateFileList = (e) => {
 };
 
 onMounted(() => {
-  window.scrollTo(0, 0);
+    window.scrollTo(0, 0);
+
+    for (let key in sessionEmployee) {
+        if (sessionEmployee[key].user_id === userId) {
+            selectedEmp.value = sessionEmployee[key];
+            selectedEmpOriginal = { ...selectedEmp.value };
+            selectedEmpTags.value.emp_dvs = selectedEmp.value.division;
+            selectedEmpTags.value.emp_pst = selectedEmp.value.position;
+            break;
+        }
+    }
+
+    if(selectedEmp.value.picture) {
+        skapi.getFile(selectedEmp.value.picture, {
+            dataType: 'endpoint',
+        })
+        .then((res: any) => {  
+            selectedEmp.value.picture = res;
+        })
+        .catch((err: Error) => {
+            window.alert('프로필 사진을 불러오는데 실패했습니다.');
+        });
+    } else {
+        selectedEmp.value.picture = '';
+        return;
+    }
+
+    getAdditionalData();
+
+    if(uploadFile.value){
+        backupUploadFile.value = [...uploadFile.value];
+    }
 });
 </script>
 
