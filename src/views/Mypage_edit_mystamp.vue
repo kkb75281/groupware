@@ -19,19 +19,33 @@ hr
                     li.option(@click="selectFile") 파일 등록
                     li.option(@click="showOptions = false; openStampModal = !openStampModal") 서명 등록
 
-            .stamp-grid(v-for="stamp in uploadedStamp")
-                .stamp
-                    img#stamp-img(:src="stamp.url" alt="도장 이미지")
-                    .name {{ stamp.filename }}
-                    svg.delete-icon(@click="deleteStamp(stamp.url)")
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+            template(v-if="loading")
+                .stamp-grid.loading
+                    .stamp
+                        Loading#loading
 
-            .stamp-grid(v-if="uploading && uploadingStamp")
-                .stamp.upload-preview
-                    img#stamp-img(:src="uploadingStamp.url" alt="도장 미리보기")
-                    .name {{ uploadingStamp.name }}
+            template(v-else)
+                .stamp-grid(v-for="stamp in uploadedStamp")
+                    .stamp
+                        img#stamp-img(:src="stamp.url" alt="도장 이미지")
+                        .name {{ stamp.filename }}
+                        svg.delete-icon(@click="selectedStamp=stamp")
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+
+                .stamp-grid(v-if="uploading && uploadingStamp.length")
+                    .stamp.upload-preview
+                        img#stamp-img(:src="uploadingStamp.url" alt="도장 미리보기")
+                        .name {{ uploadingStamp.name }}
         
 MakeStamp(v-if="openStampModal" @upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
+AlertModal(:open="!!selectedStamp")
+    .content-wrap
+        h4.title 도장 삭제
+        p.desc 도장을 삭제하시겠습니까?
+    .button-wrap
+        button(@click="selectedStamp=null") 취소
+        button.warning(@click="deleteStamp(selectedStamp)") 삭제
+
 </template>
 
 <script setup lang="ts">
@@ -41,14 +55,18 @@ import { user } from '@/user';
 import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc } from '@/components/make_stamp';
 
 import MakeStamp from '@/components/make_stamp.vue';
+import AlertModal from '@/components/alert_modal.vue';
+import Loading from '@/components/loading.vue';
 
 let showOptions = ref(false);
 let stamp_file_input = ref(null);
 let optionsBtn = ref(null);
 let isSignImage = ref(false);
+let selectedStamp = ref(null);
 let uploadedStamp = ref([]);
 let uploadedRecordId = ref(null);
 let uploading = ref(false);
+let loading = ref(false);
 
 function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
@@ -64,6 +82,8 @@ let selectFile = () => {
     stamp_file_input.value.click();
 }
 let getStampList = async () => {
+    loading.value = true;
+
     try {
         let res = await skapi.getRecords({
             unique_id: '[stamp_images]' + makeSafe(user.user_id),
@@ -78,6 +98,7 @@ let getStampList = async () => {
         if(res.list.length) {
             uploadedStamp.value = res.list[0].bin.stamp_data;
             uploadedRecordId.value = res.list[0].record_id;
+            loading.value = false;
         }
     } catch(e) {
         console.log({e})
@@ -88,6 +109,8 @@ let getStampList = async () => {
         } else {
             alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
         }
+
+        loading.value = false;
     }
 }
 getStampList();
@@ -166,6 +189,42 @@ let uploadStamp = async () => {
         }
     }
 }
+let deleteStamp = async(stamp: object) => {
+    if(!uploadedRecordId.value) return;
+    if(!selectedStamp.value) return;
+
+    console.log(selectedStamp.value)
+
+    let post_params = {
+        table: {
+            name: 'stamp_images',
+            access_group: 1
+        },
+        record_id: uploadedRecordId.value,
+        remove_bin: []
+    };
+
+    post_params.remove_bin.push(stamp);
+
+    // // uploadedStamp.value.map((stamp, idx) => {
+    // //     if(stamp.url === url) {
+    // //         post_params.remove_bin.push(stamp);
+    // //     }
+    // // });
+
+    console.log(post_params);
+
+    try {
+        await skapi.postRecord(null, post_params);
+        getStampList();
+        alert('도장이 삭제되었습니다.');
+    } catch(e) {
+        console.log({e});
+        alert('도장 삭제 중 오류가 발생했습니다.');
+    } finally {
+        selectedStamp.value = null;
+    }
+}
 
 onMounted(() => {
     document.addEventListener('click', closeOptions);
@@ -208,6 +267,10 @@ onUnmounted(() => {
             content: '';
             display: block;
             padding-bottom: 100%;
+        }
+
+        &.loading {
+            border: 0;
         }
 
         .stamp {
