@@ -511,11 +511,6 @@ onUnmounted(() => {
     }
 }
 
-.form-wrap {
-    max-width: 650px;
-    margin: 0 auto;
-}
-
 .checkbox.disabled {
     opacity: 0.5;
 }
@@ -621,13 +616,6 @@ onUnmounted(() => {
             left: 0;
         }
     }
-}
-
-.button-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: end;
-    gap: 8px;
 }
 
 // #position {

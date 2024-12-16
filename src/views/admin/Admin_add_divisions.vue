@@ -263,11 +263,6 @@ onMounted(() => {
     }
 }
 
-.form-wrap {
-    max-width: 650px;
-    margin: 0 auto;
-}
-
 #_el_comp_form {
     .image {
         position: relative;
@@ -359,12 +354,5 @@ onMounted(() => {
             }
         }
     }
-}
-
-.button-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: end;
-    gap: 8px;
 }
 </style>

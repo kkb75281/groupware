@@ -281,11 +281,6 @@ let editDivision = async(e) => {
     }
 }
 
-.form-wrap {
-    max-width: 650px;
-    margin: 0 auto;
-}
-
 #_el_comp_form {
     .image {
         position: relative;
@@ -377,12 +372,5 @@ let editDivision = async(e) => {
             }
         }
     }
-}
-
-.button-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: end;
-    gap: 8px;
 }
 </style>
