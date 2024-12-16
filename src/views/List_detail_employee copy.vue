@@ -5,30 +5,30 @@
 
     hr
 
-    .form-wrap
+    .form-wrap(v-if="!loading")
         form#_el_empDetail_form
-            div(style="text-align: center;")
+            #_el_pictureForm(style="text-align: center;")
                 .image
-                    img#profile-img(:src="currentEmp?.picture" alt="profile image")
+                    img#profile-img(:src="selectedEmp?.picture" alt="profile image")
 
             .input-wrap
                 p.label 직책
-                input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled")
+                input(type="text" name="position" v-model="selectedEmpTags.emp_pst" :readonly="disabled")
 
             .input-wrap
                 p.label 부서
                 template(v-if="disabled")
-                    input(type="text" name="division" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division] === '' ? '' : '부서를 선택해주세요.'" readonly)
+                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :placeholder="divisionNameList[selectedEmp?.division] === '' ? '' : '부서를 선택해주세요.'" readonly)
                 template(v-else)
-                    select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
+                    select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
                         option(value="" disabled) 부서 선택
             
             .input-wrap
                 p.label 권한
                 template(v-if="disabled")
-                    input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
+                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " readonly)
                 template(v-else)
-                    select(name="access_group" v-model="currentEmp.access_group")
+                    select(name="access_group" v-model="selectedEmp.access_group")
                         option(value="" disabled selected) 권한선택
                         option(value="1") 직원
                         option(value="98") 관리자
@@ -36,23 +36,23 @@
                 
             .input-wrap
                 p.label 이름
-                input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
+                input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
 
             .input-wrap
                 p.label 이메일
-                input(type="email" name="email" :value="currentEmp?.email || '-' " placeholder="예) user@email.com" disabled)
+                input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="예) user@email.com" disabled)
 
             .input-wrap
                 p.label 생년월일
-                input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled)
+                input(type="date" name="birthdate" :value="selectedEmp?.birthdate" disabled)
 
             .input-wrap
                 p.label 전화번호
-                input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
+                input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
 
             .input-wrap
                 p.label 주소
-                input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
+                input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
 
             .input-wrap.upload-file
                 p.label(style="margin-bottom: 0;") 기타자료
@@ -106,12 +106,19 @@ import { skapi } from '@/main';
 import { user } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
 
+// import CropImage from '@/components/crop_image.vue';
+import Loading from '@/components/loading.vue';
+
 const router = useRouter();
 const route = useRoute();
 
-let currentEmp = ref(null);
-let currentEmpOriginal = {};
-let currentEmpTags = ref({
+let loading = ref(false);
+let originalEmployee = ref([]);
+let employee = ref([]);
+let suspendedLength = ref(0);
+let selectedEmp = ref(null);
+let selectedEmpOriginal = {};
+let selectedEmpTags = ref({
     emp_dvs: '',
     emp_pst: '',
 });
@@ -119,6 +126,7 @@ let uploadFile = ref([]);
 let backupUploadFile = ref([]);
 let disabled = ref(true);
 let removeFileList = ref([]);
+let empInfo: {[key:string]: any} = ref({});
 let fileNames = ref([]);
 let access_group = {
     1: '직원',
@@ -133,13 +141,92 @@ function makeSafe(str) {
     return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
 }
 
-// 부서 목록 가져오기
-getDivisionNames();
+let displayDivisionOptions = (selectName: string) => {
+    let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
 
-// 현재 직책 정보 레코드 저장되어 있는지 확인
+    // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
+    divisionList.innerHTML = ''; // 기존 옵션 초기화
+
+    const allOption = document.createElement('option');
+    const defaultOption = document.createElement('option');
+
+    let matchFound = false;
+
+    // 기본 옵션 추가
+    if(selectName == 'searchDivision') {
+        allOption.value = '전체';
+        allOption.innerText = '전체';
+        allOption.selected = true;
+        divisionList.appendChild(allOption);
+    } else {
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        defaultOption.innerText = '부서 선택';
+        divisionList.appendChild(defaultOption);
+    }
+
+    // 동적으로 부서 옵션 추가
+    for (let key in divisionNameList.value) {
+        if(divisionNameList.value[key] !== '') {
+            const option = document.createElement('option');
+            option.value = key;
+            option.innerText = divisionNameList.value[key];
+    
+            // 선택된 부서 처리
+            if (selectName === 'division' && key === selectedEmp.value.division) {
+                option.selected = true;
+                matchFound = true;
+            }
+    
+            divisionList.appendChild(option);
+        }
+    }
+
+    // 일치하는 키가 없으면 기본 옵션에 selected 추가
+    if (selectName === 'division' && !matchFound) {
+        defaultOption.selected = true;
+    }
+
+    // 선택박스 활성화
+    divisionList.disabled = false;
+}
+
+const getEmpsInfo = async (list) => {
+    if (!list) {
+        console.log('=== getEmpsInfo === list is empty');
+        return
+    }
+
+    try {
+        let promiseList = [];
+
+        for(let e of list) {
+            promiseList.push(getEmpDivision(e.user_id));
+
+            if(e.picture) {
+                promiseList.push(getProfileImg(e));
+            }
+        }
+
+        await Promise.all(promiseList);
+
+        for(let e of list) {
+            if(empInfo[e.user_id]) {
+                e.division = empInfo[e.user_id].division;
+                e.position = empInfo[e.user_id].position;
+            }
+        }
+        
+        employee.value = list;
+
+        return employee.value;
+    } catch (error) {
+        console.log('== getEmpsInfo == error : ', error);
+    }
+}
+
 let emp_position_current_record = null;
 
-// 유저 부서 직책 정보 가져오기
 let getEmpDivision = async (userId) => {
     if(!userId) return;
 
@@ -159,26 +246,29 @@ let getEmpDivision = async (userId) => {
     
         let record = res.list[0];
         let emp_dvs = record?.index?.name?.split('.')[0];
+        let emp_id = record?.unique_id?.replace('[emp_position_current]', '').replaceAll('_', '-');
         let emp_pst = record?.index?.name?.split('.')[1];
 
-        currentEmpTags.value.emp_dvs = emp_dvs;
-        currentEmpTags.value.emp_pst = emp_pst;
+        empInfo[emp_id] = {
+            division: emp_dvs,
+            position: emp_pst
+        }
+
         emp_position_current_record = record;
     } catch (error) {
         console.error('== getEmpDivision == error == ', error);
     }
 }
-getEmpDivision(userId);
 
-// 추가자료 가져오기    
 let getAdditionalData = () => {
     skapi.getRecords({
         table: {
             name: 'emp_additional_data',
             access_group: 99,
         },
-        reference: "[emp_additional_data]" + makeSafe(userId),
+        reference: "[emp_additional_data]" + makeSafe(selectedEmp.value.user_id),
     }).then(res => {
+
         if(res.list.length > 0) {
             let fileList = [];
 
@@ -204,71 +294,46 @@ let getAdditionalData = () => {
         }
     })
 }
-getAdditionalData();
 
-// 부서 목록 옵션으로 가져오기 (회원 수정시 사용)
-let displayDivisionOptions = () => {
-    let divisionList = document.querySelector(`select[name="division"]`) as HTMLSelectElement;
+const getProfileImg = async (emp) => {
+    if(!emp || !emp.picture) return;
 
-    // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
-    divisionList.innerHTML = ''; // 기존 옵션 초기화
-
-    const allOption = document.createElement('option');
-    const defaultOption = document.createElement('option');
-
-    let matchFound = false;
-
-    // 기본 옵션 추가
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    defaultOption.innerText = '부서 선택';
-    divisionList.appendChild(defaultOption);
-
-    // 동적으로 부서 옵션 추가
-    for (let key in divisionNameList.value) {
-        if(divisionNameList.value[key] !== '') {
-            const option = document.createElement('option');
-            option.value = key;
-            option.innerText = divisionNameList.value[key];
-    
-            // 선택된 부서 처리
-            if (key === currentEmp.value.division) {
-                option.selected = true;
-                matchFound = true;
-            }
-    
-            divisionList.appendChild(option);
-        }
-    }
-
-    // 일치하는 키가 없으면 기본 옵션에 selected 추가
-    if (!matchFound) {
-        defaultOption.selected = true;
-    }
-
-    // 선택박스 활성화
-    divisionList.disabled = false;
+    await skapi.getFile(emp.picture, {
+        dataType: 'endpoint',
+    })
+    .then((res: any) => {  
+        emp.picture = res;
+    })
+    .catch((err: Error) => {
+        console.log('프로필 사진을 불러오는데 실패했습니다.');
+    });
 }
 
-// 파일 업로드 리스트 업데이트
-let updateFileList = (e) => {
-    let target = e.target;
-    if (target.files) {
-        fileNames.value = Array.from(target.files).map(file => file.name);
-    }
-};
+// let getEmployee = () => {
+//     skapi.getUsers().then(async(res) => {        
+//         selectedList.value = [];
 
-// 수정 시작
-let startEditEmp = async() => {
+//         const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
+//         const result = await getEmpsInfo(userList);
+        
+//         const list = result.filter(emp => emp.approved.includes('approved'));
+        
+//         employee.value = res.list;
+//         displayEmployee(result);
+//     });
+// }
+
+let displayEmployee = (employee) => {
+    window.sessionStorage.setItem('employee', JSON.stringify(employee));
+}
+
+let startEditEmp = async(emp) => {
     disabled.value = false;
-    currentEmpOriginal = { ...currentEmp.value };
-    currentEmpOriginal.division = currentEmpTags.value.emp_dvs;
-    currentEmpOriginal.position = currentEmpTags.value.emp_pst;
     fileNames.value = [];
     removeFileList.value = [];
 
     nextTick(() => {
-        displayDivisionOptions();
+        displayDivisionOptions('division');
     });
 
     if(uploadFile.value){
@@ -276,45 +341,43 @@ let startEditEmp = async() => {
     }
 }
 
-// 수정 취소
 let cancelEdit = () => {
     disabled.value = true;
-    currentEmp.value = { ...currentEmpOriginal };
-    currentEmpTags.value.emp_dvs = currentEmpOriginal.division;
-    currentEmpTags.value.emp_pst = currentEmpOriginal.position;
-    fileNames.value = [];
     removeFileList.value = [];
     uploadFile.value = [...backupUploadFile.value];
 }
 
-// 수정사항 저장
 let registerEmp = async(e) => {
     e.preventDefault();
     disabled.value = true;
 
-    let user_id_safe = makeSafe(currentEmp.value.user_id);
+    let user_id_safe = makeSafe(selectedEmp.value.user_id);
     let needUpdate = false;
 
     // 부서, 직책 업데이트 (history/current)
-    if(currentEmpOriginal.division !== currentEmpTags.value.emp_dvs || currentEmpOriginal.position !== currentEmpTags.value.emp_pst) {
+    if(selectedEmpOriginal.division !== selectedEmpTags.value.emp_dvs || selectedEmpOriginal.position !== selectedEmpTags.value.emp_pst) {
         skapi.postRecord(null, {
             table: {
                 name: 'emp_division',
                 access_group: 1
             },
-            tags: ["[emp_pst]" + currentEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + currentEmpTags.value.emp_dvs]
+            tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
         }).then(r => {
             console.log('history 부서직책업데이트', r);
         })
 
-        if(!!emp_position_current_record) {
+        if(emp_position_current_record) {
             await skapi.deleteRecords({record_id: emp_position_current_record.record_id}).then(r => {
                 console.log(r)
             });
         }
 
+        // await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(async(r) => {
+        //     console.log(r)
+        //     // current
+
         await skapi.postRecord({
-            user_id: currentEmp.value.user_id,
+            user_id: selectedEmp.value.user_id,
         }, {
             unique_id: "[emp_position_current]" + user_id_safe,
             table: {
@@ -322,21 +385,22 @@ let registerEmp = async(e) => {
                 access_group: 1
             },
             index: {
-                name: currentEmpTags.value.emp_dvs + '.' + currentEmpTags.value.emp_pst,
-                value: currentEmp.value.name
+                name: selectedEmpTags.value.emp_dvs + '.' + selectedEmpTags.value.emp_pst,
+                value: selectedEmp.value.name
             }
         }).then(r => {
             console.log('current 부서직책업데이트', r);
         })
         
+        // });
         needUpdate = true;
     }
 
     // 권한 업데이트
-    if(currentEmpOriginal.access_group !== currentEmp.value.access_group) {
+    if(selectedEmpOriginal.access_group !== selectedEmp.value.access_group) {
         skapi.grantAccess({
-            user_id: currentEmp.value.user_id,
-            access_group: currentEmp.value.access_group
+            user_id: selectedEmp.value.user_id,
+            access_group: selectedEmp.value.access_group
         }).then(r => {
             console.log('권한업데이트' ,r)
         })
@@ -356,7 +420,7 @@ let registerEmp = async(e) => {
                     name: 'emp_additional_data',
                     access_group: 99
                 },
-                reference: "[emp_additional_data]" + makeSafe(currentEmp.value.user_id),
+                reference: "[emp_additional_data]" + makeSafe(selectedEmp.value.user_id),
             })
         }
 
@@ -373,53 +437,66 @@ let registerEmp = async(e) => {
         });
     }
 
+    console.log('AA === registerEmp === employee.value : ', employee.value);
 
-    for(let e of sessionEmployee) {
-        if(e.user_id === currentEmp.value.user_id) {
-            e.division = currentEmpTags.value.emp_dvs;
-            e.position = currentEmpTags.value.emp_pst;
-            currentEmpOriginal = { ...e };
+    for(let e of employee.value) {
+        if(e.user_id === selectedEmp.value.user_id) {
+            e.division = selectedEmpTags.value.emp_dvs;
+            e.position = selectedEmpTags.value.emp_pst;
+            selectedEmpOriginal = { ...e };
             break;
         }
     }
 
-    console.log('=== registerEmp === currentEmp.value : ', currentEmp.value);
+    console.log('=== registerEmp === selectedEmp.value : ', selectedEmp.value);
+    console.log('BB === registerEmp === employee.value : ', employee.value);
 
-    window.sessionStorage.setItem('employee', JSON.stringify(sessionEmployee));
+    // displayEmployee(employee.value);    // 세션에 저장
     getAdditionalData();
     window.alert('직원 정보 수정이 완료되었습니다.');
 
     disabled.value = true;
 }
 
-onMounted(async() => {
+let updateFileList = (e) => {
+  let target = e.target;
+  if (target.files) {
+    fileNames.value = Array.from(target.files).map(file => file.name);
+  }
+};
+
+onMounted(() => {
     window.scrollTo(0, 0);
 
-    // 현재 직원 세션에서 찾기
     for (let key in sessionEmployee) {
         if (sessionEmployee[key].user_id === userId) {
-            currentEmp.value = sessionEmployee[key];
+            selectedEmp.value = sessionEmployee[key];
+            selectedEmpOriginal = { ...selectedEmp.value };
+            selectedEmpTags.value.emp_dvs = selectedEmp.value.division;
+            selectedEmpTags.value.emp_pst = selectedEmp.value.position;
             break;
         }
     }
 
-    // 유저 프로필 이미지 가져오기
-    if(currentEmp.value.picture) {
-        try {
-            if(!currentEmp.value || !currentEmp.value.picture) return;
-
-            await skapi.getFile(currentEmp.value.picture, {
-                dataType: 'endpoint',
-            }).then((res: any) => {  
-                currentEmp.value.picture = res;
-            }).catch((err: Error) => {
-                console.log('프로필 사진을 불러오는데 실패했습니다.');
-            });
-        } catch (error) {
-            console.error('== getProfileImg == error == ', error);
-        }
+    if(selectedEmp.value.picture) {
+        skapi.getFile(selectedEmp.value.picture, {
+            dataType: 'endpoint',
+        })
+        .then((res: any) => {  
+            selectedEmp.value.picture = res;
+        })
+        .catch((err: Error) => {
+            window.alert('프로필 사진을 불러오는데 실패했습니다.');
+        });
     } else {
-        currentEmp.value.picture = '';
+        selectedEmp.value.picture = '';
+        return;
+    }
+
+    getAdditionalData();
+
+    if(uploadFile.value){
+        backupUploadFile.value = [...uploadFile.value];
     }
 });
 </script>
