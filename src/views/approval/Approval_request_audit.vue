@@ -55,7 +55,7 @@ hr
 <script setup lang="ts">
 import { ref } from 'vue';
 import { skapi } from '@/main';
-import { user } from '@/user';
+import { user, makeSafe } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
 
 let user_division_name = ref('');
@@ -72,14 +72,17 @@ let getSameDivisionPeople = async () => {
         }
     });
 
+    const userEmp = await skapi.getRecords({
+        table: {
+            name: 'emp_position_current',
+            access_group: 1
+        },
+        unique_id: "[emp_position_current]" + makeSafe(user.user_id)
+    })
+
     let wholeEmpsList = wholeEmps.list;
 
-    for(let emp of wholeEmpsList) {
-        if (emp.user_id === user.user_id) {
-            user_division_name.value = emp.index.name.split('.')[0];
-            break;
-        }
-    }
+    user_division_name.value = userEmp.list[0].index.name.split('.')[0];
 
     same_division_auditors.value = wholeEmpsList.filter((emp) => {
         if (emp.index.name.split('.')[0] === user_division_name.value) {
@@ -87,7 +90,7 @@ let getSameDivisionPeople = async () => {
         }
     });
 
-    console.log(same_division_auditors.value)
+    // console.log(same_division_auditors.value)
 }
 getSameDivisionPeople();
 
