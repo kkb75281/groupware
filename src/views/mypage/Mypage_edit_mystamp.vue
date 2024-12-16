@@ -236,6 +236,7 @@ onUnmounted(() => {
 
 <style scoped lang="less">
 .form-wrap {
+    max-width: unset;
     margin-top: 3rem;
 }
 .form-inner {

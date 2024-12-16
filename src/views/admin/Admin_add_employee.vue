@@ -396,11 +396,6 @@ onMounted(() => {
     }
 }
 
-.form-wrap {
-    max-width: 650px;
-    margin: 0 auto;
-}
-
 #profPic {
     text-align: center;
 
@@ -459,13 +454,6 @@ onMounted(() => {
             left: 0;
         }
     }
-}
-
-.button-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: end;
-    gap: 8px;
 }
 
 .btn-upload-file {
