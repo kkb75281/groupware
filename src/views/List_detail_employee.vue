@@ -440,11 +440,6 @@ onMounted(async() => {
     }
 }
 
-.form-wrap {
-    max-width: 650px;
-    margin: 0 auto;
-}
-
 #_el_empDetail_form {
     .input-wrap {
         margin-top: 16px;
@@ -580,13 +575,6 @@ onMounted(async() => {
 
 .btn-upload-file {
     margin-top: 12px;
-}
-
-.button-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: end;
-    gap: 8px;
 }
 
 @media (max-width: 768px) {
