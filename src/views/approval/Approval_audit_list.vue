@@ -62,7 +62,16 @@ const auditList = ref([]);
 
 const audit_doc_list = {};
 
-
+// 내가 올린 결재 서류 가져오기
+skapi.getRecords({
+    table: {
+        name: 'audit_doc',
+        access_group: 'private',
+    },
+    reference: user.user_id // 본인 아이디 참조해야 가지고 와짐
+}).then(r => {
+    console.log({r})
+})
 
 onMounted(async () => {
     let audits = await skapi.getRecords( // 내가 결제해야할 결제 요청 가져오기
