@@ -948,7 +948,7 @@ let registerEmp = async(e) => {
             },
             tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
         }).then(r => {
-            console.log('history부서직책업데이트', r);
+            console.log('history 부서직책업데이트', r);
         })
 
         await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(async(r) => {
@@ -967,7 +967,7 @@ let registerEmp = async(e) => {
                     value: selectedEmp.value.name
                 }
             }).then(r => {
-                console.log('current부서직책업데이트', r);
+                console.log('current 부서직책업데이트', r);
             })
         });
         needUpdate = true;
