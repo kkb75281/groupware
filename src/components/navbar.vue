@@ -52,6 +52,28 @@ let menuList = [
     },
     {
         show: true,
+        name: 'approval',
+        to: '/approval',
+        icon: 'src/assets/icon/material-icon.svg#icon-approval',
+        text: '전자결재',
+        child: {
+            name: 'approval',
+            list: [
+                {
+                    name: 'request-audit',
+                    to: '/approval/request-audit',
+                    text: '결재 요청',
+                },
+                {
+                    name: 'audit-list',
+                    to: '/approval/audit-list',
+                    text: '결재 목록',
+                }
+            ]
+        }
+    },
+    {
+        show: true,
         name: 'mypage',
         to: '/mypage',
         icon: 'src/assets/icon/material-icon.svg#icon-account-circle-fill',

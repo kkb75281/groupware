@@ -1,248 +1,247 @@
 <template lang="pug">
-.wrap
-    div(style="display: flex; gap: 1rem")
-        h1.title(v-if="user.access_group > 98") 직원 관리
-        h1.title(v-else) 직원 목록
-        .input-wrap(v-if="user.access_group > 98")
-            select(v-model="empListType")
-                option(value="직원목록") 직원목록
-                option(value="초청여부") 초청여부
-                option(value="숨김여부") 숨김여부
+div(style="display: flex; gap: 1rem")
+    h1.title(v-if="user.access_group > 98") 직원 관리
+    h1.title(v-else) 직원 목록
+    .input-wrap(v-if="user.access_group > 98")
+        select(v-model="empListType")
+            option(value="직원목록") 직원목록
+            option(value="초청여부") 초청여부
+            option(value="숨김여부") 숨김여부
 
-    hr
+hr
 
-    .table-wrap
-        .tb-head-wrap
-            form#searchForm(@submit.prevent="searchEmp")
+.table-wrap
+    .tb-head-wrap
+        form#searchForm(@submit.prevent="searchEmp")
+            .input-wrap
+                select(v-model="searchFor" :disabled="empListType !== '직원목록'")
+                    option(value="name") 이름
+                    option(value="division") 부서/직책
+                    option(value="email") 이메일
+            .input-wrap.search(v-if="searchFor !== 'division'")
+                input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요" :disabled="empListType !== '직원목록'")
+                button.btn-search
+            template(v-else)
                 .input-wrap
-                    select(v-model="searchFor" :disabled="empListType !== '직원목록'")
-                        option(value="name") 이름
-                        option(value="division") 부서/직책
-                        option(value="email") 이메일
-                .input-wrap.search(v-if="searchFor !== 'division'")
-                    input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요" :disabled="empListType !== '직원목록'")
+                    select(name="searchDivision" v-model="searchValue" :disabled="empListType !== '직원목록'" @change="searchEmp")
+                .input-wrap.search(style="width: 176px;")
+                    input(v-model="searchPositionValue" type="text" placeholder="직책을 입력하세요" :disabled="searchValue === '전체'")
                     button.btn-search
-                template(v-else)
-                    .input-wrap
-                        select(name="searchDivision" v-model="searchValue" :disabled="empListType !== '직원목록'" @change="searchEmp")
-                    .input-wrap.search(style="width: 176px;")
-                        input(v-model="searchPositionValue" type="text" placeholder="직책을 입력하세요" :disabled="searchValue === '전체'")
-                        button.btn-search
 
-            .tb-toolbar
-                .btn-wrap
-                    button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
-                        svg(:class="{'rotate' : loading}")
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+        .tb-toolbar
+            .btn-wrap
+                button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
+                    svg(:class="{'rotate' : loading}")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
 
+                template(v-if="user.access_group > 98")
+                    template(v-if="empListType === '직원목록'")
+                        button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김
+                        button.btn.outline(@click="router.push('/admin/add-employee')") 등록
+                    template(v-else-if="empListType === '초청여부'")
+                        button.btn.outline(@click="router.push('/admin/add-employee')") 등록
+                    template(v-else-if="empListType === '숨김여부'")
+                        button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('unblock')") 숨김 해제
+                        button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="employeeState('delete')") 삭제
+
+    .tb-overflow
+        template(v-if="loading")
+            Loading#loading
+        table.table#employee_list
+            colgroup
+                template(v-if="user.access_group > 98")
+                    col(style="width: 5%;")
+                col(v-show="isDesktop" style="width: 5%;")
+                col(style="width: 10%;")
+                col(style="width: 10%;")
+                col(style="width: 10%;")
+                col(v-show="isDesktop" style="width: 25%;")
+                //- template(v-if='empListType === "초청여부"')
+                //-     col(style="width: 11%;")
+                //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
+                //-     col(style="width: 11%;")
+                col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
+                col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
+                col(v-show="isDesktop" style="min-width: 15rem;")
+            thead
+                tr
                     template(v-if="user.access_group > 98")
-                        template(v-if="empListType === '직원목록'")
-                            button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김
-                            button.btn.outline(@click="router.push('/admin/add-employee')") 등록
-                        template(v-else-if="empListType === '초청여부'")
-                            button.btn.outline(@click="router.push('/admin/add-employee')") 등록
-                        template(v-else-if="empListType === '숨김여부'")
-                            button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('unblock')") 숨김 해제
-                            button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="employeeState('delete')") 삭제
-
-        .tb-overflow
-            template(v-if="loading")
-                Loading#loading
-            table.table#employee_list
-                colgroup
-                    template(v-if="user.access_group > 98")
-                        col(style="width: 5%;")
-                    col(v-show="isDesktop" style="width: 5%;")
-                    col(style="width: 10%;")
-                    col(style="width: 10%;")
-                    col(style="width: 10%;")
-                    col(v-show="isDesktop" style="width: 25%;")
-                    //- template(v-if='empListType === "초청여부"')
-                    //-     col(style="width: 11%;")
+                        th(scope="col")
+                            label.checkbox
+                                input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
+                                span.label-checkbox
+                    th(v-show="isDesktop" scope="col") NO
+                    th(scope="col") 직책<br>(직급)
+                    th(scope="col") 부서
+                    th(scope="col") 이름
+                    th(v-show="isDesktop" scope="col") 이메일
+                    template(v-if='empListType === "초청여부"')
+                        th(scope="col") 초청여부
                     //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
-                    //-     col(style="width: 11%;")
-                    col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
-                    col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
-                    col(v-show="isDesktop" style="min-width: 15rem;")
-                thead
+                    //-     th(scope="col") 상세보기
+                    th(v-show="isDesktop" scope="col") 생년월일
+                    th(v-show="isDesktop" scope="col") 전화번호
+                    th(v-show="isDesktop" scope="col") 주소
+            tbody
+                template(v-if="loading")
+                    tr(v-for="i in 4")
+                template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
                     tr
-                        template(v-if="user.access_group > 98")
-                            th(scope="col")
-                                label.checkbox
-                                    input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
-                                    span.label-checkbox
-                        th(v-show="isDesktop" scope="col") NO
-                        th(scope="col") 직책<br>(직급)
-                        th(scope="col") 부서
-                        th(scope="col") 이름
-                        th(v-show="isDesktop" scope="col") 이메일
-                        template(v-if='empListType === "초청여부"')
-                            th(scope="col") 초청여부
-                        //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
-                        //-     th(scope="col") 상세보기
-                        th(v-show="isDesktop" scope="col") 생년월일
-                        th(v-show="isDesktop" scope="col") 전화번호
-                        th(v-show="isDesktop" scope="col") 주소
-                tbody
-                    template(v-if="loading")
-                        tr(v-for="i in 4")
-                    template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
-                        tr
-                            td(colspan="10") 데이터가 없습니다.
-                    template(v-else)
-                        tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEditEmp(e, emp.user_id)" style="cursor: pointer;")
-                            //- 직원목록/숨김여부
-                            template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
-                                template(v-if="user.access_group > 98")
-                                    td
-                                        label.checkbox
-                                            input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click.stop="toggleSelect(emp.user_id)")
-                                            span.label-checkbox
-                                td.list-num(v-show="isDesktop") {{ index + 1 }}
-                                td {{ emp?.position }}
-                                td {{ divisionNameList[emp?.division] }}
-                                template(v-if='user.access_group > 98')
-                                    td {{ emp.name }}
-                                template(v-else)
-                                    td
-                                        .name-wrap
-                                            .img-wrap(style="width: 36px; height: 36px;")
-                                                template(v-if="emp.picture")
-                                                    img(:src="emp.picture" alt="img-profile")
-                                                template(v-else)
-                                                    .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
-                                                        svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
-                                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
-
-                                            span {{ emp.name }}
-                                
-                                td(v-show="isDesktop") {{ emp.email }}
-                                //- template(v-if='user.access_group > 98')
-                                //-     td
-                                //-         .btn-wrap(v-if="!emp.approved.includes('by_master')")
-                                //-             button.btn.bg-gray.sm(@click="openModal(emp)") 상세보기
-                                td(v-show="isDesktop") {{ emp.birthdate }}
-                                td(v-show="isDesktop") {{ emp.phone_number }}
-                                td(v-show="isDesktop") {{ emp.address }}
-                            
-                            //- 초청여부
-                            template(v-else-if="empListType === '초청여부'")
-                                template(v-if="user.access_group > 98")
-                                    td
-                                        label.checkbox
-                                            input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
-                                            span.label-checkbox
-                                td.list-num(v-show="isDesktop") {{ index + 1 }}
-                                td {{ emp?.position }}
-                                td {{ divisionNameList[emp?.division] }}
-                                td {{ emp.name }}
-                                td(v-show="isDesktop") {{ emp.email }}
-                                td
-                                    .btn-wrap
-                                        button.btn.bg-gray.sm(@click="resendInvite(emp.email)") 재전송
-                                        button.btn.bg-gray.sm(@click="cancelInvite(emp)") 초청취소
-                                td(v-show="isDesktop") {{ emp.birthdate }}
-                                td(v-show="isDesktop") {{ emp.phone_number }}
-                                td(v-show="isDesktop") {{ emp.address }}
-
-        //- .pagination
-            button.btn-prev.icon(type="button") 
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
-                | Prev
-            button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
-    br
-    br
-    br
-
-    //- Modal
-    #modal.modal(v-if="isModalOpen" @click="closeModal")
-        .modal-cont(@click.stop)
-            .modal-header
-                h2.modal-title 직원 상세
-                button.btn-close(@click="closeModal")
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-            .modal-body
-                #_el_pictureForm
-                    .image
-                        img#profile-img(:src="selectedEmp?.picture" alt="profile image")
-
-                .input-wrap
-                    p.label 직책
-                    input(type="text" name="position" v-model="selectedEmpTags.emp_pst" placeholder="직책을 입력해주세요." :readonly="disabled")
-
-                .input-wrap
-                    p.label 부서
-                    template(v-if="disabled")
-                        input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :placeholder="divisionNameList[selectedEmp?.division] === '' ? '부서를 선택해주세요.' : ''" readonly)
-                    template(v-else)
-                        select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
-                            option(value="" disabled) 부서 선택
-                
-                .input-wrap
-                    p.label 권한
-                    template(v-if="disabled")
-                        input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " readonly)
-                    template(v-else)
-                        select(name="access_group" v-model="selectedEmp.access_group" style="height: 40px;")
-                            option(value="" disabled selected) 권한선택
-                            option(value="1") 직원
-                            option(value="98") 관리자
-                            option(value="99") 마스터
-                    
-                .input-wrap
-                    p.label 이름
-                    input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
-
-                .input-wrap
-                    p.label 이메일
-                    input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="예) user@email.com" disabled)
-
-                .input-wrap
-                    p.label 생년월일
-                    input(type="date" name="birthdate" :value="selectedEmp?.birthdate" disabled)
-
-                .input-wrap
-                    p.label 전화번호
-                    input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
-
-                .input-wrap
-                    p.label 주소
-                    input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
-
-                .input-wrap.upload-file
-                    p.label(style="margin-bottom: 0;") 기타자료
-                    template(v-if="!disabled")
-                        .btn-upload-file
-                            input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-                            label.btn.outline.btn-upload(for="file") 파일 추가
-                            ul.upload-file-list
-                                li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
-
-                    .file-wrap
-                        ul.file-list
-                            template(v-if="uploadFile.length === 0")
-                                li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
-                            template(v-else)
-                                li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
-                                    a.file-name(:href="file.url" target="_blank") {{ file.filename }}
-                                    template(v-if="!disabled")
-                                        button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
-                                            svg
-                                                use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-                                        button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
-                                            svg
-                                                use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-            .modal-footer
-                template(v-if="disabled")
-                    button.btn.btn-edit(type="button" @click="editEmp") 수정
+                        td(colspan="10") 데이터가 없습니다.
                 template(v-else)
-                    button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
-                    button.btn.btn-register(type="submit" @click="registerEmp") 등록
+                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEditEmp(e, emp.user_id)" style="cursor: pointer;")
+                        //- 직원목록/숨김여부
+                        template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
+                            template(v-if="user.access_group > 98")
+                                td
+                                    label.checkbox
+                                        input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click.stop="toggleSelect(emp.user_id)")
+                                        span.label-checkbox
+                            td.list-num(v-show="isDesktop") {{ index + 1 }}
+                            td {{ emp?.position }}
+                            td {{ divisionNameList[emp?.division] }}
+                            template(v-if='user.access_group > 98')
+                                td {{ emp.name }}
+                            template(v-else)
+                                td
+                                    .name-wrap
+                                        .img-wrap(style="width: 36px; height: 36px;")
+                                            template(v-if="emp.picture")
+                                                img(:src="emp.picture" alt="img-profile")
+                                            template(v-else)
+                                                .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
+                                                    svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
+                                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+
+                                        span {{ emp.name }}
+                            
+                            td(v-show="isDesktop") {{ emp.email }}
+                            //- template(v-if='user.access_group > 98')
+                            //-     td
+                            //-         .btn-wrap(v-if="!emp.approved.includes('by_master')")
+                            //-             button.btn.bg-gray.sm(@click="openModal(emp)") 상세보기
+                            td(v-show="isDesktop") {{ emp.birthdate }}
+                            td(v-show="isDesktop") {{ emp.phone_number }}
+                            td(v-show="isDesktop") {{ emp.address }}
+                        
+                        //- 초청여부
+                        template(v-else-if="empListType === '초청여부'")
+                            template(v-if="user.access_group > 98")
+                                td
+                                    label.checkbox
+                                        input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
+                                        span.label-checkbox
+                            td.list-num(v-show="isDesktop") {{ index + 1 }}
+                            td {{ emp?.position }}
+                            td {{ divisionNameList[emp?.division] }}
+                            td {{ emp.name }}
+                            td(v-show="isDesktop") {{ emp.email }}
+                            td
+                                .btn-wrap
+                                    button.btn.bg-gray.sm(@click="resendInvite(emp.email)") 재전송
+                                    button.btn.bg-gray.sm(@click="cancelInvite(emp)") 초청취소
+                            td(v-show="isDesktop") {{ emp.birthdate }}
+                            td(v-show="isDesktop") {{ emp.phone_number }}
+                            td(v-show="isDesktop") {{ emp.address }}
+
+    //- .pagination
+        button.btn-prev.icon(type="button") 
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
+            | Prev
+        button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+br
+br
+br
+
+//- Modal
+#modal.modal(v-if="isModalOpen" @click="closeModal")
+    .modal-cont(@click.stop)
+        .modal-header
+            h2.modal-title 직원 상세
+            button.btn-close(@click="closeModal")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+        .modal-body
+            #_el_pictureForm
+                .image
+                    img#profile-img(:src="selectedEmp?.picture" alt="profile image")
+
+            .input-wrap
+                p.label 직책
+                input(type="text" name="position" v-model="selectedEmpTags.emp_pst" placeholder="직책을 입력해주세요." :readonly="disabled")
+
+            .input-wrap
+                p.label 부서
+                template(v-if="disabled")
+                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :placeholder="divisionNameList[selectedEmp?.division] === '' ? '부서를 선택해주세요.' : ''" readonly)
+                template(v-else)
+                    select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
+                        option(value="" disabled) 부서 선택
+            
+            .input-wrap
+                p.label 권한
+                template(v-if="disabled")
+                    input(type="text" name="access_group" :value="access_group[selectedEmp?.access_group] || '-' " readonly)
+                template(v-else)
+                    select(name="access_group" v-model="selectedEmp.access_group" style="height: 40px;")
+                        option(value="" disabled selected) 권한선택
+                        option(value="1") 직원
+                        option(value="98") 관리자
+                        option(value="99") 마스터
+                
+            .input-wrap
+                p.label 이름
+                input(type="text" name="name" :value="selectedEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
+
+            .input-wrap
+                p.label 이메일
+                input(type="email" name="email" :value="selectedEmp?.email || '-' " placeholder="예) user@email.com" disabled)
+
+            .input-wrap
+                p.label 생년월일
+                input(type="date" name="birthdate" :value="selectedEmp?.birthdate" disabled)
+
+            .input-wrap
+                p.label 전화번호
+                input(type="tel" name="phone_number" :value="selectedEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
+
+            .input-wrap
+                p.label 주소
+                input(type="text" name="address" :value="selectedEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
+
+            .input-wrap.upload-file
+                p.label(style="margin-bottom: 0;") 기타자료
+                template(v-if="!disabled")
+                    .btn-upload-file
+                        input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                        label.btn.outline.btn-upload(for="file") 파일 추가
+                        ul.upload-file-list
+                            li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+
+                .file-wrap
+                    ul.file-list
+                        template(v-if="uploadFile.length === 0")
+                            li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
+                        template(v-else)
+                            li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
+                                a.file-name(:href="file.url" target="_blank") {{ file.filename }}
+                                template(v-if="!disabled")
+                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
+                                        svg
+                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+                                    button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
+                                        svg
+                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+        .modal-footer
+            template(v-if="disabled")
+                button.btn.btn-edit(type="button" @click="editEmp") 수정
+            template(v-else)
+                button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
+                button.btn.btn-register(type="submit" @click="registerEmp") 등록
 </template>
 
 <script setup lang="ts">

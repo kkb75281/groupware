@@ -2,26 +2,25 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { loaded } from '@/main';
 import { user } from '@/user';
 
-import Main from '@/views/Main.vue';
-import Dashboard from '@/views/Dashboard.vue';
-import Mypage_main from '@/views/Mypage_main.vue';
-import Mypage from '@/views/Mypage.vue';
-import Mypage_edit_myinfo from '@/views/Mypage_edit_myinfo.vue';
-import Mypage_edit_mystamp from '@/views/Mypage_edit_mystamp.vue';
-import Mypage_list_data from '@/views/backup/Mypage_list_data.vue';
+import Login from '@/views/Login.vue';
 import Change_password from '@/views/Change_password.vue';
 import Profile from '@/views/Profile.vue';
-import Admin from '@/views/Admin.vue';
-import Admin_main from '@/views/Admin_main.vue';
-import Admin_add_employee from '@/views/Admin_add_employee.vue';
-import Admin_add_divisions from '@/views/Admin_add_divisions.vue';
-import Admin_edit_divisions from '@/views/Admin_edit_divisions.vue';
-import Admin_list_divisions from '@/views/Admin_list_divisions.vue';
+import Main from '@/views/Main.vue';
+import Dashboard from '@/views/Dashboard.vue';
 import List_employee from '@/views/List_employee.vue';
 import List_detail_employee from '@/views/List_detail_employee.vue';
-// import Admin_list_employee from '@/views/Admin_list_employee.vue';
-// import Employee_list_employee from '@/views/Employee_list_employee.vue';
-import Login from '@/views/Login.vue';
+import Mypage from '@/views/mypage/Mypage.vue';
+import Mypage_edit_myinfo from '@/views/mypage/Mypage_edit_myinfo.vue';
+import Mypage_edit_mystamp from '@/views/mypage/Mypage_edit_mystamp.vue';
+import Mypage_list_data from '@/views/_backup/Mypage_list_data.vue';
+import Admin from '@/views/admin/Admin.vue';
+import Admin_add_employee from '@/views/admin/Admin_add_employee.vue';
+import Admin_add_divisions from '@/views/admin/Admin_add_divisions.vue';
+import Admin_edit_divisions from '@/views/admin/Admin_edit_divisions.vue';
+import Admin_list_divisions from '@/views/admin/Admin_list_divisions.vue';
+import Approval from '@/views/approval/Approval.vue';
+import Approval_request_audit from '@/views/approval/Approval_request_audit.vue';
+import Approval_audit_list from '@/views/approval/Approval_audit_list.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -61,8 +60,42 @@ const router = createRouter({
           component: Dashboard,
         },
         {
+          path: '/list-data',
+          name: 'list-data',
+          component: Mypage_list_data,
+        },
+        {
+          path: '/list-employee',
+          name: 'list-employee',
+          component: List_employee,
+        },
+        {
+          path: '/detail-employee/:userId',
+          name: 'detail-employee',
+          component: List_detail_employee,
+        },
+        {
+          path: '/approval',
+          children: [
+            {
+              path: '/approval',
+              name: 'approval',
+              component: Approval
+            },
+            {
+              path: 'request-audit',
+              name: 'request-audit',
+              component: Approval_request_audit
+            },
+            {
+              path: 'audit-list',
+              name: 'audit-list',
+              component: Approval_audit_list
+            }
+          ]
+        },
+        {
           path: '/mypage',
-          component: Mypage_main,
           children: [
             {
               path: '/mypage',
@@ -82,23 +115,7 @@ const router = createRouter({
           ]
         },
         {
-          path: '/list-data',
-          name: 'list-data',
-          component: Mypage_list_data,
-        },
-        {
-          path: '/list-employee',
-          name: 'list-employee',
-          component: List_employee,
-        },
-        {
-          path: '/detail-employee/:userId',
-          name: 'detail-employee',
-          component: List_detail_employee,
-        },
-        {
           path: '/admin',
-          component: Admin_main,
           beforeEnter: async(to, from, next) => {
             if (user.access_group > 98) {
               next();
