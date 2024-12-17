@@ -21,6 +21,7 @@ import Admin_list_divisions from '@/views/admin/Admin_list_divisions.vue';
 import Approval from '@/views/approval/Approval.vue';
 import Approval_request_audit from '@/views/approval/Approval_request_audit.vue';
 import Approval_audit_list from '@/views/approval/Approval_audit_list.vue';
+import Approval_audit_detail from '@/views/approval/Approval_audit_detail.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,17 +34,17 @@ const router = createRouter({
     {
       path: '/verification',
       name: 'verification',
-      component: () => import('@/views/Verification.vue')
+      component: () => import('@/views/Verification.vue'),
     },
     {
       path: '/change-password',
       name: 'change-password',
-      component: () => import('@/views/Change_password.vue')
+      component: () => import('@/views/Change_password.vue'),
     },
     {
       path: '/forgot-password',
       name: 'forgot-password',
-      component: () => import('@/views/Forgot_password.vue')
+      component: () => import('@/views/Forgot_password.vue'),
     },
     {
       path: '/mailing',
@@ -80,19 +81,24 @@ const router = createRouter({
             {
               path: '/approval',
               name: 'approval',
-              component: Approval
+              component: Approval,
             },
             {
               path: 'request-audit',
               name: 'request-audit',
-              component: Approval_request_audit
+              component: Approval_request_audit,
             },
             {
               path: 'audit-list',
               name: 'audit-list',
-              component: Approval_audit_list
-            }
-          ]
+              component: Approval_audit_list,
+            },
+            {
+              path: 'audit-detail/:auditId',
+              name: 'audit-detail',
+              component: Approval_audit_detail,
+            },
+          ],
         },
         {
           path: '/mypage',
@@ -100,7 +106,7 @@ const router = createRouter({
             {
               path: '/mypage',
               name: 'mypage',
-              component: Mypage
+              component: Mypage,
             },
             {
               path: 'edit-myinfo',
@@ -108,15 +114,15 @@ const router = createRouter({
               component: Mypage_edit_myinfo,
             },
             {
-                path: 'edit-mystamp',
-                name: 'edit-mystamp',
-                component: Mypage_edit_mystamp,
+              path: 'edit-mystamp',
+              name: 'edit-mystamp',
+              component: Mypage_edit_mystamp,
             },
-          ]
+          ],
         },
         {
           path: '/admin',
-          beforeEnter: async(to, from, next) => {
+          beforeEnter: async (to, from, next) => {
             if (user.access_group > 98) {
               next();
             } else {
@@ -127,7 +133,7 @@ const router = createRouter({
             {
               path: '/admin',
               name: 'admin',
-              component: Admin
+              component: Admin,
             },
             {
               path: 'add-employee',
