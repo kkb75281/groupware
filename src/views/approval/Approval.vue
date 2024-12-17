@@ -23,18 +23,6 @@ ul.card-wrap
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
-    //- li.card
-        router-link.router(to="/change-password")
-            .icon.img
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-password")
-            h4.name 비밀번호 변경
-            .btn-wrap
-                p.btn-go 바로가기
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
 <script setup lang="ts">

@@ -23,26 +23,26 @@
         .tb-overflow
             table.table#tb-auditList
                 colgroup
-                    col(style="width: 2.4rem")
+                    //- col(style="width: 2.4rem")
                     col(style="width: 3rem")
                     col
                     col(style="width: 10%")
                 thead
                     tr
-                        th(scope="col") 
-                            label.checkbox
-                                input(type="checkbox" name="checkbox")
-                                span.label-checkbox
+                        //- th(scope="col") 
+                        //-     label.checkbox
+                        //-         input(type="checkbox" name="checkbox")
+                        //-         span.label-checkbox
                         th(scope="col") NO
                         th.left(scope="col") 결재 서류
                         th(scope="col") 결재 현황
 
                 tbody
-                    tr(v-for="(audit, index) of auditList")
-                        td 
-                            label.checkbox
-                                input(type="checkbox" name="checkbox")
-                                span.label-checkbox
+                    tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id)" style="cursor: pointer;")
+                        //- td 
+                        //-     label.checkbox
+                        //-         input(type="checkbox" name="checkbox")
+                        //-         span.label-checkbox
                         td {{ index + 1 }}
                         td.left {{ audit.data.to_audit }}
                         td {{ audit.data.approved }}
@@ -63,99 +63,155 @@ const auditList = ref([]);
 const audit_doc_list = {};
 
 // 내가 올린 결재 서류 가져오기
-skapi.getRecords({
-    table: {
-        name: 'audit_doc',
-        access_group: 'private',
-    },
-    reference: user.user_id // 본인 아이디 참조해야 가지고 와짐
-}).then(r => {
-    console.log({r})
-})
+// skapi.getRecords({
+//     table: {
+//         name: 'audit_doc',
+//         access_group: 'private',
+//     },
+//     reference: user.user_id // 본인 아이디 참조해야 가지고 와짐
+// }).then(r => {
+//     console.log({r})
+// })
+
+// 직원 목록 가져오기
+skapi.getUsers().then(employee => {
+    console.log('=== getUsers === employee : ', employee);
+});
 
 onMounted(async () => {
-    let audits = await skapi.getRecords( // 내가 결제해야할 결제 요청 가져오기
-        {
+    try {
+        const audits = await skapi.getRecords({
             table: {
                 name: 'audit_request',
                 access_group: 'authorized'
             },
             reference: `audit:${user.user_id}`
-        },
-        {
-            ascending: false, // 최신순
-        }
-    );
+        }, {
+            ascending: false,
+        });
 
-    console.log('audits.list : ', audits.list);
+        const auditDocs = await Promise.all(audits.list.map(async (list) => {
+            const audit_doc = (await skapi.getRecords({ 
+                record_id: list.data.audit_id 
+            })).list[0];
 
-    // auditList.value = audits.list;
+            const approvals = (await skapi.getRecords({
+                table: {
+                    name: 'audit_approval',
+                    access_group: 'authorized'
+                },
+                reference: list.data.audit_id
+            })).list;
 
+            console.log('audit_doc : ', audit_doc);
+            console.log('approvals : ', approvals);
 
-    for (let a of audits.list) {
-        console.log('a : ', a);
+            return audit_doc;
+        }));
 
-        // 결제 서류 가져오기
-        let audit_doc = (await skapi.getRecords({
-            record_id: a.data.audit_id
-        })).list[0];
+        console.log('auditDocs : ', auditDocs);
 
-        // console.log('audit_doc : ', audit_doc);
-
+        auditList.value = auditDocs;
         
-
-        // console.log('auditList.value : ', auditList.value);
-
-        // audit_doc_list[audit_doc.record_id] = audit_doc; // 결제 서류 저장
-
-        // console.log('audit_doc_list : ', audit_doc_list);
-
-        // 다른 사람 결제 여부 확인
-        let approvals = (await skapi.getRecords({
-            table: {
-                name: 'audit_approval',
-                access_group: 'authorized'
-            },
-            reference: a.data.audit_id
-        })).list;
-
-        console.log('approvals : ', approvals);
-
-        audit_doc.approved = approvals;
-
-        auditList.value.push(audit_doc); // 결제 서류 저장
-
-        console.log('audit_doc : ', audit_doc);
-
-        let oa_has_audited_str = '';
-
-        for (let auditor of audit_doc.tags.map(a => a.replaceAll('_', '-'))) { // audit_doc.tags: 결제자 목록
-            console.log('auditor : ', auditor);
-
-            let oa_has_audited_str = null;
-
-            // console.log('approvals : ', approvals);
-
-            for (let approval of approvals) {
-                // console.log('approval : ', approval);
-
-                if (approval.user_id === auditor) {
-                    oa_has_audited_str = approval.data.approved ? '결제함' : '반려함';
-                    // auditList.value += `---${auditor}:${oa_has_audited_str}---\n`; // 결제 서류 화면에 보여주기
-                    // auditList.value += audit_doc.data.to_audit;
-                    break;
-                }
-            }
-
-            if (!oa_has_audited_str) {
-                // auditList.value += `---${auditor}:결제대기중---\n`; // 결제 서류 화면에 보여주기
-            }
-        }
-
-        // auditList.value += JSON.stringify(audit_doc, null, 2) + '\n'; // 결제 서류 화면에 보여주기
-        // auditList.value += `\n--- ${JSON.stringify(audit_doc, null, 2)} ---`;
+    } catch (err) {
+        console.error({err});
     }
 });
+
+// 결재 상세 페이지로 이동
+const goToAuditDetail = (e, auditId) => {
+    console.log('== auditId == : ', auditId)
+    if(e.target.classList.contains('label-checkbox')) return;
+    
+    router.push({ name: 'audit-detail', params: { auditId } });
+};
+
+// onMounted(async () => {
+//     // 내가 결제해야할 결제 요청 가져오기
+//     let audits = await skapi.getRecords(
+//         {
+//             table: {
+//                 name: 'audit_request',
+//                 access_group: 'authorized'
+//             },
+//             reference: `audit:${user.user_id}`
+//         },
+//         {
+//             ascending: false, // 최신순
+//         }
+//     );
+
+//     console.log('audits.list : ', audits.list);
+
+//     // auditList.value = audits.list;
+
+//     const auditDocs = Promise.all(audits.list.map(async list => {
+//         await skapi.getRecords({
+//             record_id: list.data.audit_id
+//         }).then(res => {
+//             const auditItem = res.list[0];
+
+//             auditList.value.push(auditItem);
+
+//             console.log('=== auditDocs === auditList.value : ', auditList.value);
+//         })
+//     }))
+
+//     // for (let a of audits.list) {
+//     //     // console.log('a : ', a);
+
+//     //     // 결제 서류 가져오기
+//     //     let audit_doc = (await skapi.getRecords({
+//     //         record_id: a.data.audit_id
+//     //     })).list[0];
+
+//     //     // audit_doc_list[audit_doc.record_id] = audit_doc; // 결제 서류 저장
+
+//     //     // console.log('audit_doc : ', audit_doc);
+
+//     //     // 다른 사람 결제 여부 확인
+//     //     let approvals = (await skapi.getRecords({
+//     //         table: {
+//     //             name: 'audit_approval',
+//     //             access_group: 'authorized'
+//     //         },
+//     //         reference: a.data.audit_id
+//     //     })).list;
+
+//     //     console.log('approvals : ', approvals);
+
+//     //     auditList.value.push(audit_doc); // 결제 서류 저장
+
+//     //     console.log('audit_doc : ', audit_doc);
+//     //     console.log('auditList.value : ', auditList.value);
+
+//     //     let oa_has_audited_str = '';
+
+//     //     for (let auditor of audit_doc.tags.map(a => a.replaceAll('_', '-'))) { // audit_doc.tags: 결제자 목록
+//     //         let oa_has_audited_str = null;
+
+//     //         // console.log('approvals : ', approvals);
+
+//     //         for (let approval of approvals) {
+//     //             // console.log('approval : ', approval);
+
+//     //             if (approval.user_id === auditor) {
+//     //                 oa_has_audited_str = approval.data.approved ? '결제함' : '반려함';
+//     //                 // auditList.value += `---${auditor}:${oa_has_audited_str}---\n`; // 결제 서류 화면에 보여주기
+//     //                 // auditList.value += audit_doc.data.to_audit;
+//     //                 break;
+//     //             }
+//     //         }
+
+//     //         if (!oa_has_audited_str) {
+//     //             // auditList.value += `---${auditor}:결제대기중---\n`; // 결제 서류 화면에 보여주기
+//     //         }
+//     //     }
+
+//     //     // auditList.value += JSON.stringify(audit_doc, null, 2) + '\n'; // 결제 서류 화면에 보여주기
+//     //     // auditList.value += `\n--- ${JSON.stringify(audit_doc, null, 2)} ---`;
+//     // }
+// });
 </script>
 
 <style scoped lang="less">
