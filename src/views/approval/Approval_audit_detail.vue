@@ -17,17 +17,16 @@ hr
     form#_el_approved_form
         .stamp-wrap
             p.label 결재
-            .stamp
-                span.approver 1
-                template(v-if="auditDoContent.approved")
-                    button.btn.outline.btn-approve(type="button" @click="openModal") 결제
-                template(v-else)
-                    button.btn.outline.btn-approve(type="button" @click="openModal") 완료
+            .stamp(v-for="approver in auditUserList" :key="approver.user_id")
+                span.approver {{ approver.user_info?.name }}
+                template(v-if="approver.approved === 'approve'")
+                    button.btn.outline.btn-approve(type="button") 완료
+                template(v-else-if="approver.approved === 'reject'")
+                    button.btn.outline.btn-approve(type="button") 반려
+                template(v-else="!approver.approved || approver.approved === null")
+                    button.btn.outline.btn-approve(type="button" @click="openModal(approver)") 결재
+                
                 //- button.btn.outline.btn-approve(v-if="auditDoContent.approved" type="button" @click="openModal") 결제
-            .stamp
-                span.approver 2
-            .stamp
-                span.approver 3
 
         h3.audit-title(v-if="auditDoContent.data?.to_audit") {{ auditDoContent.data.to_audit }}
 
@@ -48,7 +47,7 @@ hr
 
 //- 결재 모달
 #modal.modal(v-if="isModalOpen")
-    form.modal-cont(@click.stop @submit.prevent="approvedAudit")
+    form.modal-cont(@click.stop @submit.prevent="postApproval")
         .modal-header
             h2.modal-title 결재
             button.btn-close(@click="closeModal")
@@ -75,18 +74,21 @@ import { user } from '@/user';
 
 const router = useRouter();
 const route = useRoute();
+const auditId = route.params.auditId;
 
 const disabled = ref(true);
 const auditDoContent = ref([]);
-let isModalOpen = ref(false);
-const auditId = route.params.auditId;
+const auditUserList = ref([]);
+const isModalOpen = ref(false);
 
-let openModal = () => {
+const openModal = (approver) => {
+    if (approver && approver.user_id !== user.user_id) return;
+
     isModalOpen.value = true;
     disabled.value = false;
 };
 
-let closeModal = () => {
+const closeModal = () => {
     isModalOpen.value = false;
     disabled.value = true;
 };
@@ -110,6 +112,15 @@ const approvedAudit = async () => {
     isModalOpen.value = false;
 }
 
+const getUserInfo = async (userId: string) => {
+    const params = {
+        searchFor: 'user_id',
+        value: userId
+    }
+
+    return await skapi.getUsers(params)
+}
+
 // 결재 서류 가져오기
 const getAuditDetail = async () => {
     try {
@@ -123,47 +134,48 @@ const getAuditDetail = async () => {
         
         const approvals = await approvedAudit();
 
-        console.log('=== approvals === ', approvals);
-        console.log('=== auditDoc === ', auditDoc.tags);
+        const approvalUserList = [];
+        const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
 
-        let auditor = auditDoc.tags[0].replaceAll('_', '-');
+        newTags.forEach((auditor) => {
+            let oa_has_audited_str = null;
 
-        let oa_has_audited_str = null;
+            approvals.forEach((approval) => {
+                if (approval.user_id === auditor) {
+                    oa_has_audited_str = approval.data.approved ? '결제함' : '반려함';
 
-        if(approvals[0].user_id === auditor) {
-            oa_has_audited_str = approvals[0].data.approved ? '결제함' : '반려함';
-            auditDoContent.value.approved = approvals[0].data.approved;
-            // console.log('== auditDoContent.value == ', auditDoContent.value);
-        }
+                    const result = {
+                        user_id: auditor,
+                        approved: approval.data.approved,
+                        approved_str: oa_has_audited_str
+                    }
 
+                    approvalUserList.push(result);
+                    return;
+                }
+            })
 
+            if (!oa_has_audited_str) {
+                const result = {
+                    user_id: auditor,
+                    approved: null,
+                    approved_str: '결제대기중'
+                }
 
-        // let oa_has_audited_str = '';
+                approvalUserList.push(result);
+            }
+        })
 
-        // for (let auditor of auditDoc.tags.map(a => a.replaceAll('_', '-'))) { // audit_doc.tags: 결제자 목록
-        //     console.log('== auditDoc.tags == ', auditDoc.tags);
-        //     console.log('== auditor == ', auditor);
+        const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
+        const userInfoList = userList.map(user => user.list[0]);                     
 
-        //     let oa_has_audited_str = null;
+        const newAuditUserList = approvalUserList.map((auditor) => ({
+            ...auditor,
+            user_info: userInfoList.find((user) => user.user_id === auditor.user_id)
+        }))
 
-        //     for (let approval of approvals) {
-        //         console.log('== approval == ', approval);
-
-        //         if (approval.user_id === auditor) {
-        //             oa_has_audited_str = approval.data.approved ? '결제함' : '반려함';
-        //             console.log('== oa_has_audited_str == ', oa_has_audited_str);
-        //             // audit_requests.innerHTML += `---${auditor}:${oa_has_audited_str}---\n`; // 결제 서류 화면에 보여주기
-        //             auditDoContent.value.approved = approval.data.approved;
-        //             console.log('== auditDoContent.value == ', auditDoContent.value);
-        //             break;
-        //         }
-        //     }
-        //     if (!oa_has_audited_str) {
-        //         // audit_requests.innerHTML += `---${auditor}:결제대기중---\n`; // 결제 서류 화면에 보여주기
-        //     }
-        // }
-
-        // audit_requests.innerHTML += JSON.stringify(auditDoc, null, 2) + '\n'; // 결제 서류 화면에 보여주기
+        console.log('newAuditUserList : ', newAuditUserList);
+        auditUserList.value = newAuditUserList;
     } catch (error) {
         console.error(error);
     }
@@ -178,6 +190,43 @@ const getAuditDetail = async () => {
 // const approveAudit = () => {
 //     console.log('approveAudit');
 // }
+
+// 결재 하기
+const postApproval = async (e: SubmitEvent) => {
+    e.preventDefault();
+
+    try {
+        if (!auditId) return;
+
+        const userId = user.user_id;
+
+        // 결재 하는 요청
+        await skapi.postRecord(e, {
+            table: {
+                name: 'audit_approval',
+                access_group: 'authorized'
+            },
+            reference: auditId,
+            tags: [(userId as string).replaceAll('-', '_')], 
+        }).then(res => {
+            skapi.postRealtime(
+                {
+                    audit_approval: {
+                        audit_doc_id: auditId,
+                        approval: res.data.approved
+                    }
+                },
+                userId
+            );
+
+            window.alert('결재가 완료되었습니다.');
+            closeModal();
+            getAuditDetail();
+        })
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 onMounted(() => {
     getAuditDetail();
