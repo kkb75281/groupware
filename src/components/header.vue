@@ -5,7 +5,7 @@ header#header
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
-	button.btn-noti(type="button" :data-count="notiCount" ref="btnNoti" @click="openNotification")
+	button.btn-noti(type="button" :data-count="0" ref="btnNoti" @click="openNotification")
 		.icon.icon-bell
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
@@ -178,6 +178,8 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
+
+
 let logout = () => {
 	skapi.logout().then(() => {
 		Object.assign(user, {});
@@ -187,11 +189,29 @@ let logout = () => {
     });
 }
 
+onMounted(() => {
+		const notiCount = window.sessionStorage.getItem(`notification_count:${user.user_id}`);
+
+		if (notiCount) {
+				let notification_count = document.querySelector('button.btn-noti');
+
+				notification_count.dataset.count = notiCount;
+		}
+})
+
 watch(() => route.path, (newPath, oldPath) => {
     if(newPath) {
         if (isProfileOpen.value) {
             isProfileOpen.value = !isProfileOpen.value;
         }
+
+			const notiCount = window.sessionStorage.getItem(`notification_count:${user.user_id}`);
+
+			if (notiCount) {
+				let notification_count = document.querySelector('button.btn-noti');
+
+      	notification_count.dataset.count = notification_count.dataset.count;
+			}
     }
 })
 </script>

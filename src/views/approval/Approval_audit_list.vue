@@ -26,6 +26,7 @@
                     //- col(style="width: 2.4rem")
                     col(style="width: 3rem")
                     col
+                    col(style="width: 20%")
                     col(style="width: 10%")
                 thead
                     tr
@@ -36,6 +37,7 @@
                         th(scope="col") NO
                         th.left(scope="col") 결재 사안
                         th(scope="col") 결재 현황
+                        th(scope="col") 기안자
 
                 tbody
                     tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id)" style="cursor: pointer;")
@@ -47,6 +49,7 @@
                         td.left {{ audit.data.to_audit }}
                         td
                             span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.approved }}
+                        td {{ audit.user_info?.name }}
 
 </template>
 
@@ -74,12 +77,14 @@ const audit_doc_list = {};
 //     console.log({r})
 // })
 
-// const getEmployee = skapi.getUsers().then(employee => {
-//     console.log('=== getUsers === employee : ', employee);
+const getUserInfo = async (userId: string) => {
+    const params = {
+        searchFor: 'user_id',
+        value: userId
+    }
 
-//     return employee;
-// });
-
+    return await skapi.getUsers(params)
+}
 
 onMounted(async () => {
     try {
@@ -108,27 +113,43 @@ onMounted(async () => {
 
             // let oa_has_audited_str = '';
 
-            for (let auditor of audit_doc.tags.map(a => a.replaceAll('_', '-'))) { // audit_doc.tags: 결제자 목록
+            const auditors = audit_doc.tags.map(a => a.replaceAll('_', '-'))
+
+            auditors.forEach((auditor) => {
                 let oa_has_audited_str = null;
 
-                for (let approval of approvals) {
-                    if (approval.user_id === auditor) {
-                        oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
+                approvals.forEach((approval) => {
+                    if (approval.user_id === user.user_id) {
+                        oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
+
                         audit_doc.approved = oa_has_audited_str;
-                        break;
+                        audit_doc.user_id = auditor;
+                        
+                        return;
                     }
-                }
+                })
+
                 if (!oa_has_audited_str) {
                     audit_doc.approved = '대기중';
+                    audit_doc.user_id = auditor;
                 }
-            }
+            })
             
-            return audit_doc;
+            return {
+                ...audit_doc,
+                draftUserId: list.user_id
+            };
         }));
 
-        auditList.value = auditDocs;
-        
-        console.log('=== auditList.value === ', auditList.value);
+        const userList = await Promise.all(auditDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId)))
+        const userInfoList = userList.map(user => user.list[0]).filter((user) => user)
+
+        const newAuditUserList = auditDocs.map((auditor) => ({
+            ...auditor,
+            user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId)
+        }))
+
+        auditList.value = newAuditUserList;        
     } catch (err) {
         console.error({err});
     }
