@@ -34,7 +34,7 @@
                         //-         input(type="checkbox" name="checkbox")
                         //-         span.label-checkbox
                         th(scope="col") NO
-                        th.left(scope="col") 결재 서류
+                        th.left(scope="col") 결재 사안
                         th(scope="col") 결재 현황
 
                 tbody
@@ -45,7 +45,8 @@
                         //-         span.label-checkbox
                         td {{ index + 1 }}
                         td.left {{ audit.data.to_audit }}
-                        td {{ audit.data.approved }}
+                        td
+                            span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.approved }}
 
 </template>
 
@@ -73,10 +74,12 @@ const audit_doc_list = {};
 //     console.log({r})
 // })
 
-// 직원 목록 가져오기
-skapi.getUsers().then(employee => {
-    console.log('=== getUsers === employee : ', employee);
-});
+// const getEmployee = skapi.getUsers().then(employee => {
+//     console.log('=== getUsers === employee : ', employee);
+
+//     return employee;
+// });
+
 
 onMounted(async () => {
     try {
@@ -103,16 +106,29 @@ onMounted(async () => {
                 reference: list.data.audit_id
             })).list;
 
-            console.log('audit_doc : ', audit_doc);
-            console.log('approvals : ', approvals);
+            // let oa_has_audited_str = '';
 
+            for (let auditor of audit_doc.tags.map(a => a.replaceAll('_', '-'))) { // audit_doc.tags: 결제자 목록
+                let oa_has_audited_str = null;
+
+                for (let approval of approvals) {
+                    if (approval.user_id === auditor) {
+                        oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
+                        audit_doc.approved = oa_has_audited_str;
+                        break;
+                    }
+                }
+                if (!oa_has_audited_str) {
+                    audit_doc.approved = '대기중';
+                }
+            }
+            
             return audit_doc;
         }));
 
-        console.log('auditDocs : ', auditDocs);
-
         auditList.value = auditDocs;
         
+        console.log('=== auditList.value === ', auditList.value);
     } catch (err) {
         console.error({err});
     }
@@ -120,9 +136,7 @@ onMounted(async () => {
 
 // 결재 상세 페이지로 이동
 const goToAuditDetail = (e, auditId) => {
-    console.log('== auditId == : ', auditId)
-    if(e.target.classList.contains('label-checkbox')) return;
-    
+    // if(e.target.classList.contains('label-checkbox')) return;
     router.push({ name: 'audit-detail', params: { auditId } });
 };
 
@@ -215,5 +229,22 @@ const goToAuditDetail = (e, auditId) => {
 </script>
 
 <style scoped lang="less">
+.audit-state {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 1px 0.4rem;
+    border-radius: 6px;
+    border: 1px solid var(--gray-color-400);
+    color: var(--gray-color-500);
 
+    &.approve {
+        color: var(--primary-color-400);
+        border-color: var(--primary-color-400);
+    }
+
+    &.reject {
+        color: var(--warning-color-400);
+        border-color: var(--warning-color-400);
+    }
+}
 </style>
