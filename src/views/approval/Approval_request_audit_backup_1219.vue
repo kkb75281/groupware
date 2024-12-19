@@ -122,129 +122,131 @@ const checkAuditor = (userId: string) => {
 // 결재 서류 업로드
 const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     try {
+
         const params = {
-            to_audit,
-            auditors: send_auditors, 
-            to_audit_content, 
-        };
+            to_audit, // 결재 사안 제목
+            auditors: send_auditors, // 결재자 목록
+            to_audit_content, // 결재 내용
+        }
 
         const options = {
-            readonly: true,
+            readonly: true, // 결재 올리면 수정할수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
             table: {
                 name: 'audit_doc',
-                access_group: 'private',
+                access_group: 'private', // 프라빗으로 올려야 결재자만 접근 가능
             },
             index: {
-                name: 'to_audit',
+                name: 'to_audit', // 결재 사안 제목. 제목별로 찾을때 위한 인덱싱
                 value: to_audit.replaceAll('.', '_'),
             },
             source: {
-                prevent_multiple_referencing: true,
+                prevent_multiple_referencing: true, // 중복 결재 방지
             },
-            tags: [...new Set(send_auditors.map(u => u.replaceAll('-', '_')))], // 중복 제거
-        };
+            tags: send_auditors.map(u => u.replaceAll('-', '_')) // 결재자 태그, 나중에 결재자 별로 찾을 때 사용
+        }
 
         const res = await skapi.postRecord(params, options);
 
-        console.log('결재 서류 === postAuditDoc === res : ', res);
+        console.log('결재 서류 === postAuditDoc; postRecord === res : ', res);
+
         return res;
+
 
     } catch (error) {
         console.error(error);
     }
-};
-
+}
 
 // 결재자에게 권한을 부여하는 함수
 const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
-    return skapi.grantPrivateRecordAccess({
-        record_id: audit_id,
-        user_id: auditor_id,
-    });
+  return skapi.grantPrivateRecordAccess({
+    record_id: audit_id,
+    user_id: auditor_id
+  });
 };
-
 
 // 결재 요청을 생성하고 알림을 보내는 함수
 const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
-    if (!audit_id || !auditor_id) return;
-
-    const res = await skapi.postRecord(
-        {
-            audit_id,
-            auditor: auditor_id,
-        },
-        {
-            unique_id: `audit_request:${audit_id}:${auditor_id}`,
-            readonly: true,
-            table: {
-                name: 'audit_request',
-                access_group: 'authorized',
-            },
-            reference: `audit:${auditor_id}`,
-            tags: [audit_id],
-        }
-    );
-
-    console.log('요청1 === postRecord === res : ', res);
-
-    await skapi.grantPrivateRecordAccess({
-        record_id: res.record_id,
-        user_id: auditor_id,
-    });
-
-    if (res.record_id) {
-        await skapi.postRealtime(
-            {
-                audit_request: {
-                    audit_request_id: res.record_id,
-                    send_auditors,
-                },
-            },
-            auditor_id
-        ).then(res => {
-            console.log('요청2 === postRealtime === res : ', res);
-        });
+  const res = await skapi.postRecord(
+    {
+      audit_id,
+      auditor: auditor_id,
+    },
+    {
+      unique_id: `audit_request:${audit_id}:${auditor_id}`,
+      readonly: true,
+      table: {
+        name: 'audit_request',
+        access_group: 'authorized',
+      },
+      reference: `audit:${auditor_id}`,
+      tags: [audit_id]
     }
-
+  ).then(res => {
+    console.log('요청1 === postRecord === res : ', res);
     return res;
-};
+  });
 
+  // 결재자에게 접근 권한 부여
+  await skapi.grantPrivateRecordAccess({
+    record_id: res.record_id,
+    user_id: res.data.auditor
+  });
+
+  // 실시간 알림 전송
+  await skapi.postRealtime(
+    {
+      audit_request: {
+        audit_request_id: res.record_id,
+        send_auditors
+      }
+    },
+    auditor_id
+  ).then(res => {
+    console.log('요청2 === postRealtime === res : ', res);
+  });
+
+  console.log('요청A === postRecord === res : ', res);
+
+  return res;
+};
 
 // 결재 요청 Alarm
 const poistAuditDocRecordId = async (audit_id) => {
     try {
-        const uniqueAuditors = [...new Set(send_auditors)]; // 중복 제거
-        const requests = uniqueAuditors.flatMap(auditor_id => [
+        const requests = send_auditors.flatMap(auditor_id => [
             grantAuditorAccess({ audit_id, auditor_id }),
-            createAuditRequest({ audit_id, auditor_id }, uniqueAuditors),
+            createAuditRequest({ audit_id, auditor_id }, send_auditors)
         ]);
 
-        return Promise.all(requests);
+      return Promise.all(requests);
     } catch (error) {
         console.error(error);
     }
-};
-
+}
 
 // 결재 요청
-const requestAudit = async (e) => {
+const requestAudit = async (e: SubmitEvent) => {
     e.preventDefault();
 
     try {
-        const formData = new FormData(e.target);
+        const formData = new FormData(e.target as HTMLFormElement);
+
         const formValues = Object.fromEntries(formData.entries());
         
         if (!formValues) return;
 
         const { to_audit, inp_content: to_audit_content } = formValues;
 
-        if (send_auditors.length === 0) {
+        if(send_auditors.length === 0) {
             alert('결재자를 1명 이상 선택해주세요.');
             return;
         }
 
+        // 결재 서류 업로드
         const auditDoc = await postAuditDoc({ to_audit, to_audit_content });
 
+        // 결재 요청 서류 record_id
         const auditId = auditDoc.record_id;
 
         await poistAuditDocRecordId(auditId);
@@ -257,8 +259,7 @@ const requestAudit = async (e) => {
     } catch (error) {
         console.error(error);
     }
-};
-
+}
 
 onMounted(() => {
     getDivisionNames();

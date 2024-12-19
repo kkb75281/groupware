@@ -145,9 +145,6 @@ hr
 CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 MakeStamp(v-if="openStampModal" @save="handleStampBlob" @close="closeStampDialog")
 
-br  
-br  
-br
 </template>
 
 <script setup>

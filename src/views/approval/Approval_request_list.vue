@@ -96,7 +96,6 @@ onMounted(async () => {
                 access_group: 'authorized'
             },
             reference: `audit:${user.user_id}`
-            
         }, {
             ascending: false,   // 최신순
         });
@@ -104,12 +103,7 @@ onMounted(async () => {
         const auditDocs = await Promise.all(audits.list.map(async (list) => {
             // 결재 서류 가져오기
             const audit_doc = (await skapi.getRecords({ 
-                record_id: list.data.audit_id,
-                // index: {
-                //     name: 'referenced_count',
-                //     value: 0,
-                //     condition: '=',
-                // }
+                record_id: list.data.audit_id 
             })).list[0];
 
             // 다른 사람 결재 여부 확인

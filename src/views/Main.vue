@@ -22,8 +22,8 @@ const route = useRoute();
     transition: padding-left 0.15s linear;
 
     .wrap {
-        // padding: 40px 20px 0;
-        padding: 3rem 2.4rem 0;
+        // padding: 3rem 2.4rem 0;
+        padding: 3rem 2.4rem;
     }
 }
 

@@ -66,10 +66,6 @@ hr
         button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
-br
-br
-br
 </template>
 
 <script setup>
