@@ -20,7 +20,6 @@ header#header
 				.icon
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
-				//- img(src="https://picsum.photos/250/250" alt="img-profile")
 
 #popup.notification(v-show="isNotiOpen" @click.stop)
 	.popup-header
@@ -30,37 +29,19 @@ header#header
 		.popup-main
 			ul
 				li
-					router-link.router(to="/")
-						h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요. 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
-						span.upload-time {{time}}시간전
-						button.icon(type="button")
-							svg
-								use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-				li
-					router-link.router(to="/")
-						h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요. 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
-						span.upload-time {{time}}시간전
-						button.icon(type="button")
-							svg
-								use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-				li
-					router-link.router(to="/")
-						h5.noti-title 제목입니다. 새로운 글이 등록되었습니다. 안녕하세요.
-						span.upload-time {{time}}시간전
-						button.icon(type="button")
-							svg
-								use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+					router-link.router(to="/approval/audit-list" @click="closePopup")
+						h5.noti-title 제목입니다.
 
 	template(v-else)
 		.popup-main.no-noti
 			h4.title
 				.icon
-							svg
-								use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 				| 새로운 알림이 없습니다.
 
 	.popup-bottom
-		router-link.router.view-all(to="/" @click="closePopup")
+		router-link.router.view-all(to="/approval/audit-list" @click="closePopup")
 			p 전체보기
 			.icon
 				svg
@@ -115,14 +96,13 @@ header#header
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
 import { user, profileImage } from '@/user'
-import { skapi } from '@/main'
+import { skapi, RealtimeCallback } from '@/main'
 import { toggleOpen } from '@/components/navbar'
 
 const router = useRouter();
 const route = useRoute();
 
-let time = ref(1);
-let notiCount = ref(9999);
+let notiCount = ref(999);
 let newNoti = ref(false);
 let isNotiOpen = ref(false);
 let btnNoti = ref(null);
@@ -190,13 +170,16 @@ let logout = () => {
 }
 
 onMounted(() => {
-		const notiCount = window.sessionStorage.getItem(`notification_count:${user.user_id}`);
+	const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
 
-		if (notiCount) {
-				let notification_count = document.querySelector('button.btn-noti');
+	if (notiCount) {
+		let notification_count = document.querySelector('button.btn-noti');
 
-				notification_count.dataset.count = notiCount;
-		}
+		notification_count.dataset.count = notiCount;
+		newNoti.value = true;
+
+
+	}
 })
 
 watch(() => route.path, (newPath, oldPath) => {
@@ -205,13 +188,12 @@ watch(() => route.path, (newPath, oldPath) => {
             isProfileOpen.value = !isProfileOpen.value;
         }
 
-			const notiCount = window.sessionStorage.getItem(`notification_count:${user.user_id}`);
+		const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
 
-			if (notiCount) {
-				let notification_count = document.querySelector('button.btn-noti');
-
-      	notification_count.dataset.count = notification_count.dataset.count;
-			}
+		if (notiCount) {
+			let notification_count = document.querySelector('button.btn-noti');
+			notification_count.dataset.count = notification_count.dataset.count;
+		}
     }
 })
 </script>
@@ -257,7 +239,7 @@ watch(() => route.path, (newPath, oldPath) => {
 			display: inline-block;
 			position: absolute;
 			top: -0.5rem;
-			right: -1rem;
+			right: -14px;
 			min-width: 1.625rem;
 			height: 1.625rem;
 			line-height: 1.625rem;
@@ -405,7 +387,7 @@ watch(() => route.path, (newPath, oldPath) => {
 
 	&.notification {
 		right: 124px;
-		max-width: 480px;
+		max-width: 420px;
 		width: calc(100% - 16px);
 
 		.popup-header {
@@ -459,7 +441,7 @@ watch(() => route.path, (newPath, oldPath) => {
 				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
-				width: 330px;
+				// width: 330px;
 			}
 
 			.upload-time {

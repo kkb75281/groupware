@@ -10,6 +10,7 @@ const app = createApp(App);
 
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
+let isConnected = false;
 
 function getChanges(before, after) {
   const beforeKeys = new Set(Object.keys(before));
@@ -22,7 +23,14 @@ function getChanges(before, after) {
   return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
 }
 
-let RealtimeCallback = (rt) => {
+export let RealtimeCallback = (rt) => {
+  if (!isConnected) {
+    console.log('Realtime 연결이 이미 활성화되어 있습니다.');
+    return;
+  }
+
+  console.log('=== RealtimeCallback === rt : ', rt);
+
   // 실시간 통신 (노티피케이션 / 체팅 등등)
   // Callback executed when there is data transfer between the users.
   /**
@@ -32,10 +40,11 @@ let RealtimeCallback = (rt) => {
         ...
     }
     */
+  
   if (rt.type === 'success') {
     if (rt.message === 'Connected to WebSocket server.') {
       // 실시간 통신 연결 성공
-      // 과거 결제 요청 목록 가져오기
+      // 과거 결재 요청 목록 가져오기
 
       skapi
         .getRecords(
@@ -51,13 +60,13 @@ let RealtimeCallback = (rt) => {
           }
         )
         .then((audits) => {
-          console.log('audits:', audits); // 들어온 결제 요청
+          console.log('=== RealtimeCallback === audits : ', audits); // 들어온 결재 요청
         })
         .catch((err) => null);
 
       skapi
         .getRecords({
-          // 결제 완료된 목록 가져오기
+          // 결재 완료된 목록 가져오기
           table: {
             name: 'audit_approval',
             access_group: 'authorized',
@@ -65,7 +74,7 @@ let RealtimeCallback = (rt) => {
           tag: user.user_id.replaceAll('-', '_'),
         })
         .then((approvals) => {
-          console.log('approvals:', approvals);
+          console.log('=== RealtimeCallback === approvals : ', approvals);
         })
         .catch((err) => null);
     }
@@ -76,26 +85,25 @@ let RealtimeCallback = (rt) => {
 
     // 개인 메시지
     if (rt.message?.audit_request) {
-      // 결제 요청이 들어옴
+      // 결재 요청이 들어옴
       let audit_request = rt.message.audit_request;
       console.log('audit_request:', audit_request);
     }
     if (rt.message?.audit_approval) {
-      // 결제 완료 알림
+      // 결재 완료 알림
       let audit_approval = rt.message.audit_approval;
       console.log('audit_approval:', audit_approval);
 
+      console.log('notification_count:', notification_count.dataset.count);
       notification_count.dataset.count = (parseInt(notification_count.dataset.count) - 1).toString();
-      window.sessionStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
+      window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
     }
 
     if (rt.sender !== user.user_id) {
       notification_count.dataset.count = (parseInt(notification_count.dataset.count) + 1).toString();
-      window.sessionStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
+      window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
     }
   }
-
-  console.log(rt);
 };
 
 export let loginCheck = async (profile: object | null) => {
@@ -134,7 +142,7 @@ export let loginCheck = async (profile: object | null) => {
     if (!misc.logged) {
       skapi
         .postRecord(null, {
-          // 결제 창구 만들기
+          // 결재 창구 만들기
           unique_id: `audit:${user.user_id}`,
           table: {
             name: 'audit',
@@ -150,7 +158,12 @@ export let loginCheck = async (profile: object | null) => {
       skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
     }
 
-    skapi.connectRealtime(RealtimeCallback);
+    if (!isConnected) {
+      skapi.connectRealtime(RealtimeCallback);
+      isConnected = true; // 연결 상태 플래그 업데이트
+    }
+
+    // skapi.connectRealtime(RealtimeCallback);
 
     iwaslogged.value = true;
   } else {

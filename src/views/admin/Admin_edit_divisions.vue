@@ -122,9 +122,6 @@ hr
 
 CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
-br  
-br  
-br  
 </template>
 
 <script setup>

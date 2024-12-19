@@ -4,43 +4,37 @@
 
 hr
 
+//- <input type="text" id="audit_record_id" placeholder="결제서류id" required>
+
+//- <label>
+//- 	결제/반려:
+//- 	<input type="checkbox" name="approved">
+//- </label>
+
+//- <input type="submit" value="확인">
+
 .form-wrap
     form#_el_approved_form
-        .table-wrap
-            .tb-overflow
-                table.table#tb-auditDetail
-                    colgroup
-                        col(style="width: 10%")
-                        col
-                        col(style="width: 10%")
-                        col
-                    tbody
-                        tr
-                            th 결재 사안
-                            td.left.audit-title(v-if="auditDoContent.data?.to_audit") {{ auditDoContent.data.to_audit }}
-                            th 기안자
-                            td.left.drafter() 이름
+        .stamp-wrap
+            p.label 결재
+            .stamp(v-for="approver in auditUserList" :key="approver.user_id")
+                span.approver {{ approver.user_info?.name }}
+                template(v-if="approver.approved === 'approve'")
+                    button.btn.outline.btn-approve(type="button") 완료
+                template(v-else-if="approver.approved === 'reject'")
+                    button.btn.outline.btn-approve(type="button") 반려
+                template(v-else="!approver.approved || approver.approved === null")
+                    button.btn.outline.btn-approve(type="button" @click="openModal(approver)") 결재
+                
+                //- button.btn.outline.btn-approve(v-if="auditDoContent.approved" type="button" @click="openModal") 결제
 
-                        tr(style="height: 140px")
-                            th 결재선
-                            td.audit-state.left(colspan="3" style="padding: 0")
-                                .stamp-wrap
-                                    .stamp-list(v-for="approver in auditUserList" :key="approver.user_id")
-                                        span.approver {{ approver.user_info?.name }}
-                                        .stamp
-                                            template(v-if="approver.approved === 'approve'")
-                                                span.approved 승인
-                                            template(v-else-if="approver.approved === 'reject'")
-                                                span.rejected 반려
-                                            template(v-else="!approver.approved || approver.approved === null")
-                                                template(v-if="approver.user_id === user.user_id")
-                                                    button.btn.sm.outline.btn-approve(type="button" @click="openModal(approver)") 결재
-                                                template(v-else)
-                                                    span.waitting 대기
+        h3.audit-title(v-if="auditDoContent.data?.to_audit") {{ auditDoContent.data.to_audit }}
 
-                        tr
-                            th 결재 내용
-                            td.left.audit-content(colspan="3" v-if="auditDoContent.data?.to_audit_content") {{ auditDoContent.data.to_audit_content }}
+        br
+
+        //- p.drafter(v-if="auditDoContent?.record_id") {{ auditDoContent.record_id }}
+
+        p.audit-content(v-if="auditDoContent.data?.to_audit_content") {{ auditDoContent.data.to_audit_content }}
 
         br
         br
@@ -48,6 +42,8 @@ hr
 
         .button-wrap
             button.btn.bg-gray.btn-cancel(type="button" @click="$router.push('/approval/audit-list')") 이전
+            //- button.btn.warning.btn-cancel(type="button" @click="rejectAudit") 반려
+            //- button.btn.btn-register(type="submit" @click="approveAudit") 승인
 
 //- 결재 모달
 #modal.modal(v-if="isModalOpen")
@@ -58,7 +54,7 @@ hr
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
         .modal-body
-            label.radio-button(style="width: 50%")
+            label.radio-button
                 input(type="radio" name="approved" value="approve" checked)
                 span.label-radio 결재
             label.radio-button
@@ -84,8 +80,6 @@ const disabled = ref(true);
 const auditDoContent = ref([]);
 const auditUserList = ref([]);
 const isModalOpen = ref(false);
-
-let isPosting = false;
 
 const openModal = (approver) => {
     if (approver && approver.user_id !== user.user_id) return;
@@ -148,7 +142,7 @@ const getAuditDetail = async () => {
 
             approvals.forEach((approval) => {
                 if (approval.user_id === auditor) {
-                    oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
+                    oa_has_audited_str = approval.data.approved ? '결제함' : '반려함';
 
                     const result = {
                         user_id: auditor,
@@ -187,11 +181,18 @@ const getAuditDetail = async () => {
     }
 }
 
+// 결재 반려
+// const rejectAudit = () => {
+//     console.log('rejectAudit');
+// }
+
+// 결재 승인
+// const approveAudit = () => {
+//     console.log('approveAudit');
+// }
+
 // 결재 하기
 const postApproval = async (e: SubmitEvent) => {
-    if (isPosting) return; // 중복 호출 방지
-    isPosting = true;
-  
     e.preventDefault();
 
     try {
@@ -208,9 +209,7 @@ const postApproval = async (e: SubmitEvent) => {
             reference: auditId,
             tags: [(userId as string).replaceAll('-', '_')], 
         }).then(res => {
-            console.log('결재 === postRecord === res : ', res);
-
-            return skapi.postRealtime(
+            skapi.postRealtime(
                 {
                     audit_approval: {
                         audit_doc_id: auditId,
@@ -218,13 +217,11 @@ const postApproval = async (e: SubmitEvent) => {
                     }
                 },
                 userId
-            ).then(res => {
-                console.log('결재 === postRealtime === res : ', res);
+            );
 
-                window.alert('결재가 완료되었습니다.');
-                closeModal();
-                getAuditDetail();
-            });
+            window.alert('결재가 완료되었습니다.');
+            closeModal();
+            getAuditDetail();
         })
     } catch (error) {
         console.error(error);
@@ -242,10 +239,6 @@ onMounted(() => {
     padding: 3rem 2.4rem;
 }
 
-.form-wrap {
-    max-width: 100%;
-}
-
 .title {
     display: flex;
     flex-wrap: wrap;
@@ -258,86 +251,23 @@ onMounted(() => {
     }
 }
 
-.table-wrap {
-    tbody {
-        tr {
-            &:hover {
-                background-color: transparent;
-            }
-        }
-
-        th {
-            border: 1px solid var(--gray-color-300);
-
-            &:first-of-type {
-                border-left: none;
-            }
-        }
-
-        td {
-            border: 1px solid var(--gray-color-300);
-
-            &:last-of-type {
-                border-right: none;
-            }
-        }
-    }
-}
-
 .stamp-wrap {
     display: flex;
-    flex-wrap: wrap;
-    text-align: center;
-    height: 100%;
+    gap: 1rem;
+    margin-bottom: 2rem;
 
-    .stamp-list {
-        display: flex;
-        flex-direction: column;
-        width: 6rem;
-        min-height: 7rem;
-        border-right: 1px solid var(--gray-color-300);
+    .stamp {
+        width: 4rem;
+        height: 4rem;
+        border: 1px solid var(--gray-color-300);
     }
 
     .approver {
         display: inline-block;
+        text-align: center;
         border-bottom: 1px solid var(--gray-color-300);
         color: var(--gray-color-500);
         width: 100%;
-        padding: 8px;
-    }
-
-    .stamp {
-        padding: 8px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-
-        > span {
-            display: inline-block;
-            padding: 8px;
-        }
-    }
-
-    .approved {
-        color: var(--primary-color-400);
-    }
-
-    .rejected {
-        color: var(--warning-color-400);
-    }
-
-    .waitting {
-        color: var(--gray-color-500);
-    }
-
-    .btn {
-        &.outline {
-            &:focus,
-            &:active {
-                border: 1px solid var(--primary-color-400);
-            }
-        }
     }
 }
 
