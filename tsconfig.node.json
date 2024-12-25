@@ -18,7 +18,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "types": ["node"],
-
+    "lib": ["es5", "es6", "dom", "es2021"], // window 객체를 사용하기 위해 dom 추가
     "outDir": "./dist", // 컴파일된 JavaScript 파일의 출력 디렉토리
     "rootDir": "./src", // TypeScript 소스 파일의 루트 디렉토리
     "strict": true,
