@@ -132,12 +132,12 @@ let checkNavbarClose = (e) => {
 
 onMounted(() => {
   checkScreenWidth(); // 컴포넌트가 마운트될 때 한 번 실행
-  window.addEventListener('resize', checkScreenWidth); // 리사이즈 이벤트 등록
+  window.addEventListener('resize', checkScreenWidth); // 리사이즈 이벤트 등록 <- 연산과다다
   window.addEventListener('click', checkNavbarClose);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkScreenWidth); // 컴포넌트가 언마운트될 때 이벤트 해제
+  window.removeEventListener('resize', checkScreenWidth); // 컴포넌트가 언마운트될 때 이벤트 해제 <- 연산과다
   window.removeEventListener('click', checkNavbarClose);
 });
 </script>

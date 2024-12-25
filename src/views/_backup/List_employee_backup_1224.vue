@@ -99,7 +99,7 @@ hr
                                         span.label-checkbox
                             td.list-num(v-show="isDesktop") {{ index + 1 }}
                             td {{ emp?.position }}
-                            td {{ divisionNameList?.[emp?.division] }}
+                            td {{ divisionNameList[emp?.division] }}
                             template(v-if='user.access_group > 98')
                                 td {{ emp.name }}
                             template(v-else)
@@ -116,6 +116,10 @@ hr
                                         span {{ emp.name }}
                             
                             td(v-show="isDesktop") {{ emp.email }}
+                            //- template(v-if='user.access_group > 98')
+                            //-     td
+                            //-         .btn-wrap(v-if="!emp.approved.includes('by_master')")
+                            //-             button.btn.bg-gray.sm(@click="openModal(emp)") 상세보기
                             td(v-show="isDesktop") {{ emp.birthdate }}
                             td(v-show="isDesktop") {{ emp.phone_number }}
                             td(v-show="isDesktop") {{ emp.address }}
@@ -129,13 +133,13 @@ hr
                                         span.label-checkbox
                             td.list-num(v-show="isDesktop") {{ index + 1 }}
                             td {{ emp?.position }}
-                            td {{ divisionNameList?.[emp?.division] }}
+                            td {{ divisionNameList[emp?.division] }}
                             td {{ emp.name }}
                             td(v-show="isDesktop") {{ emp.email }}
                             td
                                 .btn-wrap
-                                    button.btn.bg-gray.sm(@click.stop="resendInvite(emp.email)") 재전송
-                                    button.btn.bg-gray.sm(@click.stop="cancelInvite(emp)") 초청취소
+                                    button.btn.bg-gray.sm(@click="resendInvite(emp.email)") 재전송
+                                    button.btn.bg-gray.sm(@click="cancelInvite(emp)") 초청취소
                             td(v-show="isDesktop") {{ emp.birthdate }}
                             td(v-show="isDesktop") {{ emp.phone_number }}
                             td(v-show="isDesktop") {{ emp.address }}
@@ -173,7 +177,7 @@ br
             .input-wrap
                 p.label 부서
                 template(v-if="disabled")
-                    input(type="text" name="division" :value="divisionNameList?.[selectedEmp?.division]" :placeholder="divisionNameList?.[selectedEmp?.division] === '' ? '부서를 선택해주세요.' : ''" readonly)
+                    input(type="text" name="division" :value="divisionNameList[selectedEmp?.division]" :placeholder="divisionNameList[selectedEmp?.division] === '' ? '부서를 선택해주세요.' : ''" readonly)
                 template(v-else)
                     select(name="division" required disabled v-model="selectedEmpTags.emp_dvs")
                         option(value="" disabled) 부서 선택
@@ -244,14 +248,11 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { skapi } from '@/main';
-import { user, makeSafe } from '@/user';
+import { user } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
-import { getEmpDivisionPosition, empInfo, employeeDict, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
 import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
-
-getDivisionNames();
 
 let router = useRouter();
 let route = useRoute();
@@ -260,11 +261,13 @@ let loading = ref(false);
 let currentPage = ref(1);
 let selectedList = ref([]);
 let empListType = ref(route.query.empListType || '직원목록');
-
+let blockList = ref([]);
 let isAllSelected = computed(() => {
     return selectedList.value.length > 0 && employee.value.every(emp => selectedList.value.includes(emp.user_id));
 });
 
+let originalEmployee = ref([]);
+let sessionEmployee;
 let employee = ref([]);
 let suspendedLength = ref(0);
 let isModalOpen = ref(false);
@@ -281,7 +284,7 @@ let uploadFile = ref([]);
 let backupUploadFile = ref([]);
 let disabled = ref(true);
 let removeFileList = ref([]);
-
+let empInfo: {[key:string]: any} = ref({});
 let fileNames = ref([]);
 
 let access_group = {
@@ -344,44 +347,104 @@ watch(searchValue, (nv) => {
     }
 });
 
-async function getEmpList(type, refresh=false){
-    loading.value = true;
-    if (type === '직원목록') {
-        router.replace({
-            path: '/list-employee',
-            query: {},
-        });
+watch(empListType, async(nv) => {
+    if(nv) {
+        // checkbox reset
+        selectedList.value = [];
+        searchFor.value = 'name';
 
-        employee.value = await getUsers({
-            searchFor: 'approved',
-            value: 'by_skapi:approved',
-            condition: '>='
-        }, refresh).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l).catch(err => err)))).finally(()=>loading.value=false);
-    }
-    else if (type === '숨김여부') {
-        router.replace({
-            path: '/list-employee',
-            query: {},
-        });
+        if (nv === '직원목록') {
+            sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
 
-        let result = await getUsers({
-            searchFor: 'approved',
-            value: 'by_admin:suspended',
-            condition: '>='
-        }, refresh).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l).catch(err => err)))).finally(()=>loading.value=false);
+            router.replace({
+                path: '/list-employee',
+                query: {},
+            });
 
-        employee.value = result;
-        suspendedLength.value = result.length;
+            if (!sessionEmployee) {
+                loading.value = true;
+
+                skapi.getUsers().then(async(res) => {
+                    const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
+                    const result = await getEmpsInfo(userList);
+                    
+                    let list = result.filter(emp => emp.approved.includes('approved'));
+
+                    originalEmployee.value = result || [];
+                    displayEmployee(result);
+
+                    employee.value = list;
+
+                    loading.value = false;
+                });
+            } else {
+                employee.value = sessionEmployee.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
+            }
+        } else if (nv === '숨김여부') {
+            let list = JSON.parse(window.sessionStorage.getItem('employee'))
+            let result  = list.filter(emp => emp.approved.includes('suspended'));
+
+            router.replace({
+                path: '/list-employee',
+                query: {},
+            });
+
+            employee.value = result;
+            suspendedLength.value = result.length;
+        } else if (nv === '초청여부') {
+            const empLists = window.sessionStorage.getItem('inviteEmployee');
+
+            if (!empLists || empLists === 'undefined') {
+                loading.value = true;
+
+                skapi.getInvitations().then(async(res) => {
+                    const result = await getEmpsInfo(res.list);
+                    displayinviteEmployee(result);
+
+                    loading.value = false;
+                });
+            } else {
+                sessionEmployee = JSON.parse(empLists);
+                employee.value = sessionEmployee;
+            }
+        }
     }
-    else if (type === '초청여부') {
-        employee.value = await skapi.getInvitations().then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l).catch(err => err)))).finally(()=>loading.value=false);
-    }
+}, { immediate: true });
+
+getDivisionNames();
+
+function makeSafe(str) {
+    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
 }
 
-watch(empListType, getEmpList, { immediate: true });
+let refresh = async () => {
+    loading.value = true;
 
-let refresh = () => {
-    getEmpList(empListType.value, true);
+    try {
+        if (empListType.value === '직원목록' || empListType.value === '숨김여부') {
+            let res = await skapi.getUsers();
+            let list = [];
+
+            if(empListType.value === '직원목록') {
+                list = res.list.filter(emp => emp.approved.includes('approved') && !emp.approved.includes('by_master'));
+            } else if(empListType.value === '숨김여부') {
+                list = res.list.filter(emp => emp.approved.includes('suspended'));
+                suspendedLength.value = list.length;
+            }
+
+            const result = await getEmpsInfo(list);
+            displayEmployee(result);
+        } else if (empListType.value === '초청여부') {
+            let res = await skapi.getInvitations();
+
+            const result = await getEmpsInfo(res.list);
+            displayinviteEmployee(result);
+        }
+    } catch (error) {
+        console.error('== refresh : error == ', error);
+    } finally {
+        loading.value = false;
+    }
 }
 
 let displayDivisionOptions = (selectName: string) => {
@@ -434,7 +497,69 @@ let displayDivisionOptions = (selectName: string) => {
     divisionList.disabled = false;
 }
 
-async function searchEmp(refresh) {
+const getEmpsInfo = async (list) => {
+    if (!list) {
+        console.log('=== getEmpsInfo === list is empty');
+        return
+    }
+
+    try {
+        let promiseList = [];
+
+        for(let e of list) {
+            promiseList.push(getEmpDivision(e.user_id));
+
+            if(e.picture) {
+                promiseList.push(getProfileImg(e));
+            }
+        }
+
+        await Promise.all(promiseList);
+
+        for(let e of list) {
+            if(empInfo[e.user_id]) {
+                e.division = empInfo[e.user_id].division;
+                e.position = empInfo[e.user_id].position;
+            }
+        }
+        
+        employee.value = list;
+
+        return employee.value;
+    } catch (error) {
+        console.log('== getEmpsInfo == error : ', error);
+    }
+}
+
+let getEmpDivision = async (userId) => {
+    if(!userId) return;
+
+    try {
+        const res = await skapi.getRecords({
+            table: {
+                name: 'emp_position_current',
+                access_group: 1
+            },
+            unique_id: "[emp_position_current]" + makeSafe(userId)
+        })
+    
+        if (!res || !res.list || res.list.length === 0) return;    
+    
+        let record = res.list[0];
+        let emp_dvs = record?.index?.name?.split('.')[0];
+        let emp_id = record?.unique_id?.replace('[emp_position_current]', '').replaceAll('_', '-');
+        let emp_pst = record?.index?.name?.split('.')[1];
+
+        empInfo[emp_id] = {
+            division: emp_dvs,
+            position: emp_pst
+        }
+    } catch (error) {
+        console.error('== getEmpDivision == error == ', error);
+    }
+}
+
+let searchEmp = async() => {
     loading.value = true;
     
     if (!searchValue.value) {
@@ -448,7 +573,7 @@ async function searchEmp(refresh) {
     if (searchFor.value === 'division' && searchValue.value !== '전체') {
         employee.value = [];
 
-        try{
+        try {
             const res = await skapi.getRecords({
                 table: {
                     name: 'emp_position_current',
@@ -466,28 +591,84 @@ async function searchEmp(refresh) {
             });
 
             console.log('=== searchEmp === res : ', res);
-            let gu = [];
 
-            res.list.forEach(rec => gu.push(rec.data.user_id));
+            const list = res.list.map(emp =>
+                emp.unique_id
+                    .replace('[emp_position_current]', '')
+                    .replaceAll('_', '-')
+            );
 
-            const result = [...new Set(gu)]; // 중복 제거
+            const result = [...new Set(list)]; // 중복 제거
 
-            refresh = refresh === true;
+            const userList = await Promise.all(
+                result.map(async user => {
+                    const userResponse = await skapi.getUsers({
+                        searchFor: 'user_id',
+                        value: user,
+                        condition: '='
+                    });
+                    return userResponse.list.length > 0 ? userResponse.list[0] : null;
+                })
+            );
 
-            employee.value = await getUsers({
-                searchFor: 'user_id',
-                value: result // 절대값 검색(user_id)는 어레이 가능
-            }, refresh).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l))));
+            // 숨긴 직원은 제외
+            const filterUserList = userList.filter(list => list !== null && !list.approved.includes('suspended') && !list.approved.includes('by_master'));
+            console.log(filterUserList)
 
-        } finally {
-            loading.value = false;
+            const arr = [];
+
+            for (let user of filterUserList) {
+                if (!user) continue;
+
+                // 부서 정보 가져오기
+                await getEmpDivision(user.user_id);
+
+                // empInfo에서 부서와 직책 정보 추가
+                if (empInfo[user.user_id]) {
+                    user.division = empInfo[user.user_id].division;
+                    user.position = empInfo[user.user_id].position;
+                }
+
+                arr.push(user); // 처리된 사용자 추가
+            }
+
+            employee.value = arr; // 최종 목록 업데이트
+        } catch (error) {
+            console.error('searchEmp 에러 발생: ', error);
         }
+
+        loading.value = false;
+        return;
     }
-    else {
-        // division이 아닌 다른 검색 조건일 경우 처리
-        employee.value = await getUsers(callParams.value, refresh).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l)).finally(()=>loading.value=false)));
+
+    // division이 아닌 다른 검색 조건일 경우 처리
+    try {
+        const fetchedData = await skapi.getUsers(callParams.value, {
+            // ascending: !!searchValue.value
+        });
+
+        if (fetchedData) {
+            const arr = fetchedData.list.filter(emp => !emp.approved.includes('by_master'));
+
+            for (const e of arr) {
+                console.log(e)
+                await getEmpDivision(e.user_id);
+
+                if (empInfo[e.user_id]) {
+                    e.division = empInfo[e.user_id].division;
+                    e.position = empInfo[e.user_id].position;
+                }
+            }
+
+            employee.value = arr;
+        }
+    } catch (err) {
+        console.error('searchEmp 에러 발생: ', err);
+        alert(err);
     }
-}
+
+    loading.value = false;
+};
 
 // 추가자료 업로드 한 것 가져오기
 let getAdditionalData = () => {
@@ -525,11 +706,77 @@ let getAdditionalData = () => {
     })
 }
 
+const getProfileImg = async (emp) => {
+    if(!emp || !emp.picture) return;
+
+    await skapi.getFile(emp.picture, {
+        dataType: 'endpoint',
+    })
+    .then((res: any) => {  
+        emp.picture = res;
+    })
+    .catch((err: Error) => {
+        console.log('프로필 사진을 불러오는데 실패했습니다.');
+    });
+
+    console.log('dd')
+}
+
+let openModal = async(emp: { [key: string]: any }) => {
+    isModalOpen.value = true;
+    selectedEmp.value = emp;
+    selectedEmpOriginal = { ...emp };
+    selectedEmpTags.value.emp_dvs = emp.division;
+    selectedEmpTags.value.emp_pst = emp.position;
+    uploadFile.value = [];
+    removeFileList.value = [];
+
+    if(emp.picture) {
+        await skapi.getFile(emp.picture, {
+            dataType: 'endpoint',
+        })
+        .then((res: any) => {  
+            emp.picture = res;
+        })
+        .catch((err: Error) => {
+            window.alert('프로필 사진을 불러오는데 실패했습니다.');
+            throw err;
+        });
+    }
+
+    getAdditionalData();
+};
+
 let closeModal = () => {
     isModalOpen.value = false;
     selectedEmp.value = null;
     disabled.value = true;
 };
+
+let getEmployee = () => {
+    skapi.getUsers().then(async(res) => {        
+        empListType.value = '직원목록';
+
+        selectedList.value = [];
+
+
+        const userList = res.list.filter(emp => !emp.approved.includes('by_master'));
+        const result = await getEmpsInfo(userList);
+        
+        const list = result.filter(emp => emp.approved.includes('approved'));
+        
+        employee.value = list;
+        displayEmployee(result);
+    });
+}
+
+let displayEmployee = (employee) => {
+    window.sessionStorage.setItem('employee', JSON.stringify(employee));
+}
+
+let displayinviteEmployee = (employee) => {
+    window.sessionStorage.setItem('inviteEmployee', JSON.stringify(employee));
+}
 
 let toggleSelectAll = () => {
     if (isAllSelected.value) {
@@ -558,15 +805,6 @@ let employeeState = async(state) => {
 
         await Promise.all(userId.map(el => {
             return skapi.blockAccount({ user_id: el }).then(res => {
-
-                let appr_cache = getUserCache['by_skapi:approved'];
-                let sus_cache = getUserCache['by_admin:suspended'];
-                if(appr_cache.length) {
-                    let index = appr_cache.findIndex(uid => uid === el);
-                    appr_cache.splice(index, 1);
-                }
-                sus_cache.push(el);
-
                 isSuccess.push(el);
             }).catch(err => {
                 isFail.push(el);
@@ -577,14 +815,6 @@ let employeeState = async(state) => {
 
         await Promise.all(userId.map(el => {
             return skapi.unblockAccount({ user_id: el }).then(res => {
-                let appr_cache = getUserCache['by_skapi:approved'];
-                let sus_cache = getUserCache['by_admin:suspended'];
-                if(sus_cache.length) {
-                    let index = sus_cache.findIndex(uid => uid === el);
-                    sus_cache.splice(index, 1);
-                }
-                appr_cache.push(el);
-
                 isSuccess.push(el);
             }).catch(err => {
                 isFail.push(el);
@@ -595,18 +825,14 @@ let employeeState = async(state) => {
 
         await Promise.all(userId.map(el => {
             return skapi.deleteAccount({ user_id: el }).then(res => {
-                let sus_cache = getUserCache['by_admin:suspended'];
-                if(sus_cache.length) {
-                    let index = sus_cache.findIndex(uid => uid === el);
-                    sus_cache.splice(index, 1);
-                }
-
                 isSuccess.push(el);
             }).catch(err => {
                 isFail.push(el);
             });
         }));
     }
+
+    getEmployee();
 
     if(isSuccess.length > 0) {
         alert(`${isSuccess.length}명의 직원이 ${alertMsg}되었습니다.`);
@@ -667,20 +893,20 @@ let cancelInvite = (employee_info) => {
         },
     }
 
-    skapi.cancelInvitation(employee_info).then(async (res) => {
+    skapi.cancelInvitation(employee_info).then((res) => {
         // 이제 record_id 몰라도 query로 레코드 삭제 가능
         skapi.deleteRecords(picTable);
         skapi.deleteRecords(positionTable);
         skapi.deleteRecords(privateStorage);
         skapi.deleteRecords(ref_info);
 
-        getInvitationsCache.splice(getInvitationsCache.findIndex(inv => res.user_id === inv), 1); // 캐시에서 삭제
-
-        let inv = getInvitations();
         alert('초대메일이 취소되었습니다.');
 
-        employee.value = await inv;
+        let session = JSON.parse(window.sessionStorage.getItem('inviteEmployee'));
+        let newSession = session.filter(emp => emp.user_id !== employee_info.user_id);
 
+        employee.value = newSession;
+        displayinviteEmployee(newSession);
     }).catch(err => {
         alert('초대메일 취소에 실패하였습니다.');
     });
@@ -796,21 +1022,22 @@ let registerEmp = async(e) => {
         }
     }
 
+    displayEmployee(employee.value);    // 세션에 저장
     getAdditionalData();   // 추가자료 가져오기
     window.alert('등록완료');
 
     if(needUpdate) {
-        searchEmp(true);
+        searchEmp();
     }
     disabled.value = true;
 }
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
-  let target = e.target;
-  if (target.files) {
+    let target = e.target;
+    if (target.files) {
     fileNames.value = Array.from(target.files).map(file => file.name);
-  }
+    }
 };
 
 const goToEditEmp = (e, userId) => {
@@ -822,15 +1049,15 @@ const goToEditEmp = (e, userId) => {
 const isDesktop = ref(window.innerWidth > 768);
 
 const updateScreenSize = () => {
-  isDesktop.value = window.innerWidth > 768;
+    isDesktop.value = window.innerWidth > 768;
 };
 
 onMounted(() => {
-  window.addEventListener('resize', updateScreenSize);
+    window.addEventListener('resize', updateScreenSize);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateScreenSize);
+    window.removeEventListener('resize', updateScreenSize);
 });
 </script>
 

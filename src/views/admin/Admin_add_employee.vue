@@ -347,13 +347,8 @@ const registerEmp = async (e) => {
         // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
         await createReference({ user_id_safe, user_division_name, user_id });
 
-        const res = getInvitations();
+        await getInvitations(true); // refresh invitation list
 
-        if (!res) {
-            return console.log('실패');
-        }
-
-        window.sessionStorage.setItem('inviteEmployee', JSON.stringify(res.list));
         window.alert('직원 등록이 완료되었습니다.');
 
         router.push({
