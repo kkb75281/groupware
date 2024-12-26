@@ -190,10 +190,16 @@ export let loginCheck = async (profile: object | null) => {
 };
 
 const skapi = new Skapi(
-  'ap22SqnnCxZxkisPeFEc',
-  'f8e16604-69e4-451c-9d90-4410f801c006',
-  { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } }, { network_logs: true }
-  // { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
+  // 'ap21UAo9MdRQtaQ8CmGr',
+  // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
+  // 'ap21T837jUF8IFyfR98Z',
+  // 'f498d188-1fa5-43e5-a32d-904d3e125983',
+  'ap21WQQ42ZUVa3GYCmGr',
+  '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
+  // 'ap22SqnnCxZxkisPeFEc',
+  // 'f8e16604-69e4-451c-9d90-4410f801c006',
+  { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } },
+  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir', network_logs: true }
 ); // pb
 
 // const skapi = new Skapi(
