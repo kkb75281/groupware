@@ -345,13 +345,14 @@ watch(searchValue, (nv) => {
 });
 
 async function getEmpList(type, refresh=false){
+    console.log('run!')
     loading.value = true;
     if (type === '직원목록') {
         router.replace({
             path: '/list-employee',
             query: {},
         });
-
+        
         employee.value = await getUsers({
             searchFor: 'approved',
             value: 'by_skapi:approved',
@@ -374,7 +375,7 @@ async function getEmpList(type, refresh=false){
         suspendedLength.value = result.length;
     }
     else if (type === '초청여부') {
-        employee.value = await skapi.getInvitations().then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l).catch(err => err)))).finally(()=>loading.value=false);
+        employee.value = await getInvitations().then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l).catch(err => err)))).finally(()=>loading.value=false);
     }
 }
 
