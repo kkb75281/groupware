@@ -45,13 +45,14 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
 
 export const getUserCache: { [hash: string]: string[] } = {};
 export const getUsers = async (params: any = null, refresh:boolean = false, options: { [k: string]: any } = {}): Promise<any[]> => {
+    console.log({params})
     options = Object.assign({ limit: 100 }, options || {});
 
     let paramsHash = params?.searchFor === 'approved' ? params.value : null; // 기본 approved / suspended 리스트만 캐싱
     let userCached: any[] = [];
 
     if(refresh) {
-        if(paramsHash) {
+        if(paramsHash && getUserCache[paramsHash]) {
             getUserCache[paramsHash].splice(0, getUserCache[paramsHash].length); // 캐시 초기화
         }
     }
