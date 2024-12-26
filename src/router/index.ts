@@ -1,25 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { loaded } from '@/main';
+// import { loaded } from '@/main';
 import { user } from '@/user';
 
 import Login from '@/views/Login.vue';
-import Change_password from '@/views/Change_password.vue';
+// import Change_password from '@/views/Change_password.vue';
 import Profile from '@/views/Profile.vue';
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
-import List_employee from '@/views/List_employee.vue';
-import List_detail_employee from '@/views/List_detail_employee.vue';
+// import List_employee from '@/views/List_employee.vue';
+// import List_detail_employee from '@/views/List_detail_employee.vue';
 import Mypage from '@/views/mypage/Mypage.vue';
-import Mypage_edit_myinfo from '@/views/mypage/Mypage_edit_myinfo.vue';
+// import Mypage_edit_myinfo from '@/views/mypage/Mypage_edit_myinfo.vue';
 import Mypage_edit_mystamp from '@/views/mypage/Mypage_edit_mystamp.vue';
 import Mypage_list_data from '@/views/_backup/Mypage_list_data.vue';
 import Admin from '@/views/admin/Admin.vue';
-import Admin_add_employee from '@/views/admin/Admin_add_employee.vue';
-import Admin_add_divisions from '@/views/admin/Admin_add_divisions.vue';
-import Admin_edit_divisions from '@/views/admin/Admin_edit_divisions.vue';
-import Admin_list_divisions from '@/views/admin/Admin_list_divisions.vue';
+// import Admin_add_employee from '@/views/admin/Admin_add_employee.vue';
+// import Admin_add_divisions from '@/views/admin/Admin_add_divisions.vue';
+// import Admin_edit_divisions from '@/views/admin/Admin_edit_divisions.vue';
+// import Admin_list_divisions from '@/views/admin/Admin_list_divisions.vue';
 import Approval from '@/views/approval/Approval.vue';
-import Approval_request_audit from '@/views/approval/Approval_request_audit.vue';
+// import Approval_request_audit from '@/views/approval/Approval_request_audit.vue';
 import Approval_audit_list from '@/views/approval/Approval_audit_list.vue';
 import Approval_audit_detail from '@/views/approval/Approval_audit_detail.vue';
 
@@ -68,12 +68,12 @@ const router = createRouter({
         {
           path: '/list-employee',
           name: 'list-employee',
-          component: List_employee,
+          component: ()=>import('@/views/List_employee.vue') // List_employee,
         },
         {
           path: '/detail-employee/:userId',
           name: 'detail-employee',
-          component: List_detail_employee,
+          component: ()=>import('@/views/List_detail_employee.vue') // List_detail_employee,
         },
         {
           path: '/approval',
@@ -86,7 +86,7 @@ const router = createRouter({
             {
               path: 'request-audit',
               name: 'request-audit',
-              component: Approval_request_audit,
+              component: ()=>import('@/views/approval/Approval_request_audit.vue') // Approval_request_audit,
             },
             {
               path: 'audit-list',
@@ -111,7 +111,7 @@ const router = createRouter({
             {
               path: 'edit-myinfo',
               name: 'edit-myinfo',
-              component: Mypage_edit_myinfo,
+              component: ()=>import('@/views/mypage/Mypage_edit_myinfo.vue') // Mypage_edit_myinfo,
             },
             {
               path: 'edit-mystamp',
@@ -138,22 +138,22 @@ const router = createRouter({
             {
               path: 'add-employee',
               name: 'add-employee',
-              component: Admin_add_employee,
+              component: () => import('@/views/admin/Admin_add_employee.vue'), // Admin_add_employee,
             },
             {
               path: 'add-divisions',
               name: 'add-divisions',
-              component: Admin_add_divisions,
+              component: () => import('@/views/admin/Admin_add_divisions.vue') // Admin_add_divisions,
             },
             {
               path: 'edit-divisions',
               name: 'edit-divisions',
-              component: Admin_edit_divisions,
+              component: () => import('@/views/admin/Admin_edit_divisions.vue') //Admin_edit_divisions,
             },
             {
               path: 'list-divisions',
               name: 'list-divisions',
-              component: Admin_list_divisions,
+              component: () => import('@/views/admin/Admin_list_divisions.vue')
             },
             // {
             //   path: 'list-employee',

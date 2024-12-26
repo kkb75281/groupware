@@ -130,7 +130,7 @@ import { onMounted, ref } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
-
+import { getDivisionNames, divisionNameList, divisions } from '@/division';
 import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
@@ -166,7 +166,7 @@ if (!record_id) {
     router.push('/admin/list-divisions');
 }
 
-let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+let sessionDivisions = divisions.value; // JSON.parse(window.sessionStorage.getItem('divisions')); // 세션 스토리지 쓸 이유가 없음.
 let record = sessionDivisions[record_id];
 let isMyRecord = record.user_id === user.user_id;
 let originalDivisionName = record.data.division_name;
@@ -217,44 +217,47 @@ let editDivision = async(e) => {
     if(originalDivisionName !== ext.data.division_name) {
         let changeDivisionName = {};
 
-        skapi.getRecords({
+        // 이미 받아왔음
+        // skapi.getRecords({
+        //     unique_id: '[division_name_list]'
+        // }).then(r => {
+        // let data = r.list[0].data;
+
+        let data = divisionNameList.value;
+        let keys = Object.keys(data); // 'DVS_0', 'DVS_1', ...
+        let values = Object.values(data); // '부서명1', '부서명2', ...
+        let index = 0;
+
+        for(let v of values) {
+            if(v === originalDivisionName) {
+                index = values.indexOf(v);
+                break;
+            }
+        }
+
+        data[keys[index]] = ext.data.division_name;
+
+        changeDivisionName = data;
+
+        skapi.deleteRecords({
             unique_id: '[division_name_list]'
         }).then(r => {
-            let data = r.list[0].data;
-            let keys = Object.keys(data); // 'DVS_0', 'DVS_1', ...
-            let values = Object.values(data); // '부서명1', '부서명2', ...
-            let index = 0;
-
-            for(let v of values) {
-                if(v === originalDivisionName) {
-                    index = values.indexOf(v);
-                    break;
+            skapi.postRecord(changeDivisionName, {
+                unique_id: '[division_name_list]',
+                table: {
+                    name: 'divisionNames',
+                    access_group: 1
                 }
-            }
-
-            data[keys[index]] = ext.data.division_name;
-
-            changeDivisionName = data;
-
-            skapi.deleteRecords({
-                unique_id: '[division_name_list]'
-            }).then(r => {
-                skapi.postRecord(changeDivisionName, {
-                    unique_id: '[division_name_list]',
-                    table: {
-                        name: 'divisionNames',
-                        access_group: 1
-                    }
-                })
             })
         })
+
+        // })
     }
 
     try {
         let result = await skapi.postRecord(formData, post_params);
 
         sessionDivisions[result.record_id] = result;
-        window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
 
         window.alert('부서 수정이 완료되었습니다.');
         router.push('/admin/list-divisions');
