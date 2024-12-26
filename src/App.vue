@@ -19,7 +19,8 @@ watch(loaded, async(nv) => {
 
     await router.isReady();
 
-    if(route.name === 'mailing' && (iwaslogged.value || !iwaslogged.value)) {
+    // if(route.name === 'mailing' && (iwaslogged.value || !iwaslogged.value)) { <- 참이거나 || 아니거나 조건이 의미없음
+    if(route.name === 'mailing') {
         return;
     }
 

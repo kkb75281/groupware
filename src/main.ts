@@ -5,29 +5,29 @@ import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
-
+import { notifications } from './notifications';
 const app = createApp(App);
 
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
 let isConnected = false;
 
-function getChanges(before, after) {
-  const beforeKeys = new Set(Object.keys(before));
-  const afterKeys = new Set(Object.keys(after));
+// function getChanges(before:any, after:any) {
+//   const beforeKeys = new Set(Object.keys(before));
+//   const afterKeys = new Set(Object.keys(after));
 
-  const addedKeys = [...afterKeys].filter((key) => !beforeKeys.has(key));
-  const removedKeys = [...beforeKeys].filter((key) => !afterKeys.has(key));
-  const modifiedKeys = [...afterKeys].filter((key) => beforeKeys.has(key) && before[key] !== after[key]);
+//   const addedKeys = [...afterKeys].filter((key) => !beforeKeys.has(key));
+//   const removedKeys = [...beforeKeys].filter((key) => !afterKeys.has(key));
+//   const modifiedKeys = [...afterKeys].filter((key) => beforeKeys.has(key) && before[key] !== after[key]);
 
-  return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
-}
+//   return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
+// }
 
-export let RealtimeCallback = (rt) => {
-  if (!isConnected) {
-    console.log('Realtime 연결이 이미 활성화되어 있습니다.');
-    return;
-  }
+export let RealtimeCallback = (rt: any) => {
+  // if (!isConnected) {
+  //   console.log('Realtime 연결이 이미 활성화되어 있습니다.');
+  //   return;
+  // }
 
   console.log('=== RealtimeCallback === rt : ', rt);
 
@@ -46,6 +46,8 @@ export let RealtimeCallback = (rt) => {
       // 실시간 통신 연결 성공
       // 과거 결재 요청 목록 가져오기
 
+      isConnected = true; // 연결 상태 플래그 업데이트
+
       skapi
         .getRecords(
           {
@@ -62,7 +64,7 @@ export let RealtimeCallback = (rt) => {
         .then((audits) => {
           console.log('=== RealtimeCallback === audits : ', audits); // 들어온 결재 요청
         })
-        .catch((err) => null);
+        .catch(err => err);
 
       skapi
         .getRecords({
@@ -76,32 +78,38 @@ export let RealtimeCallback = (rt) => {
         .then((approvals) => {
           console.log('=== RealtimeCallback === approvals : ', approvals);
         })
-        .catch((err) => null);
+        .catch(err => err);
     }
   }
 
+  if (rt.type === 'close') {
+    // 실시간 통신 연결 종료
+    isConnected = false; // 연결 상태 플래그 업데이트
+  }
+
   if (rt.type === 'private') {
-    let notification_count = document.querySelector('button.btn-noti');
+    let notification_count: any = document.querySelector('button.btn-noti');
+    if (rt.sender !== user.user_id) { // 다른 사람이 나에게 보낸 메시지
+      // 개인 메시지
+      if (rt.message?.audit_request) {
+        // 결재 요청이 들어옴
+        let audit_request = rt.message.audit_request;
 
-    // 개인 메시지
-    if (rt.message?.audit_request) {
-      // 결재 요청이 들어옴
-      let audit_request = rt.message.audit_request;
-      console.log('audit_request:', audit_request);
-    }
-    if (rt.message?.audit_approval) {
-      // 결재 완료 알림
-      let audit_approval = rt.message.audit_approval;
-      console.log('audit_approval:', audit_approval);
+        notifications.audits.push({ fromUserId: rt.sender, msg: audit_request }); // 결재 요청 알림
 
-      console.log('notification_count:', notification_count.dataset.count);
-      notification_count.dataset.count = (parseInt(notification_count.dataset.count) - 1).toString();
-      window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
-    }
+        console.log('audit_request:', audit_request);
+      }
+      if (rt.message?.audit_approval) {
+        // 결재 완료 알림
+        let audit_approval = rt.message.audit_approval;
+        console.log('audit_approval:', audit_approval);
+        
+        notifications.audits.push({ fromUserId: rt.sender, msg: audit_approval }); // 결재 완료 알림
 
-    if (rt.sender !== user.user_id) {
-      notification_count.dataset.count = (parseInt(notification_count.dataset.count) + 1).toString();
-      window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
+        console.log('notification_count:', notification_count.dataset.count);
+        notification_count.dataset.count = (parseInt(notification_count.dataset.count) - 1).toString();
+        window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
+      }
     }
   }
 };
@@ -113,7 +121,7 @@ export let loginCheck = async (profile: object | null) => {
 
     Object.assign(user, profile);
 
-    sessionStorage.setItem('userId', profile['user_id']);
+    // sessionStorage.setItem('userId', profile['user_id']); // 사용되고 있지 않음
 
     for (const key in originalUser) {
       if (!profile.hasOwnProperty(key)) {
@@ -130,8 +138,9 @@ export let loginCheck = async (profile: object | null) => {
           profileImage.value = res;
         })
         .catch((err) => {
-          window.alert('프로필 사진을 불러오는데 실패했습니다.');
-          throw err; // 의도적으로 에러 전달
+          // window.alert('프로필 사진을 불러오는데 실패했습니다.');
+          // throw err; // 의도적으로 에러 전달
+          profileImage.value = null; // 에러 발생 시 이미지 없음
         });
     } else {
       profileImage.value = null;
@@ -160,7 +169,6 @@ export let loginCheck = async (profile: object | null) => {
 
     if (!isConnected) {
       skapi.connectRealtime(RealtimeCallback);
-      isConnected = true; // 연결 상태 플래그 업데이트
     }
 
     // skapi.connectRealtime(RealtimeCallback);
@@ -168,7 +176,11 @@ export let loginCheck = async (profile: object | null) => {
     iwaslogged.value = true;
   } else {
     if (iwaslogged.value) {
-      Object.assign(user, {});
+      // Object.assign(user, {}); // 이렇게 하면 지워지지 않음
+      for (let key in user) {
+        delete user[key];
+      }
+
       iwaslogged.value = false;
     }
   }
@@ -178,10 +190,10 @@ export let loginCheck = async (profile: object | null) => {
 };
 
 const skapi = new Skapi(
-  'ap21WQQ42ZUVa3GYCmGr',
-  '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
-  { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } },
-  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
+  'ap22SqnnCxZxkisPeFEc',
+  'f8e16604-69e4-451c-9d90-4410f801c006',
+  { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } }, { network_logs: true }
+  // { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
 ); // pb
 
 // const skapi = new Skapi(

@@ -4,7 +4,7 @@
 
 hr
 
-.form-wrap
+.form-wrap(v-if="currentEmp")
     form#_el_empDetail_form
         div(style="text-align: center;")
             .image
@@ -102,9 +102,9 @@ br
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { skapi } from '@/main';
-import { user } from '@/user';
+import { user, makeSafe } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
-
+import { getEmpDivisionPosition, getUsers, employeeDict } from '@/employee';
 const router = useRouter();
 const route = useRoute();
 
@@ -126,48 +126,15 @@ let access_group = {
 };
 
 const userId = route.params.userId;
-const sessionEmployee = JSON.parse(window.sessionStorage.getItem('employee'));
-
-function makeSafe(str) {
-    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
-}
+getUsers(userId).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l)))).then(res=>{
+    currentEmp.value = res?.[0];
+    
+    currentEmpTags.value.emp_dvs = res.division;
+    currentEmpTags.value.emp_pst = res.position;
+});
 
 // 부서 목록 가져오기
 getDivisionNames();
-
-// 현재 직책 정보 레코드 저장되어 있는지 확인
-let emp_position_current_record = null;
-
-// 유저 부서 직책 정보 가져오기
-let getEmpDivision = async (userId) => {
-    if(!userId) return;
-
-    try {
-        const res = await skapi.getRecords({
-            table: {
-                name: 'emp_position_current',
-                access_group: 1
-            },
-            unique_id: "[emp_position_current]" + makeSafe(userId)
-        })
-    
-        if (!res || !res.list || res.list.length === 0) {
-            emp_position_current_record = null;
-            return;
-        };    
-    
-        let record = res.list[0];
-        let emp_dvs = record?.index?.name?.split('.')[0];
-        let emp_pst = record?.index?.name?.split('.')[1];
-
-        currentEmpTags.value.emp_dvs = emp_dvs;
-        currentEmpTags.value.emp_pst = emp_pst;
-        emp_position_current_record = record;
-    } catch (error) {
-        console.error('== getEmpDivision == error == ', error);
-    }
-}
-getEmpDivision(userId);
 
 // 추가자료 가져오기    
 let getAdditionalData = () => {
@@ -306,11 +273,9 @@ let registerEmp = async(e) => {
             console.log('history 부서직책업데이트', r);
         })
 
-        if(!!emp_position_current_record) {
-            await skapi.deleteRecords({record_id: emp_position_current_record.record_id}).then(r => {
-                console.log(r)
-            });
-        }
+        await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
+            console.log(r)
+        }).catch(err=>err);
 
         await skapi.postRecord({
             user_id: currentEmp.value.user_id,
@@ -372,54 +337,20 @@ let registerEmp = async(e) => {
         });
     }
 
+    currentEmp.value.division = currentEmpTags.value.emp_dvs;
+    currentEmp.value.position = currentEmpTags.value.emp_pst;
 
-    for(let e of sessionEmployee) {
-        if(e.user_id === currentEmp.value.user_id) {
-            e.division = currentEmpTags.value.emp_dvs;
-            e.position = currentEmpTags.value.emp_pst;
-            currentEmpOriginal = { ...e };
-            break;
-        }
-    }
+    employeeDict[currentEmp.value.user_id] = currentEmp.value;
 
     console.log('=== registerEmp === currentEmp.value : ', currentEmp.value);
-
-    window.sessionStorage.setItem('employee', JSON.stringify(sessionEmployee));
     getAdditionalData();
     window.alert('직원 정보 수정이 완료되었습니다.');
 
     disabled.value = true;
 }
 
-onMounted(async() => {
+onMounted(async () => {
     window.scrollTo(0, 0);
-
-    // 현재 직원 세션에서 찾기
-    for (let key in sessionEmployee) {
-        if (sessionEmployee[key].user_id === userId) {
-            currentEmp.value = sessionEmployee[key];
-            break;
-        }
-    }
-
-    // 유저 프로필 이미지 가져오기
-    if(currentEmp.value.picture) {
-        try {
-            if(!currentEmp.value || !currentEmp.value.picture) return;
-
-            await skapi.getFile(currentEmp.value.picture, {
-                dataType: 'endpoint',
-            }).then((res: any) => {  
-                currentEmp.value.picture = res;
-            }).catch((err: Error) => {
-                console.log('프로필 사진을 불러오는데 실패했습니다.');
-            });
-        } catch (error) {
-            console.error('== getProfileImg == error == ', error);
-        }
-    } else {
-        currentEmp.value.picture = '';
-    }
 });
 </script>
 
