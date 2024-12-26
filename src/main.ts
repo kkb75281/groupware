@@ -190,10 +190,10 @@ export let loginCheck = async (profile: object | null) => {
 };
 
 const skapi = new Skapi(
-  'ap22SqnnCxZxkisPeFEc',
-  'f8e16604-69e4-451c-9d90-4410f801c006',
-  { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } }, { network_logs: true }
-  // { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
+  'ap21WQQ42ZUVa3GYCmGr',
+  '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
+  { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } },
+  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
 ); // pb
 
 // const skapi = new Skapi(
