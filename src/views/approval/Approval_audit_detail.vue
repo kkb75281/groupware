@@ -217,7 +217,7 @@ const postApproval = async (e: SubmitEvent) => {
                         approval: res.data.approved
                     }
                 },
-                userId
+                auditDoContent.value.user_id
             ).then(res => {
                 console.log('결재 === postRealtime === res : ', res);
 
