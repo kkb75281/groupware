@@ -40,7 +40,7 @@
                         th(scope="col") 기안자
 
                 tbody
-                    tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id)" style="cursor: pointer;")
+                    tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
                         //- td 
                         //-     label.checkbox
                         //-         input(type="checkbox" name="checkbox")
@@ -58,11 +58,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
+import { auditList, goToAuditDetail } from '@/notifications';
 
 const router = useRouter();
 const route = useRoute();
 
-const auditList = ref([]);
+// const auditList = ref([]);
 
 const audit_doc_list = {};
 
@@ -78,97 +79,97 @@ const audit_doc_list = {};
 // })
 
 // 기안자 정보 가져오기
-const getUserInfo = async (userId: string) => {
-    const params = {
-        searchFor: 'user_id',
-        value: userId
-    }
+// const getUserInfo = async (userId: string) => {
+//     const params = {
+//         searchFor: 'user_id',
+//         value: userId
+//     }
 
-    return await skapi.getUsers(params);
-}
+//     return await skapi.getUsers(params);
+// }
 
-onMounted(async () => {
-    try {
-        // 내가 받은 결재 요청건 가져오기
-        const audits = await skapi.getRecords({
-            table: {
-                name: 'audit_request',
-                access_group: 'authorized'
-            },
-            reference: `audit:${user.user_id}`
+// onMounted(async () => {
+//     try {
+//         // 내가 받은 결재 요청건 가져오기
+//         const audits = await skapi.getRecords({
+//             table: {
+//                 name: 'audit_request',
+//                 access_group: 'authorized'
+//             },
+//             reference: `audit:${user.user_id}`
             
-        }, {
-            ascending: false,   // 최신순
-        });
+//         }, {
+//             ascending: false,   // 최신순
+//         });
 
-        const auditDocs = await Promise.all(audits.list.map(async (list) => {
-            // 결재 서류 가져오기
-            const audit_doc = (await skapi.getRecords({ 
-                record_id: list.data.audit_id,
-                // index: {
-                //     name: 'referenced_count',
-                //     value: 0,
-                //     condition: '=',
-                // }
-            })).list[0];
+//         const auditDocs = await Promise.all(audits.list.map(async (list) => {
+//             // 결재 서류 가져오기
+//             const audit_doc = (await skapi.getRecords({ 
+//                 record_id: list.data.audit_id,
+//                 // index: {
+//                 //     name: 'referenced_count',
+//                 //     value: 0,
+//                 //     condition: '=',
+//                 // }
+//             })).list[0];
 
-            // 다른 사람 결재 여부 확인
-            const approvals = (await skapi.getRecords({
-                table: {
-                    name: 'audit_approval',
-                    access_group: 'authorized'
-                },
-                reference: list.data.audit_id
-            })).list;
+//             // 다른 사람 결재 여부 확인
+//             const approvals = (await skapi.getRecords({
+//                 table: {
+//                     name: 'audit_approval',
+//                     access_group: 'authorized'
+//                 },
+//                 reference: list.data.audit_id
+//             })).list;
 
-            // 결재자 목록에서 각 결재자 ID 가져오기
-            const auditors = audit_doc.tags.map(a => a.replaceAll('_', '-'));
+//             // 결재자 목록에서 각 결재자 ID 가져오기
+//             const auditors = audit_doc.tags.map(a => a.replaceAll('_', '-'));
 
-            auditors.forEach((auditor) => {
-                let oa_has_audited_str = null;
+//             auditors.forEach((auditor) => {
+//                 let oa_has_audited_str = null;
 
-                approvals.forEach((approval) => {
-                    if (approval.user_id === user.user_id) {
-                        oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
+//                 approvals.forEach((approval) => {
+//                     if (approval.user_id === user.user_id) {
+//                         oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
 
-                        audit_doc.approved = oa_has_audited_str;
-                        audit_doc.user_id = auditor;
+//                         audit_doc.approved = oa_has_audited_str;
+//                         audit_doc.user_id = auditor;
                         
-                        return;
-                    }
-                })
+//                         return;
+//                     }
+//                 })
 
-                if (!oa_has_audited_str) {
-                    audit_doc.approved = '대기중';
-                    audit_doc.user_id = auditor;
-                }
-            })
+//                 if (!oa_has_audited_str) {
+//                     audit_doc.approved = '대기중';
+//                     audit_doc.user_id = auditor;
+//                 }
+//             })
             
-            return {
-                ...audit_doc,
-                draftUserId: list.user_id
-            };
-        }));
+//             return {
+//                 ...audit_doc,
+//                 draftUserId: list.user_id
+//             };
+//         }));
 
-        const userList = await Promise.all(auditDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId)))
-        const userInfoList = userList.map(user => user.list[0]).filter((user) => user)
+//         const userList = await Promise.all(auditDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId)))
+//         const userInfoList = userList.map(user => user.list[0]).filter((user) => user)
 
-        const newAuditUserList = auditDocs.map((auditor) => ({
-            ...auditor,
-            user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId)
-        }))
+//         const newAuditUserList = auditDocs.map((auditor) => ({
+//             ...auditor,
+//             user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId)
+//         }))
 
-        auditList.value = newAuditUserList;        
-    } catch (err) {
-        console.error({err});
-    }
-});
+//         auditList.value = newAuditUserList;        
+//     } catch (err) {
+//         console.error({err});
+//     }
+// });
 
 // 결재 상세 페이지로 이동
-const goToAuditDetail = (e, auditId) => {
-    // if(e.target.classList.contains('label-checkbox')) return;
-    router.push({ name: 'audit-detail', params: { auditId } });
-};
+// const goToAuditDetail = (e, auditId) => {
+//     // if(e.target.classList.contains('label-checkbox')) return;
+//     router.push({ name: 'audit-detail', params: { auditId } });
+// };
 </script>
 
 <style scoped lang="less">

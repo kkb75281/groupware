@@ -1,7 +1,7 @@
 import { Reactive, reactive } from 'vue';
 import { skapi } from './main';
 import { makeSafe } from './user';
-export const employeeDict: Reactive<{ [key: string]: any }> = reactive({}); // 사용자정보 저장소 (직급, 부서 정보 포함)
+export const employeeDict: Reactive<{ [user_id: string]: any }> = reactive({}); // 사용자정보 저장소 (직급, 부서 정보 포함)
 
 export const empInfo: { // 사용자 직급, 부서 정보 저장소
     [employee_user_id: string]: {
@@ -50,7 +50,7 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
     return user;
 }
 
-export const getUserCache: { [hash: string]: string[] } = {};
+export const getUserCache: { [searchValue: string]: string[] } = {};
 export const getUsers = async (
     params: {
         searchFor: "name" | "user_id" | "address" | "email" | "phone_number" | "gender" | "birthdate" | "locale" | "subscribers" | "timestamp" | "approved",
@@ -106,6 +106,8 @@ export const getUsers = async (
     }
 
     let res = await skapi.getUsers(params, options);
+
+	console.log({ res })
 
     res.list.filter((emp: any) => {
         if (emp.approved.includes('by_master')) {
