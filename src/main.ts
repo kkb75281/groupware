@@ -5,7 +5,7 @@ import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
-import { notifications, getAuditList } from './notifications';
+import { notifications, getAuditList, getSendAuditList } from './notifications';
 import { employeeDict, getEmpDivisionPosition } from './employee';
 const app = createApp(App);
 
@@ -74,6 +74,7 @@ export let RealtimeCallback = async(rt: any) => {
 
 			nextTick(() => {
 				getAuditList();
+				// getSendAuditList();
 			})
 
 			// await skapi.getRecords({
@@ -138,6 +139,7 @@ export let RealtimeCallback = async(rt: any) => {
 
 		nextTick(() => {
 			getAuditList();
+			// getSendAuditList();
 		})
 	}
 };
