@@ -145,22 +145,36 @@ hr
 CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 MakeStamp(v-if="openStampModal" @save="handleStampBlob" @close="closeStampDialog")
 
-br  
-br  
-br
 </template>
 
 <script setup>
-import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import { skapi } from '@/main';
-import { user, profileImage, verifiedEmail } from '@/user';
-import { divisionNameList } from '@/division'
-import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
-import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc } from '@/components/make_stamp';
+import { useRoute, useRouter } from "vue-router";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
+import { skapi } from "@/main";
+import { user, profileImage, verifiedEmail } from "@/user";
+import { divisionNameList } from "@/division";
+import {
+    openCropModal,
+    croppedImages,
+    uploadSrc,
+    currentImageSrc,
+    resetCropImage,
+    openCropImageDialog,
+    closeCropImageDialog,
+    setCroppedImage,
+} from "@/components/crop_image";
+import {
+    openStampModal,
+    openStampDialog,
+    closeStampDialog,
+    handleStampBlob,
+    uploadingStamp,
+    stampImages,
+    uploadingSrc,
+} from "@/components/make_stamp";
 
-import CropImage from '@/components/crop_image.vue';
-import MakeStamp from '@/components/make_stamp.vue';
+import CropImage from "@/components/crop_image.vue";
+import MakeStamp from "@/components/make_stamp.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -174,9 +188,9 @@ let backupUploadFile = ref([]);
 let removeFileList = ref([]);
 let originUserProfile = {};
 let access_group = {
-    1: '직원',
-    98: '관리자',
-    99: '마스터',
+    1: "직원",
+    98: "관리자",
+    99: "마스터",
 };
 let disabled = ref(false);
 let onlyEmail = ref(false);
@@ -185,125 +199,144 @@ let fileNames = ref([]);
 let stampNames = ref([]);
 
 function makeSafe(str) {
-    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
+    return str
+        .replaceAll(".", "_")
+        .replaceAll("+", "_")
+        .replaceAll("@", "_")
+        .replaceAll("-", "_");
 }
 
-let getUserDivision = async() => {
-    // 부서 이름 가져오기
-    await skapi.getRecords({
-        unique_id: '[division_name_list]',
-        table: {
-            name: 'divisionNames',
-            access_group: 1
-        },
-    }).then(r => {
-        divisionNameList.value = r.list[0].data;
-    })
+let getUserDivision = async () => {
+    // // 부서 이름 가져오기
+    // await skapi.getRecords({
+    //     unique_id: '[division_name_list]',
+    //     table: {
+    //         name: 'divisionNames',
+    //         access_group: 1
+    //     },
+    // }).then(r => {
+    //     divisionNameList.value = r.list[0].data;
+    // })
 
     // user position 가져오기
-    skapi.getRecords({
-        table: {
-            name: 'emp_division',
-            access_group: 1
-        },
-        tag: "[emp_id]" + makeSafe(user.user_id),
-    }, {
-        limit: 1,
-        ascending: false,
-    }).then(r => {
-        let result = r.list[0];
+    skapi
+        .getRecords(
+            {
+                table: {
+                    name: "emp_division",
+                    access_group: 1,
+                },
+                tag: "[emp_id]" + makeSafe(user.user_id),
+            },
+            {
+                limit: 1,
+                ascending: false,
+            }
+        )
+        .then((r) => {
+            let result = r.list[0];
 
-        if(result) {
-            let emp_dvs = result.tags.filter(t => t.includes('[emp_dvs]'))[0].replace('[emp_dvs]', '');
-            let emp_id = result.tags.filter(t => t.includes('[emp_id]'))[0].replace('[emp_id]', '').replaceAll('_', '-');
-            let emp_pst = result.tags.filter(t => t.includes('[emp_pst]'))[0].replace('[emp_pst]', '');
-    
-            userPosition.value = divisionNameList.value[emp_dvs];
-        }
-    })
-}
+            if (result) {
+                let emp_dvs = result.tags
+                    .filter((t) => t.includes("[emp_dvs]"))[0]
+                    .replace("[emp_dvs]", "");
+                let emp_id = result.tags
+                    .filter((t) => t.includes("[emp_id]"))[0]
+                    .replace("[emp_id]", "")
+                    .replaceAll("_", "-");
+                let emp_pst = result.tags
+                    .filter((t) => t.includes("[emp_pst]"))[0]
+                    .replace("[emp_pst]", "");
+
+                userPosition.value = divisionNameList.value[emp_dvs];
+            }
+        });
+};
 getUserDivision();
 
 // user additional data 가져오기
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = () => {
-    skapi.getRecords({
-        table: {
-            name: 'emp_additional_data',
-            access_group: 99
-        },
-        reference: "[emp_additional_data]" + makeSafe(user.user_id),
-    }).then(res => {
-        let fileList = [];
-        
-        if(res.list.length === 0) {
-            fileList = [];
-            uploadedFile.value = fileList;
-        } else {
-            res.list.forEach((item) => {
-                if (item.bin.additional_data && item.bin.additional_data.length > 0) {
-                    function getFileUserId(str) {
-                        if (!str) return '';
-                        return str.split('/')[3]
+    skapi
+        .getRecords({
+            table: {
+                name: "emp_additional_data",
+                access_group: 99,
+            },
+            reference: "[emp_additional_data]" + makeSafe(user.user_id),
+        })
+        .then((res) => {
+            let fileList = [];
+
+            if (res.list.length === 0) {
+                fileList = [];
+                uploadedFile.value = fileList;
+            } else {
+                res.list.forEach((item) => {
+                    if (item.bin.additional_data && item.bin.additional_data.length > 0) {
+                        function getFileUserId(str) {
+                            if (!str) return "";
+                            return str.split("/")[3];
+                        }
+
+                        const result = item.bin.additional_data.map((el) => ({
+                            ...el,
+                            user_id: getFileUserId(el.path),
+                            record_id: item.record_id,
+                        }));
+
+                        fileList.push(...result);
                     }
+                });
+                uploadedFile.value = fileList;
+            }
+        })
+        .catch((err) => {
+            console.log("== getRecords == err : ", err);
+        });
+};
 
-                    const result = item.bin.additional_data.map((el) => ({
-                        ...el,
-                        user_id: getFileUserId(el.path),
-                        record_id: item.record_id,
-                    }));    
-
-                    fileList.push(...result);
-                }
-            });
-            uploadedFile.value = fileList;
-        }
-    }).catch(err => {
-        console.log('== getRecords == err : ', err);
-    });
-}
-
-if(user && !user.approved.includes('by_master')) {
+if (user && !user.approved.includes("by_master")) {
     getAdditionalData();
 }
 
-let getProfileImage = async() => {
+let getProfileImage = async () => {
     try {
         let res = await skapi.getFile(user.picture, {
-            dataType: 'endpoint',
+            dataType: "endpoint",
         });
 
-        console.log(res)
-    
+        console.log(res);
+
         profileImage.value = res;
         uploadSrc.value.profile_pic = res;
     } catch (err) {
-        window.alert('프로필 사진을 불러오는데 실패했습니다.');
+        window.alert("프로필 사진을 불러오는데 실패했습니다.");
         throw err;
     }
-}
+};
 
-let sendEmail = async() => {
+let sendEmail = async () => {
     try {
         await skapi.verifyEmail();
     } catch (err) {
         window.alert(err.message);
     }
-    router.push('/verification');
-}
+    router.push("/verification");
+};
 
 let profile_pic_input = ref(null);
 
 let selectFile = () => {
     showOptions.value = false;
     profile_pic_input.value.click();
-}
+};
 
 let setToDefault = () => {
     showOptions.value = false;
     uploadSrc.value.profile_pic = null;
-    profile_pic.value = '';
-}
+    profile_pic.value = "";
+};
 
 let closeOptions = (e) => {
     if (showOptions.value && !optionsBtn.value.contains(e.target)) {
@@ -333,17 +366,17 @@ let cancelEdit = () => {
     //     user[k] = originUserProfile[k];
     // }
 
-    if(verifiedEmail.value && onlyEmail.value) {
+    if (verifiedEmail.value && onlyEmail.value) {
         onlyEmail.value = false;
         return;
     }
 
     removeFileList.value = [];
     uploadedFile.value = [...backupUploadFile.value];
-    router.push('/mypage');
-}
+    router.push("/mypage");
+};
 
-let registerMypage = async(e) => {
+let registerMypage = async (e) => {
     e.preventDefault();
 
     disabled.value = true;
@@ -354,89 +387,100 @@ let registerMypage = async(e) => {
     let samePerson = false;
 
     console.log(uploadSrc.value.profile_pic);
-    console.log(croppedImages.value['profile_pic'])
-    console.log(_el_picture_input.value)
+    console.log(croppedImages.value["profile_pic"]);
+    console.log(_el_picture_input.value);
 
-    if(user.user_id === getFileInfo.value?.uploader) {
+    if (user.user_id === getFileInfo.value?.uploader) {
         samePerson = true;
         profile_pic_postParams.record_id = getFileInfo.value.record_id;
     } else {
         profile_pic_postParams = {
             table: {
-                name: 'profile_picture',
-                access_group: 'authorized',
-            }
+                name: "profile_picture",
+                access_group: "authorized",
+            },
         };
     }
 
-    if(uploadSrc.value.profile_pic) {
-        _el_picture_input.value = uploadSrc.value.profile_pic.split('?')[0];  // 사진 수정 안할때 기존 사진을 그대로 넣어줌
+    if (uploadSrc.value.profile_pic) {
+        _el_picture_input.value = uploadSrc.value.profile_pic.split("?")[0]; // 사진 수정 안할때 기존 사진을 그대로 넣어줌
     }
 
-    if(croppedImages.value['profile_pic']) {    // 사진 수정할때 새로운 사진을 넣어줌
-        console.log('here')
+    if (croppedImages.value["profile_pic"]) {
+        // 사진 수정할때 새로운 사진을 넣어줌
+        console.log("here");
         // 새로 선택한 사진이 있고 본인이 이전에 올린 사진이 있을 경우 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
-        if(samePerson && getFileInfo.value?.uploader === user.user_id) {
+        if (samePerson && getFileInfo.value?.uploader === user.user_id) {
             profile_pic_postParams.remove_bin = null;
         }
 
-        const croppedFile = new File([croppedImages.value['profile_pic']], 'profile_pic.png', {
-            type: croppedImages.value['profile_pic'].type,
-        });
+        const croppedFile = new File(
+            [croppedImages.value["profile_pic"]],
+            "profile_pic.png",
+            {
+                type: croppedImages.value["profile_pic"].type,
+            }
+        );
 
         const imgFormData = new FormData();
-        imgFormData.append('profile_pic', croppedFile);
-        
+        imgFormData.append("profile_pic", croppedFile);
+
         // 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
         let picRec = await skapi.postRecord(imgFormData, profile_pic_postParams);
-        _el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split('?')[0];
-        console.log(picRec)
-        console.log(_el_picture_input.value)
+        _el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split("?")[0];
+        console.log(picRec);
+        console.log(_el_picture_input.value);
     }
 
     // 기존 사진을 기본 이미지로 변경했을 경우
-    if(uploadSrc.value.profile_pic === null && samePerson) {
+    if (uploadSrc.value.profile_pic === null && samePerson) {
         _el_picture_input.value = null;
-        await skapi.deleteRecords({record_id: getFileInfo.value.record_id});
-    } else if(uploadSrc.value.profile_pic === null && !samePerson) {
+        await skapi.deleteRecords({ record_id: getFileInfo.value.record_id });
+    } else if (uploadSrc.value.profile_pic === null && !samePerson) {
         _el_picture_input.value = null;
-        await skapi.postRecord(document.getElementById('profile_pic'), profile_pic_postParams);
+        await skapi.postRecord(
+            document.getElementById("profile_pic"),
+            profile_pic_postParams
+        );
     }
 
     // const files = document.querySelector('input[name="additional_data"]').files;
-    let filebox = document.querySelector('input[name=additional_data]');
+    let filebox = document.querySelector("input[name=additional_data]");
 
-    if(filebox && filebox.files.length) {
-        console.log(filebox.files.length)
-        for(let file of filebox.files) {
+    if (filebox && filebox.files.length) {
+        console.log(filebox.files.length);
+        for (let file of filebox.files) {
             const additionalFormData = new FormData();
 
-            additionalFormData.append('additional_data', file);
-            
+            additionalFormData.append("additional_data", file);
+
             await skapi.postRecord(additionalFormData, {
                 table: {
-                    name: 'emp_additional_data',
-                    access_group: 99
+                    name: "emp_additional_data",
+                    access_group: 99,
                 },
                 reference: "[emp_additional_data]" + makeSafe(user.user_id),
             });
 
-            if(uploadedFile.value && uploadedFile.value.length) {
+            if (uploadedFile.value && uploadedFile.value.length) {
                 backupUploadFile.value = [...uploadedFile.value];
             }
         }
-        
-        document.querySelector('input[name="additional_data"]').value = '';
+
+        document.querySelector('input[name="additional_data"]').value = "";
         fileNames.value = [];
     } else {
-        console.log('false == registerMypage == uploadedFile.value : ', uploadedFile.value);
+        console.log(
+            "false == registerMypage == uploadedFile.value : ",
+            uploadedFile.value
+        );
     }
 
     // document.querySelector('input[name="additional_data"]').value = '';
     // fileNames.value = [];
 
-    if(removeFileList.value.length) {
-        await skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
+    if (removeFileList.value.length) {
+        await skapi.deleteRecords({ record_id: removeFileList.value }).then((r) => {
             removeFileList.value = [];
         });
     }
@@ -446,55 +490,58 @@ let registerMypage = async(e) => {
 
     getAdditionalData();
 
-    window.alert('회원정보가 수정되었습니다.');
+    window.alert("회원정보가 수정되었습니다.");
     onlyEmail.value = false;
     disabled.value = false;
-}
+};
 
 // 업로드 파일 삭제
 let removeFile = (item) => {
     removeFileList.value.push(item.record_id);
-}
+};
 
 let cancelRemoveFile = (item) => {
     removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
-}
+};
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
-  let target = e.target;
-  
-  if (target.files) {
-    fileNames.value = Array.from(target.files).map(file => file.name);
-  }
+    let target = e.target;
+
+    if (target.files) {
+        fileNames.value = Array.from(target.files).map((file) => file.name);
+    }
 };
 
-onMounted(async() => {
-    document.addEventListener('click', closeOptions);
-    
+onMounted(async () => {
+    document.addEventListener("click", closeOptions);
+
     resetCropImage();
 
-    if(user.picture) {
-        console.log(profileImage.value)
-        if(profileImage.value) {
+    if (user.picture) {
+        console.log(profileImage.value);
+        if (profileImage.value) {
             uploadSrc.value.profile_pic = profileImage.value;
         } else {
             getProfileImage();
         }
 
         // 프로필 사진 정보 가져오기 (사진 올린 사람 찾기)
-        skapi.getFile(user.picture, {
-            dataType: 'info',
-        }).then(res => {
-            getFileInfo.value = res;
-        }).catch(err => {
-            console.log('== getFile == err : ', err)
-        });
+        skapi
+            .getFile(user.picture, {
+                dataType: "info",
+            })
+            .then((res) => {
+                getFileInfo.value = res;
+            })
+            .catch((err) => {
+                console.log("== getFile == err : ", err);
+            });
     }
 });
 
 onUnmounted(() => {
-    document.removeEventListener('click', closeOptions);
+    document.removeEventListener("click", closeOptions);
 });
 </script>
 
@@ -551,7 +598,7 @@ onUnmounted(() => {
                 }
             }
         }
-        
+
         .options {
             position: absolute;
             right: -113px;
@@ -561,7 +608,7 @@ onUnmounted(() => {
             border: 1px solid var(--gray-color-300);
             padding: 5px;
             border-radius: 4px;
-            
+
             li {
                 font-size: 0.8rem;
                 text-align: left;
@@ -657,8 +704,10 @@ onUnmounted(() => {
             flex-wrap: wrap;
             align-items: center;
             gap: 0.5rem;
-        
-            input, label, button {
+
+            input,
+            label,
+            button {
                 margin: 0;
             }
         }
@@ -724,7 +773,9 @@ onUnmounted(() => {
     .input-wrap {
         &.upload-file {
             .btn-upload-file {
-                input, label, button {
+                input,
+                label,
+                button {
                     flex-grow: 1;
                 }
             }
@@ -739,7 +790,6 @@ onUnmounted(() => {
             }
         }
         &.upload-stamp {
-            
         }
     }
 }

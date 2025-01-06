@@ -8,13 +8,13 @@ hr
     form#_el_request_form(@submit.prevent="requestAudit")
         .input-wrap
             p.label.essential 결재 사안
-            input#to_audit(type="text" placeholder="결재 사안" required)
+            input#to_audit(type="text" placeholder="결재 사안" required name="to_audit")
 
         br
 
         .input-wrap
             p.label 결재 내용
-            textarea#inp_content(type="text" placeholder="결재 내용")
+            textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content")
 
         br
 
@@ -34,14 +34,15 @@ hr
 
                         tbody
                             tr(v-for="(auditor, index) in same_division_auditors")
-                                td {{ index + 1 }}
-                                td {{ auditor.index.name.split('.')[1] }}
-                                td {{ auditor.index.value }}
-                                td {{ divisionNameList[auditor.index.name.split('.')[0]] }}
-                                td
-                                    label.checkbox
-                                        input(type="checkbox" name="checkbox" :value="auditor.user_id" @change="checkAuditor(auditor.data.user_id)")
-                                        span.label-checkbox
+                                template(v-if="auditor.data.user_id !== user.user_id")
+                                    td {{ index + 1 }}
+                                    td {{ auditor.index.name.split('.')[1] }}
+                                    td {{ auditor.index.value }}
+                                    td {{ divisionNameList[auditor.index.name.split('.')[0]] }}
+                                    td
+                                        label.checkbox
+                                            input(type="checkbox" name="checkbox" :value="auditor.user_id" @change="checkAuditor(auditor.data.user_id)")
+                                            span.label-checkbox
 
             //- input#inp_auditors(type="text" placeholder="결재자1, 결재자2, ..." required)
         
@@ -53,152 +54,202 @@ hr
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { skapi } from '@/main';
-import { user, makeSafe } from '@/user';
-import { divisionNameList, getDivisionNames } from '@/division'
+import { useRoute, useRouter } from "vue-router";
+import { onMounted, ref } from "vue";
+import { skapi } from "@/main";
+import { user } from "@/user";
+import { getDivisionNames, divisionNameList } from "@/division";
 
-let user_division_name = ref('');
+const router = useRouter();
+const route = useRoute();
+
 let same_division_auditors = ref({});
 let send_auditors = [];
 
-getDivisionNames();
-
-let getSameDivisionPeople = async () => {
-    const wholeEmps = await skapi.getRecords({
-        table: {
-            name: 'emp_position_current',
-            access_group: 1
+async function init() {
+    await getDivisionNames();
+    let myDivisionTopLevel = divisionNameList.value[user.division].split("/")[0]; // 부서명/팀명/...
+    let divToFetch = []; // DIV_1, DIV_2, ...
+    for (let k in divisionNameList.value) {
+        if (divisionNameList.value[k].startsWith(myDivisionTopLevel)) {
+            divToFetch.push(k);
         }
-    });
+    }
 
-    const userEmp = await skapi.getRecords({
-        table: {
-            name: 'emp_position_current',
-            access_group: 1
-        },
-        unique_id: "[emp_position_current]" + makeSafe(user.user_id)
-    })
+    divToFetch = await Promise.all(
+        divToFetch.map((d) => {
+            return skapi
+                .getRecords(
+                    {
+                        table: {
+                            name: "emp_position_current",
+                            access_group: 1,
+                        },
+                        index: {
+                            name: d + ".",
+                            value: " ",
+                            condition: ">",
+                        },
+                    },
+                    { limit: 1000 }
+                )
+                .then((res) => res.list);
+        })
+    );
 
-    let wholeEmpsList = wholeEmps.list;
+    let allUsers = [];
+    for (let d of divToFetch) {
+        allUsers = allUsers.concat(d);
+    }
 
-    user_division_name.value = userEmp.list[0].index.name.split('.')[0];
-
-    same_division_auditors.value = wholeEmpsList.filter((emp) => {
-        if (emp.index.name.split('.')[0] === user_division_name.value) {
-            return emp;
-        }
-    });
-
-    // console.log(same_division_auditors.value)
+    same_division_auditors.value = allUsers;
 }
-getSameDivisionPeople();
+
+init();
 
 // 결재자 체크 박스
-let checkAuditor = (user_id) => {
-    if (send_auditors.includes(user_id)) {
-        send_auditors = send_auditors.filter(auditor => auditor !== user_id);
+const checkAuditor = (userId: string) => {
+    if (send_auditors.includes(userId)) {
+        send_auditors = send_auditors.filter((auditor) => auditor !== userId);
     } else {
-        send_auditors.push(user_id);
+        send_auditors.push(userId);
     }
+};
 
-    console.log(send_auditors);
-}
+// 결재 서류 업로드
+const postAuditDoc = async ({ to_audit, to_audit_content }) => {
+    try {
+        const params = {
+            to_audit,
+            auditors: send_auditors,
+            to_audit_content,
+        };
 
-// 결재 요청
-let requestAudit = async (e) => {
-    e.preventDefault();
-
-    if(send_auditors.length === 0) {
-        alert('결재자를 1명 이상 선택해주세요.');
-        return;
-    }
-
-    let to_audit_content = inp_content.value;
-
-    // 결재 서류 업로드
-    let audit_doc = await skapi.postRecord(
-        {
-            to_audit: to_audit.value, // 결제 사안 제목
-            send_auditors, // 결제자 목록
-            to_audit_content, // 결재 내용
-            // ... 기타 등등 데이터
-        },
-        {
-            readonly: true, // 결제 올리면 수정할수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
+        const options = {
+            readonly: true,
             table: {
-                name: 'audit_doc',
-                access_group: 'private', // 프라빗으로 올려야 결제자만 접근 가능
+                name: "audit_doc",
+                access_group: "private",
             },
             index: {
-                name: 'to_audit', // 결제 사안 제목. 제목별로 찾을때 위한 인덱싱
-                value: to_audit.value,
+                name: "to_audit",
+                value: to_audit.replaceAll(".", "_"),
             },
             source: {
-                prevent_multiple_referencing: true, // 중복 결제 방지
+                prevent_multiple_referencing: true,
             },
-            tags: send_auditors.map(u => u.replaceAll('-', '_')) // 결제자 태그, 나중에 결제자 별로 찾을 때 사용
+            tags: [...new Set(send_auditors.map((u) => u.replaceAll("-", "_")))], // 중복 제거
+        };
+
+        const res = await skapi.postRecord(params, options);
+
+        console.log("결재 서류 === postAuditDoc === res : ", res);
+        return res;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+// 결재자에게 권한을 부여하는 함수
+const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
+    return skapi.grantPrivateRecordAccess({
+        record_id: audit_id,
+        user_id: auditor_id,
+    });
+};
+
+// 결재 요청을 생성하고 알림을 보내는 함수
+const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
+    if (!audit_id || !auditor_id) return;
+
+    const res = await skapi.postRecord(
+        {
+            audit_id,
+            auditor: auditor_id,
+        },
+        {
+            unique_id: `audit_request:${audit_id}:${auditor_id}`,
+            readonly: true,
+            table: {
+                name: "audit_request",
+                access_group: "authorized",
+            },
+            reference: `audit:${auditor_id}`,
+            tags: [audit_id],
         }
     );
-    
-    // 결제 요청 서류 record_id
-    let audit_id = audit_doc.record_id;
 
-    let sendRequest = [];
+    console.log("요청1 === postRecord === res : ", res);
 
-    for (let i = 0; i < send_auditors.length; i++) {
-        sendRequest.push( // 각각 결제자에게 결제 서류 접근 권한 부여
-            skapi.grantPrivateRecordAccess({
-                record_id: audit_id,
-                user_id: send_auditors[i]
-            })
-        );
+    skapi.grantPrivateRecordAccess({
+        record_id: res.record_id,
+        user_id: auditor_id,
+    });
 
-        sendRequest.push(
-            // 각각 결제자에게 결제 창구 보내기
-            skapi.postRecord(
-                {
-                    audit_id, // 결제 요청 서류 record_id
-                    auditor: send_auditors[i], // 결제자
+    skapi
+        .postRealtime(
+            {
+                audit_request: {
+                    audit_request_id: res.record_id,
+                    send_auditors,
                 },
-                {
-                    unique_id: `audit_request:${audit_id}:${send_auditors[i]}`,
-                    readonly: true,
-                    table: {
-                        name: 'audit_request',
-                        access_group: 'authorized', // 결제 요청 목록은 공개
-                    },
-                    reference: `audit:${send_auditors[i]}`, // 각 결제자에게게 결제 창구
-
-                    tags: [audit_id]
-                }
-            ).then(res => {
-                skapi.grantPrivateRecordAccess( // 결제자에게 결제 요청 record에도 접근 권한 부여해야 reference(결제) 가능
-                    {
-                        record_id: res.record_id,
-                        user_id: res.data.auditor
-                    }
-                );
-
-                skapi.postRealtime(  // realtime으로 결제 요청 알림
-                    {
-                        audit_request: {
-                            audit_request_id: res.record_id,
-                            send_auditors
-                        }
-                    },
-                    send_auditors[i]
-                );
-
-                return res;
-            })
+            },
+            auditor_id
         )
+        .then((res) => {
+            console.log("요청2 === postRealtime === res : ", res);
+        });
+
+    return res;
+};
+
+// 결재 요청 Alarm
+const poistAuditDocRecordId = async (audit_id) => {
+    try {
+        const uniqueAuditors = [...new Set(send_auditors)]; // 중복 제거
+        const requests = uniqueAuditors.flatMap((auditor_id) => [
+            grantAuditorAccess({ audit_id, auditor_id }),
+            createAuditRequest({ audit_id, auditor_id }, uniqueAuditors),
+        ]);
+
+        return Promise.all(requests);
+    } catch (error) {
+        console.error(error);
     }
+};
 
-    await Promise.all(sendRequest);
+// 결재 요청
+const requestAudit = async (e) => {
+    e.preventDefault();
 
-    alert('결제 요청이 완료되었습니다.');
-}
+    try {
+        const formData = new FormData(e.target);
+        const formValues = Object.fromEntries(formData.entries());
+
+        if (!formValues) return;
+
+        const { to_audit, inp_content: to_audit_content } = formValues;
+
+        if (send_auditors.length === 0) {
+            alert("결재자를 1명 이상 선택해주세요.");
+            return;
+        }
+
+        const auditDoc = await postAuditDoc({ to_audit, to_audit_content });
+
+        const auditId = auditDoc.record_id;
+
+        await poistAuditDocRecordId(auditId);
+
+        alert("결재 요청이 완료되었습니다.");
+
+        router.push({
+            path: "/approval/audit-list",
+        });
+    } catch (error) {
+        console.error(error);
+    }
+};
 </script>
 
 <style scoped lang="less">

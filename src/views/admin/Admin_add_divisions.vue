@@ -121,10 +121,7 @@ hr
             button.btn(type="submit") 등록
 
 CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
-
-br  
-br  
-br  
+ 
 </template>
 
 <script setup>
@@ -132,7 +129,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { nextTick, onMounted, ref } from 'vue';
 import { skapi } from '@/main';
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
-
+import { getDivisionNames, divisionNameList } from '@/division';
+import { divisions } from '@/division';
 import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
@@ -158,22 +156,22 @@ let resigterComp = (e) => {
         });
     }
     
-    let currentData = {};
+    let currentData = divisionNameList.value;
 
-    let deleteDivisionName = async() => {
-        try {
-            await skapi.deleteRecords({
-                unique_id: '[division_name_list]'
-            });
-        } catch(e) {
-            alert('부서명 삭제 중 오류가 발생했습니다.');
-            throw e;
-        }
+    // let deleteDivisionName = async() => {
+    //     try {
+    //         await skapi.deleteRecords({
+    //             unique_id: '[division_name_list]'
+    //         });
+    //     } catch(e) {
+    //         // alert('부서명 삭제 중 오류가 발생했습니다.');
+    //         throw e;
+    //     }
 
-        createDivisionName();
-    }
+    //     // createDivisionName();
+    // }
 
-    let createDivisionName = async() => {
+    let createDivisionName = () => {
         if(Object.keys(currentData).length) {
             let keys = Object.keys(currentData);
             let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
@@ -194,7 +192,7 @@ let resigterComp = (e) => {
             }
         }
 
-        skapi.postRecord(currentData, {
+        return skapi.postRecord(currentData, {
             unique_id: '[division_name_list]',
             table: {
                 name: 'divisionNames',
@@ -203,24 +201,30 @@ let resigterComp = (e) => {
         })
     }
 
-    // 부서명 저장
-    skapi.getRecords({
-        unique_id: '[division_name_list]'
-    }).then(r => {
-        console.log(r);
-        if(r.list.length) {
-            let data = r.list[0].data;
-            if(data) {
-                currentData = data;
-            }
-            deleteDivisionName();
-        }
-    }).catch(e => {
-        console.log({e})
-        if(e.code === 'NOT_EXISTS') {
-            createDivisionName();
-        }
-    })
+    getDivisionNames().then(async ()=>{
+        return await skapi.deleteRecords({
+                unique_id: '[division_name_list]'
+        });
+    }).finally(createDivisionName);
+
+    // // 부서명 저장
+    // skapi.getRecords({
+    //     unique_id: '[division_name_list]'
+    // }).then(r => {
+    //     console.log(r);
+    //     if(r.list.length) {
+    //         let data = r.list[0].data;
+    //         if(data) {
+    //             currentData = data;
+    //         }
+    //         deleteDivisionName();
+    //     }
+    // }).catch(e => {
+    //     console.log({e})
+    //     if(e.code === 'NOT_EXISTS') {
+    //         createDivisionName();
+    //     }
+    // })
 
     //form data에 이미지 파일 추가
     skapi.postRecord(formData, {
@@ -229,16 +233,18 @@ let resigterComp = (e) => {
             access_group: 99
         }
     }).then((r) => {
-        let sessionDivisions = window.sessionStorage.getItem('divisions');
+        // let sessionDivisions = window.sessionStorage.getItem('divisions'); // 세션 스토리지 쓸 이유가 없음.
 
-        if(sessionDivisions == 'no data' || !JSON.parse(sessionDivisions)) {
-            sessionDivisions = {};
-        } else {
-            sessionDivisions = JSON.parse(sessionDivisions);
-        }
+        // if(sessionDivisions == 'no data' || !JSON.parse(sessionDivisions)) {
+        //     sessionDivisions = {};
+        // } else {
+        //     sessionDivisions = JSON.parse(sessionDivisions);
+        // }
         
-        sessionDivisions[r.record_id] = r;
-        window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
+        // sessionDivisions[r.record_id] = r;
+        // window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
+
+        divisions.value[r.record_id] = r; // divisions.value에 추가
 
         window.alert('등록되었습니다.');
         router.push('/admin/list-divisions');

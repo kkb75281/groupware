@@ -44,6 +44,13 @@ import { ref, watch, onMounted } from 'vue';
 const router = useRouter();
 const route = useRoute();
 
+if(iwaslogged.value) {
+	router.push('/'); // 이미 로그인 되어있으면 바로 메인페이지로 이동
+}
+else {
+	// window.sessionStorage.clear();
+}
+
 let showPassword = ref(false);
 let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위함
 let promiseRunning = ref(false);
@@ -52,15 +59,13 @@ let enableAccount = ref(false);
 
 // skapi.logout();
 
-onMounted(() => {
-    if (window.localStorage.getItem('remember') === 'true') {
-        remVal.value = true;
-    } else {
-        remVal.value = false;
-    }
-
-	window.sessionStorage.clear();
-});
+// onMounted(() => { // Dom을 기다릴 필요 없음
+if (window.localStorage.getItem('remember') === 'true') {
+	remVal.value = true;
+} else {
+	remVal.value = false;
+}
+// });
 
 let setLocalStorage = (e) => {
     localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
@@ -70,34 +75,37 @@ let setLocalStorage = (e) => {
 let login = (e) => {
     promiseRunning.value = true;
 
-    skapi.login(e).then(async (u) => {
+    skapi.login(e).then((u) => {
         router.push('/');
     }).catch(err => {
 		for (let k in user) {
-				delete user[k];
+			delete user[k];
 		}
 		if (err.code === "USER_IS_DISABLED") {
-				alert("This account is disabled.");
+			alert("This account is disabled."); // 한글로 할것
 		}
 		else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
-				alert("Incorrect email or password.");
+			alert("Incorrect email or password."); // 한글로 할것
 		}
 		else if (err.code === "NOT_EXISTS") {
-				alert("Incorrect email or password.");
+			alert("Incorrect email or password."); // 한글로 할것
 		}
 		else {
-				alert(err.message);
+			alert(err.message);
 		}
     }).finally(() => {
         promiseRunning.value = false;
     })
 };
 
-watch(iwaslogged, (nv) => {
-	if(nv && Object.keys(user).length > 0) {
-		router.push('/');
-	}
-}, { immediate: true });
+// watch 필요없음, 로그인 성공시 위 코드에서 router.push('/')로 이동하므로, 페이지 방문시만 한번 확인하면 됨.
+
+// watch(iwaslogged, (nv) => {
+// 	if(nv && Object.keys(user).length > 0) {
+// 		router.push('/');
+// 	}
+// }, { immediate: true });
+
 </script>
 
 <style scoped lang="less">
