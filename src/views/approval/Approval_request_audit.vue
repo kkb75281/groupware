@@ -34,14 +34,15 @@ hr
 
                         tbody
                             tr(v-for="(auditor, index) in same_division_auditors")
-                                td {{ index + 1 }}
-                                td {{ auditor.index.name.split('.')[1] }}
-                                td {{ auditor.index.value }}
-                                td {{ divisionNameList[auditor.index.name.split('.')[0]] }}
-                                td
-                                    label.checkbox
-                                        input(type="checkbox" name="checkbox" :value="auditor.user_id" @change="checkAuditor(auditor.data.user_id)")
-                                        span.label-checkbox
+                                template(v-if="auditor.data.user_id !== user.user_id")
+                                    td {{ index + 1 }}
+                                    td {{ auditor.index.name.split('.')[1] }}
+                                    td {{ auditor.index.value }}
+                                    td {{ divisionNameList[auditor.index.name.split('.')[0]] }}
+                                    td
+                                        label.checkbox
+                                            input(type="checkbox" name="checkbox" :value="auditor.user_id" @change="checkAuditor(auditor.data.user_id)")
+                                            span.label-checkbox
 
             //- input#inp_auditors(type="text" placeholder="결재자1, 결재자2, ..." required)
         
@@ -53,107 +54,101 @@ hr
 </template>
 
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router';
-import { onMounted, ref } from 'vue';
-import { skapi } from '@/main';
-import { user, makeSafe } from '@/user';
-import { divisionNameList, getDivisionNames } from '@/division'
+import { useRoute, useRouter } from "vue-router";
+import { onMounted, ref } from "vue";
+import { skapi } from "@/main";
+import { user } from "@/user";
+import { getDivisionNames, divisionNameList } from "@/division";
 
 const router = useRouter();
 const route = useRoute();
 
-let user_division_name = ref('');
 let same_division_auditors = ref({});
 let send_auditors = [];
 
-const toAuditContent = ref('');
-
-const getWholeEmps = async () => {
-    const wholeEmps = await skapi.getRecords({
-        table: {
-            name: 'emp_position_current',
-            access_group: 1
+async function init() {
+    await getDivisionNames();
+    let myDivisionTopLevel = divisionNameList.value[user.division].split("/")[0]; // 부서명/팀명/...
+    let divToFetch = []; // DIV_1, DIV_2, ...
+    for (let k in divisionNameList.value) {
+        if (divisionNameList.value[k].startsWith(myDivisionTopLevel)) {
+            divToFetch.push(k);
         }
-    });
-
-    return wholeEmps.list;
-}
-
-const getUserEmp = async () => {
-    const userEmp = await skapi.getRecords({
-        table: {
-            name: 'emp_position_current',
-            access_group: 1
-        },
-        unique_id: "[emp_position_current]" + makeSafe(user.user_id)
-    })
-
-    return userEmp.list[0];
-}
-
-const getSameDivisionPeople = async () => {
-    try {
-        const wholeEmpsList = await getWholeEmps();
-        const userEmp = await getUserEmp();
-
-        user_division_name.value = userEmp.index.name.split('.')[0];
-
-        same_division_auditors.value = wholeEmpsList.filter((emp) => {
-            if (emp.index.name.split('.')[0] === user_division_name.value) {
-                return emp;
-            }
-        });
-
-        // console.log(same_division_auditors.value)
-    } catch (error) {
-        console.error(error);
     }
+
+    divToFetch = await Promise.all(
+        divToFetch.map((d) => {
+            return skapi
+                .getRecords(
+                    {
+                        table: {
+                            name: "emp_position_current",
+                            access_group: 1,
+                        },
+                        index: {
+                            name: d + ".",
+                            value: " ",
+                            condition: ">",
+                        },
+                    },
+                    { limit: 1000 }
+                )
+                .then((res) => res.list);
+        })
+    );
+
+    let allUsers = [];
+    for (let d of divToFetch) {
+        allUsers = allUsers.concat(d);
+    }
+
+    same_division_auditors.value = allUsers;
 }
+
+init();
 
 // 결재자 체크 박스
 const checkAuditor = (userId: string) => {
     if (send_auditors.includes(userId)) {
-        send_auditors = send_auditors.filter(auditor => auditor !== userId);
+        send_auditors = send_auditors.filter((auditor) => auditor !== userId);
     } else {
         send_auditors.push(userId);
     }
-}
+};
 
 // 결재 서류 업로드
 const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     try {
         const params = {
             to_audit,
-            auditors: send_auditors, 
-            to_audit_content, 
+            auditors: send_auditors,
+            to_audit_content,
         };
 
         const options = {
             readonly: true,
             table: {
-                name: 'audit_doc',
-                access_group: 'private',
+                name: "audit_doc",
+                access_group: "private",
             },
             index: {
-                name: 'to_audit',
-                value: to_audit.replaceAll('.', '_'),
+                name: "to_audit",
+                value: to_audit.replaceAll(".", "_"),
             },
             source: {
                 prevent_multiple_referencing: true,
             },
-            tags: [...new Set(send_auditors.map(u => u.replaceAll('-', '_')))], // 중복 제거
+            tags: [...new Set(send_auditors.map((u) => u.replaceAll("-", "_")))], // 중복 제거
         };
 
         const res = await skapi.postRecord(params, options);
 
-        console.log('결재 서류 === postAuditDoc === res : ', res);
+        console.log("결재 서류 === postAuditDoc === res : ", res);
         return res;
-
     } catch (error) {
         console.error(error);
     }
 };
-
 
 // 결재자에게 권한을 부여하는 함수
 const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
@@ -162,7 +157,6 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
         user_id: auditor_id,
     });
 };
-
 
 // 결재 요청을 생성하고 알림을 보내는 함수
 const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
@@ -177,23 +171,23 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
             unique_id: `audit_request:${audit_id}:${auditor_id}`,
             readonly: true,
             table: {
-                name: 'audit_request',
-                access_group: 'authorized',
+                name: "audit_request",
+                access_group: "authorized",
             },
             reference: `audit:${auditor_id}`,
             tags: [audit_id],
         }
     );
 
-    console.log('요청1 === postRecord === res : ', res);
+    console.log("요청1 === postRecord === res : ", res);
 
-    await skapi.grantPrivateRecordAccess({
+    skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
         user_id: auditor_id,
     });
 
-    if (res.record_id) {
-        await skapi.postRealtime(
+    skapi
+        .postRealtime(
             {
                 audit_request: {
                     audit_request_id: res.record_id,
@@ -201,20 +195,19 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
                 },
             },
             auditor_id
-        ).then(res => {
-            console.log('요청2 === postRealtime === res : ', res);
+        )
+        .then((res) => {
+            console.log("요청2 === postRealtime === res : ", res);
         });
-    }
 
     return res;
 };
-
 
 // 결재 요청 Alarm
 const poistAuditDocRecordId = async (audit_id) => {
     try {
         const uniqueAuditors = [...new Set(send_auditors)]; // 중복 제거
-        const requests = uniqueAuditors.flatMap(auditor_id => [
+        const requests = uniqueAuditors.flatMap((auditor_id) => [
             grantAuditorAccess({ audit_id, auditor_id }),
             createAuditRequest({ audit_id, auditor_id }, uniqueAuditors),
         ]);
@@ -225,7 +218,6 @@ const poistAuditDocRecordId = async (audit_id) => {
     }
 };
 
-
 // 결재 요청
 const requestAudit = async (e) => {
     e.preventDefault();
@@ -233,13 +225,13 @@ const requestAudit = async (e) => {
     try {
         const formData = new FormData(e.target);
         const formValues = Object.fromEntries(formData.entries());
-        
+
         if (!formValues) return;
 
         const { to_audit, inp_content: to_audit_content } = formValues;
 
         if (send_auditors.length === 0) {
-            alert('결재자를 1명 이상 선택해주세요.');
+            alert("결재자를 1명 이상 선택해주세요.");
             return;
         }
 
@@ -248,23 +240,16 @@ const requestAudit = async (e) => {
         const auditId = auditDoc.record_id;
 
         await poistAuditDocRecordId(auditId);
-        
-        alert('결재 요청이 완료되었습니다.');
+
+        alert("결재 요청이 완료되었습니다.");
 
         router.push({
-            path: '/approval/audit-list',
+            path: "/approval/audit-list",
         });
     } catch (error) {
         console.error(error);
     }
 };
-
-
-onMounted(() => {
-    getDivisionNames();
-    getSameDivisionPeople();
-})
-
 </script>
 
 <style scoped lang="less">
