@@ -6,6 +6,7 @@ import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
 import { notifications } from './notifications';
+import {employeeDict, getEmpDivisionPosition} from './employee';
 const app = createApp(App);
 
 export let iwaslogged = ref(false);
@@ -114,11 +115,20 @@ export let RealtimeCallback = (rt: any) => {
   }
 };
 
-export let loginCheck = async (profile: object | null) => {
-  if (profile) {
+export let loginCheck = async (profile: any) => {
+  if (!profile) {
+    if(!isConnected) {
+      skapi.closeRealtime();
+    }
+  }
+
+  else if (profile) {
     console.log(profile);
     let originalUser = { ...user };
-
+    
+    profile = await getEmpDivisionPosition(profile);
+    employeeDict[profile.user_id] = profile;
+    
     Object.assign(user, profile);
 
     // sessionStorage.setItem('userId', profile['user_id']); // 사용되고 있지 않음
