@@ -134,7 +134,7 @@ import { onMounted, ref } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
-
+import { divisions } from '@/division';
 import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
@@ -170,7 +170,7 @@ if (!record_id) {
     router.push('/list-employee');
 }
 
-let sessionDivisions = JSON.parse(window.sessionStorage.getItem('divisions'));
+let sessionDivisions = divisions.value; // JSON.parse(window.sessionStorage.getItem('divisions')); // 세션 스토리지 쓸 이유가 없음.
 let record = sessionDivisions[record_id];
 let isMyRecord = record.user_id === user.user_id;
 let originalDivisionName = record.data.division_name;
