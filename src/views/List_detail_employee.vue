@@ -126,11 +126,17 @@ let access_group = {
 };
 
 const userId = route.params.userId;
-getUsers(userId).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l)))).then(res=>{
-    currentEmp.value = res?.[0];
+getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l)))).then(res=>{
+    if(res.length === 0) {
+        window.alert('해당 직원을 찾을 수 없습니다.');
+        router.push('/list-employee');
+    }
+
+    let emp = res[0];
+    currentEmp.value = emp;
     
-    currentEmpTags.value.emp_dvs = res.division;
-    currentEmpTags.value.emp_pst = res.position;
+    currentEmpTags.value.emp_dvs = emp.division;
+    currentEmpTags.value.emp_pst = emp.position;
 });
 
 // 부서 목록 가져오기

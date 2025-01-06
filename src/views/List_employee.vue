@@ -245,13 +245,11 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
-import { divisionNameList, getDivisionNames } from '@/division'
+import { divisionNameList } from '@/division'
 import { getEmpDivisionPosition, empInfo, employeeDict, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
 import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
-
-getDivisionNames();
 
 let router = useRouter();
 let route = useRoute();
@@ -344,6 +342,22 @@ watch(searchValue, (nv) => {
     }
 });
 
+async function arrangeEmpDivisionPosition(li) {
+    let list = await Promise.all(li.map((l: any) => {
+        if(l) {
+            return getEmpDivisionPosition(l).catch(err => err)
+        }
+        return null;
+    }));
+    let toReturn = [];
+    list.forEach((l: any) => {
+        if (l) {
+            toReturn.push(l);
+        }
+    });
+    return toReturn;
+}
+
 async function getEmpList(type, refresh=false){
     console.log('run!')
     loading.value = true;
@@ -357,7 +371,7 @@ async function getEmpList(type, refresh=false){
             searchFor: 'approved',
             value: 'by_skapi:approved',
             condition: '>='
-        }, refresh).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l).catch(err => err)))).finally(()=>loading.value=false);
+        }, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
     }
     else if (type === '숨김여부') {
         router.replace({
@@ -369,13 +383,13 @@ async function getEmpList(type, refresh=false){
             searchFor: 'approved',
             value: 'by_admin:suspended',
             condition: '>='
-        }, refresh).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l).catch(err => err)))).finally(()=>loading.value=false);
+        }, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
 
         employee.value = result;
         suspendedLength.value = result.length;
     }
     else if (type === '초청여부') {
-        employee.value = await getInvitations().then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l).catch(err => err)))).finally(()=>loading.value=false);
+        employee.value = await getInvitations().then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
     }
 }
 
@@ -478,7 +492,7 @@ async function searchEmp(refresh) {
             employee.value = await getUsers({
                 searchFor: 'user_id',
                 value: result // 절대값 검색(user_id)는 어레이 가능
-            }, refresh).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l))));
+            }, refresh).then(li => arrangeEmpDivisionPosition(li));
 
         } finally {
             loading.value = false;
@@ -486,7 +500,7 @@ async function searchEmp(refresh) {
     }
     else {
         // division이 아닌 다른 검색 조건일 경우 처리
-        employee.value = await getUsers(callParams.value, refresh).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l)).finally(()=>loading.value=false)));
+        employee.value = await getUsers(callParams.value, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(() => loading.value=false);
     }
 }
 
