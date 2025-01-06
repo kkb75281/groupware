@@ -5,7 +5,7 @@ header#header
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
-	button.btn-noti(type="button" :data-count="0" ref="btnNoti" @click="openNotification")
+	button.btn-noti(type="button" :data-count="notiCount" ref="btnNoti" @click="openNotification")
 		.icon.icon-bell
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
@@ -28,10 +28,13 @@ header#header
 	template(v-if="newNoti")
 		.popup-main
 			ul
-				li(v-for="audit in auditList" :key="audit" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)")
+				li(v-for="audit in auditList" :key="audit" @click.stop="readNoti(e, audit)")
 					//- template(v-if="audit?.approved == '대기중'" )
-					router-link.router(to="/approval/audit-list" @click="closePopup")
+					router-link.router(to="/approval/audit-list" @click="closePopup" :class="{'read' : readList.includes(audit.record_id)}")
+						h4.noti-type {{ '[' + audit.audit_type + ']'}}
 						h5.noti-title {{ audit.data.to_audit }}
+						p.noti-sender {{ audit.user_info?.name }}
+						//- p.upload-time {{ audit.uploaded }}
 
 	template(v-else)
 		.popup-main.no-noti
@@ -99,12 +102,16 @@ import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { notifications, auditList, goToAuditDetail } from '@/notifications'
+import { notifications, auditList, readList, goToAuditDetail, isCalculating } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
 
-let notiCount = ref(999);
+let notiCount = computed(() => {
+	if (isCalculating.value) return 0;
+
+	return auditList.value.length - readList.value.length;
+});
 let newNoti = ref(false);
 let isNotiOpen = ref(false);
 let btnNoti = ref(null);
@@ -160,7 +167,14 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
+let readNoti = (e, audit) => {
+	if (!readList.value.includes(audit.record_id)) {
+        readList.value.push(audit.record_id);
+    }
 
+	window.localStorage.setItem('read_noti_list', JSON.stringify(readList.value));
+	goToAuditDetail(e, audit.record_id, router);
+}
 
 let logout = () => {
 	skapi.logout().then(() => {
@@ -385,6 +399,9 @@ watch(() => route.path, (newPath, oldPath) => {
 			&:hover {
 				background-color: var(--primary-color-100);
 			}
+			&.read {
+				opacity: 0.5;
+			}
 		}
 	}
 
@@ -438,6 +455,11 @@ watch(() => route.path, (newPath, oldPath) => {
 				}
 			}
 
+			.noti-type {
+				font-size: 0.8rem;
+				// color: var(--gray-color-600);
+			}
+
 			.noti-title {
 				font-size: 16px;
 				font-weight: 500;
@@ -445,6 +467,12 @@ watch(() => route.path, (newPath, oldPath) => {
 				overflow: hidden;
 				text-overflow: ellipsis;
 				// width: 330px;
+			}
+
+			.noti-sender {
+				font-size: 0.8rem;
+				font-weight: 500;
+				color: var(--gray-color-600);
 			}
 
 			.upload-time {
@@ -463,6 +491,10 @@ watch(() => route.path, (newPath, oldPath) => {
 			}
 		}
 
+		.popup-bottom {
+			border-top: 1px solid var(--gray-color-200);
+		}
+
 		.icon {
 			padding: 0;
 
@@ -479,7 +511,6 @@ watch(() => route.path, (newPath, oldPath) => {
 			gap: 8px;
 			padding: 24px 0;
 			margin: 0 30px;
-			border-top: 1px solid var(--gray-color-200);
 
 			p {
 				font-size: 14px;

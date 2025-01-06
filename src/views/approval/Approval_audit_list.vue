@@ -1,55 +1,72 @@
 <template lang="pug">
-.title
-    h1 결재 목록
+div(style="display: flex; gap: 1rem")
+	h1.title 결재 목록
+	.input-wrap
+		select(v-model="auditListType")
+			option(value="받은결재") 받은 결재
+			option(value="보낸결재") 보낸 결재
 
-    hr
+hr
 
-    .table-wrap
-        //- .tb-head-wrap
-            .input-wrap.search
-                input(type="text" name="" placeholder="회원명, 직급, 아이디 검색")
-                button.btn-search(type="button")
+.table-wrap
+	//- .tb-head-wrap
+		.input-wrap.search
+			input(type="text" name="" placeholder="회원명, 직급, 아이디 검색")
+			button.btn-search(type="button")
 
-            .input-wrap
-                select
-                    option(value="") 10개
-                    option(value="") 20개
-                    option(value="") 30개
+		.input-wrap
+			select
+				option(value="") 10개
+				option(value="") 20개
+				option(value="") 30개
 
-            .tb-toolbar
-                .btn-wrap
-                    button.btn.outline.md(type="button") 등록
+		.tb-toolbar
+			.btn-wrap
+				button.btn.outline.md(type="button") 등록
 
-        .tb-overflow
-            table.table#tb-auditList
-                colgroup
-                    //- col(style="width: 2.4rem")
-                    col(style="width: 3rem")
-                    col
-                    col(style="width: 20%")
-                    col(style="width: 10%")
-                thead
-                    tr
-                        //- th(scope="col") 
-                        //-     label.checkbox
-                        //-         input(type="checkbox" name="checkbox")
-                        //-         span.label-checkbox
-                        th(scope="col") NO
-                        th.left(scope="col") 결재 사안
-                        th(scope="col") 결재 현황
-                        th(scope="col") 기안자
+	.tb-overflow
+		table.table#tb-auditList
+			colgroup
+				//- col(style="width: 2.4rem")
+				col(style="width: 3rem")
+				col
+				col(style="width: 20%")
+				col(style="width: 10%")
+			thead
+				tr
+					//- th(scope="col") 
+					//-     label.checkbox
+					//-         input(type="checkbox" name="checkbox")
+					//-         span.label-checkbox
+					th(scope="col") NO
+					th.left(scope="col") 결재 사안
+					th(scope="col") 결재 현황
+					th(scope="col") 기안자
 
-                tbody
-                    tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
-                        //- td 
-                        //-     label.checkbox
-                        //-         input(type="checkbox" name="checkbox")
-                        //-         span.label-checkbox
-                        td {{ index + 1 }}
-                        td.left {{ audit.data.to_audit }}
-                        td
-                            span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.approved }}
-                        td {{ audit.user_info?.name }}
+			tbody
+				template(v-if="auditListType === '받은결재'")
+					tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
+						//- td 
+						//-     label.checkbox
+						//-         input(type="checkbox" name="checkbox")
+						//-         span.label-checkbox
+						td {{ index + 1 }}
+						td.left {{ audit.data.to_audit }}
+						td
+							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.approved }}
+						td {{ audit.user_info?.name }}
+
+				template(v-if="auditListType === '보낸결재'")
+					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
+						//- td 
+						//-     label.checkbox
+						//-         input(type="checkbox" name="checkbox")
+						//-         span.label-checkbox
+						td {{ index + 1 }}
+						td.left {{ audit.data.to_audit }}
+						td
+							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.approved }}
+						td {{ audit.user_info?.name }}
 
 </template>
 
@@ -58,16 +75,17 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
-import { auditList, goToAuditDetail } from '@/notifications';
+import { auditList, sendAuditList, goToAuditDetail } from '@/notifications';
+import type { Ref } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
 
-// const auditList = ref([]);
+const auditListType: Ref<"받은결재" | "보낸결재"> = ref('받은결재');
 
 const audit_doc_list = {};
 
-// 내가 올린 결재 서류 가져오기
+// // 내가 올린 결재 서류 가져오기
 // skapi.getRecords({
 //     table: {
 //         name: 'audit_doc',
@@ -75,7 +93,7 @@ const audit_doc_list = {};
 //     },
 //     reference: user.user_id // 본인 아이디 참조해야 가지고 와짐
 // }).then(r => {
-//     console.log({r})
+//     console.log('ㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇ',r)
 // })
 
 // 기안자 정보 가져오기
