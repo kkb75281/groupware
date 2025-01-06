@@ -92,6 +92,7 @@ const router = createRouter({
               path: 'audit-list',
               name: 'audit-list',
               component: Approval_audit_list,
+            //   component: ()=>import('@/views/approval/Approval_audit_list.vue') // Approval_audit_list,
             },
             {
               path: 'audit-detail/:auditId',

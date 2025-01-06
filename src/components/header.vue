@@ -21,16 +21,17 @@ header#header
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 
-#popup.notification(v-show="isNotiOpen" @click.stop)
+#popup.notification(v-if="isNotiOpen" @click.stop)
 	.popup-header
 		h3.title 알림 목록
 
 	template(v-if="newNoti")
 		.popup-main
 			ul
-				li
+				li(v-for="audit in auditList" :key="audit" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)")
+					//- template(v-if="audit?.approved == '대기중'" )
 					router-link.router(to="/approval/audit-list" @click="closePopup")
-						h5.noti-title 제목입니다.
+						h5.noti-title {{ audit.data.to_audit }}
 
 	template(v-else)
 		.popup-main.no-noti
@@ -96,8 +97,9 @@ header#header
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
 import { user, profileImage } from '@/user'
-import { skapi, RealtimeCallback } from '@/main'
+import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
+import { notifications, auditList, goToAuditDetail } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
@@ -176,9 +178,10 @@ onMounted(() => {
 		let notification_count = document.querySelector('button.btn-noti');
 
 		notification_count.dataset.count = notiCount;
-		newNoti.value = true;
-
-
+		
+		if (notiCount > 0) {
+			newNoti.value = true;
+		}
 	}
 })
 
