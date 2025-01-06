@@ -1,12 +1,12 @@
 import './assets/less/main.less';
 
-import { createApp, ref } from 'vue';
+import { createApp, nextTick, ref } from 'vue';
 import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
-import { notifications } from './notifications';
-import {employeeDict, getEmpDivisionPosition} from './employee';
+import { notifications, getAuditList } from './notifications';
+import { employeeDict, getEmpDivisionPosition } from './employee';
 const app = createApp(App);
 
 export let iwaslogged = ref(false);
@@ -24,17 +24,37 @@ let isConnected = false;
 //   return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
 // }
 
-export let RealtimeCallback = (rt: any) => {
-  // if (!isConnected) {
-  //   console.log('Realtime 연결이 이미 활성화되어 있습니다.');
-  //   return;
-  // }
+function updateAuditsAndApprovals(audits, approvals) {
+	if (audits.list.length > 0 || approvals.list.length > 0) {
+		const mergedList = [
+			...Object.values(getAuditsList),
+			...audits.list,
+			...approvals.list
+		];
+	
+		const sortedList = mergedList.sort((a, b) => a.updated - b.updated);
+	
+		// 기존 데이터 초기화
+		Object.keys(getAuditsList).forEach(key => delete getAuditsList[key]);
+	
+		// 정렬된 데이터를 다시 저장
+		for (let item of sortedList) {
+			getAuditsList[item.updated] = item;
+		}
+	}
+}
 
-  console.log('=== RealtimeCallback === rt : ', rt);
+export let RealtimeCallback = async(rt: any) => {
+	// if (!isConnected) {
+	//   console.log('Realtime 연결이 이미 활성화되어 있습니다.');
+	//   return;
+	// }
 
-  // 실시간 통신 (노티피케이션 / 체팅 등등)
-  // Callback executed when there is data transfer between the users.
-  /**
+	console.log('=== RealtimeCallback === rt : ', rt);
+
+	// 실시간 통신 (노티피케이션 / 체팅 등등)
+	// Callback executed when there is data transfer between the users.
+	/**
     rt = {
         type: 'message' | 'private' | 'error' | 'success' | 'close' | 'notice',
         message: '...',
@@ -42,77 +62,84 @@ export let RealtimeCallback = (rt: any) => {
     }
     */
   
-  if (rt.type === 'success') {
-    if (rt.message === 'Connected to WebSocket server.') {
-      // 실시간 통신 연결 성공
-      // 과거 결재 요청 목록 가져오기
+  	if (rt.type === 'success') {
+		if (rt.message === 'Connected to WebSocket server.') {
+			// 실시간 통신 연결 성공
+			// 과거 결재 요청 목록 가져오기
+			let getAudits, getApprovals;
 
-      isConnected = true; // 연결 상태 플래그 업데이트
+			isConnected = true; // 연결 상태 플래그 업데이트
 
-      skapi
-        .getRecords(
-          {
-            table: {
-              name: 'audit_request',
-              access_group: 'authorized',
-            },
-            reference: `audit:${user.user_id}`,
-          },
-          {
-            ascending: false, // 최신순
-          }
-        )
-        .then((audits) => {
-          console.log('=== RealtimeCallback === audits : ', audits); // 들어온 결재 요청
-        })
-        .catch(err => err);
+			// window.localStorage.setItem(`notification_count:${user.user_id}`, '0');
 
-      skapi
-        .getRecords({
-          // 결재 완료된 목록 가져오기
-          table: {
-            name: 'audit_approval',
-            access_group: 'authorized',
-          },
-          tag: user.user_id.replaceAll('-', '_'),
-        })
-        .then((approvals) => {
-          console.log('=== RealtimeCallback === approvals : ', approvals);
-        })
-        .catch(err => err);
-    }
-  }
+			nextTick(() => {
+				getAuditList();
+			})
 
-  if (rt.type === 'close') {
-    // 실시간 통신 연결 종료
-    isConnected = false; // 연결 상태 플래그 업데이트
-  }
+			// await skapi.getRecords({
+			// 	table: {
+			// 		name: 'audit_request',
+			// 		access_group: 'authorized',
+			// 	},
+			// 	reference: `audit:${user.user_id}`,
+			// },{
+			// 	ascending: false, // 최신순
+			// }).then((audits) => {
+			// 	console.log('=== RealtimeCallback === audits : ', audits); // 들어온 결재 요청
+			// }).catch(err => err);
 
-  if (rt.type === 'private') {
-    let notification_count: any = document.querySelector('button.btn-noti');
-    if (rt.sender !== user.user_id) { // 다른 사람이 나에게 보낸 메시지
-      // 개인 메시지
-      if (rt.message?.audit_request) {
-        // 결재 요청이 들어옴
-        let audit_request = rt.message.audit_request;
+			// await skapi.getRecords({
+			// 	// 결재 완료된 목록 가져오기
+			// 	table: {
+			// 		name: 'audit_approval',
+			// 		access_group: 'authorized',
+			// 	},
+			// 	tag: user.user_id.replaceAll('-', '_'),
+			// }).then((approvals) => {
+			// 	console.log('=== RealtimeCallback === approvals : ', approvals);
+			// }).catch(err => err);
+		}
+	}
 
-        notifications.audits.push({ fromUserId: rt.sender, msg: audit_request }); // 결재 요청 알림
+	if (rt.type === 'close') {
+		// 실시간 통신 연결 종료
+		isConnected = false; // 연결 상태 플래그 업데이트
+	}
 
-        console.log('audit_request:', audit_request);
-      }
-      if (rt.message?.audit_approval) {
-        // 결재 완료 알림
-        let audit_approval = rt.message.audit_approval;
-        console.log('audit_approval:', audit_approval);
-        
-        notifications.audits.push({ fromUserId: rt.sender, msg: audit_approval }); // 결재 완료 알림
+	if (rt.type === 'private') {
+		let notification_count: any = document.querySelector('button.btn-noti');
 
-        console.log('notification_count:', notification_count.dataset.count);
-        notification_count.dataset.count = (parseInt(notification_count.dataset.count) - 1).toString();
-        window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
-      }
-    }
-  }
+		console.log('sender', rt.sender, user.user_id);
+		console.log('msgg', rt.message);
+
+		if (rt.sender !== user.user_id) { // 다른 사람이 나에게 보낸 메시지
+			// 개인 메시지
+			if (rt.message?.audit_request) {
+				// 결재 요청이 들어옴
+				let audit_request = rt.message.audit_request;
+				console.log('audit_request:', audit_request);
+
+				notifications.audits.push({ fromUserId: rt.sender, msg: audit_request }); // 결재 요청 알림
+				notification_count.dataset.count = (parseInt(notification_count.dataset.count) + 1).toString();
+			}
+
+			if (rt.message?.audit_approval) {
+				// 결재 완료 알림
+				let audit_approval = rt.message.audit_approval;
+				console.log('audit_approval:', audit_approval);
+				
+				notifications.audits.push({ fromUserId: rt.sender, msg: audit_approval }); // 결재 완료 알림
+				notification_count.dataset.count = (parseInt(notification_count.dataset.count) + 1).toString();
+			}	
+		}
+
+		console.log(notification_count.dataset.count)
+		window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
+
+		nextTick(() => {
+			getAuditList();
+		})
+	}
 };
 
 export let loginCheck = async (profile: any) => {
