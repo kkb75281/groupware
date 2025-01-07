@@ -92,10 +92,15 @@ let menuList = [
                     text: '도장 관리',
                 },
                 {
+                    name: 'record-commute',
+                    to: '/mypage/record-commute',
+                    text: '근퇴 관리',
+                },
+                {
                     name: 'change-password',
                     to: '/change-password',
                     text: '비밀번호 변경',
-                }
+                },
             ]
         }
     },
