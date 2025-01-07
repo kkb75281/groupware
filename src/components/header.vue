@@ -184,19 +184,18 @@ onUnmounted(() => {
 });
 
 let readNoti = async(e, audit) => {
-	// window.localStorage.setItem(`notification_count:${user.user_id}`, '0');
 	let notification_count = document.querySelector('button.btn-noti');
 	let updateData = readList.value;
 
 	let createReadListRecord = () => {
-		if(Object.keys(updateData).length) {
-			if(!updateData.includes(audit.record_id)) {	// 읽은 알림이 아닐 경우
-				updateData.push(audit.record_id);
-				nextTick(()=> {
+		if(!updateData.includes(audit.record_id)) {	// 읽은 알림이 아닐 경우
+			updateData.push(audit.record_id);
+			nextTick(()=> {
+				if(notification_count.dataset.count > 0) {
 					notification_count.dataset.count = (parseInt(notification_count.dataset.count) - 1).toString();
 					window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count);
-				})
-			}
+				}
+			})
 		}
 
 		return skapi.postRecord(
