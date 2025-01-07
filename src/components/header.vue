@@ -5,7 +5,7 @@ header#header
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
-	button.btn-noti(type="button" :data-count="notiCount" ref="btnNoti" @click="openNotification")
+	button.btn-noti(type="button" :data-count="0" ref="btnNoti" @click="openNotification")
 		.icon.icon-bell
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
@@ -25,16 +25,17 @@ header#header
 	.popup-header
 		h3.title 알림 목록
 
-	template(v-if="newNoti")
+	template(v-if="auditList.length > 0")
 		.popup-main
 			ul
 				li(v-for="audit in auditList" :key="audit" @click.stop="readNoti(e, audit)")
 					//- template(v-if="audit?.approved == '대기중'" )
 					router-link.router(to="/approval/audit-list" @click="closePopup" :class="{'read' : readList.includes(audit.record_id)}")
+						//- .right
 						h4.noti-type {{ '[' + audit.audit_type + ']'}}
 						h5.noti-title {{ audit.data.to_audit }}
 						p.noti-sender {{ audit.user_info?.name }}
-						//- p.upload-time {{ audit.uploaded }}
+						p.upload-time {{ formatTimeAgo(audit.uploaded) }}
 
 	template(v-else)
 		.popup-main.no-noti
@@ -102,21 +103,36 @@ import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { notifications, auditList, readList, goToAuditDetail, isCalculating } from '@/notifications'
+import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
 
-let notiCount = computed(() => {
-	if (isCalculating.value) return 0;
-
-	return auditList.value.length - readList.value.length;
-});
-let newNoti = ref(false);
+// let newNoti = ref(false);
 let isNotiOpen = ref(false);
 let btnNoti = ref(null);
 let isProfileOpen = ref(false);
 let btnProfile = ref(null);
+
+function formatTimeAgo(timestamp) {
+	const now = Date.now(); // 현재 시간 (밀리초)
+	const difference = now - timestamp; // 시간 차이 (밀리초)
+	
+	const seconds = Math.floor(difference / 1000); // 초 단위로 변환
+	const minutes = Math.floor(seconds / 60); // 분 단위로 변환
+	const hours = Math.floor(minutes / 60); // 시간 단위로 변환
+	const days = Math.floor(hours / 24); // 일 단위로 변환
+
+	if (seconds < 60) {
+		return `${seconds}초 전`;
+	} else if (minutes < 60) {
+		return `${minutes}분 전`;
+	} else if (hours < 24) {
+		return `${hours}시간 전`;
+	} else {
+		return `${days}일 전`;
+	}
+}
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
@@ -167,12 +183,42 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
-let readNoti = (e, audit) => {
-	if (!readList.value.includes(audit.record_id)) {
-        readList.value.push(audit.record_id);
-    }
+let readNoti = async(e, audit) => {
+	// window.localStorage.setItem(`notification_count:${user.user_id}`, '0');
+	let notification_count = document.querySelector('button.btn-noti');
+	let updateData = readList.value;
 
-	window.localStorage.setItem('read_noti_list', JSON.stringify(readList.value));
+	let createReadListRecord = () => {
+		if(Object.keys(updateData).length) {
+			if(!updateData.includes(audit.record_id)) {	// 읽은 알림이 아닐 경우
+				updateData.push(audit.record_id);
+				nextTick(()=> {
+					notification_count.dataset.count = (parseInt(notification_count.dataset.count) - 1).toString();
+					window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count);
+				})
+			}
+		}
+
+		return skapi.postRecord(
+			{
+				list: JSON.stringify(updateData)
+			},
+			{
+				unique_id: '[notification_read_list]' + user.user_id,
+				table: {
+					name: 'notification_read_list',
+					access_group: 'private'
+				}
+			}
+		)
+	}
+
+	getReadList().then(async ()=>{
+        return await skapi.deleteRecords({
+			unique_id: '[notification_read_list]' + user.user_id
+        });
+    }).finally(createReadListRecord);
+
 	goToAuditDetail(e, audit.record_id, router);
 }
 
@@ -193,9 +239,9 @@ onMounted(() => {
 
 		notification_count.dataset.count = notiCount;
 		
-		if (notiCount > 0) {
-			newNoti.value = true;
-		}
+		// if (notiCount > 0) {
+		// 	newNoti.value = true;
+		// }
 	}
 })
 
@@ -391,6 +437,7 @@ watch(() => route.path, (newPath, oldPath) => {
 		.router {
 			display: flex;
 			align-items: center;
+			// justify-content: space-between;
 			padding: 0.8rem;
 			font-size: 0.9rem;
 			font-weight: 700;
@@ -402,6 +449,12 @@ watch(() => route.path, (newPath, oldPath) => {
 			&.read {
 				opacity: 0.5;
 			}
+
+			// .right {
+			// 	display: flex;
+			// 	align-items: center;
+			// 	gap: 10px;
+			// }
 		}
 	}
 
@@ -453,6 +506,10 @@ watch(() => route.path, (newPath, oldPath) => {
 						}
 					}
 				}
+
+				> * {
+					white-space: nowrap;
+				}
 			}
 
 			.noti-type {
@@ -463,7 +520,6 @@ watch(() => route.path, (newPath, oldPath) => {
 			.noti-title {
 				font-size: 16px;
 				font-weight: 500;
-				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
 				// width: 330px;
@@ -472,6 +528,8 @@ watch(() => route.path, (newPath, oldPath) => {
 			.noti-sender {
 				font-size: 0.8rem;
 				font-weight: 500;
+				overflow: hidden;
+				text-overflow: ellipsis;
 				color: var(--gray-color-600);
 			}
 

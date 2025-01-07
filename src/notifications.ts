@@ -1,4 +1,4 @@
-import { request } from "http";
+import { get, request } from "http";
 // import { useRoute, useRouter } from 'vue-router';
 import { skapi } from "./main";
 import { user } from "./user";
@@ -12,10 +12,43 @@ export const notifications:Reactive<{messages: {fromUserId:string; msg: any }[],
     messages: []
 });
 
-export let isCalculating = ref(false);
 export const sendAuditList = ref([]);
 export const auditList = ref([]);
-export const readList = ref(JSON.parse(localStorage.getItem('read_noti_list')) || []);
+export const readList = ref([]);
+
+export let getReadListRunning: Promise<any> | null = null;
+
+export const getReadList = async() => {
+	if(getReadListRunning instanceof Promise) { // 이미 실행중인 경우
+		await getReadListRunning;
+		return readList.value;
+	}
+
+	if (readList.value && Object.keys(readList.value).length) { // 받아온적 있거나, 데이터가 없는경우
+		console.log('herererere')
+		return readList.value; // 이미 데이터가 존재하면 불러오지 않음
+	}
+	
+	getReadListRunning = skapi.getRecords({
+		unique_id: '[notification_read_list]' + user.user_id
+	}).finally(() => {
+		getReadListRunning = null;
+	})
+
+	let res = await getReadListRunning;
+
+	if (res.list.length) {
+		if (res.list[0].data && res.list[0].data?.list) {
+			readList.value = JSON.parse(res.list[0].data.list);
+		} else {
+			readList.value = [];
+		}
+	}
+
+	console.log('readList', readList.value);
+
+	return readList.value;
+}
 
 const getUserInfo = async (userId: string) => {
     const params = {
@@ -27,9 +60,10 @@ const getUserInfo = async (userId: string) => {
 }
 
 export async function getAuditList() {
-	let audits, auditDocs;
-	isCalculating.value = true;
+	getReadList();
 
+	let audits, auditDocs;
+	
 	try {
 		// 내가 받은 결재 요청건 가져오기
 		audits = await skapi.getRecords({
@@ -110,7 +144,6 @@ export async function getAuditList() {
 		}))
 	
 		auditList.value = newAuditUserList;        
-		isCalculating.value = false;
 
 		console.log({auditList: auditList.value});
 	} catch (err) {
@@ -222,7 +255,6 @@ export async function getAuditList() {
 // 	// 	}))
 	
 // 	// 	sendAuditList.value = newAuditUserList;        
-// 	// 	isCalculating.value = false;
 
 // 	// 	console.log({sendAuditList: sendAuditList.value});
 // 	// } catch (err) {
