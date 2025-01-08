@@ -161,6 +161,11 @@ const router = createRouter({
               name: 'list-divisions',
               component: () => import('@/views/admin/Admin_list_divisions.vue'),
             },
+            {
+              path: 'list-commute',
+              name: 'list-commute',
+              component: () => import('@/views/admin/Admin_list_commute.vue'),  //Admin_list_commute,
+            },
             // {
             //   path: 'list-employee',
             //   name: 'list-employee',

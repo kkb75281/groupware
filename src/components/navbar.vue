@@ -122,6 +122,11 @@ let menuList = [
                     name: 'list-employee',
                     to: '/list-employee',
                     text: '직원 관리',
+                },
+                {
+                    name: 'list-commute',
+                    to: '/admin/list-commute',
+                    text: '근태 관리',
                 }
             ]
         }
