@@ -1,5 +1,5 @@
 <template lang="pug">
-h1 근태 관리
+h1 출퇴근 시간 설정
 
 hr
 
@@ -14,6 +14,8 @@ hr
                 button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
                     svg(:class="{'rotate' : loading}")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+                button.btn.outline.warning(:disabled="!Object.keys(selectedList).length" @click="deleteDivision") 삭제
+                button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
         template(v-if="loading")
             Loading#loading
@@ -23,13 +25,14 @@ hr
                 col(style="width: 10%")
                 col
                 col
+                col(style="width: 10%")
             thead
                 tr
                     th(scope="col") NO
-                    th(scope="col") 이름
-                    th(scope="col") 부서명
+                    th.left(scope="col") 부서명
                     th(scope="col") 출근시간
                     th(scope="col") 퇴근시간
+                    th(scope="col") 수정
 
             tbody
                 template(v-if="loading")
@@ -41,13 +44,23 @@ hr
                 template(v-else)
                     tr(v-for="(division, keys, index) in divisions" :key="division.record_id")
                         td.list-num {{ index + 1 }}
-                        td.user-name
+                        td.left 
+                            router-link.go-detail(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
+                                .img-wrap
+                                    img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
                                 span {{ division.data.division_name }}
-                        td.dvs {{ division.data.division_name }}
                         td.startWork
-                            span.time 00:00:00 ~ 00:00:00
+                            .input-wrap(style="display: flex; align-items: center; gap: 4px;")
+                                input(type="text" readonly)
+                                | ~
+                                input(type="text" readonly)
                         td.endWork
-                            span.time 00:00:00 ~ 00:00:00
+                            .input-wrap(style="display: flex; align-items: center; gap: 4px;")
+                                input(type="text" readonly)
+                                | ~
+                                input(type="text" readonly)
+                        td.edit
+                            button.btn.sm.bg-gray(@click="onEditDivision(division)") 수정
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -57,6 +70,36 @@ hr
         button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+
+            
+
+//- Modal
+#modal.modal(v-if="isModalOpen" @click="closeModal")
+    .modal-cont(@click.stop)
+        .modal-header
+            h2.modal-title 출퇴근 시간 설정
+            button.btn-close(@click="closeModal")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+        .modal-body
+            .item-wrap
+                p.label 출근시간
+                .input-wrap
+                    input(type="time" v-model="startTimeMin")
+                    | ~
+                    input(type="time" v-model="startTimeMax")
+
+            .item-wrap
+                p.label 퇴근시간
+                .input-wrap
+                    input(type="time" v-model="endTimeMin")
+                    | ~
+                    input(type="time" v-model="endTimeMax")
+
+        .modal-footer
+            button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
+            button.btn.btn-save(type="submit" @click="saveWorkTime") 저장
 </template>
 
 <script setup>
