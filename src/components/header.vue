@@ -5,7 +5,7 @@ header#header
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
-	button.btn-noti(type="button" :data-count="0" ref="btnNoti" @click="openNotification")
+	button.btn-noti(type="button" :data-count="unreadCount" ref="btnNoti" @click="openNotification")
 		.icon.icon-bell
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
@@ -103,10 +103,14 @@ import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList } from '@/notifications'
+import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList, getAuditList, getSendAuditList } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
+
+const unreadCount = computed(() => {
+  return auditList.value.filter(audit => !readList.value.includes(audit.record_id)).length;
+});
 
 // let newNoti = ref(false);
 let isNotiOpen = ref(false);
@@ -230,18 +234,29 @@ let logout = () => {
     });
 }
 
-onMounted(() => {
-	const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
+onMounted(async() => {
+	// try {
+	// 	await Promise.all([
+	// 		getReadList(),
+	// 		getAuditList(),
+	// 		getSendAuditList(),
+	// 	]);
+	// } catch (error) {
+	// 	console.error('Error occurred:', error);
+	// }
 
-	if (notiCount) {
-		let notification_count = document.querySelector('button.btn-noti');
 
-		notification_count.dataset.count = notiCount;
+	// const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
+
+	// if (notiCount) {
+	// 	let notification_count = document.querySelector('button.btn-noti');
+
+	// 	notification_count.dataset.count = notiCount;
 		
-		// if (notiCount > 0) {
-		// 	newNoti.value = true;
-		// }
-	}
+	// 	// if (notiCount > 0) {
+	// 	// 	newNoti.value = true;
+	// 	// }
+	// }
 })
 
 watch(() => route.path, (newPath, oldPath) => {

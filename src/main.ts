@@ -170,7 +170,7 @@ export let loginCheck = async (profile: any) => {
 
     if (user.picture) {
       skapi
-        .getFile(user.picture, {
+        .getFile((user.picture as string), {
           dataType: 'endpoint',
         })
         .then((res) => {
