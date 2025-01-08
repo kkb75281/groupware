@@ -12,7 +12,7 @@ export let divisions: Ref<{ [key: string]: any }> = ref({});
  *  ...
  * }
  */
-export let divisionNameList: Ref<{ [key: string]: string }> = ref({});
+export let divisionNameList: Ref<{ [DVS_NUMBER: string]: string }> = ref({});
 export let loading = ref(true);
 
 export let getDivisionDataRunning: Promise<any> | null = null;
@@ -53,6 +53,31 @@ export async function getDivisionNames(refresh = false) {
     }
 
     return divisionNameList.value;
+
+	// try{
+	// 	let res = await skapi.getRecords({
+	// 		unique_id: '[division_name_list]'
+	// 	})
+	// 	if (res.list.length) {
+	// 		if (res.list[0].data) {
+	// 			divisionNameList.value = res.list[0].data;
+	// 		}
+	// 	}
+	
+	// 	return divisionNameList.value;
+	// }
+	// finally {
+		        
+    //     getDivisionNamesRunning = null;
+
+    //     if (getDivisionDataRunning instanceof Promise) {
+    //         getDivisionDataRunning.finally(() => {
+    //             loading.value = false;
+    //         });
+    //     } else {
+    //         loading.value = false;
+    //     }
+	// }
 }
 
 export async function getDivisionData(refresh: boolean = false) {

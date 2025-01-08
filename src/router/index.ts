@@ -20,6 +20,7 @@ import Admin from '@/views/admin/Admin.vue';
 // import Admin_list_divisions from '@/views/admin/Admin_list_divisions.vue';
 import Approval from '@/views/approval/Approval.vue';
 // import Approval_request_audit from '@/views/approval/Approval_request_audit.vue';
+import Approval_request_list from '@/views/approval/Approval_request_list.vue';
 import Approval_audit_list from '@/views/approval/Approval_audit_list.vue';
 import Approval_audit_detail from '@/views/approval/Approval_audit_detail.vue';
 
@@ -83,6 +84,11 @@ const router = createRouter({
               name: 'approval',
               component: Approval,
             },
+			{
+				path: 'request-list',
+				name: 'request-list',
+				component: Approval_request_list,
+			},
             {
               path: 'request-audit',
               name: 'request-audit',
@@ -92,7 +98,6 @@ const router = createRouter({
               path: 'audit-list',
               name: 'audit-list',
               component: Approval_audit_list,
-            //   component: ()=>import('@/views/approval/Approval_audit_list.vue') // Approval_audit_list,
             },
             {
               path: 'audit-detail/:auditId',

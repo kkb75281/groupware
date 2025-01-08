@@ -62,12 +62,17 @@ let menuList = [
                 {
                     name: 'request-audit',
                     to: '/approval/request-audit',
-                    text: '결재 요청',
+                    text: '결재 작성',
                 },
                 {
                     name: 'audit-list',
                     to: '/approval/audit-list',
-                    text: '결재 목록',
+                    text: '결재 수신함',
+                },
+				{
+                    name: 'request-list',
+                    to: '/approval/request-list',
+                    text: '결재 발신함',
                 }
             ]
         }
