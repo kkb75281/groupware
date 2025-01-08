@@ -22,6 +22,18 @@ ul.card-wrap
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+    li.card
+        router-link.router(to="/admin/list-commute")
+            .icon.img
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
+            h4.name 근태 관리
+            .btn-wrap
+                p.btn-go 바로가기
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
 <script setup lang="ts">
