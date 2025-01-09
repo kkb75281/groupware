@@ -5,7 +5,7 @@ import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
-import { notifications, getAuditList, getSendAuditList } from './notifications';
+import { notifications, getAuditList, getRealtime } from './notifications';
 import { employeeDict, getEmpDivisionPosition } from './employee';
 const app = createApp(App);
 
@@ -138,94 +138,106 @@ export let RealtimeCallback = async(rt: any) => {
 		window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
 
 		nextTick(() => {
-			getAuditList();
+			getRealtime();
+			// getAuditList();
 			// getSendAuditList();
 		})
 	}
 };
 
 export let loginCheck = async (profile: any) => {
-  if (!profile) {
-    if(!isConnected) {
-      skapi.closeRealtime();
-    }
-  }
+	if (!profile) {
+		if(!isConnected) {
+			skapi.closeRealtime();
+		}
+	}
 
-  else if (profile) {
-    console.log(profile);
-    let originalUser = { ...user };
-    
-    profile = await getEmpDivisionPosition(profile);
-    employeeDict[profile.user_id] = profile;
-    
-    Object.assign(user, profile);
+	else if (profile) {
+		console.log(profile);
+		let originalUser = { ...user };
+		
+		profile = await getEmpDivisionPosition(profile);
+		employeeDict[profile.user_id] = profile;
+		
+		Object.assign(user, profile);
 
-    // sessionStorage.setItem('userId', profile['user_id']); // 사용되고 있지 않음
+		// sessionStorage.setItem('userId', profile['user_id']); // 사용되고 있지 않음
 
-    for (const key in originalUser) {
-      if (!profile.hasOwnProperty(key)) {
-        delete user[key];
-      }
-    }
+		for (const key in originalUser) {
+			if (!profile.hasOwnProperty(key)) {
+				delete user[key];
+			}
+		}
 
-    if (user.picture) {
-      skapi
-        .getFile((user.picture as string), {
-          dataType: 'endpoint',
-        })
-        .then((res) => {
-          profileImage.value = res;
-        })
-        .catch((err) => {
-          // window.alert('프로필 사진을 불러오는데 실패했습니다.');
-          // throw err; // 의도적으로 에러 전달
-          profileImage.value = null; // 에러 발생 시 이미지 없음
-        });
-    } else {
-      profileImage.value = null;
-    }
+		if (user.picture) {
+			skapi.getFile((user.picture as string), {
+				dataType: 'endpoint',
+			}).then((res) => {
+				profileImage.value = res;
+			}).catch((err) => {
+				// window.alert('프로필 사진을 불러오는데 실패했습니다.');
+				// throw err; // 의도적으로 에러 전달
+				profileImage.value = null; // 에러 발생 시 이미지 없음
+			});
+		} else {
+			profileImage.value = null;
+		}
 
-    let misc = JSON.parse(user.misc || '{}');
+		let misc = JSON.parse(user.misc || '{}');
 
-    if (!misc.logged) {
-      skapi
-        .postRecord(null, {
-          // 결재 창구 만들기
-          unique_id: `audit:${user.user_id}`,
-          table: {
-            name: 'audit',
-            access_group: 'authorized',
-          },
-          source: {
-            can_remove_referencing_records: true,
-          },
-        })
-        .catch((err) => console.error({ err }));
+		if (!misc.logged) {
+			skapi.postRecord(null, {
+				// 결재 창구 만들기
+				unique_id: `audit:${user.user_id}`,
+				table: {
+					name: 'audit',
+					access_group: 'authorized',
+				},
+				source: {
+					can_remove_referencing_records: true,
+				},
+			})
+			.catch((err) => console.error({ err }));
 
-      misc.logged = true; // 로그인 후 한번만 실행
-      skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
-    }
+			misc.logged = true; // 로그인 후 한번만 실행
+			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
+		}
 
-    if (!isConnected) {
-      skapi.connectRealtime(RealtimeCallback);
-    }
+		if (!misc.notification) {
+			skapi.postRecord(null, {
+				// 결재 창구 만들기
+				unique_id: `realtime:${user.user_id}`,
+				table: {
+					name: 'realtime',
+					access_group: 'authorized',
+				},
+			})
+			.catch((err) => console.error({ err }));
+	
+			misc.notification = true; // 로그인 후 한번만 실행
+			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
+		}
 
-    // skapi.connectRealtime(RealtimeCallback);
+		if (!isConnected) {
+			skapi.connectRealtime(RealtimeCallback);
+		}
 
-    iwaslogged.value = true;
-  } else {
-    if (iwaslogged.value) {
-      // Object.assign(user, {}); // 이렇게 하면 지워지지 않음
-      for (let key in user) {
-        delete user[key];
-      }
+		// skapi.connectRealtime(RealtimeCallback);
 
-      iwaslogged.value = false;
-    }
-  }
-  // console.log('profile', profile)
-  // console.log('iwaslogged', iwaslogged.value)
-  loaded.value = true;
+		iwaslogged.value = true;
+	} else {
+		if (iwaslogged.value) {
+			// Object.assign(user, {}); // 이렇게 하면 지워지지 않음
+			for (let key in user) {
+				delete user[key];
+			}
+
+			iwaslogged.value = false;
+		}
+	}
+	// console.log('profile', profile)
+	// console.log('iwaslogged', iwaslogged.value)
+	loaded.value = true;
 };
 
 const skapi = new Skapi(
