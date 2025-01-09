@@ -38,7 +38,9 @@ header#header
 
 						template(v-else)
 							h4.noti-type [알람]
-							h5.noti-title {{ rt.send_name + '님께서 [' + rt.to_audit + '] 문서를 결재하였습니다.' }}
+							h5.noti-title 
+								template(v-if="rt.approval === 'approve'") {{ rt.send_name + '님께서 [' + rt.to_audit + '] 문서를 승인하였습니다.' }}
+								template(v-else) {{ rt.send_name + '님께서 [' + rt.to_audit + '] 문서를 반려하였습니다.' }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 	template(v-else)
