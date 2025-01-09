@@ -258,6 +258,8 @@ let readNoti = async(e, rt) => {
 
 	if(rt.type === 'request') {
 		goToAuditDetail(e, rt.audit_id, router);
+	} else {
+		router.push({ name: 'request-list' });
 	}
 }
 

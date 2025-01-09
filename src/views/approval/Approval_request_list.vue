@@ -81,7 +81,7 @@ const getUserInfo = async (userId: string) => {
 }
 
 onMounted(async () => {
-	// await getSendAuditList();
+	await getSendAuditList();
 //     try {
 //         // 내가 받은 결재 요청건 가져오기
 //         const audits = await skapi.getRecords({
