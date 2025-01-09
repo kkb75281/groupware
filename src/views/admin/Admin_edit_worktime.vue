@@ -14,8 +14,7 @@ hr
                 button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
                     svg(:class="{'rotate' : loading}")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-                button.btn.outline.warning(:disabled="!Object.keys(selectedList).length" @click="deleteDivision") 삭제
-                button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
+                button.btn.bg-gray.btn-prev(@click="router.push('/admin/list-commute')") 이전
     .tb-overflow
         template(v-if="loading")
             Loading#loading
@@ -44,21 +43,21 @@ hr
                 template(v-else)
                     tr(v-for="(division, keys, index) in divisions" :key="division.record_id")
                         td.list-num {{ index + 1 }}
-                        td.left 
-                            router-link.go-detail(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
+                        td.left
+                            .item-wrap
                                 .img-wrap
                                     img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
-                                span {{ division.data.division_name }}
+                                span(style="white-space: nowrap;") {{ division.data.division_name }}
                         td.startWork
                             .input-wrap(style="display: flex; align-items: center; gap: 4px;")
-                                input(type="text" readonly)
+                                input(type="text" :value="workTimes[makeSafe(division.record_id)]?.division_startTime?.min?.slice(0, 5) || ''" readonly)
                                 | ~
-                                input(type="text" readonly)
+                                input(type="text" :value="workTimes[makeSafe(division.record_id)]?.division_startTime?.max?.slice(0, 5) || ''" readonly)
                         td.endWork
                             .input-wrap(style="display: flex; align-items: center; gap: 4px;")
-                                input(type="text" readonly)
+                                input(type="text" :value="workTimes[makeSafe(division.record_id)]?.division_endTime?.min?.slice(0, 5) || ''" readonly)
                                 | ~
-                                input(type="text" readonly)
+                                input(type="text" :value="workTimes[makeSafe(division.record_id)]?.division_endTime?.max?.slice(0, 5) || ''" readonly)
                         td.edit
                             button.btn.sm.bg-gray(@click="onEditDivision(division)") 수정
 
@@ -106,60 +105,70 @@ hr
 import { useRoute, useRouter } from "vue-router";
 import { ref, computed, onMounted } from "vue";
 import { skapi } from "@/main";
-import {
-    loading,
-    divisions,
-    divisionNameList,
-    getDivisionData,
-    getDivisionDataRunning,
-    getDivisionNamesRunning,
-} from "@/division";
+import { loading, divisions, getDivisionData, divisionNameList } from "@/division";
+import { makeSafe } from '@/user';
 
 import Loading from "@/components/loading.vue";
 
 const router = useRouter();
 const route = useRoute();
 
-let isModalOpen = ref(false);
-
-let currentPage = ref(1);
-let selectedList = ref({});
-let isAllSelected = computed(() => {
-    let keys = Object.keys(divisions.value);
-    return (
-        keys.length > 0 &&
-        keys.every((key) => Object.keys(selectedList.value).includes(key))
-    );
-});
-
 const selectedDivision = ref(null);
+const workTimes = ref({});
+const isModalOpen = ref(false);
 
-let startTimeMin = ref("");
-let startTimeMax = ref("");
-let endTimeMin = ref("");
-let endTimeMax = ref("");
+const startTimeMin = ref("");
+const startTimeMax = ref("");
+const endTimeMin = ref("");
+const endTimeMax = ref("");
 
-console.log('=======================================');
 console.log('divisions:', divisions.value);
+console.log('divisionNameList:', divisionNameList.value);
+console.log('selectedDivision:', selectedDivision.value);
 
+// 근무시간 저장
 const saveWorkTime = async () => {
-    console.log('출퇴근 시간 설정 완료');
-
     try {
+        console.log('== AA ===');
         console.log('== selectedDivision:', selectedDivision.value);
-        const findDivision = divisions.value[selectedDivision.value.record_id]
+
+        const findDivision = divisions.value[selectedDivision.value.record_id];
 
         console.log('== findDivision:', findDivision);
+         console.log('== BB ===');
+
+        const sssss = selectedDivision.value.record_id;
+        const nnnnn = divisionNameList.value[divisionId];
+
+        console.log('== sssss:', sssss);
+        console.log('== nnnnn:', nnnnn);
 
         if (!findDivision) {
             alert('부서를 찾을 수 없습니다.');
             return;
         }
 
+        const divisionId = makeSafe(findDivision.record_id);
+        const uniqueId = `dvs_workTime_${divisionId}`;
+
+        // 기존 데이터가 있다면 삭제 (unique_id 때문)
+        try {
+            const query = {
+                table: 'dvs_workTime_setting',
+                unique_id: uniqueId
+            };
+            
+            await skapi.deleteRecords(query);
+            console.log('기존 시간 설정 삭제 완료');
+        } catch (error) {
+            console.log('=== deleteRecords === error : ', {error});
+        }
+
+        // 새로운 데이터 생성
         const workTimeData = {
-            ...findDivision.data,
+            division_name: findDivision.data.division_name,
             division_startTime: {
-                min: `${startTimeMin.value}:00`,  // HH:MM 값에 :00 추가
+                min: `${startTimeMin.value}:00`,
                 max: `${startTimeMax.value}:59`
             },
             division_endTime: {
@@ -169,30 +178,70 @@ const saveWorkTime = async () => {
         };
 
         const config = {
-            record_id: findDivision.record_id
+            table: {
+                name: 'dvs_workTime_setting',
+                access_group: 99
+            },
+            unique_id: uniqueId
         };
 
-        console.log('== selectedDivision:', selectedDivision.value);  
         console.log('== workTimeData:', workTimeData);  
-        console.log('== config:', config);  
 
         const savedRecord = await skapi.postRecord(workTimeData, config);
-        console.log('저장 성공:', savedRecord);
+        console.log('=== saveWorkTime === savedRecord : ', savedRecord);
         
-        // divisions.value[selectedDivision.value.record_id] = savedRecord;
+        // 업데이트
+        workTimes.value[divisionId] = savedRecord.data;
 
         alert('근무시간이 성공적으로 저장되었습니다.');
 
     } catch (error) {
-        console.error('저장 실패:', error);
-        alert('저장에 실패했습니다.');
+        console.log('=== saveWorkTime === error : ', error);
+        alert('근무시간 저장을 실패했습니다.');
     } finally {
         selectedDivision.value = null;
         startTimeMax.value = '';
         startTimeMin.value = '';
         endTimeMax.value = '';
         endTimeMin.value = '';
+
         closeModal();
+        await getWorkTime();
+    }
+};
+
+// 근무시간 가져오기
+const getWorkTime = async () => {
+    try {
+        const query = {
+            table:  {
+                name: 'dvs_workTime_setting',
+                access_group: 99
+            }
+        };
+        
+        const res = await skapi.getRecords(query);
+        console.log('=== getWorkTime === res.list : ', res.list);
+        
+        // 부서별 근무시간 데이터를 객체로 변환
+        const workTimeMap = res.list.reduce((acc, record) => {
+            console.log('=== getWorkTime === acc : ', acc);
+            console.log('=== getWorkTime === record : ', record);
+
+            const divisionId = record.unique_id.replace('dvs_workTime_', '');
+            acc[divisionId] = record.data;
+
+            console.log('=== getWorkTime === divisionId : ', divisionId);
+
+            return acc;
+        }, {});
+
+        console.log('=== getWorkTime === workTimeMap : ', workTimeMap);
+        
+        return workTimeMap;
+        
+    } catch (error) {
+        console.error('=== getWorkTime === error : ', {error});
     }
 };
 
@@ -208,119 +257,65 @@ const cancelEdit = () => {
     closeModal();
 };
 
+// 수정 버튼 클릭 시
 const onEditDivision = (division) => {
-    console.log('-- onEditDivision : division:', division);
+    console.log('=== onEditDivision === : division:', division);
+    console.log('divisionNameList:', divisionNameList.value);
+
+    // const result = Object.keys(divisionNameList.value).find((item) => item.record_id === division.record_id);
+    // console.log('=== onEditDivision === result : ', result);
+
     selectedDivision.value = division;
+
+    const divisionId = makeSafe(division.record_id);
+    const existingWorkTime = workTimes.value[divisionId];
+
+    console.log('=== onEditDivision === divisionId : ', divisionId);
+    console.log('=== onEditDivision === existingWorkTime : ', existingWorkTime);
+
+    // 기존 시간 데이터가 있는 경우
+    if (existingWorkTime) {
+        startTimeMin.value = existingWorkTime.division_startTime.min.slice(0, 5);
+        startTimeMax.value = existingWorkTime.division_startTime.max.slice(0, 5);
+        endTimeMin.value = existingWorkTime.division_endTime.min.slice(0, 5);
+        endTimeMax.value = existingWorkTime.division_endTime.max.slice(0, 5);
+    } else {
+        startTimeMin.value = '';
+        startTimeMax.value = '';
+        endTimeMin.value = '';
+        endTimeMax.value = '';
+    }
+    
     openModal();
 };
 
-let toggleSelectAll = () => {
-    if (isAllSelected.value) {
-        selectedList.value = {};
-    } else {
-        for (let key in divisions.value) {
-            selectedList.value[key] = divisions.value[key].data.division_name;
-        }
-    }
-};
-
-let toggleSelect = (id, name) => {
-    if (selectedList.value[id]) {
-        delete selectedList.value[id];
-    } else {
-        selectedList.value[id] = name;
-    }
-};
-
-let refresh = () => {
-    // loading.value = true;
-
-    // getDivisions();
-    getDivisionData(true);
-};
-
-let deleteDivision = async () => {
-    let userId = Object.keys(selectedList.value);
-    console.log({ userId });
-    let name = Object.values(selectedList.value);
-
-    let filteredData = {};
-    let isSuccess = [];
-    let isFail = [];
-
-    // 회사 자체 레코드 삭제
-    await Promise.all(
-        userId.map((el) => {
-            return skapi
-                .deleteRecords({ record_id: el })
-                .then((res) => {
-                    isSuccess.push(el);
-                    delete divisions.value[el];
-                })
-                .catch((err) => {
-                    isFail.push(el);
-                    alert("부서 삭제에 실패하였습니다. 관리자에게 문의해주세요.");
-                    throw err;
-                });
-        })
-    );
-
-    // 부서명 리스트 비교 및 지울 항목 제외한 데이터 생성
-    // try {
-    // let res = await skapi.getRecords({
-    //     unique_id: '[division_name_list]'
-    // });
-
-    let data = divisionNameList; // res.list[0].data;          // { 'DF1': '부서명1', 'DF2': '부서명2', ... }
-    let keys = Object.keys(data); // 'DF1', 'DF2', ...
-    let values = Object.values(data); // '부서명1', '부서명2', ...
-    let nameSet = new Set(name); // Set으로 변환 (빠른 검색)
-
-    // 값 비교 및 제외 로직
-    for (let i = 0; i < values.length; i++) {
-        if (!nameSet.has(values[i])) {
-            filteredData[keys[i]] = values[i]; // 제외되지 않은 항목만 추가
-        } else {
-            filteredData[keys[i]] = "";
-        }
-    }
-    // } catch (error) {
-    //     alert('부서명 리스트를 불러오는데 실패하였습니다. 관리자에게 문의해주세요.');
-    //     throw error;
-    // }
-
-    // 부서명 리스트 삭제
+// 새로고침
+const refresh = async () => {
     try {
-        await skapi.deleteRecords({
-            unique_id: "[division_name_list]",
-        });
+        loading.value = true;
+
+        await getDivisionData(true);
+
+        const refreshedWorkTimes = await getWorkTime();
+        workTimes.value = refreshedWorkTimes;
     } catch (error) {
-        alert("부서명 리스트를 삭제하는데 실패하였습니다. 관리자에게 문의해주세요.");
-        throw error;
-    }
-
-    // 부서명 리스트 업데이트
-    try {
-        await skapi.postRecord(filteredData, {
-            unique_id: "[division_name_list]",
-            table: {
-                name: "divisionNames",
-                access_group: 1,
-            },
-        });
-    } catch (error) {
-        alert("부서명 리스트를 업데이트하는데 실패하였습니다. 관리자에게 문의해주세요.");
-        throw error;
-    }
-
-    // getDivisions(); // 이미 promise.all에서 삭제되었으므로 불필요
-
-    if (isSuccess.length > 0) {
-        alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);
-    } else {
-        alert("부서 삭제에 실패하였습니다.");
+        console.log('=== refresh === error : ', error);
+        alert('데이터 새로고침에 실패했습니다.');
+    } finally {
+        loading.value = false;
     }
 };
+
+onMounted(async () => {
+    try {
+        const workTimeData = await getWorkTime();
+        workTimes.value = workTimeData;
+
+        console.log('=== onMounted === workTimes.value : ', workTimes.value);
+    } catch (error) {
+        console.log('=== onMounted === error : ', error);
+    }
+});
 </script>
 
 <style scoped lang="less">
@@ -346,7 +341,17 @@ let deleteDivision = async () => {
     }
 }
 
-.go-detail {
+.table {
+    tbody {
+        tr {
+            &:hover {
+                background-color: transparent;
+            }
+        }
+    }
+} 
+
+.item-wrap {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
@@ -369,6 +374,16 @@ let deleteDivision = async () => {
         width: 100%;
         height: 100%;
         object-fit: contain;
+    }
+}
+
+.input-wrap {
+    input {
+        &:hover,
+        &:focus {
+            cursor: default;
+            border-color: var(--gray-color-200);
+        }
     }
 }
 
