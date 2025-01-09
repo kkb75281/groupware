@@ -25,17 +25,21 @@ header#header
 	.popup-header
 		h3.title 알림 목록
 
-	template(v-if="auditList.length > 0")
+	template(v-if="realtimes.length > 0")
 		.popup-main
 			ul
-				li(v-for="audit in auditList" :key="audit" @click.stop="readNoti(e, audit)")
-					//- template(v-if="audit?.approved == '대기중'" )
-					router-link.router(to="/approval/audit-list" @click="closePopup" :class="{'read' : readList.includes(audit.record_id)}")
-						//- .right
-						h4.noti-type {{ '[' + audit.audit_type + ']'}}
-						h5.noti-title {{ audit.data.to_audit }}
-						p.noti-sender {{ audit.user_info?.name }}
-						p.upload-time {{ formatTimeAgo(audit.uploaded) }}
+				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
+					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.audit_id) || readList.includes(rt?.audit_doc_id)}")
+						template(v-if="rt.type === 'request'")
+							h4.noti-type [결재 요청]
+							h5.noti-title {{ rt.to_audit }}
+							p.noti-sender {{ rt.send_name }}
+							p.upload-time {{ formatTimeAgo(rt.send_date) }}
+
+						template(v-else)
+							h4.noti-type [알람]
+							h5.noti-title {{ rt.send_name + '님께서 [' + rt.to_audit + '] 문서를 결재하였습니다.' }}
+							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 	template(v-else)
 		.popup-main.no-noti
@@ -99,18 +103,38 @@ header#header
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
+import { onUnmounted, onMounted, ref, nextTick, watch, reactive } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList, getAuditList, getSendAuditList } from '@/notifications'
+// import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList, getAuditList, getSendAuditList } from '@/notifications'
+import { realtimes, readList, getRealtime, getReadList, goToAuditDetail } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
 
-const unreadCount = computed(() => {
-  return auditList.value.filter(audit => !readList.value.includes(audit.record_id)).length;
-});
+const unreadCount = ref(0);
+
+watch([realtimes, readList], () => {
+	unreadCount.value = realtimes.value.filter((audit) => {
+		if (audit.type === 'request') {
+			return !readList.value.includes(audit.audit_id);
+		} else {
+			return !readList.value.includes(audit.audit_doc_id);
+		}
+	}).length;
+}, { immediate: true });
+
+onMounted(async() => {
+	try {
+		await Promise.all([
+			getReadList(),
+			getRealtime()
+		]);
+	} catch (error) {
+		console.error('Error occurred:', error);
+	}
+})
 
 // let newNoti = ref(false);
 let isNotiOpen = ref(false);
@@ -187,13 +211,21 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
-let readNoti = async(e, audit) => {
+let readNoti = async(e, rt) => {
 	let notification_count = document.querySelector('button.btn-noti');
 	let updateData = readList.value;
 
 	let createReadListRecord = () => {
-		if(!updateData.includes(audit.record_id)) {	// 읽은 알림이 아닐 경우
-			updateData.push(audit.record_id);
+		let checkId;
+
+		if(rt.type === 'request') {
+			checkId = rt.audit_id;
+		} else {
+			checkId = rt.audit_doc_id;
+		}
+
+		if(!updateData.includes(checkId)) {	// 읽은 알림이 아닐 경우
+			updateData.push(checkId);
 			nextTick(()=> {
 				if(notification_count.dataset.count > 0) {
 					notification_count.dataset.count = (parseInt(notification_count.dataset.count) - 1).toString();
@@ -222,7 +254,9 @@ let readNoti = async(e, audit) => {
         });
     }).finally(createReadListRecord);
 
-	goToAuditDetail(e, audit.record_id, router);
+	if(rt.type === 'request') {
+		goToAuditDetail(e, rt.audit_id, router);
+	}
 }
 
 let logout = () => {
