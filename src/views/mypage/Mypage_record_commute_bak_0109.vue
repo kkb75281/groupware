@@ -127,12 +127,8 @@ console.log('=== 출퇴근 기록 === user : ', user);
 const loading = ref(false);
 const currentDate = getDate();	// 오늘 날짜
 const maxHour = 16;	// 퇴근 기록 가능한 최대 시간
-const commuteRecords = ref([]);	// 출퇴근 기록
-const timeRecords = ref(initWorkFormat); // 출퇴근 시간 기록
-const monthlyWorkTime = ref("");	// 한 달 총 근무시간
 
-let commuteStorage = []; // 직원별 출퇴근 정보 저장소
-
+// 마스터가 정한 출근 시간
 const masterStartTime = {
   min: "08:00:00",
   max: "19:59:59",
@@ -152,48 +148,11 @@ const masterEndTime = {
   maxTimestamp: convertTimeToTimestamp(`${getDate()} 02:00:00`),
 };
 
-// 마스터가 정한 부서별 근무시간 설정 데이터 가져오기
-const getWorkTime = async () => {
-    try {
-        const query = {
-            table:  {
-                name: 'dvs_workTime_setting',
-                access_group: 99
-            }
-        };
-        
-        const res = await skapi.getRecords(query);
-        console.log('=== getWorkTime === res.list : ', res.list);
-        console.log('=== getWorkTime === user.division_id : ', user.division_id);
-        
-        // 현재 로그인한 유저의 부서 근무시간 찾기
-        const myDivisionWorkTime = res.list.find(
-            workTime => workTime.data.division_id === user.division_id  // user.division_id는 로그인한 유저의 부서 ID
-        );
+const commuteRecords = ref([]);	// 출퇴근 기록
+const timeRecords = ref(initWorkFormat); // 출퇴근 시간 기록
+const monthlyWorkTime = ref("");	// 한 달 총 근무시간
 
-        console.log('=== getWorkTime === myDivisionWorkTime : ', myDivisionWorkTime);
-
-        if (myDivisionWorkTime) {
-            // 마스터가 설정한 시간으로 업데이트
-            masterStartTime.min = myDivisionWorkTime.data.division_startTime.min;
-            masterStartTime.max = myDivisionWorkTime.data.division_startTime.max;
-            masterStartTime.minTime = `${currentDate} ${myDivisionWorkTime.data.division_startTime.min}`;
-            masterStartTime.maxTime = `${currentDate} ${myDivisionWorkTime.data.division_startTime.max}`;
-            masterStartTime.minTimestamp = convertToTimestamp(`${currentDate} ${myDivisionWorkTime.data.division_startTime.min}`);
-            masterStartTime.maxTimestamp = convertToTimestamp(`${currentDate} ${myDivisionWorkTime.data.division_startTime.max}`);
-
-            masterEndTime.min = myDivisionWorkTime.data.division_endTime.min;
-            masterEndTime.max = myDivisionWorkTime.data.division_endTime.max;
-            masterEndTime.minTime = `${currentDate} ${myDivisionWorkTime.data.division_endTime.min}`;
-            masterEndTime.maxTime = `${currentDate} ${myDivisionWorkTime.data.division_endTime.max}`;
-            masterEndTime.minTimestamp = convertToTimestamp(`${currentDate} ${myDivisionWorkTime.data.division_endTime.min}`);
-            masterEndTime.maxTimestamp = convertToTimestamp(`${currentDate} ${myDivisionWorkTime.data.division_endTime.max}`);
-        }
-        
-    } catch (error) {
-        console.error('근무시간 데이터 조회 실패:', error);
-    }
-};
+let commuteStorage = []; // 직원별 출퇴근 정보 저장소
 
 // 출근시간 기록 저장소 초기화
 const generateWorkTime = () => {
@@ -260,8 +219,6 @@ const saveCommuteRecord = async (record, isUpdate = false) => {
   console.log('======================')
 
   try {
-    // 출퇴근 기록은, 마스터(권한 99) 레코드 하나만 가지고 있고, 직원들에게 권한을 부여해서 직원들은 그 레코드를 reference 하는 식으로. (변경예정)
-    // 추후 reference 추가해서 권한 부여
     const config = {
       table: 'commute_records',
       access_group: 'private',
@@ -320,8 +277,7 @@ const startWork = async () => {
 
   // 마스터가 정한 출근시간 범위 지났을 경우
   if (!isCommute) {
-    // alert("마스터가 정한 출근시간 범위를 벗어났습니다. 출근 기록이 불가합니다.");
-    alert(`마스터가 정한 출근시간 범위(${masterStartTime.min.slice(0,5)} ~ ${masterStartTime.max.slice(0,5)})를 벗어났습니다.`);
+    alert("마스터가 정한 출근시간 범위를 벗어났습니다. 출근 기록이 불가합니다.");
     return;
   }
 
@@ -538,6 +494,38 @@ const endWork = async () => {
 
 let totalWorkTimeMs = 0; // 총 근무시간
 
+// 근무시간 계산 함수
+// const calcWorkTime = (value) => {
+//   if (!value) return;
+
+//   const { startTimeStamp, endTimeStamp, dailyCommuteTime, calculated } = value.data;
+
+//   if (!startTimeStamp || !endTimeStamp || calculated) {
+//     console.log("유효하지 않은 출퇴근 기록이거나 이미 계산된 기록입니다.");
+//     return;
+//   }
+
+//   // 새로 계산된 근무시간
+//   const updatedWorkTimeMs = endTimeStamp - startTimeStamp;
+
+//   // 기존 근무시간 (있다면 빼고 갱신)
+//   const previousWorkTimeMs = dailyCommuteTime || 0;
+//   const workTimeDiff = endTimeStamp - startTimeStamp
+
+//   // 총 근무시간 갱신
+//   totalWorkTimeMs += workTimeDiff;
+
+//   // 현재 기록 업데이트
+//   value.data.dailyCommuteTime = convertMsToTime(updatedWorkTimeMs);
+//   value.data.calculated = true;
+
+//   // 시간 변환
+//   const totalHours = Math.floor(totalWorkTimeMs / 1000 / 60 / 60);
+//   const totalMinutes = Math.floor((totalWorkTimeMs / 1000 / 60) % 60);
+
+//   monthlyWorkTime.value = `${totalHours}시간 ${totalMinutes}분`;
+// };
+
 // 비고란 작성 내용 업데이트
 const updateDesc = debounce(async (record) => {
   console.log('=== updateDesc === record : ', record);
@@ -643,6 +631,8 @@ const onRecord = () => {
     }
 };
 
+
+// 단일책임 원칙을 위해 watch를 사용하여 로직 분리
 // 최신 출퇴근 기록을 보이게 셋팅
 watch(commuteRecords, (newVal) => {
   if (newVal.length > 0) {
@@ -684,13 +674,10 @@ onMounted(async () => {
   timeRecords.value.date = getDate();
 
   try {
-    // 마스터가 설정한 부서별 근무시간 가져오기
-      await getWorkTime();
-
     // DB에서 기록 조회
-    const res = await fetchCommuteRecords();
-    if (res.list && Array.isArray(res.list)) {
-      commuteStorage = res.list.sort((a, b) => a.uploaded - b.uploaded);
+    const response = await fetchCommuteRecords();
+    if (response.list && Array.isArray(response.list)) {
+      commuteStorage = response.list.sort((a, b) => a.uploaded - b.uploaded);
     } else {
       commuteStorage = [];
     }
