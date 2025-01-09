@@ -264,7 +264,7 @@ const saveCommuteRecord = async (record, isUpdate = false) => {
     // 추후 reference 추가해서 권한 부여
     const config = {
       table: 'commute_records',
-      access_group: 'private',
+      access_group: 'public',
       index: {
         name: 'user_id',
         value: makeSafe(user.user_id),
@@ -589,7 +589,7 @@ const fetchCommuteRecords = async (userId, options = {}) => {
 
     const query = {
       table: 'commute_records',
-      access_group: 'private',
+      access_group: 'public',
       index: {
         name: 'user_id',
         value: makeSafe(user.user_id),
@@ -690,7 +690,7 @@ onMounted(async () => {
     // DB에서 기록 조회
     const res = await fetchCommuteRecords();
     if (res.list && Array.isArray(res.list)) {
-      commuteStorage = res.list.sort((a, b) => a.uploaded - b.uploaded);
+      commuteStorage = res.list.sort((a, b) => a.uploaded - b.uploaded);  // uploaded(레코드 최초 생성순) 기준으로 정렬해야 함.
     } else {
       commuteStorage = [];
     }

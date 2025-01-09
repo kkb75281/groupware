@@ -3,6 +3,14 @@ h1 출퇴근 시간 설정
 
 hr
 
+.master-set-wrap(style="display: flex; align-items: center; gap: 4px;")
+    .input-wrap(style="display: flex; align-items: center; gap: 4px;")
+        input(type="time" v-model="startTimeMin")
+        | ~
+        input(type="time" v-model="startTimeMax")
+    button.btn.bg-gray.btn-save(@click="saveWorkTime") 저장
+    button.btn.bg-gray.btn-cancel(@click="cancelEdit") 취소
+
 .table-wrap
     .tb-head-wrap
         .input-wrap.search
@@ -36,7 +44,6 @@ hr
             tbody
                 template(v-if="loading")
                     tr(v-for="i in 4")
-                //- template(v-else-if="divisions === 'no data' || !divisions || Object.keys(divisions).length === 0")
                 template(v-else-if="Object.keys(divisions).length === 0")
                     tr
                         td(colspan="5") 데이터가 없습니다.
@@ -122,26 +129,19 @@ const startTimeMax = ref("");
 const endTimeMin = ref("");
 const endTimeMax = ref("");
 
-console.log('divisions:', divisions.value);
-console.log('divisionNameList:', divisionNameList.value);
-console.log('selectedDivision:', selectedDivision.value);
+console.log('divisions : ', divisions.value);
+console.log('AA === divisionNameList : ', divisionNameList.value);
 
 // 근무시간 저장
 const saveWorkTime = async () => {
     try {
         console.log('== AA ===');
-        console.log('== selectedDivision:', selectedDivision.value);
+        console.log('== selectedDivision : ', selectedDivision.value);
 
         const findDivision = divisions.value[selectedDivision.value.record_id];
 
-        console.log('== findDivision:', findDivision);
+        console.log('== findDivision : ', findDivision);
          console.log('== BB ===');
-
-        const sssss = selectedDivision.value.record_id;
-        const nnnnn = divisionNameList.value[divisionId];
-
-        console.log('== sssss:', sssss);
-        console.log('== nnnnn:', nnnnn);
 
         if (!findDivision) {
             alert('부서를 찾을 수 없습니다.');
@@ -152,7 +152,7 @@ const saveWorkTime = async () => {
         const uniqueId = `dvs_workTime_${divisionId}`;
 
         // 기존 데이터가 있다면 삭제 (unique_id 때문)
-        try {
+        if (workTimes.value[divisionId]) {
             const query = {
                 table: 'dvs_workTime_setting',
                 unique_id: uniqueId
@@ -160,13 +160,14 @@ const saveWorkTime = async () => {
             
             await skapi.deleteRecords(query);
             console.log('기존 시간 설정 삭제 완료');
-        } catch (error) {
-            console.log('=== deleteRecords === error : ', {error});
         }
+
+        const findDivisionKey = Object.entries(divisionNameList.value).find(([key, value]) => value === findDivision.data.division_name);
 
         // 새로운 데이터 생성
         const workTimeData = {
-            division_name: findDivision.data.division_name,
+            division_name: findDivision.data.division_name || '',
+            division_key: findDivisionKey?.[0] || '',
             division_startTime: {
                 min: `${startTimeMin.value}:00`,
                 max: `${startTimeMax.value}:59`
