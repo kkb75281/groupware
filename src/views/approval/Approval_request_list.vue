@@ -48,8 +48,8 @@ hr
 						td {{ index + 1 }}
 						td.left {{ audit.data.to_audit }}
 						td
-							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.approved }}
-						td {{ audit.user_info?.name }}
+							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.referenced_count + ' / ' + audit.data.auditors.length }}
+						td {{ user.name }}
 				template(v-else)
 					tr.nohover
 						td(colspan="4") 결재 목록이 없습니다.
@@ -82,74 +82,33 @@ const getUserInfo = async (userId: string) => {
 
 onMounted(async () => {
 	await getSendAuditList();
-//     try {
-//         // 내가 받은 결재 요청건 가져오기
-//         const audits = await skapi.getRecords({
-//             table: {
-//                 name: 'audit_request',
-//                 access_group: 'authorized'
-//             },
-//             reference: `audit:${user.user_id}`
-//         }, {
-//             ascending: false,   // 최신순
-//         });
 
-//         const auditDocs = await Promise.all(audits.list.map(async (list) => {
-//             // 결재 서류 가져오기
-//             const audit_doc = (await skapi.getRecords({ 
-//                 record_id: list.data.audit_id 
-//             })).list[0];
+	console.log('!!!!!sendAuditList', sendAuditList.value);
 
-//             // 다른 사람 결재 여부 확인
-//             const approvals = (await skapi.getRecords({
-//                 table: {
-//                     name: 'audit_approval',
-//                     access_group: 'authorized'
-//                 },
-//                 reference: list.data.audit_id
-//             })).list;
 
-//             // 결재자 목록에서 각 결재자 ID 가져오기
-//             const auditors = audit_doc.tags.map(a => a.replaceAll('_', '-'));
+	try {
+		const results = await Promise.all(
+			sendAuditList.value.map(async (audit) => {
+				console.log('!!!!!audit', audit);
+				const response = await skapi.getRecords({
+					table: {
+						name: 'audit_approval',
+						access_group: 'authorized',
+					},
+					reference: audit.record_id,
+				});
 
-//             auditors.forEach((auditor) => {
-//                 let oa_has_audited_str = null;
+				console.log('!!!!!rerere', response);
+				return response;
+			})
+		);
 
-//                 approvals.forEach((approval) => {
-//                     if (approval.user_id === user.user_id) {
-//                         oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
-
-//                         audit_doc.approved = oa_has_audited_str;
-//                         audit_doc.user_id = auditor;
-                        
-//                         return;
-//                     }
-//                 })
-
-//                 if (!oa_has_audited_str) {
-//                     audit_doc.approved = '대기중';
-//                     audit_doc.user_id = auditor;
-//                 }
-//             })
-            
-//             return {
-//                 ...audit_doc,
-//                 draftUserId: list.user_id
-//             };
-//         }));
-
-//         const userList = await Promise.all(auditDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId)))
-//         const userInfoList = userList.map(user => user.list[0]).filter((user) => user)
-
-//         const newAuditUserList = auditDocs.map((auditor) => ({
-//             ...auditor,
-//             user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId)
-//         }))
-
-//         auditList.value = newAuditUserList;        
-//     } catch (err) {
-//         console.error({err});
-//     }
+		console.log('All audit records fetched:', results);
+		return results; // 필요에 따라 반환
+	} catch (error) {
+		console.error('Error fetching audit records:', error);
+		throw error; // 필요에 따라 에러를 다시 던짐
+	}
 });
 
 // 결재 상세 페이지로 이동

@@ -30,7 +30,7 @@ header#header
 			ul
 				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
 					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.audit_id) || readList.includes(rt?.audit_doc_id)}")
-						template(v-if="rt.type === 'request'")
+						template(v-if="rt.audit_type === 'request'")
 							h4.noti-type [결재 요청]
 							h5.noti-title {{ rt.to_audit }}
 							p.noti-sender {{ rt.send_name }}
@@ -110,33 +110,14 @@ import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
 // import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList, getAuditList, getSendAuditList } from '@/notifications'
-import { realtimes, readList, getRealtime, getReadList, goToAuditDetail } from '@/notifications'
+import { realtimes, readList, unreadCount, getReadList, goToAuditDetail, readAudit, createReadListRecord } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
 
-const unreadCount = ref(0);
-
-watch([realtimes, readList], () => {
-	unreadCount.value = realtimes.value.filter((audit) => {
-		if (audit.type === 'request') {
-			return !readList.value.includes(audit.audit_id);
-		} else {
-			return !readList.value.includes(audit.audit_doc_id);
-		}
-	}).length;
-}, { immediate: true });
-
-onMounted(async() => {
-	try {
-		await Promise.all([
-			getReadList(),
-			getRealtime()
-		]);
-	} catch (error) {
-		console.error('Error occurred:', error);
-	}
-})
+// onMounted(async() => {
+// 	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.audit_doc_id)).length;
+// })
 
 // let newNoti = ref(false);
 let isNotiOpen = ref(false);
@@ -166,6 +147,8 @@ function formatTimeAgo(timestamp) {
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
+	console.log(realtimes.value)
+	console.log(readList.value)
 };
 
 let closeNotification = (event) => {
@@ -214,52 +197,29 @@ onUnmounted(() => {
 });
 
 let readNoti = async(e, rt) => {
-	let notification_count = document.querySelector('button.btn-noti');
-	let updateData = readList.value;
+	// 기존 readAudit 초기화
+    for (let key in readAudit.value) {
+        delete readAudit.value[key];
+    }
 
-	let createReadListRecord = () => {
-		let checkId;
-
-		if(rt.type === 'request') {
-			checkId = rt.audit_id;
-		} else {
-			checkId = rt.audit_doc_id;
-		}
-
-		if(!updateData.includes(checkId)) {	// 읽은 알림이 아닐 경우
-			updateData.push(checkId);
-			nextTick(()=> {
-				if(notification_count.dataset.count > 0) {
-					notification_count.dataset.count = (parseInt(notification_count.dataset.count) - 1).toString();
-					window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count);
-				}
-			})
-		}
-
-		return skapi.postRecord(
-			{
-				list: JSON.stringify(updateData)
-			},
-			{
-				unique_id: '[notification_read_list]' + user.user_id,
-				table: {
-					name: 'notification_read_list',
-					access_group: 'private'
-				}
-			}
-		)
+	// 현재 읽은 알람 저장
+	for (let key in rt) {
+		readAudit.value[key] = rt[key];
 	}
 
-	getReadList().then(async ()=>{
-        return await skapi.deleteRecords({
-			unique_id: '[notification_read_list]' + user.user_id
-        });
-    }).finally(createReadListRecord);
-
-	if(rt.type === 'request') {
-		goToAuditDetail(e, rt.audit_id, router);
+	if(rt.audit_type === 'request') {
+		goToAuditDetail(e, rt.audit_doc_id, router);
 	} else {
 		router.push({ name: 'request-list' });
+	}
+
+	// 읽은 알람 리스트를 업데이트
+	// await getReadList(); // 기존 리스트 로드
+	if (!readList.value.includes(rt.audit_doc_id)) {
+		await skapi.deleteRecords({
+			unique_id: '[notification_read_list]' + user.user_id
+        });
+		createReadListRecord(true); // 새로 읽은 알람 추가
 	}
 }
 
@@ -272,43 +232,11 @@ let logout = () => {
     });
 }
 
-onMounted(async() => {
-	// try {
-	// 	await Promise.all([
-	// 		getReadList(),
-	// 		getAuditList(),
-	// 		getSendAuditList(),
-	// 	]);
-	// } catch (error) {
-	// 	console.error('Error occurred:', error);
-	// }
-
-
-	// const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
-
-	// if (notiCount) {
-	// 	let notification_count = document.querySelector('button.btn-noti');
-
-	// 	notification_count.dataset.count = notiCount;
-		
-	// 	// if (notiCount > 0) {
-	// 	// 	newNoti.value = true;
-	// 	// }
-	// }
-})
-
 watch(() => route.path, (newPath, oldPath) => {
     if(newPath) {
         if (isProfileOpen.value) {
             isProfileOpen.value = !isProfileOpen.value;
         }
-
-		const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
-
-		if (notiCount) {
-			let notification_count = document.querySelector('button.btn-noti');
-			notification_count.dataset.count = notification_count.dataset.count;
-		}
     }
 })
 </script>
