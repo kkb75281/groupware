@@ -236,6 +236,7 @@ const postApproval = async (e: SubmitEvent) => {
 					audit_doc_id: auditId,
 					approval: res.data.approved,
 					to_audit: auditDoContent.value?.data?.to_audit,
+					audit_type: "approval",
 					send_user: user.user_id,
 					send_date: new Date().getTime()
 				}
@@ -251,6 +252,7 @@ const postApproval = async (e: SubmitEvent) => {
 				audit_doc_id: auditId,
 				approval: res.data.approved,
 				to_audit: auditDoContent.value?.data?.to_audit,
+				audit_type: "approval",
 				send_user: user.user_id,
 				send_date: new Date().getTime()
 			},
@@ -258,10 +260,10 @@ const postApproval = async (e: SubmitEvent) => {
 				// unique_id: `realtime_approval:${auditId}:${senderUser.value.user_id}`,
 				readonly: true,
 				table: {
-					name: "realtime_approval",
+					name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
 					access_group: "authorized",
 				},
-				reference: `realtime:${senderUser.value.user_id}`,
+				// reference: `realtime:${senderUser.value.user_id}`,
 				// tags: [senderUser.value.user_id],
 			}
 		)

@@ -1,19 +1,39 @@
 import { get, request } from "http";
 import { skapi } from "./main";
 import { user } from "./user";
-import { Reactive, reactive, ref } from "vue";
+import { Reactive, reactive, type Ref, ref, watch } from "vue";
 
 export const notifications:Reactive<{messages: {fromUserId:string; msg: any }[], audits: {fromUserId:string; msg: any }[]}> = reactive({
     audits: [],
     messages: []
 });
+export const unreadCount = ref(0);
 export const realtimes = ref([]);
-
-export const sendAuditList = ref([]);
-export const auditList = ref([]);
 export const readList = ref([]);
+export const readAudit: Ref<{
+	audit_type: string; // 'request' | 'approval'
+	to_audit: string;
+	audit_doc_id: string;
+	send_date: number;
+	send_user: string;
+	send_name: string;
+	audit_request_id?: string; // audit_type이 request일 경우 존재(결재 요청 record_id)
+	send_auditors?: []; // audit_type이 request일 경우 존재(결재자 목록)
+	approval?: string; // audit_type이 approval일 경우 존재(결재 승인/반려 여부)
 
-const getUserInfo = async (userId: string) => {
+}> = ref({
+	audit_type: '',
+	to_audit: '',
+	audit_doc_id: '',
+	send_date: 0,
+	send_user: '',
+	send_name: '',
+});
+
+export const auditList = ref([]);
+export const sendAuditList = ref([]);
+
+export const getUserInfo = async (userId: string): Promise<object> => {
     const params = {
         searchFor: 'user_id',
         value: userId
@@ -22,62 +42,84 @@ const getUserInfo = async (userId: string) => {
     return await skapi.getUsers(params);
 }
 
-export const getRealtime = async () => {
-	const requests = await skapi.getRecords({
-		table: {
-			name: "realtime_request",
-			access_group: "authorized",
-		},
-		reference: `realtime:${user.user_id}`,
-	});
+export let getRealtimeRunning: Promise<any> | null = null;
+export let getReadListRunning: Promise<any> | null = null;
 
-	const approvals = await skapi.getRecords({
-		table: {
-			name: "realtime_approval",
-			access_group: "authorized",
-		},
-		reference: `realtime:${user.user_id}`,
-	});
-
-	const request_list = await Promise.all(
-		requests.list.map(async (request) => {
-			try {
-				const senderInfo = await getUserInfo(request.data.send_user);
-
-				console.log({senderInfo});
-			
-				return {
-					...request.data,
-					send_name: senderInfo.list[0].name,
-					type: "request",
-				};
-			} catch (err) {
-				console.error({err});
-			}
-		})
-	)
-
-	const approval_list = await Promise.all(
-		approvals.list.map(async (approval) => {
-			try {
-				const senderInfo = await getUserInfo(approval.data.send_user);
+export const getRealtime = async (refresh = false) => {
+	if(getRealtimeRunning instanceof Promise) {	// 이미 실행중인 경우
+		console.log('!!!!!실행중')
+		return await getRealtimeRunning;
+	}
 	
-				return {
-					...approval.data,
-					send_name: senderInfo.list[0].name,
-					type: "approval",
-				}
-			} catch (err) {
-				console.error({err});
-			}
-		})
-	);
+	if (Object.keys(realtimes.value).length && !refresh) {	// 기존 데이터가 있고 새로고침이 필요 없는 경우
+		console.log('!!!!!데이터 있음')
+		return realtimes.value;
+	}
 
-	realtimes.value = request_list.concat(approval_list);
-	console.log({realtimes: realtimes.value});
+	getRealtimeRunning = (async () => {
+		try {
+			const realtime = await skapi.getRecords({
+				table: {
+					name: `realtime:${user.user_id.replaceAll('-', '_')}`,
+					access_group: "authorized",
+				},
+			});
+
+			const realtime_list = await Promise.all(
+				realtime.list.map(async (request) => {
+					try {
+						const senderInfo = await getUserInfo(request.data.send_user);
+
+						console.log({ senderInfo });
+
+						return {
+							...request.data,
+							send_name: senderInfo.list[0].name,
+						};
+					} catch (err) {
+						console.error({ err });
+					}
+				})
+			);
+
+			realtimes.value = realtime_list;
+			realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
+
+			console.log('!!!!!realtimes', realtimes.value);
+			return realtimes.value;
+		} catch (err) {
+			console.error("Error fetching realtime data:", err);
+			throw err;
+		} finally {
+			// 실행 완료 후 getRealtimeRunning 초기화
+			getRealtimeRunning = null;
+		}
+	})();
+
+	return await getRealtimeRunning;
 };
 
-export let getReadListRunning: Promise<any> | null = null;
+export const createReadListRecord = (read = false) => {
+	let updateData = readList.value || [];
+
+	if(read && !updateData.includes(readAudit.value.audit_doc_id)) {
+		updateData.push(readAudit.value.audit_doc_id);	// 읽지 않은 알람일 경우 추가
+		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.audit_doc_id)).length;
+	}
+
+	return skapi.postRecord(
+		{
+			list: JSON.stringify(updateData)
+		},
+		{
+			unique_id: '[notification_read_list]' + user.user_id,
+			table: {
+				name: 'notification_read_list',
+				access_group: 'private'
+			}
+		}
+	)
+}
 
 export const getReadList = async() => {
 	if(getReadListRunning instanceof Promise) { // 이미 실행중인 경우
@@ -86,24 +128,28 @@ export const getReadList = async() => {
 	}
 
 	if (readList.value && Object.keys(readList.value).length) { // 받아온적 있거나, 데이터가 없는경우
-		console.log('herererere')
 		return readList.value; // 이미 데이터가 존재하면 불러오지 않음
 	}
 	
 	getReadListRunning = skapi.getRecords({
 		unique_id: '[notification_read_list]' + user.user_id
+	}).catch(async(err) => {
+		if(err.code === 'NOT_EXISTS') {
+			readList.value = [];
+			await createReadListRecord();
+		}
 	}).finally(() => {
 		getReadListRunning = null;
 	})
 
 	let res = await getReadListRunning;
 
-	if (res.list.length) {
-		if (res.list[0].data && res.list[0].data?.list) {
-			readList.value = JSON.parse(res.list[0].data.list);
-		} else {
-			readList.value = [];
-		}
+	if (res.list.length && res.list[0].data && res.list[0].data.list) {
+		readList.value = JSON.parse(res.list[0].data.list);
+	} else {
+		// 레코드가 없으면 빈 배열 생성
+		readList.value = [];
+		await createReadListRecord(); // 초기 빈 레코드 생성
 	}
 
 	console.log('readList', readList.value);
@@ -225,3 +271,16 @@ export const goToAuditDetail = (e, auditId, router) => {
     // if(e.target.classList.contains('label-checkbox')) return;
     router.push({ name: 'audit-detail', params: { auditId } });
 };
+
+watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
+	if (u && Object.keys(u).length) {
+		await Promise.all([
+			getRealtime(),
+			getReadList()
+		])
+	}
+}, { immediate: true });
+
+watch([realtimes, readList], () => {
+	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.audit_doc_id)).length;
+}, { immediate: true, deep: true });
