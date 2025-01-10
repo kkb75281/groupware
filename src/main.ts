@@ -108,8 +108,6 @@ export let RealtimeCallback = async(rt: any) => {
 	}
 
 	if (rt.type === 'private') {
-		// let notification_count: any = document.querySelector('button.btn-noti');
-
 		console.log('sender', rt.sender, user.user_id);
 		console.log('msgg', rt.message);
 
