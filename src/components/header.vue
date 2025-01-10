@@ -29,18 +29,18 @@ header#header
 		.popup-main
 			ul
 				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
-					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.audit_id) || readList.includes(rt?.audit_doc_id)}")
-						template(v-if="rt.audit_type === 'request'")
+					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.noti_id)}")
+						template(v-if="rt.audit_info.audit_type === 'request'")
 							h4.noti-type [결재 요청]
-							h5.noti-title {{ rt.to_audit }}
+							h5.noti-title {{ rt.audit_info.to_audit }}
 							p.noti-sender {{ rt.send_name }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 						template(v-else)
 							h4.noti-type [알람]
 							h5.noti-title 
-								template(v-if="rt.approval === 'approve'") {{ rt.send_name + '님께서 [' + rt.to_audit + '] 문서를 승인하였습니다.' }}
-								template(v-else) {{ rt.send_name + '님께서 [' + rt.to_audit + '] 문서를 반려하였습니다.' }}
+								template(v-if="rt.audit_info.approval === 'approve'") {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 승인하였습니다.' }}
+								template(v-else) {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 반려하였습니다.' }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 	template(v-else)
@@ -207,15 +207,15 @@ let readNoti = async(e, rt) => {
 		readAudit.value[key] = rt[key];
 	}
 
-	if(rt.audit_type === 'request') {
-		goToAuditDetail(e, rt.audit_doc_id, router);
+	if(rt.audit_info.audit_type === 'request') {
+		goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
 	} else {
 		router.push({ name: 'request-list' });
 	}
 
 	// 읽은 알람 리스트를 업데이트
 	// await getReadList(); // 기존 리스트 로드
-	if (!readList.value.includes(rt.audit_doc_id)) {
+	if (!readList.value.includes(rt.audit_info.audit_doc_id)) {
 		await skapi.deleteRecords({
 			unique_id: '[notification_read_list]' + user.user_id
         });
