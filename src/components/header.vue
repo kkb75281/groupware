@@ -207,19 +207,19 @@ let readNoti = async(e, rt) => {
 		readAudit.value[key] = rt[key];
 	}
 
+	if(rt.audit_type === 'request') {
+		goToAuditDetail(e, rt.audit_doc_id, router);
+	} else {
+		router.push({ name: 'request-list' });
+	}
+
 	// 읽은 알람 리스트를 업데이트
-	await getReadList(); // 기존 리스트 로드
+	// await getReadList(); // 기존 리스트 로드
 	if (!readList.value.includes(rt.audit_doc_id)) {
 		await skapi.deleteRecords({
 			unique_id: '[notification_read_list]' + user.user_id
         });
 		createReadListRecord(true); // 새로 읽은 알람 추가
-	}
-
-	if(rt.audit_type === 'request') {
-		goToAuditDetail(e, rt.audit_doc_id, router);
-	} else {
-		router.push({ name: 'request-list' });
 	}
 }
 
