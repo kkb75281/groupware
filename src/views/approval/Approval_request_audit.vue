@@ -162,6 +162,7 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
     if (!audit_id || !auditor_id) return;
 
+	// 결재 요청
     const res = await skapi.postRecord(
         {
             audit_id,
@@ -186,18 +187,58 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
         user_id: auditor_id,
     });
 
+    let to_audit = (document.getElementById('to_audit') as HTMLInputElement).value;
+
+	// 실시간 알림 보내기
     skapi
         .postRealtime(
             {
                 audit_request: {
-                    audit_request_id: res.record_id,
-                    send_auditors,
+					noti_id: res.record_id,
+					noti_type: 'audit',
+					send_date: new Date().getTime(),
+					send_user: user.user_id,
+					audit_info: {
+						audit_type: 'request',
+						to_audit: to_audit,
+						audit_doc_id: audit_id,
+						audit_request_id: res.record_id,
+						send_auditors: send_auditors,
+					}
                 },
             },
             auditor_id
         )
         .then((res) => {
             console.log("요청2 === postRealtime === res : ", res);
+        });
+
+	// 실시간 못 받을 경우 알림 기록 저장
+	skapi
+		.postRecord(
+			{	
+				noti_id: res.record_id,
+				noti_type: 'audit',
+				send_date: new Date().getTime(),
+				send_user: user.user_id,
+				audit_info: {
+					audit_type: 'request',
+					to_audit: to_audit,
+					audit_doc_id: audit_id,
+					audit_request_id: res.record_id,
+					send_auditors: send_auditors,
+				}
+			},
+			{
+				readonly: true,
+				table: {
+					name: `realtime:${auditor_id.replaceAll('-', '_')}`,
+					access_group: "authorized",
+				},
+			}
+		)
+		.then((res) => {
+            console.log("요청3 === postRecord === res : ", res);
         });
 
     return res;

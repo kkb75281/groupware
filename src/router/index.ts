@@ -11,8 +11,8 @@ import Dashboard from '@/views/Dashboard.vue';
 // import List_detail_employee from '@/views/List_detail_employee.vue';
 import Mypage from '@/views/mypage/Mypage.vue';
 // import Mypage_edit_myinfo from '@/views/mypage/Mypage_edit_myinfo.vue';
-import Mypage_edit_mystamp from '@/views/mypage/Mypage_edit_mystamp.vue';
-import Mypage_list_data from '@/views/_backup/Mypage_list_data.vue';
+// import Mypage_edit_mystamp from '@/views/mypage/Mypage_edit_mystamp.vue';
+// import Mypage_list_data from '@/views/_backup/Mypage_list_data.vue';
 import Admin from '@/views/admin/Admin.vue';
 // import Admin_add_employee from '@/views/admin/Admin_add_employee.vue';
 // import Admin_add_divisions from '@/views/admin/Admin_add_divisions.vue';
@@ -20,8 +20,9 @@ import Admin from '@/views/admin/Admin.vue';
 // import Admin_list_divisions from '@/views/admin/Admin_list_divisions.vue';
 import Approval from '@/views/approval/Approval.vue';
 // import Approval_request_audit from '@/views/approval/Approval_request_audit.vue';
-import Approval_audit_list from '@/views/approval/Approval_audit_list.vue';
-import Approval_audit_detail from '@/views/approval/Approval_audit_detail.vue';
+// import Approval_request_list from '@/views/approval/Approval_request_list.vue';
+// import Approval_audit_list from '@/views/approval/Approval_audit_list.vue';
+// import Approval_audit_detail from '@/views/approval/Approval_audit_detail.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,11 +61,11 @@ const router = createRouter({
           name: 'home',
           component: Dashboard,
         },
-        {
-          path: '/list-data',
-          name: 'list-data',
-          component: Mypage_list_data,
-        },
+        // {
+        //   path: '/list-data',
+        //   name: 'list-data',
+        //   component: Mypage_list_data,
+        // },
         {
           path: '/list-employee',
           name: 'list-employee',
@@ -83,6 +84,11 @@ const router = createRouter({
               name: 'approval',
               component: Approval,
             },
+			{
+				path: 'request-list',
+				name: 'request-list',
+				component: () => import('@/views/approval/Approval_request_list.vue'),
+			},
             {
               path: 'request-audit',
               name: 'request-audit',
@@ -91,13 +97,12 @@ const router = createRouter({
             {
               path: 'audit-list',
               name: 'audit-list',
-              component: Approval_audit_list,
-              //   component: ()=>import('@/views/approval/Approval_audit_list.vue') // Approval_audit_list,
+			  component: () => import('@/views/approval/Approval_audit_list.vue'),
             },
             {
               path: 'audit-detail/:auditId',
               name: 'audit-detail',
-              component: Approval_audit_detail,
+			  component: () => import('@/views/approval/Approval_audit_detail.vue'),
             },
           ],
         },
@@ -117,7 +122,7 @@ const router = createRouter({
             {
               path: 'edit-mystamp',
               name: 'edit-mystamp',
-              component: Mypage_edit_mystamp,
+			  component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
             },
             {
               path: 'record-commute',

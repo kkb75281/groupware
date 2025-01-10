@@ -8,11 +8,12 @@ export let divisions: Ref<{ [key: string]: any }> = ref({});
  * divisionNameList =
  * {
  *  DVS_0: "부서명",
+ * 
  *  DVS_1: "부서명",
  *  ...
  * }
  */
-export let divisionNameList: Ref<{ [key: string]: string }> = ref({});
+export let divisionNameList: Ref<{ [DVS_NUMBER: string]: string }> = ref({});
 export let loading = ref(true);
 
 export let getDivisionDataRunning: Promise<any> | null = null;
@@ -20,11 +21,13 @@ export let getDivisionNamesRunning: Promise<any> | null = null;
 
 export async function getDivisionNames(refresh = false) {
     if(getDivisionNamesRunning instanceof Promise) { // 이미 실행중인 경우
+		console.log('!!!!!실행중 getDivisionNames')
         await getDivisionNamesRunning;
         return divisionNameList.value;
     }
 
     if (Object.keys(divisionNameList.value).length && !refresh) { // 받아온적 없거나, 데이터가 없는경우 + 새로고침을 요청하지 않은 경우
+		console.log('!!!!!이미 있음')
         loading.value = false;
         return divisionNameList.value; // 이미 데이터가 존재하면 불러오지 않음
     }
@@ -49,10 +52,36 @@ export async function getDivisionNames(refresh = false) {
     if (res.list.length) {
         if (res.list[0].data) {
             divisionNameList.value = res.list[0].data;
+			console.log('!!!!!받아옴')
         }
     }
 
     return divisionNameList.value;
+
+	// try{
+	// 	let res = await skapi.getRecords({
+	// 		unique_id: '[division_name_list]'
+	// 	})
+	// 	if (res.list.length) {
+	// 		if (res.list[0].data) {
+	// 			divisionNameList.value = res.list[0].data;
+	// 		}
+	// 	}
+	
+	// 	return divisionNameList.value;
+	// }
+	// finally {
+		        
+    //     getDivisionNamesRunning = null;
+
+    //     if (getDivisionDataRunning instanceof Promise) {
+    //         getDivisionDataRunning.finally(() => {
+    //             loading.value = false;
+    //         });
+    //     } else {
+    //         loading.value = false;
+    //     }
+	// }
 }
 
 export async function getDivisionData(refresh: boolean = false) {
