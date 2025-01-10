@@ -1,6 +1,6 @@
 <template lang="pug">
 .title
-    h1 결재
+    h1 결재 문서
 
 hr
 
@@ -78,7 +78,7 @@ import { user } from '@/user';
 
 const router = useRouter();
 const route = useRoute();
-const auditId = route.params.auditId;
+const auditId = ref('');
 
 const disabled = ref(true);
 const auditDoContent = ref([]);
@@ -86,7 +86,15 @@ const auditUserList = ref([]);
 const isModalOpen = ref(false);
 const senderUser = ref({});
 
+watch(() => (route.params.auditId as string), async(nv, ov) => {
+	if(nv !== ov) {
+		auditId.value = nv;
+		await getAuditDetail();
+	}
+});
+
 watch(auditDoContent, () => {
+	console.log('!!!!!auditDoContent 변경:', auditDoContent.value.data.to_audit);
 	let userId = auditDoContent.value?.user_id;
 
 	if (userId) {
@@ -124,7 +132,7 @@ const approvedAudit = async () => {
                 name: 'audit_approval',
                 access_group: 'authorized'
             },
-            reference: auditId
+            reference: auditId.value
         })
 
         return res.list;
@@ -148,7 +156,7 @@ const getUserInfo = async (userId: string) => {
 const getAuditDetail = async () => {
     try {
         const auditDoc = (await skapi.getRecords({
-            record_id: auditId
+            record_id: auditId.value
         })).list[0];
 
         if (auditDoc) {
@@ -213,7 +221,7 @@ const postApproval = async (e: SubmitEvent) => {
     e.preventDefault();
 
     try {
-        if (!auditId) return;
+        if (!auditId.value) return;
 
         const userId = user.user_id;
 
@@ -223,7 +231,7 @@ const postApproval = async (e: SubmitEvent) => {
                 name: 'audit_approval',
                 access_group: 'authorized'
             },
-            reference: auditId,
+            reference: auditId.value,
             tags: [(userId as string).replaceAll('-', '_')], 
         });
 
@@ -233,9 +241,10 @@ const postApproval = async (e: SubmitEvent) => {
 		skapi.postRealtime(
 			{
 				audit_approval: {
-					audit_doc_id: auditId,
+					audit_doc_id: auditId.value,
 					approval: res.data.approved,
 					to_audit: auditDoContent.value?.data?.to_audit,
+					audit_type: "approval",
 					send_user: user.user_id,
 					send_date: new Date().getTime()
 				}
@@ -248,9 +257,10 @@ const postApproval = async (e: SubmitEvent) => {
 		// 실시간 못 받을 경우 알림 기록 저장
 		skapi.postRecord(
 			{
-				audit_doc_id: auditId,
+				audit_doc_id: auditId.value,
 				approval: res.data.approved,
 				to_audit: auditDoContent.value?.data?.to_audit,
+				audit_type: "approval",
 				send_user: user.user_id,
 				send_date: new Date().getTime()
 			},
@@ -258,10 +268,10 @@ const postApproval = async (e: SubmitEvent) => {
 				// unique_id: `realtime_approval:${auditId}:${senderUser.value.user_id}`,
 				readonly: true,
 				table: {
-					name: "realtime_approval",
+					name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
 					access_group: "authorized",
 				},
-				reference: `realtime:${senderUser.value.user_id}`,
+				// reference: `realtime:${senderUser.value.user_id}`,
 				// tags: [senderUser.value.user_id],
 			}
 		)
@@ -278,15 +288,8 @@ const postApproval = async (e: SubmitEvent) => {
 }
 
 onMounted(() => {
+	auditId.value = (route.params.auditId as string);
     getAuditDetail();
-
-	console.log('rnjsrnsj', auditId);
-
-	skapi.getRecords({
-		record_id: auditId
-	}).then(r => {
-		console.log('rnjsrnsj',r.list[0])
-	})
 });
 
 </script>
