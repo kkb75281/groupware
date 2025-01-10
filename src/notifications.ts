@@ -45,10 +45,10 @@ export const getUserInfo = async (userId: string): Promise<object> => {
 export let getRealtimeRunning: Promise<any> | null = null;
 export let getReadListRunning: Promise<any> | null = null;
 
-export const getRealtime = async (refresh = false) => {
+export const getRealtime = (refresh = false) => {
 	if(getRealtimeRunning instanceof Promise) {	// 이미 실행중인 경우
 		console.log('!!!!!실행중')
-		return await getRealtimeRunning;
+		return getRealtimeRunning;
 	}
 	
 	if (Object.keys(realtimes.value).length && !refresh) {	// 기존 데이터가 있고 새로고침이 필요 없는 경우
@@ -63,6 +63,8 @@ export const getRealtime = async (refresh = false) => {
 					name: `realtime:${user.user_id.replaceAll('-', '_')}`,
 					access_group: "authorized",
 				},
+			}, {
+				ascending: false,
 			});
 
 			const realtime_list = await Promise.all(
@@ -83,7 +85,7 @@ export const getRealtime = async (refresh = false) => {
 			);
 
 			realtimes.value = realtime_list;
-			realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
+			// realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 
 			console.log('!!!!!realtimes', realtimes.value);
 			return realtimes.value;
@@ -96,7 +98,7 @@ export const getRealtime = async (refresh = false) => {
 		}
 	})();
 
-	return await getRealtimeRunning;
+	return getRealtimeRunning;
 };
 
 export const createReadListRecord = (read = false) => {
