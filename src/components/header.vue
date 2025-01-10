@@ -232,43 +232,11 @@ let logout = () => {
     });
 }
 
-onMounted(async() => {
-	// try {
-	// 	await Promise.all([
-	// 		getReadList(),
-	// 		getAuditList(),
-	// 		getSendAuditList(),
-	// 	]);
-	// } catch (error) {
-	// 	console.error('Error occurred:', error);
-	// }
-
-
-	// const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
-
-	// if (notiCount) {
-	// 	let notification_count = document.querySelector('button.btn-noti');
-
-	// 	notification_count.dataset.count = notiCount;
-		
-	// 	// if (notiCount > 0) {
-	// 	// 	newNoti.value = true;
-	// 	// }
-	// }
-})
-
 watch(() => route.path, (newPath, oldPath) => {
     if(newPath) {
         if (isProfileOpen.value) {
             isProfileOpen.value = !isProfileOpen.value;
         }
-
-		const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
-
-		if (notiCount) {
-			let notification_count = document.querySelector('button.btn-noti');
-			notification_count.dataset.count = notification_count.dataset.count;
-		}
     }
 })
 </script>
