@@ -47,7 +47,7 @@ hr
         br
 
         .button-wrap
-            button.btn.bg-gray.btn-cancel(type="button" @click="$router.push('/approval/audit-list')") 이전
+            button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
 
 //- 결재 모달
 #modal.modal(v-if="isModalOpen")
@@ -241,12 +241,16 @@ const postApproval = async (e: SubmitEvent) => {
 		skapi.postRealtime(
 			{
 				audit_approval: {
-					audit_doc_id: auditId.value,
-					approval: res.data.approved,
-					to_audit: auditDoContent.value?.data?.to_audit,
-					audit_type: "approval",
+					noti_id: res.record_id,
+					noti_type: 'audit',
+					send_date: new Date().getTime(),
 					send_user: user.user_id,
-					send_date: new Date().getTime()
+					audit_info: {
+						audit_type: 'approved',
+						to_audit: auditDoContent.value?.data?.to_audit,
+						audit_doc_id: auditId.value,
+						approval: res.data.approved,
+					}
 				}
 			},
 			auditDoContent.value.user_id
@@ -257,22 +261,23 @@ const postApproval = async (e: SubmitEvent) => {
 		// 실시간 못 받을 경우 알림 기록 저장
 		skapi.postRecord(
 			{
-				audit_doc_id: auditId.value,
-				approval: res.data.approved,
-				to_audit: auditDoContent.value?.data?.to_audit,
-				audit_type: "approval",
+				noti_id: res.record_id,
+				noti_type: 'audit',
+				send_date: new Date().getTime(),
 				send_user: user.user_id,
-				send_date: new Date().getTime()
+				audit_info: {
+					audit_type: 'approved',
+					to_audit: auditDoContent.value?.data?.to_audit,
+					audit_doc_id: auditId.value,
+					approval: res.data.approved,
+				}
 			},
 			{
-				// unique_id: `realtime_approval:${auditId}:${senderUser.value.user_id}`,
 				readonly: true,
 				table: {
 					name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
 					access_group: "authorized",
 				},
-				// reference: `realtime:${senderUser.value.user_id}`,
-				// tags: [senderUser.value.user_id],
 			}
 		)
 		.then((res) => {

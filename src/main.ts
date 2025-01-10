@@ -147,7 +147,7 @@ export let RealtimeCallback = async(rt: any) => {
 				handleAuditRequest(rt.message.audit_approval);
 			}	
 
-			unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.audit_doc_id)).length;
+			unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.noti_id)).length;
 		}
 
 		// console.log(notification_count.dataset.count)

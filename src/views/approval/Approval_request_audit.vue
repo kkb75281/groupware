@@ -194,13 +194,17 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
         .postRealtime(
             {
                 audit_request: {
-					audit_doc_id: audit_id,
-                    audit_request_id: res.record_id,
-                    send_auditors,
-					audit_type: "request",
-					to_audit: to_audit,
+					noti_id: res.record_id,
+					noti_type: 'audit',
+					send_date: new Date().getTime(),
 					send_user: user.user_id,
-					send_date: new Date().getTime()
+					audit_info: {
+						audit_type: 'request',
+						to_audit: to_audit,
+						audit_doc_id: audit_id,
+						audit_request_id: res.record_id,
+						send_auditors: send_auditors,
+					}
                 },
             },
             auditor_id
@@ -213,23 +217,24 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
 	skapi
 		.postRecord(
 			{	
-				audit_doc_id: audit_id,
-				audit_request_id: res.record_id,
-				send_auditors,
-				to_audit,
-				audit_type: "request",
+				noti_id: res.record_id,
+				noti_type: 'audit',
+				send_date: new Date().getTime(),
 				send_user: user.user_id,
-				send_date: new Date().getTime()
+				audit_info: {
+					audit_type: 'request',
+					to_audit: to_audit,
+					audit_doc_id: audit_id,
+					audit_request_id: res.record_id,
+					send_auditors: send_auditors,
+				}
 			},
 			{
-				// unique_id: `realtime_request:${audit_id}:${auditor_id}`,
 				readonly: true,
 				table: {
 					name: `realtime:${auditor_id.replaceAll('-', '_')}`,
 					access_group: "authorized",
 				},
-				// reference: `realtime:${auditor_id}`,
-				// tags: [auditor_id],
 			}
 		)
 		.then((res) => {
