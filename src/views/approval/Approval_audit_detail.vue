@@ -1,6 +1,6 @@
 <template lang="pug">
 .title
-    h1 결재
+    h1 결재 문서
 
 hr
 
@@ -19,7 +19,7 @@ hr
                             th 결재 사안
                             td.left.audit-title(v-if="auditDoContent.data?.to_audit") {{ auditDoContent.data.to_audit }}
                             th 기안자
-                            td.left.drafter() 이름
+                            td.left.drafter {{ senderUser?.name || '' }}
 
                         tr(style="height: 140px")
                             th 결재선
@@ -47,7 +47,7 @@ hr
         br
 
         .button-wrap
-            button.btn.bg-gray.btn-cancel(type="button" @click="$router.push('/approval/audit-list')") 이전
+            button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
 
 //- 결재 모달
 #modal.modal(v-if="isModalOpen")
@@ -78,12 +78,37 @@ import { user } from '@/user';
 
 const router = useRouter();
 const route = useRoute();
-const auditId = route.params.auditId;
+const auditId = ref('');
 
 const disabled = ref(true);
 const auditDoContent = ref([]);
 const auditUserList = ref([]);
 const isModalOpen = ref(false);
+const senderUser = ref({});
+
+watch(() => (route.params.auditId as string), async(nv, ov) => {
+	if(nv !== ov) {
+		auditId.value = nv;
+		await getAuditDetail();
+	}
+});
+
+watch(auditDoContent, () => {
+	console.log('!!!!!auditDoContent 변경:', auditDoContent.value.data.to_audit);
+	let userId = auditDoContent.value?.user_id;
+
+	if (userId) {
+		getUserInfo(userId).then((res) => {
+			senderUser.value = res.list[0] || {};
+		})
+		.catch((err) => {
+			console.error('Failed to fetch user info:', err);
+			senderUser.value = {};
+		});
+	} else {
+		senderUser.value = {};
+	}
+})
 
 let isPosting = false;
 
@@ -107,7 +132,7 @@ const approvedAudit = async () => {
                 name: 'audit_approval',
                 access_group: 'authorized'
             },
-            reference: auditId
+            reference: auditId.value
         })
 
         return res.list;
@@ -131,11 +156,12 @@ const getUserInfo = async (userId: string) => {
 const getAuditDetail = async () => {
     try {
         const auditDoc = (await skapi.getRecords({
-            record_id: auditId
+            record_id: auditId.value
         })).list[0];
 
         if (auditDoc) {
             auditDoContent.value = auditDoc;
+			console.log('auditDoContent : ', auditDoContent.value);
         }
         
         const approvals = await approvedAudit();
@@ -146,20 +172,20 @@ const getAuditDetail = async () => {
         newTags.forEach((auditor) => {
             let oa_has_audited_str = null;
 
-            approvals.forEach((approval) => {
-                if (approval.user_id === auditor) {
-                    oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
+			approvals.forEach((approval) => {
+				if (approval.user_id === auditor) {
+					oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
 
-                    const result = {
-                        user_id: auditor,
-                        approved: approval.data.approved,
-                        approved_str: oa_has_audited_str
-                    }
+					const result = {
+						user_id: auditor,
+						approved: approval.data.approved,
+						approved_str: oa_has_audited_str
+					}
 
-                    approvalUserList.push(result);
-                    return;
-                }
-            })
+					approvalUserList.push(result);
+					return;
+				}
+			})
 
             if (!oa_has_audited_str) {
                 const result = {
@@ -195,43 +221,79 @@ const postApproval = async (e: SubmitEvent) => {
     e.preventDefault();
 
     try {
-        if (!auditId) return;
+        if (!auditId.value) return;
 
         const userId = user.user_id;
 
         // 결재 하는 요청
-        await skapi.postRecord(e, {
+        const res = await skapi.postRecord(e, {
             table: {
                 name: 'audit_approval',
                 access_group: 'authorized'
             },
-            reference: auditId,
+            reference: auditId.value,
             tags: [(userId as string).replaceAll('-', '_')], 
-        }).then(res => {
-            console.log('결재 === postRecord === res : ', res);
+        });
 
-            return skapi.postRealtime(
-                {
-                    audit_approval: {
-                        audit_doc_id: auditId,
-                        approval: res.data.approved
-                    }
-                },
-                auditDoContent.value.user_id
-            ).then(res => {
-                console.log('결재 === postRealtime === res : ', res);
+		console.log('결재 === postRecord === res : ', res);
+		
+		// 실시간 알림 보내기
+		skapi.postRealtime(
+			{
+				audit_approval: {
+					noti_id: res.record_id,
+					noti_type: 'audit',
+					send_date: new Date().getTime(),
+					send_user: user.user_id,
+					audit_info: {
+						audit_type: 'approved',
+						to_audit: auditDoContent.value?.data?.to_audit,
+						audit_doc_id: auditId.value,
+						approval: res.data.approved,
+					}
+				}
+			},
+			auditDoContent.value.user_id
+		).then(res => {
+			console.log('결재알림 === postRealtime === res : ', res);
+		});
 
-                window.alert('결재가 완료되었습니다.');
-                closeModal();
-                getAuditDetail();
-            });
-        })
+		// 실시간 못 받을 경우 알림 기록 저장
+		skapi.postRecord(
+			{
+				noti_id: res.record_id,
+				noti_type: 'audit',
+				send_date: new Date().getTime(),
+				send_user: user.user_id,
+				audit_info: {
+					audit_type: 'approved',
+					to_audit: auditDoContent.value?.data?.to_audit,
+					audit_doc_id: auditId.value,
+					approval: res.data.approved,
+				}
+			},
+			{
+				readonly: true,
+				table: {
+					name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+					access_group: "authorized",
+				},
+			}
+		)
+		.then((res) => {
+            console.log("결재알림기록 === postRecord === res : ", res);
+        });
+
+		window.alert('결재가 완료되었습니다.');
+		closeModal();
+		getAuditDetail();
     } catch (error) {
         console.error(error);
     }
 }
 
 onMounted(() => {
+	auditId.value = (route.params.auditId as string);
     getAuditDetail();
 });
 

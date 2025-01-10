@@ -5,7 +5,7 @@ header#header
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
 
-	button.btn-noti(type="button" :data-count="notiCount" ref="btnNoti" @click="openNotification")
+	button.btn-noti(type="button" :data-count="unreadCount" ref="btnNoti" @click="openNotification")
 		.icon.icon-bell
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
@@ -25,16 +25,23 @@ header#header
 	.popup-header
 		h3.title 알림 목록
 
-	template(v-if="newNoti")
+	template(v-if="realtimes.length > 0")
 		.popup-main
 			ul
-				li(v-for="audit in auditList" :key="audit" @click.stop="readNoti(e, audit)")
-					//- template(v-if="audit?.approved == '대기중'" )
-					router-link.router(to="/approval/audit-list" @click="closePopup" :class="{'read' : readList.includes(audit.record_id)}")
-						h4.noti-type {{ '[' + audit.audit_type + ']'}}
-						h5.noti-title {{ audit.data.to_audit }}
-						p.noti-sender {{ audit.user_info?.name }}
-						//- p.upload-time {{ audit.uploaded }}
+				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
+					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.noti_id)}")
+						template(v-if="rt.audit_info.audit_type === 'request'")
+							h4.noti-type [결재 요청]
+							h5.noti-title {{ rt.audit_info.to_audit }}
+							p.noti-sender {{ rt.send_name }}
+							p.upload-time {{ formatTimeAgo(rt.send_date) }}
+
+						template(v-else)
+							h4.noti-type [알람]
+							h5.noti-title 
+								template(v-if="rt.audit_info.approval === 'approve'") {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 승인하였습니다.' }}
+								template(v-else) {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 반려하였습니다.' }}
+							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 	template(v-else)
 		.popup-main.no-noti
@@ -98,28 +105,50 @@ header#header
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onUnmounted, onMounted, ref, nextTick, watch, computed } from 'vue';
+import { onUnmounted, onMounted, ref, nextTick, watch, reactive } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { notifications, auditList, readList, goToAuditDetail, isCalculating } from '@/notifications'
+// import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList, getAuditList, getSendAuditList } from '@/notifications'
+import { realtimes, readList, unreadCount, getReadList, goToAuditDetail, readAudit, createReadListRecord } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
 
-let notiCount = computed(() => {
-	if (isCalculating.value) return 0;
+// onMounted(async() => {
+// 	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.audit_doc_id)).length;
+// })
 
-	return auditList.value.length - readList.value.length;
-});
-let newNoti = ref(false);
+// let newNoti = ref(false);
 let isNotiOpen = ref(false);
 let btnNoti = ref(null);
 let isProfileOpen = ref(false);
 let btnProfile = ref(null);
 
+function formatTimeAgo(timestamp) {
+	const now = Date.now(); // 현재 시간 (밀리초)
+	const difference = now - timestamp; // 시간 차이 (밀리초)
+	
+	const seconds = Math.floor(difference / 1000); // 초 단위로 변환
+	const minutes = Math.floor(seconds / 60); // 분 단위로 변환
+	const hours = Math.floor(minutes / 60); // 시간 단위로 변환
+	const days = Math.floor(hours / 24); // 일 단위로 변환
+
+	if (seconds < 60) {
+		return `${seconds}초 전`;
+	} else if (minutes < 60) {
+		return `${minutes}분 전`;
+	} else if (hours < 24) {
+		return `${hours}시간 전`;
+	} else {
+		return `${days}일 전`;
+	}
+}
+
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
+	console.log(realtimes.value)
+	console.log(readList.value)
 };
 
 let closeNotification = (event) => {
@@ -167,13 +196,31 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
-let readNoti = (e, audit) => {
-	if (!readList.value.includes(audit.record_id)) {
-        readList.value.push(audit.record_id);
+let readNoti = async(e, rt) => {
+	// 기존 readAudit 초기화
+    for (let key in readAudit.value) {
+        delete readAudit.value[key];
     }
 
-	window.localStorage.setItem('read_noti_list', JSON.stringify(readList.value));
-	goToAuditDetail(e, audit.record_id, router);
+	// 현재 읽은 알람 저장
+	for (let key in rt) {
+		readAudit.value[key] = rt[key];
+	}
+
+	if(rt.audit_info.audit_type === 'request') {
+		goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
+	} else {
+		router.push({ name: 'request-list' });
+	}
+
+	// 읽은 알람 리스트를 업데이트
+	// await getReadList(); // 기존 리스트 로드
+	if (!readList.value.includes(rt.audit_info.audit_doc_id)) {
+		await skapi.deleteRecords({
+			unique_id: '[notification_read_list]' + user.user_id
+        });
+		createReadListRecord(true); // 새로 읽은 알람 추가
+	}
 }
 
 let logout = () => {
@@ -185,32 +232,11 @@ let logout = () => {
     });
 }
 
-onMounted(() => {
-	const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
-
-	if (notiCount) {
-		let notification_count = document.querySelector('button.btn-noti');
-
-		notification_count.dataset.count = notiCount;
-		
-		if (notiCount > 0) {
-			newNoti.value = true;
-		}
-	}
-})
-
 watch(() => route.path, (newPath, oldPath) => {
     if(newPath) {
         if (isProfileOpen.value) {
             isProfileOpen.value = !isProfileOpen.value;
         }
-
-		const notiCount = window.localStorage.getItem(`notification_count:${user.user_id}`);
-
-		if (notiCount) {
-			let notification_count = document.querySelector('button.btn-noti');
-			notification_count.dataset.count = notification_count.dataset.count;
-		}
     }
 })
 </script>
@@ -391,6 +417,7 @@ watch(() => route.path, (newPath, oldPath) => {
 		.router {
 			display: flex;
 			align-items: center;
+			// justify-content: space-between;
 			padding: 0.8rem;
 			font-size: 0.9rem;
 			font-weight: 700;
@@ -402,6 +429,12 @@ watch(() => route.path, (newPath, oldPath) => {
 			&.read {
 				opacity: 0.5;
 			}
+
+			// .right {
+			// 	display: flex;
+			// 	align-items: center;
+			// 	gap: 10px;
+			// }
 		}
 	}
 
@@ -453,6 +486,10 @@ watch(() => route.path, (newPath, oldPath) => {
 						}
 					}
 				}
+
+				> * {
+					white-space: nowrap;
+				}
 			}
 
 			.noti-type {
@@ -463,7 +500,6 @@ watch(() => route.path, (newPath, oldPath) => {
 			.noti-title {
 				font-size: 16px;
 				font-weight: 500;
-				white-space: nowrap;
 				overflow: hidden;
 				text-overflow: ellipsis;
 				// width: 330px;
@@ -472,6 +508,8 @@ watch(() => route.path, (newPath, oldPath) => {
 			.noti-sender {
 				font-size: 0.8rem;
 				font-weight: 500;
+				overflow: hidden;
+				text-overflow: ellipsis;
 				color: var(--gray-color-600);
 			}
 
