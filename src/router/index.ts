@@ -167,6 +167,11 @@ const router = createRouter({
               component: () => import('@/views/admin/Admin_list_commute.vue'),  //Admin_list_commute,
             },
             {
+              path: '/commute-detail/:userId',
+              name: 'commute-detail',
+              component: () => import('@/views/admin/Admin_commute_detail.vue'),  //Admin_commute_detail,
+            },
+            {
               path: 'edit-worktime',
               name: 'edit-worktime',
               component: () => import('@/views/admin/Admin_edit_worktime.vue'), // Admin_edit_worktime,

@@ -349,6 +349,22 @@ const registerEmp = async (e) => {
 
         await getInvitations(true); // refresh invitation list
 
+        // 직원별 출퇴근 기록을 위한 저장소 레코드 생성하기
+        const res = await skapi.postRecord(null, {
+            table: {
+                name: 'commute_records',
+                access_group: 98
+            },
+            unique_id: `emp_id:${user_id_safe}`,
+        });
+
+        // console.log('AAAAAA === registerEmp === res : ', res);
+
+        await grantPrivateRecordAccess({
+            record_id: res.record_id,
+            user_id: user_id
+        });
+
         window.alert('직원 등록이 완료되었습니다.');
 
         router.push({

@@ -220,8 +220,10 @@ const saveCommuteRecord = async (record, isUpdate = false) => {
 
   try {
     const config = {
-      table: 'commute_records',
-      access_group: 'private',
+      table: {
+        name: 'commute_records',
+        access_group: 98,
+      },
       index: {
         name: 'user_id',
         value: makeSafe(user.user_id),
