@@ -5,7 +5,7 @@ import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
-import { notifications, getAuditList, getRealtime } from './notifications';
+import { notifications, getAuditList, realtimes, getUserInfo, unreadCount, readList } from './notifications';
 import { employeeDict, getEmpDivisionPosition } from './employee';
 const app = createApp(App);
 
@@ -108,40 +108,52 @@ export let RealtimeCallback = async(rt: any) => {
 	}
 
 	if (rt.type === 'private') {
-		let notification_count: any = document.querySelector('button.btn-noti');
+		// let notification_count: any = document.querySelector('button.btn-noti');
 
 		console.log('sender', rt.sender, user.user_id);
 		console.log('msgg', rt.message);
 
 		if (rt.sender !== user.user_id) { // 다른 사람이 나에게 보낸 메시지
 			// 개인 메시지
-			if (rt.message?.audit_request) {
-				// 결재 요청이 들어옴
-				let audit_request = rt.message.audit_request;
-				console.log('audit_request:', audit_request);
 
-				notifications.audits.push({ fromUserId: rt.sender, msg: audit_request }); // 결재 요청 알림
-				notification_count.dataset.count = (parseInt(notification_count.dataset.count) + 1).toString();
+			const handleAuditRequest = async (audit_msg: any) => {
+				try {
+					// senderInfo 가져오기
+					const senderInfo = await getUserInfo(audit_msg.send_user);
+			
+					console.log({ senderInfo });
+			
+					// audit_request에 이름 추가
+					const enrichedAuditRequest = {
+						...audit_msg,
+						send_name: senderInfo.list[0].name, // 사용자 이름 추가
+					};
+			
+					// 리스트에 추가
+					realtimes.value.push(enrichedAuditRequest);
+					realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
+					// realtimes.value = [...realtimes.value, enrichedAuditRequest];
+					console.log('Updated realtimes:', realtimes.value);
+				} catch (error) {
+					console.error('Failed to process audit request:', error);
+				}
+			};
+			
+			// 결재 요청이 들어옴
+			if (rt.message?.audit_request) {
+				handleAuditRequest(rt.message.audit_request);
 			}
 
+			// 결재 완료 알림
 			if (rt.message?.audit_approval) {
-				// 결재 완료 알림
-				let audit_approval = rt.message.audit_approval;
-				console.log('audit_approval:', audit_approval);
-				
-				notifications.audits.push({ fromUserId: rt.sender, msg: audit_approval }); // 결재 완료 알림
-				notification_count.dataset.count = (parseInt(notification_count.dataset.count) + 1).toString();
+				handleAuditRequest(rt.message.audit_approval);
 			}	
+
+			unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.audit_doc_id)).length;
 		}
 
-		console.log(notification_count.dataset.count)
-		window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
-
-		nextTick(() => {
-			getRealtime();
-			// getAuditList();
-			// getSendAuditList();
-		})
+		// console.log(notification_count.dataset.count)
+		// window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
 	}
 };
 
@@ -203,26 +215,27 @@ export let loginCheck = async (profile: any) => {
 			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
 		}
 
-		if (!misc.notification) {
-			skapi.postRecord(null, {
-				// 결재 창구 만들기
-				unique_id: `realtime:${user.user_id}`,
-				table: {
-					name: 'realtime',
-					access_group: 'authorized',
-				},
-			})
-			.catch((err) => console.error({ err }));
+		// if (!misc.notification) {
+		// 	skapi.postRecord(null, {
+		// 		// 결재 창구 만들기
+		// 		unique_id: `realtime:${user.user_id}`,
+		// 		table: {
+		// 			name: 'realtime',
+		// 			access_group: 'authorized',
+		// 		},
+		// 	})
+		// 	.catch((err) => console.error({ err }));
 	
-			misc.notification = true; // 로그인 후 한번만 실행
-			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
-		}
+		// 	misc.notification = true; // 로그인 후 한번만 실행
+		// 	skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
+		// }
 
 		if (!isConnected) {
 			skapi.connectRealtime(RealtimeCallback);
 		}
 
 		// skapi.connectRealtime(RealtimeCallback);
+		// getRealtime();
 
 		iwaslogged.value = true;
 	} else {
