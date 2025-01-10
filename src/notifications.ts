@@ -11,23 +11,23 @@ export const unreadCount = ref(0);
 export const realtimes = ref([]);
 export const readList = ref([]);
 export const readAudit: Ref<{
-	audit_type: string; // 'request' | 'approval'
-	to_audit: string;
-	audit_doc_id: string;
-	send_date: number;
-	send_user: string;
-	send_name: string;
-	audit_request_id?: string; // audit_type이 request일 경우 존재(결재 요청 record_id)
-	send_auditors?: []; // audit_type이 request일 경우 존재(결재자 목록)
-	approval?: string; // audit_type이 approval일 경우 존재(결재 승인/반려 여부)
-
+	noti_id: string; // 알람 ID
+	noti_type: string; // 'audit' | 'message' | 'notice'
+	send_date: number; // 결재 알람 보낸 시간
+	send_user: string; // 결재 알람 보낸 사람
+	audit_info?: {
+		audit_type: string;
+		to_audit: string;
+		audit_doc_id: string;
+		audit_request_id?: string;
+		send_auditors?: [];
+		approval?: string;
+	}
 }> = ref({
-	audit_type: '',
-	to_audit: '',
-	audit_doc_id: '',
-	send_date: 0,
+	noti_id: '',
+	noti_type: '',
+	send_date: 0, // 결재 알람 보낸 시간
 	send_user: '',
-	send_name: '',
 });
 
 export const auditList = ref([]);
@@ -104,9 +104,9 @@ export const getRealtime = (refresh = false) => {
 export const createReadListRecord = (read = false) => {
 	let updateData = readList.value || [];
 
-	if(read && !updateData.includes(readAudit.value.audit_doc_id)) {
-		updateData.push(readAudit.value.audit_doc_id);	// 읽지 않은 알람일 경우 추가
-		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.audit_doc_id)).length;
+	if(read && !updateData.includes(readAudit.value.noti_id)) {
+		updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
+		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
 	}
 
 	return skapi.postRecord(
@@ -284,5 +284,5 @@ watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 }, { immediate: true });
 
 watch([realtimes, readList], () => {
-	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.audit_doc_id)).length;
+	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.noti_id)).length;
 }, { immediate: true, deep: true });
