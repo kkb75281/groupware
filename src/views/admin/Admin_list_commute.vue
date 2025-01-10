@@ -18,10 +18,12 @@ hr
     .tb-overflow
         template(v-if="loading")
             Loading#loading
-        table.table#divisions_list
+        table.table#tb-record-empCommute
             colgroup
                 col(style="width: 3rem")
                 col(style="width: 10%")
+                col(style="width: 10%")
+                col(style="width: 20%")
                 col
                 col
             thead
@@ -40,7 +42,7 @@ hr
                     tr
                         td(colspan="5") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee" :key="emp.user_id")
+                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(e, emp.user_id)")
                         td.list-num {{ index + 1 }}
                         td.user-name
                                 span {{ emp.name }}
@@ -94,11 +96,9 @@ const endTimeMax = ref("");
 
 empDivision.value = divisions.value;
 
-console.log('=======================================');
-console.log('=== divisions : ', divisions);
-console.log('=== empDivision.value : ', empDivision.value);
-
-
+// console.log('=======================================');
+// console.log('=== divisions : ', divisions);
+// console.log('=== empDivision.value : ', empDivision.value);
 
 const getEmpList = async () => {
     const newEmpList = [];
@@ -107,6 +107,30 @@ const getEmpList = async () => {
         const empList = await skapi.getUsers();
 
         empList.list.pop(); // 최고 마스터 제거
+
+        const workTime = await skapi.getRecords({
+            table:  {
+                name: 'dvs_workTime_setting',
+                access_group: 1
+            },
+        });
+
+        function getTimestampFromTimeString(timeString) {
+            // 현재 날짜 가져오기
+            const today = new Date();
+
+            // 입력된 시간 문자열 분리 (시, 분, 초)
+            const [hours, minutes, seconds] = timeString.split(':').map(Number);
+
+            // 오늘 날짜에 입력된 시간 설정
+            today.setHours(hours, minutes, seconds, 0);
+
+            // 타임스탬프 반환 (밀리초 기준)
+            return today.getTime();
+        }
+
+        const hrStartTime = workTime.list.find(wt => (wt.data?.division_name === '개발팀'))?.data.division_startTime.min;
+        // console.log('=== HR Start Time: ', hrStartTime);
 
         const empPromises = empList.list.map(async (emp) => {
             const user_id_safe = makeSafe(emp.user_id);
@@ -118,15 +142,17 @@ const getEmpList = async () => {
                 unique_id: "[emp_position_current]" + user_id_safe,
             });
 
-            // 1. 특정유저의 출퇴근 기록중 오늘의 기록을 가져온다.
-            // 2. 가져온 데이터를 기존 데이터에 추가한다.
             const query = {
-                table: 'commute_records',
-                access_group: 'public',
+                table: {
+                    name: 'commute_record',
+                    access_group: 98,
+                },
                 index: {
-                    name: 'user_id',
-                    value: makeSafe(user.user_id),
-                }
+                    name: '$uploaded',
+                    value: getTimestampFromTimeString(hrStartTime),
+                    condition: '>='
+                },
+                reference: "emp_id:" + makeSafe(emp.user_id),
             };
 
             const fetchOptions = {
@@ -134,18 +160,62 @@ const getEmpList = async () => {
                 ascending: false
             };
 
+            // try {
+            //     await skapi.getRecords(query, fetchOptions)
+            // } catch(err) {
+            //     if(err.code === 'NOT_EXISTS') {
+            //         // 직원별 출퇴근 기록을 위한 저장소 레코드 생성하기
+            //         const res = await skapi.postRecord(null, {
+            //             table: {
+            //                 name: 'commute_records',
+            //                 access_group: 98
+            //             },
+            //             unique_id: `emp_id:${user_id_safe}`,
+            //         });
+
+            //         console.log('AAAAAA === registerEmp === res : ', res);
+
+            //         const grantPrivateRecordAccess = (data) => {
+            //             if (!data) return;
+
+            //             return skapi.grantPrivateRecordAccess(data);
+            //         };  
+
+            //         await grantPrivateRecordAccess({
+            //             record_id: res.record_id,
+            //             user_id: emp.user_id
+            //         });
+            //     }
+            // }
             const commuteRecords = await skapi.getRecords(query, fetchOptions)
             const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
-
-            console.log('=== commuteRecords : ', commuteRecords);
-            console.log('=== commuteList : ', commuteList);
             
+            // if (commuteList && commuteList.length > 0) {
+            //     if(commuteList.length > 1) {
+            //         const lastCommute = commuteList[commuteList.length - 1];
+            //         emp.startWork = lastCommute.data.startTime;
+            //         emp.endWork = lastCommute.data.endTime;
+            //     } else {
+            //         const lastCommute = commuteList[0];
+            //         console.log('=== lastCommute : ', lastCommute.data.startTime);
+            //         emp.startWork = lastCommute.data?.startTime;
+            //         emp.endWork = lastCommute.data?.endTime;
+            //     }
+            // } else {
+            //     emp.startWork = '-';
+            //     emp.endWork = '-';
+            // }
 
             if (commuteList && commuteList.length > 0) {
-                const lastCommute = commuteList[0];
-                
-                emp.startWork = lastCommute.startTime;
-                emp.endWork = lastCommute.endTime;
+                if (commuteList.length > 1) {
+                    const lastCommute = commuteList[commuteList.length - 1];
+                    emp.startWork = lastCommute?.data?.startTime || '-';
+                    emp.endWork = lastCommute?.data?.endTime || '-';
+                } else {
+                    const lastCommute = commuteList[0];
+                    emp.startWork = lastCommute?.data?.startTime || '-';
+                    emp.endWork = lastCommute?.data?.endTime || '-';
+                }
             } else {
                 emp.startWork = '-';
                 emp.endWork = '-';
@@ -154,8 +224,6 @@ const getEmpList = async () => {
             if (res && res.list.length > 0) {
                 const empInfo = res.list[0].index.name;
                 const empSplit = empInfo.split('.');
-
-
 
                 return {
                     ...emp,
@@ -169,7 +237,6 @@ const getEmpList = async () => {
         });
 
         const results = await Promise.all(empPromises);
-        
         newEmpList.push(...results);
 
         return newEmpList;
@@ -190,27 +257,20 @@ const getDivisionName = computed(() => {
     }
 });
 
+// 각 직원 출퇴근 기록 상세 페이지로 이동
+const goToEmpCommute = (e, userId) => {
+    router.push({ name: 'commute-detail', params: { userId } });        
+};
+
 onMounted(async () => {
     await getDivisionData();  // 부서 데이터를 먼저 완전히 로드
     const res = await getEmpList(); // 그 다음 직원 목록 로드
-
-    console.log('=== getEmpList : res : ', res);
 
     employee.value = res;
 });
 </script>
 
 <style scoped lang="less">
-#divisions_list > a > * {
-    vertical-align: middle;
-}
-
-.division-logo {
-    width: 2rem;
-    height: 2rem;
-    object-fit: contain;
-}
-
 .table-wrap {
     position: relative;
     margin-top: 3rem;
@@ -223,50 +283,13 @@ onMounted(async () => {
     }
 }
 
-.go-detail {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 16px;
-
-    span {
-        white-space: nowrap;
-    }
-}
-
-.img-wrap {
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 1px solid var(--gray-color-300);
-    border-radius: 50%;
-
-    img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-    }
-}
-
-.modal {
-    .item-wrap {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-top: 16px;
-
-        .label {
-            flex: none;
+.table {
+    tbody {
+        tr {
+            &:hover {
+                cursor: pointer;
+            }
         }
-    }
-
-    .input-wrap {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 0;
-        flex: 1;
     }
 }
 </style>

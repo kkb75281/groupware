@@ -3,19 +3,11 @@ h1 출퇴근 시간 설정
 
 hr
 
-.master-set-wrap(style="display: flex; align-items: center; gap: 4px;")
-    .input-wrap(style="display: flex; align-items: center; gap: 4px;")
-        input(type="time" v-model="startTimeMin")
-        | ~
-        input(type="time" v-model="startTimeMax")
-    button.btn.bg-gray.btn-save(@click="saveWorkTime") 저장
-    button.btn.bg-gray.btn-cancel(@click="cancelEdit") 취소
-
 .table-wrap
     .tb-head-wrap
-        .input-wrap.search
-            input(type="text" placeholder="검색어를 입력하세요")
-            button.btn-search
+        //- .input-wrap.search
+        //-     input(type="text" placeholder="검색어를 입력하세요")
+        //-     button.btn-search
 
         .tb-toolbar
             .btn-wrap
@@ -26,7 +18,7 @@ hr
     .tb-overflow
         template(v-if="loading")
             Loading#loading
-        table.table#divisions_list
+        table.table#tb-edit-workTime
             colgroup
                 col(style="width: 3rem")
                 col(style="width: 10%")
@@ -36,14 +28,14 @@ hr
             thead
                 tr
                     th(scope="col") NO
-                    th.left(scope="col") 부서명
+                    th(scope="col") 부서명
                     th(scope="col") 출근시간
                     th(scope="col") 퇴근시간
                     th(scope="col") 수정
 
             tbody
                 template(v-if="loading")
-                    tr(v-for="i in 4")
+                    tr(v-for="i in 5")
                 template(v-else-if="Object.keys(divisions).length === 0")
                     tr
                         td(colspan="5") 데이터가 없습니다.
@@ -181,7 +173,7 @@ const saveWorkTime = async () => {
         const config = {
             table: {
                 name: 'dvs_workTime_setting',
-                access_group: 99
+                access_group: 1
             },
             unique_id: uniqueId
         };
@@ -217,7 +209,7 @@ const getWorkTime = async () => {
         const query = {
             table:  {
                 name: 'dvs_workTime_setting',
-                access_group: 99
+                access_group: 1
             }
         };
         
@@ -320,10 +312,6 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="less">
-#divisions_list > a > * {
-    vertical-align: middle;
-}
-
 .division-logo {
     width: 2rem;
     height: 2rem;
@@ -380,6 +368,8 @@ onMounted(async () => {
 
 .input-wrap {
     input {
+        text-align: center;
+
         &:hover,
         &:focus {
             cursor: default;
