@@ -14,52 +14,20 @@ hr
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-clock")
 		| {{ timeRecords.date }}
 
-.itembox
-	span.time 출근 : {{ timeRecords.startTime }}
-	button.btn.btn-work(@click="startWork") 출근
+.itembox-wrap
+	.itembox
+		span.time 출근 : #[span.value {{ timeRecords.startTime }}]
+		button.btn.btn-work(@click="startWork") 출근
 
-.itembox
-	span.time 퇴근 : {{ timeRecords.endTime }}
-	button.btn.btn-work(@click="endWork") 퇴근
+	.itembox
+		span.time 퇴근 : #[span.value {{ timeRecords.endTime }}]
+		button.btn.btn-work(@click="endWork") 퇴근
 
 .itembox(style="margin-top: 3rem; padding: 0; border-radius: 0; box-shadow: none;")
 	.title-wrap
 		span.title(style="font-size: 1.125rem; font-weight: 700; display: inline-block;") 이전 출퇴근 기록
 		span.monthlyWorkTime 총 근무시간 : {{ monthlyWorkTime }}
 	.table-wrap
-		.tb-head-wrap
-				//form#searchForm(@submit.prevent="searchEmp")
-						.input-wrap
-								select(v-model="searchFor" :disabled="empListType !== '직원목록'")
-										option(value="name") 이름
-										option(value="division") 부서/직책
-										option(value="email") 이메일
-						.input-wrap.search(v-if="searchFor !== 'division'")
-								input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요" :disabled="empListType !== '직원목록'")
-								button.btn-search
-						template(v-else)
-								.input-wrap
-										select(name="searchDivision" v-model="searchValue" :disabled="empListType !== '직원목록'" @change="searchEmp")
-								.input-wrap.search(style="width: 176px;")
-										input(v-model="searchPositionValue" type="text" placeholder="직책을 입력하세요" :disabled="searchValue === '전체'")
-										button.btn-search
-
-				//.tb-toolbar
-						.btn-wrap
-								button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
-										svg(:class="{'rotate' : loading}")
-												use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-
-								template(v-if="user.access_group > 98")
-										template(v-if="empListType === '직원목록'")
-												button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김
-												button.btn.outline(@click="router.push('/admin/add-employee')") 등록
-										template(v-else-if="empListType === '초청여부'")
-												button.btn.outline(@click="router.push('/admin/add-employee')") 등록
-										template(v-else-if="empListType === '숨김여부'")
-												button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('unblock')") 숨김 해제
-												button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="employeeState('delete')") 삭제
-
 		.tb-overflow
 				template(v-if="loading")
 						Loading#loading
@@ -737,21 +705,34 @@ onMounted(async () => {
 	}
 }
 
+.itembox-wrap {
+	display: flex;
+	gap: 0 24px;
+	flex-wrap: wrap;
+}
+
 .itembox {
   box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.15);
   border-radius: 16px;
   padding: 1.5rem;
   margin-top: 1.5rem;
   line-height: 1.2;
+  flex: 1;
 
   .time {
-    display: inline-block;
+	display: flex;
+	flex-wrap: wrap;
     width: 100%;
     font-size: 1.25rem;
     font-weight: 600;
     color: #2c3e50;
     border-bottom: 1px solid #ccc;
     padding-bottom: 1.5rem;
+
+	.value {
+		flex: 1;
+		margin-left: 8px;
+	}
   }
 
   .btn-work {
@@ -765,6 +746,7 @@ onMounted(async () => {
 		align-items: center;
 		gap: 0.5rem;
 		flex-wrap: wrap;
+		margin-bottom: 20px;
 	}
 }
 
@@ -778,6 +760,12 @@ onMounted(async () => {
 
 	.icon {
 		padding: 0;
+	}
+}
+
+@media (max-width: 768px) {
+	.itembox-wrap {
+		flex-direction: column;
 	}
 }
 </style>

@@ -146,13 +146,19 @@ export const getReadList = async() => {
 
 	let res = await getReadListRunning;
 
-	if (res.list.length && res.list[0].data && res.list[0].data.list) {
-		readList.value = JSON.parse(res.list[0].data.list);
-	} else {
-		// 레코드가 없으면 빈 배열 생성
-		readList.value = [];
+	// 레코드가 없으면 빈 배열 생성
+	if (!res.list.length) {
 		await createReadListRecord(); // 초기 빈 레코드 생성
 	}
+
+	if (res.list.length && res.list[0].data && res.list[0].data.list) {
+		readList.value = JSON.parse(res.list[0].data.list);
+	} 
+	// else {
+	// 	// 레코드가 없으면 빈 배열 생성
+	// 	readList.value = [];
+	// 	await createReadListRecord(); // 초기 빈 레코드 생성
+	// }
 
 	console.log('readList', readList.value);
 

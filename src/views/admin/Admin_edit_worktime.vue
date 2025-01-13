@@ -126,6 +126,8 @@ console.log('AA === divisionNameList : ', divisionNameList.value);
 
 // 근무시간 저장
 const saveWorkTime = async () => {
+    loading.value = true;
+
     try {
         console.log('== AA ===');
         console.log('== selectedDivision : ', selectedDivision.value);
@@ -197,6 +199,8 @@ const saveWorkTime = async () => {
         startTimeMin.value = '';
         endTimeMax.value = '';
         endTimeMin.value = '';
+
+        loading.value = false;
 
         closeModal();
         await getWorkTime();
