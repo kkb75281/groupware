@@ -92,6 +92,9 @@ hr
         //- input(type="checkbox" name="gender_public" checked hidden)
         input(type="checkbox" name="birthdate_public" checked hidden)
 
+        //- openid 로거 id 추가
+        input(name='openid_id' value='by_admin' hidden)
+
         .button-wrap
             button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 취소
             button.btn(type="submit") 등록
@@ -159,6 +162,7 @@ function makeSafe(str) {
 }
 
 const inviteUserMail = (e) => {
+    // inviteUser({openid_id: 'openid 로거 id'})
     return skapi.inviteUser(e, {confirmation_url: '/mailing'});
 }
 

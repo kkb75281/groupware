@@ -75,6 +75,20 @@ header#header
 	.popup-main
 		ul
 			li
+				router-link.router(to="/" @click="closePopup")
+					.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
+					p 대시보드
+
+			li
+				router-link.router(to="/approval" @click="closePopup")
+					.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
+					p 전자결재
+
+			li
 				router-link.router(to="/mypage" @click="closePopup")
 					.icon
 						svg

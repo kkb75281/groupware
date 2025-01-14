@@ -3,8 +3,8 @@ nav#navbar(ref="navbar")
     .navbar-wrap
         .logo
             router-link.img-logo(to="/") 로고 부분
-            button.btn-menu(@click="toggleNavbarFold")
-                //- .icon
+            //- button.btn-menu(@click="toggleNavbarFold")
+                .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
             button.btn-close(@click="toggleNavbarFold")
@@ -128,7 +128,7 @@ const menuList = computed(() => [
                 },
                 {
                     name: 'list-employee',
-                    to: '/admin/list-employee',
+                    to: '/list-employee',
                     text: '직원 관리',
                 },
                 {

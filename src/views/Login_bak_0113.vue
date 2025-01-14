@@ -1,9 +1,5 @@
 <template lang="pug">
 #login
-	//- 구글 로그인시 로딩
-	.overlay(v-if="loading")
-		Loading
-
 	router-link.logo(to="/")
 		//- img(src="@/assets/img/img_logo_symbol.png")
 		p 로고영역
@@ -36,13 +32,7 @@
 
 			router-link.btn-forgot(to="/forgot-password") 비밀번호 찾기
 
-		button.btn.btn-login(type="submit" style="margin-top: 2.5rem;") 로그인
-
-	button#el_bt_login.btn.outline.btn-login-google(type="button" @click="googleLogin" :disabled="loading")
-		template(v-if="loading")
-			span Google 로그인 중...
-		template(v-else)
-			| Google 로그인
+		button.btn.btn-login(type="submit") 로그인
 </template>
 
 <script setup>
@@ -50,7 +40,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { user } from '@/user';
 import { skapi, iwaslogged } from "@/main";
 import { ref, watch, onMounted } from 'vue';
-import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -67,7 +56,6 @@ let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위�
 let promiseRunning = ref(false);
 let error = ref(null);
 let enableAccount = ref(false);
-let loading = ref(false);
 
 // skapi.logout();
 
@@ -85,7 +73,6 @@ let setLocalStorage = (e) => {
 };
 
 let login = (e) => {
-	loading.value = true;
     promiseRunning.value = true;
 
     skapi.login(e).then((u) => {
@@ -108,7 +95,6 @@ let login = (e) => {
 		}
     }).finally(() => {
         promiseRunning.value = false;
-		loading.value = false;
     })
 };
 
@@ -120,56 +106,6 @@ let login = (e) => {
 // 	}
 // }, { immediate: true });
 
-// google login
-function googleLogin() {
-	loading.value = true;
-
-	const GOOGLE_CLIENT_ID = '685505600375-tiheatfjtp0if764ri7ilop3o4nuhql3.apps.googleusercontent.com';	// mina(broadwayinc.com) 계정으로 생성
-	const REDIRECT_URL = 'http://localhost:5173/login';
-
-	let rnd = Math.random().toString(36).substring(2); // Generate a random string
-	sessionStorage.setItem('oauth_state', rnd); // Store the state value in session storage
-
-	let url = 'https://accounts.google.com/o/oauth2/v2/auth';
-	url += '?client_id=' + GOOGLE_CLIENT_ID;
-	url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
-	url += '&response_type=token';
-	url += '&scope=' + encodeURIComponent('https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly');
-	url += '&prompt=select_account';
-	url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
-
-	window.location.href = url;
-}
-
-async function handleOAuthCallback() {
-	const params = new URLSearchParams(window.location.hash.substring(1));
-	const state = params.get('state');
-	const storedState = sessionStorage.getItem('oauth_state');
-
-	loading.value = true;
-
-	if (state !== storedState) {
-		console.error('Invalid state parameter');
-		return;
-	}
-
-	const OPENID_LOGGER_ID = 'by_admin';
-	// Handle the OAuth callback and extract the access token
-	const accessToken = params.get('access_token');
-	sessionStorage.setItem('accessToken', accessToken); // Store the state value in session storage
-
-	skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
-		// Redirect to root path after successful login
-		window.location.href = '/';
-	}).finally(() => {
-        loading.value = false;
-    });
-}
-
-// Call handleOAuthCallback on page load if there is a hash fragment
-if (window.location.hash) {
-	handleOAuthCallback();
-}
 </script>
 
 <style scoped lang="less">
@@ -237,21 +173,9 @@ if (window.location.hash) {
 	}
 
 	.btn {
-		margin-top: 1rem;
-		width: 100%;
+		margin-left: auto;
+		margin-top: 3rem;
+		min-width: 100px;
 	}
-}
-
-.overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100vw;
-	height: 100vh;
-	background: rgba(255, 255, 255, 0.6);
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	z-index: 9999;
 }
 </style>

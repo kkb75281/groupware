@@ -567,6 +567,8 @@ const fetchCommuteRecords = async (userId, options = {}) => {
       reference: "emp_id:" + makeSafe(user.user_id),
     };
 
+    console.log('Reference:', "emp_id:" + makeSafe(user.user_id));
+
     const fetchOptions = {
       // limit,
       ascending
