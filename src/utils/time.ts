@@ -1,5 +1,3 @@
-import { reactive, ref, computed } from 'vue';
-
 // 날짜 가져오기
 const getDate = () => {
   const date = new Date();
