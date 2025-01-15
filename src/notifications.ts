@@ -5,7 +5,8 @@ import { Reactive, reactive, type Ref, ref, watch } from "vue";
 
 export const notifications:Reactive<{messages: {fromUserId:string; msg: any }[], audits: {fromUserId:string; msg: any }[]}> = reactive({
     audits: [],
-    messages: []
+    messages: [],
+	emails: []
 });
 export const unreadCount = ref(0);
 export const realtimes = ref([]);
@@ -280,6 +281,20 @@ export const goToAuditDetail = (e, auditId, router) => {
     router.push({ name: 'audit-detail', params: { auditId } });
 };
 
+// 이메일 알림
+export const addEmailNotification = (emailData) => {
+    notifications.emails.unshift({
+        type: 'email',
+        title: emailData.subject,
+        from: emailData.from,
+        date: emailData.date,
+        dateTimeStamp: emailData.dateTimeStamp,
+        link: emailData.link
+    });
+
+    unreadCount.value++;
+}
+
 watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 	if (u && Object.keys(u).length) {
 		await Promise.all([
@@ -289,6 +304,19 @@ watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 	}
 }, { immediate: true });
 
-watch([realtimes, readList], () => {
-	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.noti_id)).length;
+// watch([realtimes, readList], () => {
+// 	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.noti_id)).length;
+// }, { immediate: true, deep: true });
+
+watch([realtimes, readList, notifications.emails], () => {
+    // 기존 알림 개수
+    const auditCount = realtimes.value.filter(
+        (audit) => !readList.value.includes(audit.noti_id)
+    ).length;
+    
+    // 읽지 않은 이메일 개수
+    const emailCount = notifications.emails.length;
+    
+    // 전체 읽지 않은 알림 개수
+    unreadCount.value = auditCount + emailCount;
 }, { immediate: true, deep: true });

@@ -550,6 +550,11 @@ const updateDesc = debounce(async (record) => {
 // 출퇴근 기록 조회
 const fetchCommuteRecords = async (userId, options = {}) => {
   try {
+    if (!commuteStorage) {
+      console.log('No commute records found');
+      return [];
+    }
+
     const {
       // limit = 50,   // 한 번에 가져올 기록 수
       ascending = true  // 정렬 순서 (false: 최신순)
@@ -579,7 +584,8 @@ const fetchCommuteRecords = async (userId, options = {}) => {
     return response;
   } catch (error) {
     console.error('Error fetching records:', error);
-    throw error;
+    return [];
+    // throw error;
   }
 };
 

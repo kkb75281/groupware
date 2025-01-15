@@ -162,6 +162,7 @@ function makeSafe(str) {
 }
 
 const inviteUserMail = (e) => {
+    console.log('=== inviteUserMail === e : ', e);
     // inviteUser({openid_id: 'openid 로거 id'})
     return skapi.inviteUser(e, {confirmation_url: '/mailing'});
 }
@@ -329,6 +330,7 @@ const registerEmp = async (e) => {
         // 직원을 초대한다.
         const added = await inviteUserMail(e);
         // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
+        console.log('=== registerEmp === added : ', added);
 
         if (!added) {
             console.log('직원 초대에 실패하였습니다.');

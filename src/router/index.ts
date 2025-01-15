@@ -184,12 +184,12 @@ const router = createRouter({
             // {
             //   path: 'list-employee',
             //   name: 'list-employee',
-            //   component: Admin_list_employee,
+            //   component: () => import('@/views/List_employee.vue'), // List_employee,
             // },
             // {
-            //   path: 'employee-data/:userId',
-            //   name: 'employee-data',
-            //   component: () => import('@/views/Employee_data.vue'),
+            //   path: '/detail-employee/:userId',
+            //   name: 'detail-employee',
+            //   component: () => import('@/views/List_detail_employee.vue'), // List_detail_employee,
             //   props: true,
             // },
           ],

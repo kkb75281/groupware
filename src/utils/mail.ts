@@ -1,14 +1,10 @@
 async function fetchGmailEmails(accessToken) {
-    // console.log('=== fetchGmailEmails === accessToken:', accessToken);
-
     try {
         const response = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?labelIds=UNREAD&maxResults=10', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
         });
-
-        // console.log('=== fetchGmailEmails === response:', response);
 
         const data = await response.json();
         const messages = data.messages || [];
@@ -23,7 +19,6 @@ async function fetchGmailEmails(accessToken) {
         detailedMails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         // 최신 5개 메일만 가져오기
-        // mails.value = detailedMails.splice(0, 5);
         return detailedMails.splice(0, 5);
     } catch (error) {
         sessionStorage.clear();
@@ -40,11 +35,13 @@ async function fetchMessageDetails(accessToken, messageId, threadId) {
         });
         const data = await response.json();
         const headers = data.payload.headers;
+        // console.log('=== fetchMessageDetails === headers : ', headers);
         const subjectHeader = headers.find(header => header.name === 'Subject');
         const fromHeader = headers.find(header => header.name === 'From');
         const dateHeader = headers.find(header => header.name === 'Date');
         const rawDate = dateHeader ? dateHeader.value : null;
         const snippet = data.snippet;
+        const hasAttachment = checkForAttachments(data.payload);
 
         // 보낸 사람 추출
         const fromValue = fromHeader ? fromHeader.value : 'Unknown Sender';
@@ -56,7 +53,9 @@ async function fetchMessageDetails(accessToken, messageId, threadId) {
             from: senderName,
             date: rawDate ? formatMailDate(rawDate) : 'Unknown Date',
             snippet: snippet,
-            link: `https://mail.google.com/mail/u/0/#inbox/${threadId}`
+            link: `https://mail.google.com/mail/u/0/#inbox/${threadId}`,
+            hasAttachment: hasAttachment,
+            dateTimeStamp: convertToTimestamp(rawDate)
         };
     } catch (error) {
         console.error('Error fetching message details:', error);
@@ -66,6 +65,7 @@ async function fetchMessageDetails(accessToken, messageId, threadId) {
             from: 'Error fetching sender',
             date: 'Error fetching date',
             snippet: 'Error fetching snippet',
+            hasAttachment: false,
             link: '#'
         };
     }
@@ -88,4 +88,24 @@ function formatMailDate(dateString) {
     return `${year}/${month}/${day}`;
 }
 
-export { fetchGmailEmails, fetchMessageDetails, extractSenderName, formatMailDate };
+// 첨부파일 확인
+function checkForAttachments(payload) {
+    // 첨부파일이 있는 경우 filename과 mimeType이 존재
+    if (payload.parts) {
+        return payload.parts.some(part => 
+            part.filename && part.filename.length > 0
+        );
+    }
+    return false;
+}
+
+// 날짜 문자열을 타임스탬프로 변환
+function convertToTimestamp(dateTimeString) {
+    // 날짜 객체 생성
+    const date = new Date(dateTimeString);
+    // 타임스탬프로 변환 (밀리초 단위)
+    const timestamp = date.getTime();
+    return timestamp;
+}
+
+export { fetchGmailEmails, fetchMessageDetails, extractSenderName, formatMailDate, checkForAttachments };

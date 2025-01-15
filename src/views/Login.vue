@@ -55,6 +55,12 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
+if(window.location.hash) {
+    console.log('OAuth 콜백 처리중...');
+} else if(iwaslogged.value) {
+    router.push('/');
+}
+
 if(iwaslogged.value) {
 	router.push('/'); // 이미 로그인 되어있으면 바로 메인페이지로 이동
 }
@@ -138,38 +144,54 @@ function googleLogin() {
 	url += '&prompt=select_account';
 	url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
 
+	console.log('=== googleLogin === url : ', url);
 	window.location.href = url;
 }
 
-async function handleOAuthCallback() {
-	const params = new URLSearchParams(window.location.hash.substring(1));
-	const state = params.get('state');
-	const storedState = sessionStorage.getItem('oauth_state');
+// fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+// 	headers: {
+// 		Authorization: 'Bearer ' + 'ya29.a0ARW5m757vUJzM6Cn2o2GeqrZ4TG4Po8DlbfOvCjk7lE77Kze9zs1jOruGfJGajX2CL6FHaJdDHwryfm_1Bnz5lyQ9xgwihXgvTl-08SzNedPQOlHsNM8c0l-v1ojwqWJydijXfHw5-xLT3VFlieDRbH5_PLF1WgRyXEaCgYKAW4SARESFQHGX2MikPRMahgxxsn7iyqxjBHsZg0170'
+// 	}
+// }).then(response => response.json()).then(data => {
+// 	console.log('=== googleLogin === data : ', data);
+// });
 
-	loading.value = true;
+async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을 받도록 수정
+    const params = new URLSearchParams(hashValue.substring(1));
+    const state = params.get('state');
+    const storedState = sessionStorage.getItem('oauth_state');
 
-	if (state !== storedState) {
-		console.error('Invalid state parameter');
-		return;
-	}
+    console.log('=== handleOAuthCallback === parms : ', params);
+    console.log('=== handleOAuthCallback === state : ', state);
+    console.log('=== handleOAuthCallback === storedState : ', storedState);
 
-	const OPENID_LOGGER_ID = 'by_admin';
-	// Handle the OAuth callback and extract the access token
-	const accessToken = params.get('access_token');
-	sessionStorage.setItem('accessToken', accessToken); // Store the state value in session storage
+    loading.value = true;
 
-	skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
-		// Redirect to root path after successful login
-		window.location.href = '/';
-	}).finally(() => {
+    if (state !== storedState || !state || !storedState) {
+        console.error('Invalid state parameter');
+        return;
+    }
+
+    const OPENID_LOGGER_ID = 'by_admin';
+    const accessToken = params.get('access_token');
+    sessionStorage.setItem('accessToken', accessToken);
+
+	console.log('=== handleOAuthCallback === accessToken : ', accessToken);
+
+    skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
+		console.log('=== handleOAuthCallback === u : ', u);
+        window.location.href = '/';
+    }).finally(() => {
         loading.value = false;
     });
 }
 
-// Call handleOAuthCallback on page load if there is a hash fragment
-if (window.location.hash) {
-	handleOAuthCallback();
-}
+onMounted(() => {
+    const currentHash = window.location.hash;
+    if (currentHash) {
+        handleOAuthCallback(currentHash);
+    }
+});
 </script>
 
 <style scoped lang="less">
