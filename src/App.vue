@@ -28,6 +28,11 @@ watch(loaded, async(nv) => {
     //     await router.push('/');
     // }
 
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+        console.log('OAuth 콜백 처리 중...');
+        return;
+    }
+
     if(!iwaslogged.value && Object.keys(user).length === 0) {
         await router.push('/login');
     }

@@ -830,7 +830,6 @@ let updateFileList = (e) => {
 
 const goToEditEmp = (e, userId) => {
     if(e.target.classList.contains('label-checkbox')) return;
-
     router.push({ name: 'detail-employee', params: { userId } });
 };
 
@@ -842,6 +841,8 @@ const updateScreenSize = () => {
 
 onMounted(() => {
   window.addEventListener('resize', updateScreenSize);
+
+  console.log('employee', employee.value);
 });
 
 onUnmounted(() => {
