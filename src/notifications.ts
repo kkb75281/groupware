@@ -31,6 +31,7 @@ export const readAudit: Ref<{
 	send_user: '',
 });
 
+export const mailList = ref([]);
 export const auditList = ref([]);
 export const sendAuditList = ref([]);
 
@@ -104,15 +105,18 @@ export const getRealtime = (refresh = false) => {
 
 export const createReadListRecord = (read = false) => {
 	let updateData = readList.value || [];
+	console.log('1updateData', updateData);
 
 	if(read && !updateData.includes(readAudit.value.noti_id)) {
 		updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
+		console.log('2updateData', updateData);
+		console.log(readAudit.value.noti_id)
 		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
 	}
 
 	return skapi.postRecord(
 		{
-			list: JSON.stringify(updateData)
+			list: updateData
 		},
 		{
 			unique_id: '[notification_read_list]' + user.user_id,
@@ -153,7 +157,7 @@ export const getReadList = async() => {
 	}
 
 	if (res.list.length && res.list[0].data && res.list[0].data.list) {
-		readList.value = JSON.parse(res.list[0].data.list);
+		readList.value = res.list[0].data.list;
 	} 
 	// else {
 	// 	// 레코드가 없으면 빈 배열 생성
@@ -283,19 +287,37 @@ export const goToAuditDetail = (e, auditId, router) => {
 
 // 이메일 알림
 export const addEmailNotification = (emailData) => {
-	console.log('=== addEmailNotification === emailData : ', emailData);
-    notifications.emails.unshift({
-        type: 'email',
-        title: emailData.subject,
-        from: emailData.from,
-        date: emailData.date,
-        dateTimeStamp: emailData.dateTimeStamp,
-        link: emailData.link
-    });
+	// console.log('=== addEmailNotification === emailData : ', emailData);
+	let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
+
+	if(checkOrigin) return;
+
+	// const addEmailData = {
+	// 	...emailData,
+	// 	noti_id: emailData.id,
+	// 	send_date: emailData.dateTimeStamp,
+	// 	audit_info: {
+	// 		audit_type: 'email',
+	// 	}
+	// };
+
+	realtimes.value.push(emailData);
+	realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
+
+	console.log('Updated realtimes:', realtimes.value);
+
+    // notifications.emails.unshift({
+    //     type: 'email',
+    //     title: emailData.subject,
+    //     from: emailData.from,
+    //     date: emailData.date,
+    //     dateTimeStamp: emailData.dateTimeStamp,
+    //     link: emailData.link
+    // });
 
     unreadCount.value++;
 
-	return notifications.emails;
+	// return notifications.emails;
 }
 
 watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
@@ -321,3 +343,35 @@ watch([realtimes, readList, notifications.emails], () => {
     // 전체 읽지 않은 알림 개수
     unreadCount.value = auditCount + emailCount;
 }, { immediate: true, deep: true });
+
+// 컴포넌트 마운트 시 이메일 업데이트 되는 거에 따른 mails.value 변경 감지
+watch(mailList, (newVal, oldVal) => {
+	console.log('=== watch === newVal : ', newVal);
+	console.log('=== watch === oldVal : ', oldVal);
+	console.log('========== 확인 !! ==========')
+	console.log(!oldVal);
+
+	if(!newVal) {
+		return;
+	}
+
+	if((newVal.length && !oldVal) || (newVal.length > oldVal.length)) {
+		// console.log('=== watch === new email');
+		console.log('dddd')
+		for(let i in newVal) {
+			addEmailNotification(newVal[i]);
+		}
+	} else {
+		console.log('wwww');
+	}
+
+	// if(newVal[0].dateTimeStamp > oldVal[0].dateTimeStamp) {
+	//     console.log('=== watch === new email');
+	//     // addEmailNotification(newVal[0]);
+	// 	for(let i in newVal) {
+	// 		addEmailNotification(newVal[i]);
+	// 	}
+	// } else {
+	//     console.log('=== watch === no new email');
+	// }
+});
