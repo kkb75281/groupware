@@ -28,6 +28,7 @@ header#header
 	template(v-if="realtimes.length > 0")
 		.popup-main
 			ul
+				//- 결재 알림
 				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
 					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.noti_id)}")
 						template(v-if="rt.audit_info.audit_type === 'request'")
@@ -42,6 +43,15 @@ header#header
 								template(v-if="rt.audit_info.approval === 'approve'") {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 승인하였습니다.' }}
 								template(v-else) {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 반려하였습니다.' }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
+
+				//- 이메일 알림
+				li(v-for="email in notifications.emails")
+					a.router(:href="email.link" target="_blank" @click="closePopup")
+						h4.noti-type [새 이메일]
+						h5.noti-title {{ email.title }}
+						.noti-info
+							p.noti-sender {{ email.from }}
+							span.upload-time {{ formatTimeAgo(email.dateTimeStamp) }}
 
 	template(v-else)
 		.popup-main.no-noti
@@ -75,6 +85,20 @@ header#header
 	.popup-main
 		ul
 			li
+				router-link.router(to="/" @click="closePopup")
+					.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
+					p 대시보드
+
+			li
+				router-link.router(to="/approval" @click="closePopup")
+					.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
+					p 전자결재
+
+			li
 				router-link.router(to="/mypage" @click="closePopup")
 					.icon
 						svg
@@ -105,12 +129,12 @@ header#header
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onUnmounted, onMounted, ref, nextTick, watch, reactive } from 'vue';
+import { onUnmounted, onMounted, ref, nextTick, watch, reactive, computed } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
 // import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList, getAuditList, getSendAuditList } from '@/notifications'
-import { realtimes, readList, unreadCount, getReadList, goToAuditDetail, readAudit, createReadListRecord } from '@/notifications'
+import { notifications, realtimes, readList, unreadCount, getReadList, goToAuditDetail, readAudit, createReadListRecord, addEmailNotification } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
@@ -147,8 +171,8 @@ function formatTimeAgo(timestamp) {
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
-	console.log(realtimes.value)
-	console.log(readList.value)
+	console.log('=== openNotification === realtimes.value : ', realtimes.value)
+	console.log('=== openNotification === readList.value : ', readList.value)
 };
 
 let closeNotification = (event) => {
@@ -180,6 +204,26 @@ let closePopup = () => {
 	isProfileOpen.value = false;
 };
 
+// const allNotifications = computed(() => {
+//     // 결재 알림 변환
+//     const auditNotifications = realtimes.value.map(rt => ({
+//         type: 'audit',
+//         data: rt,
+//         timestamp: rt.send_date
+//     }));
+
+//     // 이메일 알림 변환
+//     const emailNotifications = notifications.emails.map(email => ({
+//         type: 'email',
+//         data: email,
+//         timestamp: email.dateTimeStamp
+//     }));
+
+//     // 모든 알림 합치고 시간순 정렬
+//     return [...auditNotifications, ...emailNotifications]
+//         .sort((a, b) => b.timestamp - a.timestamp);
+// });
+
 onMounted(() => {
 	document.addEventListener('click', closeNotification);
 	document.addEventListener('click', closeProfile);
@@ -189,6 +233,10 @@ onMounted(() => {
 		closePopup();
 		next();
 	});
+
+	addEmailNotification(newEmail => {
+		console.log('=== addEmailNotification === newEmail : ', newEmail);
+	});
 });
 
 onUnmounted(() => {
@@ -197,6 +245,7 @@ onUnmounted(() => {
 });
 
 let readNoti = async(e, rt) => {
+
 	// 기존 readAudit 초기화
     for (let key in readAudit.value) {
         delete readAudit.value[key];

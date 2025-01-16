@@ -92,6 +92,9 @@ hr
         //- input(type="checkbox" name="gender_public" checked hidden)
         input(type="checkbox" name="birthdate_public" checked hidden)
 
+        //- openid 로거 id 추가
+        input(name='openid_id' value='by_admin' hidden)
+
         .button-wrap
             button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 취소
             button.btn(type="submit") 등록
@@ -159,6 +162,8 @@ function makeSafe(str) {
 }
 
 const inviteUserMail = (e) => {
+    console.log('=== inviteUserMail === e : ', e);
+    // inviteUser({openid_id: 'openid 로거 id'})
     return skapi.inviteUser(e, {confirmation_url: '/mailing'});
 }
 
@@ -325,6 +330,7 @@ const registerEmp = async (e) => {
         // 직원을 초대한다.
         const added = await inviteUserMail(e);
         // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
+        console.log('=== registerEmp === added : ', added);
 
         if (!added) {
             console.log('직원 초대에 실패하였습니다.');
@@ -348,6 +354,22 @@ const registerEmp = async (e) => {
         await createReference({ user_id_safe, user_division_name, user_id });
 
         await getInvitations(true); // refresh invitation list
+
+        // 직원별 출퇴근 기록을 위한 저장소 레코드 생성하기
+        const res = await skapi.postRecord(null, {
+            table: {
+                name: 'commute_records',
+                access_group: 98
+            },
+            unique_id: `emp_id:${user_id_safe}`,
+        });
+
+        // console.log('AAAAAA === registerEmp === res : ', res);
+
+        await grantPrivateRecordAccess({
+            record_id: res.record_id,
+            user_id: user_id
+        });
 
         window.alert('직원 등록이 완료되었습니다.');
 

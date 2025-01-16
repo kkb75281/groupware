@@ -3,7 +3,7 @@ nav#navbar(ref="navbar")
     .navbar-wrap
         .logo
             router-link.img-logo(to="/") 로고 부분
-            button.btn-menu(@click="toggleNavbarFold")
+            //- button.btn-menu(@click="toggleNavbarFold")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
@@ -40,9 +40,12 @@ const route = useRoute();
 
 let navbar = ref(null);
 let activeMenu = ref(null);
-let isadmin = user.access_group > 98;
 
-let menuList = [
+// isadmin을 computed로 변경하여 반응성 부여
+const isadmin = computed(() => user.access_group > 98);
+
+// menuList를 computed로 변경하여 isadmin 값 변화에 따라 자동 업데이트
+const menuList = computed(() => [
     {
         show: true,
         name: 'home',
@@ -69,7 +72,7 @@ let menuList = [
                     to: '/approval/audit-list',
                     text: '결재 수신함',
                 },
-				{
+                {
                     name: 'request-list',
                     to: '/approval/request-list',
                     text: '결재 발신함',
@@ -97,15 +100,20 @@ let menuList = [
                     text: '도장 관리',
                 },
                 {
+                    name: 'record-commute',
+                    to: '/mypage/record-commute',
+                    text: '근퇴 관리',
+                },
+                {
                     name: 'change-password',
                     to: '/change-password',
                     text: '비밀번호 변경',
-                }
+                },
             ]
         }
     },
     {
-        show: isadmin,
+        show: isadmin.value,
         name: 'admin',
         to: '/admin',
         icon: 'src/assets/icon/material-icon.svg#icon-settings',
@@ -122,34 +130,28 @@ let menuList = [
                     name: 'list-employee',
                     to: '/list-employee',
                     text: '직원 관리',
+                },
+                {
+                    name: 'list-commute',
+                    to: '/admin/list-commute',
+                    text: '근태 관리',
                 }
             ]
         }
     },
     {
-        show: !isadmin,
+        show: !isadmin.value,
         name: 'list-employee',
         to: '/list-employee',
         icon: 'src/assets/icon/material-icon.svg#icon-groups',
         text: '직원 목록',
-    },
-    // {
-    //     name: 'component',
-    //     to: '/component',
-    //     icon: 'src/assets/icon/material-icon.svg#icon-component',
-    //     text: 'component',
-    // },
-    // {
-    //     name: 'mailing',
-    //     to: '/mailing',
-    //     icon: 'src/assets/icon/material-icon.svg#icon-mail',
-    //     text: 'mailing',
-    // }
-];
+    }
+]);
 
-let closeNavbar = computed(() => {
+// closeNavbar도 computed로 변경하여 menuList 변화에 따라 자동 업데이트
+const closeNavbar = computed(() => {
     let arr = [];
-    menuList.forEach(item => {
+    menuList.value.forEach(item => {
         if(item.child) {
             arr.push(item.child.list.map(child => child.name));
         } else {
@@ -157,7 +159,6 @@ let closeNavbar = computed(() => {
         }
     });
     let newArr = new Set(arr.flat());
-
     return [...newArr];
 });
 
@@ -171,60 +172,61 @@ let checkNavbarClose = (e) => {
 }
 
 onMounted(() => {
-  checkScreenWidth(); // 컴포넌트가 마운트될 때 한 번 실행
-  window.addEventListener('resize', checkScreenWidth); // 리사이즈 이벤트 등록
-  window.addEventListener('click', checkNavbarClose);
+    checkScreenWidth();
+    window.addEventListener('resize', checkScreenWidth);
+    window.addEventListener('click', checkNavbarClose);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkScreenWidth); // 컴포넌트가 언마운트될 때 이벤트 해제
-  window.removeEventListener('click', checkNavbarClose);
+    window.removeEventListener('resize', checkScreenWidth);
+    window.removeEventListener('click', checkNavbarClose);
 });
 
-// watch(route, (nv) => {
-//     if(nv) {
-//         if(closeNavbar.value.includes(nv.name) && isOpen.value) {
-//             isOpen.value = false;
-//             document.body.classList.toggle('open', isOpen.value);
-//         }
-//     }
-// })
-
+// route watch 함수는 이전과 동일
 watch(() => route.fullPath, (nv) => {
     let currentPath = nv.split('/');
     let currentPathName = currentPath[currentPath.length - 1];
-
+    let currentFullPath = nv.replace(/^\//, '');
+    
     currentPathName === '' ? currentPathName = 'home' : currentPathName;
-
+    
     if(closeNavbar.value.includes(currentPathName) && isOpen.value) {
         isOpen.value = false;
         document.body.classList.toggle('open', isOpen.value);
     }
 
-    for(let menu of menuList) {
-        // let menuTo = menu.to.split('/');
-        // let menuName = menuTo[menuTo.length - 1];
-        let menuName = menu.name;
-
-        if(menuName === currentPathName) {
-            activeMenu.value = menu.name;
+    if (currentPathName === 'list-employee') {
+        if (isadmin.value) {
+            activeMenu.value = 'admin';
+            return;
+        } else {
+            activeMenu.value = 'list-employee';
             return;
         }
+    }
 
+    for(let menu of menuList.value) {
+        if (!menu.show) continue;
+
+        let menuPath = menu.to.replace(/^\//, '');
+        
         if(menu.child) {
             for(let child of menu.child.list) {
-                // let childTo = child.to.split('/');
-                // let childName = childTo[childTo.length - 1];
-                let childName = child.name;
-
-                if(childName === currentPathName) {
+                let childPath = child.to.replace(/^\//, '');
+                
+                if(childPath === currentFullPath || currentPath.includes(child.name)) {
                     activeMenu.value = menu.name;
                     return;
                 }
             }
         }
+        
+        if(menuPath === currentFullPath || currentPath.includes(menu.name)) {
+            activeMenu.value = menu.name;
+            return;
+        }
     }
-},{ immediate: true });
+}, { immediate: true });
 </script>
 
 <style scoped lang="less">

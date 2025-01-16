@@ -69,12 +69,12 @@ const router = createRouter({
         {
           path: '/list-employee',
           name: 'list-employee',
-          component: ()=>import('@/views/List_employee.vue') // List_employee,
+          component: () => import('@/views/List_employee.vue'), // List_employee,
         },
         {
           path: '/detail-employee/:userId',
           name: 'detail-employee',
-          component: ()=>import('@/views/List_detail_employee.vue') // List_detail_employee,
+          component: () => import('@/views/List_detail_employee.vue'), // List_detail_employee,
         },
         {
           path: '/approval',
@@ -92,7 +92,7 @@ const router = createRouter({
             {
               path: 'request-audit',
               name: 'request-audit',
-              component: ()=>import('@/views/approval/Approval_request_audit.vue') // Approval_request_audit,
+              component: () => import('@/views/approval/Approval_request_audit.vue'), // Approval_request_audit,
             },
             {
               path: 'audit-list',
@@ -117,12 +117,17 @@ const router = createRouter({
             {
               path: 'edit-myinfo',
               name: 'edit-myinfo',
-              component: ()=>import('@/views/mypage/Mypage_edit_myinfo.vue') // Mypage_edit_myinfo,
+              component: () => import('@/views/mypage/Mypage_edit_myinfo.vue'), // Mypage_edit_myinfo,
             },
             {
               path: 'edit-mystamp',
               name: 'edit-mystamp',
 			  component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
+            },
+            {
+              path: 'record-commute',
+              name: 'record-commute',
+              component: () => import('@/views/mypage/Mypage_record_commute.vue'), // Mypage_record_commute,
             },
           ],
         },
@@ -149,27 +154,42 @@ const router = createRouter({
             {
               path: 'add-divisions',
               name: 'add-divisions',
-              component: () => import('@/views/admin/Admin_add_divisions.vue') // Admin_add_divisions,
+              component: () => import('@/views/admin/Admin_add_divisions.vue'), // Admin_add_divisions,
             },
             {
               path: 'edit-divisions',
               name: 'edit-divisions',
-              component: () => import('@/views/admin/Admin_edit_divisions.vue') //Admin_edit_divisions,
+              component: () => import('@/views/admin/Admin_edit_divisions.vue'), //Admin_edit_divisions,
             },
             {
               path: 'list-divisions',
               name: 'list-divisions',
-              component: () => import('@/views/admin/Admin_list_divisions.vue')
+              component: () => import('@/views/admin/Admin_list_divisions.vue'),
+            },
+            {
+              path: 'list-commute',
+              name: 'list-commute',
+              component: () => import('@/views/admin/Admin_list_commute.vue'),  //Admin_list_commute,
+            },
+            {
+              path: '/commute-detail/:userId',
+              name: 'commute-detail',
+              component: () => import('@/views/admin/Admin_commute_detail.vue'),  //Admin_commute_detail,
+            },
+            {
+              path: 'edit-worktime',
+              name: 'edit-worktime',
+              component: () => import('@/views/admin/Admin_edit_worktime.vue'), // Admin_edit_worktime,
             },
             // {
             //   path: 'list-employee',
             //   name: 'list-employee',
-            //   component: Admin_list_employee,
+            //   component: () => import('@/views/List_employee.vue'), // List_employee,
             // },
             // {
-            //   path: 'employee-data/:userId',
-            //   name: 'employee-data',
-            //   component: () => import('@/views/Employee_data.vue'),
+            //   path: '/detail-employee/:userId',
+            //   name: 'detail-employee',
+            //   component: () => import('@/views/List_detail_employee.vue'), // List_detail_employee,
             //   props: true,
             // },
           ],
