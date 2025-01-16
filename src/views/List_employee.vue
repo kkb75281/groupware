@@ -610,6 +610,8 @@ let employeeState = async(state) => {
 
         await Promise.all(userId.map(el => {
             return skapi.deleteAccount({ user_id: el }).then(res => {
+                skapi.deleteRecords({unique_id: "[emp_position_current]" + makeSafe(el)});  // 현재 직책 삭제
+
                 let sus_cache = getUserCache['by_admin:suspended'];
                 if(sus_cache.length) {
                     let index = sus_cache.findIndex(uid => uid === el);

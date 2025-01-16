@@ -260,9 +260,9 @@ export async function updateEmails() {
 	}
 }
 
-setInterval(() => {
-	updateEmails();
-}, 10000);
+// setInterval(() => {
+// 	updateEmails();
+// }, 10000);
 
 const skapi = new Skapi(
   // 'ap21UAo9MdRQtaQ8CmGr',

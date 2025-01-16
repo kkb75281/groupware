@@ -22,7 +22,7 @@ ul.card-wrap.gmail
 							svg
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
 					span.mail-date {{ mail.date }}
-		p(v-else) 메일이 없습니다.
+		p.empty(v-else) 메일이 없습니다.            
 
 ul.card-wrap
 	li.card
