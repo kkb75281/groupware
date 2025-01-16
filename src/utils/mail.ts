@@ -55,7 +55,12 @@ async function fetchMessageDetails(accessToken, messageId, threadId) {
             snippet: snippet,
             link: `https://mail.google.com/mail/u/0/#inbox/${threadId}`,
             hasAttachment: hasAttachment,
-            dateTimeStamp: convertToTimestamp(rawDate)
+            dateTimeStamp: convertToTimestamp(rawDate),
+			noti_id: messageId,
+			send_date: convertToTimestamp(rawDate),
+			audit_info: {
+				audit_type: 'email',
+			}
         };
     } catch (error) {
         console.error('Error fetching message details:', error);
