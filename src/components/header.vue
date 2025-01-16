@@ -45,7 +45,7 @@ header#header
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 				//- 이메일 알림
-				li(v-for="email in notifications.emails" :key="email.dateTimeStamp")
+				li(v-for="email in notifications.emails")
 					a.router(:href="email.link" target="_blank" @click="closePopup")
 						h4.noti-type [새 이메일]
 						h5.noti-title {{ email.title }}
@@ -134,7 +134,7 @@ import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
 // import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList, getAuditList, getSendAuditList } from '@/notifications'
-import { notifications, realtimes, readList, unreadCount, getReadList, goToAuditDetail, readAudit, createReadListRecord } from '@/notifications'
+import { notifications, realtimes, readList, unreadCount, getReadList, goToAuditDetail, readAudit, createReadListRecord, addEmailNotification } from '@/notifications'
 
 const router = useRouter();
 const route = useRoute();
@@ -232,6 +232,10 @@ onMounted(() => {
 		closeProfileRouter();
 		closePopup();
 		next();
+	});
+
+	addEmailNotification(newEmail => {
+		console.log('=== addEmailNotification === newEmail : ', newEmail);
 	});
 });
 

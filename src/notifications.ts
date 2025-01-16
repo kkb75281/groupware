@@ -6,7 +6,7 @@ import { Reactive, reactive, type Ref, ref, watch } from "vue";
 export const notifications:Reactive<{messages: {fromUserId:string; msg: any }[], audits: {fromUserId:string; msg: any }[]}> = reactive({
     audits: [],
     messages: [],
-	emails: []
+	emails: [],
 });
 export const unreadCount = ref(0);
 export const realtimes = ref([]);
@@ -283,6 +283,7 @@ export const goToAuditDetail = (e, auditId, router) => {
 
 // 이메일 알림
 export const addEmailNotification = (emailData) => {
+	console.log('=== addEmailNotification === emailData : ', emailData);
     notifications.emails.unshift({
         type: 'email',
         title: emailData.subject,
@@ -293,6 +294,8 @@ export const addEmailNotification = (emailData) => {
     });
 
     unreadCount.value++;
+
+	return notifications.emails;
 }
 
 watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
@@ -310,9 +313,7 @@ watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 
 watch([realtimes, readList, notifications.emails], () => {
     // 기존 알림 개수
-    const auditCount = realtimes.value.filter(
-        (audit) => !readList.value.includes(audit.noti_id)
-    ).length;
+    const auditCount = realtimes.value.filter((audit) => !readList.value.includes(audit.noti_id)).length;
     
     // 읽지 않은 이메일 개수
     const emailCount = notifications.emails.length;
