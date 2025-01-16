@@ -270,8 +270,8 @@ const startWork = async () => {
     // console.log('=== startWork === 확인 : ');
     
     const checkMaxHour = addTimeToTimestamp(lastCommute, {
-      // hours: maxHour,
-      seconds: 5,
+      hours: maxHour,
+      // seconds: 5,
     });
 
     // 출근시간으로부터 16시간이 지나기 전까지는 출근 재기록 불가
@@ -371,14 +371,14 @@ const endWork = async () => {
 
   // 퇴근 기록 가능한 최대 시간 (출근시간으로부터 16시간이 기준)
   const maxEndTime = addTimeToTimestamp(value.data.startTimeStamp, {
-    // hours: maxHour,
-    seconds: 70,
+    hours: maxHour,
+    // seconds: 70,
   });
 
   // 새로운 퇴근 기록 가능한 시간
   const newEndTime = addTimeToTimestamp(maxEndTime, {
-    // hours: maxHour,
-    seconds: 5,
+    hours: 2,
+    // seconds: 5,
   });
 
   // 마스터가 정한 출근시간 범위 안에 있는지 확인
