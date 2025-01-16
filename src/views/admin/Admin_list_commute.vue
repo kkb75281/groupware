@@ -106,7 +106,7 @@ const getEmpList = async () => {
 
         // 기준 근무시간(인사팀 근무시간) 가져오기
         const getTimestampFromTimeString = (timeString) => {
-            // console.log('=== getTimestampFromTimeString === timeString : ', timeString); // 인사팀 출근시간
+            console.log('=== getTimestampFromTimeString === timeString : ', timeString); // 인사팀 출근시간
 
             // 현재 날짜 가져오기
             const today = new Date();

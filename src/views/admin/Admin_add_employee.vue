@@ -93,7 +93,7 @@ hr
         input(type="checkbox" name="birthdate_public" checked hidden)
 
         //- openid 로거 id 추가
-        input(name='openid_id' value='by_admin' hidden)
+        //- input(name='openid_id' value='by_admin' hidden)
 
         .button-wrap
             button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 취소
