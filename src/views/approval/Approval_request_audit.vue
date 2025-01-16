@@ -57,7 +57,7 @@ hr
 import { useRoute, useRouter } from "vue-router";
 import { onMounted, ref } from "vue";
 import { skapi } from "@/main";
-import { user } from "@/user";
+import { user, makeSafe } from "@/user";
 import { getDivisionNames, divisionNameList } from "@/division";
 
 const router = useRouter();
@@ -66,8 +66,31 @@ const route = useRoute();
 let same_division_auditors = ref({});
 let send_auditors = [];
 
+let getEmpDivision = async(userId: string) => {
+    if(!userId) return;
+
+    await skapi.getRecords({
+        table: {
+            name: 'emp_position_current',
+            access_group: 1
+        },
+        unique_id: "[emp_position_current]" + makeSafe(userId)
+    }).then(r => {
+        if (r.list.length === 0) return;
+
+		user.division = r.list[0].index.name.split(".")[0];
+		user.position = r.list[0].index.name.split(".")[1];
+    });
+}
+
 async function init() {
     await getDivisionNames();
+	await getEmpDivision(user.user_id);
+	skapi.getUsers().then((res) => {
+		console.log('!!!!!!!!!',res)
+	});
+	console.log('=== init === divisionNameList : ', divisionNameList.value);
+	console.log('=== init === user : ', user);
     let myDivisionTopLevel = divisionNameList.value[user.division].split("/")[0]; // 부서명/팀명/...
     let divToFetch = []; // DIV_1, DIV_2, ...
     for (let k in divisionNameList.value) {
