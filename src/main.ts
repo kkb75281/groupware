@@ -1,11 +1,12 @@
 import './assets/less/main.less';
 
-import { createApp, nextTick, ref } from 'vue';
+import { createApp, nextTick, ref, watch } from 'vue';
 import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
+import { fetchGmailEmails } from "@/utils/mail";
 import App from './App.vue';
 import router from './router';
-import { notifications, getAuditList, realtimes, getUserInfo, unreadCount, readList } from './notifications';
+import { notifications, getAuditList, realtimes, getUserInfo, unreadCount, readList, mailList } from './notifications';
 import { employeeDict, getEmpDivisionPosition } from './employee';
 const app = createApp(App);
 
@@ -41,62 +42,62 @@ function updateAuditsAndApprovals(audits, approvals) {
 }
 
 export let RealtimeCallback = async (rt: any) => {
-  // if (!isConnected) {
-  //   console.log('Realtime 연결이 이미 활성화되어 있습니다.');
-  //   return;
-  // }
+	// if (!isConnected) {
+	//   console.log('Realtime 연결이 이미 활성화되어 있습니다.');
+	//   return;
+	// }
 
-  console.log('=== RealtimeCallback === rt : ', rt);
+	console.log('=== RealtimeCallback === rt : ', rt);
 
-  // 실시간 통신 (노티피케이션 / 체팅 등등)
-  // Callback executed when there is data transfer between the users.
-  /**
-    rt = {
-        type: 'message' | 'private' | 'error' | 'success' | 'close' | 'notice',
-        message: '...',
-        ...
-    }
-    */
+	// 실시간 통신 (노티피케이션 / 체팅 등등)
+	// Callback executed when there is data transfer between the users.
+	/**
+		rt = {
+			type: 'message' | 'private' | 'error' | 'success' | 'close' | 'notice',
+			message: '...',
+			...
+		}
+		*/
 
-  if (rt.type === 'success') {
-    if (rt.message === 'Connected to WebSocket server.') {
-      // 실시간 통신 연결 성공
-      // 과거 결재 요청 목록 가져오기
-      let getAudits, getApprovals;
+	if (rt.type === 'success') {
+		if (rt.message === 'Connected to WebSocket server.') {
+		// 실시간 통신 연결 성공
+		// 과거 결재 요청 목록 가져오기
+		let getAudits, getApprovals;
 
-      isConnected = true; // 연결 상태 플래그 업데이트
+		isConnected = true; // 연결 상태 플래그 업데이트
 
-      // window.localStorage.setItem(`notification_count:${user.user_id}`, '0');
+		// window.localStorage.setItem(`notification_count:${user.user_id}`, '0');
 
-      nextTick(() => {
-        getAuditList();
-        // getSendAuditList();
-      });
+		nextTick(() => {
+			getAuditList();
+			// getSendAuditList();
+		});
 
-      // await skapi.getRecords({
-      // 	table: {
-      // 		name: 'audit_request',
-      // 		access_group: 'authorized',
-      // 	},
-      // 	reference: `audit:${user.user_id}`,
-      // },{
-      // 	ascending: false, // 최신순
-      // }).then((audits) => {
-      // 	console.log('=== RealtimeCallback === audits : ', audits); // 들어온 결재 요청
-      // }).catch(err => err);
+		// await skapi.getRecords({
+		// 	table: {
+		// 		name: 'audit_request',
+		// 		access_group: 'authorized',
+		// 	},
+		// 	reference: `audit:${user.user_id}`,
+		// },{
+		// 	ascending: false, // 최신순
+		// }).then((audits) => {
+		// 	console.log('=== RealtimeCallback === audits : ', audits); // 들어온 결재 요청
+		// }).catch(err => err);
 
-      // await skapi.getRecords({
-      // 	// 결재 완료된 목록 가져오기
-      // 	table: {
-      // 		name: 'audit_approval',
-      // 		access_group: 'authorized',
-      // 	},
-      // 	tag: user.user_id.replaceAll('-', '_'),
-      // }).then((approvals) => {
-      // 	console.log('=== RealtimeCallback === approvals : ', approvals);
-      // }).catch(err => err);
-    }
-  }
+		// await skapi.getRecords({
+		// 	// 결재 완료된 목록 가져오기
+		// 	table: {
+		// 		name: 'audit_approval',
+		// 		access_group: 'authorized',
+		// 	},
+		// 	tag: user.user_id.replaceAll('-', '_'),
+		// }).then((approvals) => {
+		// 	console.log('=== RealtimeCallback === approvals : ', approvals);
+		// }).catch(err => err);
+		}
+	}
 
 	if (rt.type === 'private') {
 		console.log('sender', rt.sender, user.user_id);
@@ -241,6 +242,27 @@ export let loginCheck = async (profile: any) => {
 	// console.log('iwaslogged', iwaslogged.value)
 	loaded.value = true;
 };
+
+// 이메일 업데이트
+export async function updateEmails() {
+	const accessToken = sessionStorage.getItem('accessToken');
+	
+	if (accessToken) {
+		try {
+			const res = await fetchGmailEmails(accessToken);
+			console.log('=== updateEmails === res : ', res);
+			mailList.value = res;
+
+			// console.log('=== updateEmails === res : ', res);
+		} catch (error) {
+			console.error('=== updateEmails === error : ', {error});
+		}
+	}
+}
+
+setInterval(() => {
+	updateEmails();
+}, 10000);
 
 const skapi = new Skapi(
   // 'ap21UAo9MdRQtaQ8CmGr',
