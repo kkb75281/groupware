@@ -28,7 +28,6 @@ header#header
 	template(v-if="realtimes.length > 0")
 		.popup-main
 			ul
-				//- 결재 알림
 				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
 					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.noti_id)}")
 						template(v-if="rt.audit_info.audit_type === 'request'")
@@ -36,6 +35,13 @@ header#header
 							h5.noti-title {{ rt.audit_info.to_audit }}
 							p.noti-sender {{ rt.send_name }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
+
+						template(v-else-if="rt.audit_info.audit_type === 'email'")
+							h4.noti-type [새 이메일]
+							h5.noti-title {{ rt.subject }}
+							//- .noti-info
+							p.noti-sender {{ rt.from }}
+							span.upload-time {{ formatTimeAgo(rt.dateTimeStamp) }}
 
 						template(v-else)
 							h4.noti-type [알람]
@@ -45,7 +51,7 @@ header#header
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 				//- 이메일 알림
-				li(v-for="email in notifications.emails")
+				//- li(v-for="email in notifications.emails")
 					a.router(:href="email.link" target="_blank" @click="closePopup")
 						h4.noti-type [새 이메일]
 						h5.noti-title {{ email.title }}
@@ -244,8 +250,24 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
-let readNoti = async(e, rt) => {
+let updateReadList = async(type) => {
+	let id;
 
+	if(type === 'email') {
+		id = readAudit.value.id;
+	} else {
+		id = readAudit.value.audit_info.audit_doc_id;
+	}
+
+	if (!readList.value.includes(id)) {
+		await skapi.deleteRecords({
+			unique_id: '[notification_read_list]' + user.user_id
+		});
+		createReadListRecord(true); // 새로 읽은 알람 추가
+	}
+}
+
+let readNoti = async(e, rt) => {
 	// 기존 readAudit 초기화
     for (let key in readAudit.value) {
         delete readAudit.value[key];
@@ -258,18 +280,21 @@ let readNoti = async(e, rt) => {
 
 	if(rt.audit_info.audit_type === 'request') {
 		goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
+	} else if(rt.audit_info.audit_type === 'email') {
+		window.open(rt.link, "_blank");
 	} else {
 		router.push({ name: 'request-list' });
 	}
 
 	// 읽은 알람 리스트를 업데이트
 	// await getReadList(); // 기존 리스트 로드
-	if (!readList.value.includes(rt.audit_info.audit_doc_id)) {
-		await skapi.deleteRecords({
-			unique_id: '[notification_read_list]' + user.user_id
-        });
-		createReadListRecord(true); // 새로 읽은 알람 추가
-	}
+	updateReadList(rt.audit_info.audit_type);
+	// if (!readList.value.includes(rt.audit_info.audit_doc_id)) {
+	// 	await skapi.deleteRecords({
+	// 		unique_id: '[notification_read_list]' + user.user_id
+    //     });
+	// 	createReadListRecord(true); // 새로 읽은 알람 추가
+	// }
 }
 
 let logout = () => {
