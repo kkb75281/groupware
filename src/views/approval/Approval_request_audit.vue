@@ -285,7 +285,7 @@ const requestAudit = async (e) => {
         alert("결재 요청이 완료되었습니다.");
 
         router.push({
-            path: "/approval/audit-list",
+            path: "/approval/request-list",
         });
     } catch (error) {
         console.error(error);

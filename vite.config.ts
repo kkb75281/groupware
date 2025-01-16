@@ -12,5 +12,10 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
-  }
+  },
+  server: {
+    https: false, // HTTPS를 비활성화
+    host: 'localhost',
+    port: 5173,
+  },
 })
