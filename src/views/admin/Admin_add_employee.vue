@@ -128,7 +128,7 @@ skapi.getRecords({
         alert('부서가 등록되어 있지 않습니다. 부서를 먼저 등록해주세요.');
         router.push('/list-employee');
     } else {
-        let divisionNames = r.list[0].data._value;
+        let divisionNames = r.list[0].data;
     
         for(let key in divisionNames) {
             if(divisionNames[key] !== '') {
