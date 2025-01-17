@@ -36,9 +36,9 @@
 
 			router-link.btn-forgot(to="/forgot-password") 비밀번호 찾기
 
-		button.btn.btn-login(type="submit" style="margin-top: 2.5rem;") 로그인
+		button.btn.outline.btn-login(type="submit" style="margin-top: 2.5rem;") 로그인
 
-	button#el_bt_login.btn.outline.btn-login-google(type="button" @click="googleLogin" :disabled="loading")
+	button#el_bt_login.btn.btn-login-google(type="button" @click="googleLogin" :disabled="loading")
 		template(v-if="loading")
 			span Google 로그인 중...
 		template(v-else)
