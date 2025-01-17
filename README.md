@@ -12,11 +12,11 @@
 
 ```javascript
 {
-	unique_id: '[division_name_list]',
-	table: {
-		name: 'divisionNames',
-		access_group: 1
-	}
+    unique_id: '[division_name_list]',
+    table: {
+        name: 'divisionNames',
+        access_group: 1
+    }
 }
 ```
 
