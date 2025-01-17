@@ -35,53 +35,53 @@
 ```
 ```typescript
 :{ [DVS_RECORD_ID: string]: {
-	bin?: { [division_logo: string]: {
-		access_group: number | 'private' | 'public' | 'authorized' | 'admin';
-		filename string;
-		getFile: () => Promise;
-		path: string;
-		size: number;
-		uploaded: number;
-		url: string;
-	}[] };
-	data: {
-		division_name: string;
-		division_address?: string;
-		division_business_code?: string;
-		division_business_item?: string;
-		division_business_type?: string;
-		division_ceo_name?: string;
-		division_corporate_number?: number;
-		division_description?: string;
-		division_email?: string;
-		division_establishment_date?: number;
-		division_fax?: string;
-		division_homepage?: string;
-		division_phone_number?: number;
-	};
-	ip: string;
-	readonly: boolean;
-	record_id: string;
-	referenced_count: number;
-	source?: {
-		allow_referencing_to_feed?: boolean;
-		can_remove_referencing_records?: boolean;
-		only_granted_can_reference?: boolean;
-		prevent_multiple_referencing?: boolean;
-		referencing_limit?: number || null;
-	};
-	table: {
-		name: string;
-		access_group?: number | 'private' | 'public' | 'authorized' | 'admin';
-		subscription?: {
-			group: number;
-			exclude_from_feed?: boolean;
-			notify_subscribers?: boolean;
-		};
-	};
-	updated: number;
-	uploaded: number;
-	user_id: string;
+    bin?: { [division_logo: string]: {
+        access_group: number | 'private' | 'public' | 'authorized' | 'admin';
+        filename string;
+        getFile: () => Promise;
+        path: string;
+        size: number;
+        uploaded: number;
+        url: string;
+    }[] };
+    data: {
+        division_name: string;
+        division_address?: string;
+        division_business_code?: string;
+        division_business_item?: string;
+        division_business_type?: string;
+        division_ceo_name?: string;
+        division_corporate_number?: number;
+        division_description?: string;
+        division_email?: string;
+        division_establishment_date?: number;
+        division_fax?: string;
+        division_homepage?: string;
+        division_phone_number?: number;
+    };
+    ip: string;
+    readonly: boolean;
+    record_id: string;
+    referenced_count: number;
+    source?: {
+        allow_referencing_to_feed?: boolean;
+        can_remove_referencing_records?: boolean;
+        only_granted_can_reference?: boolean;
+        prevent_multiple_referencing?: boolean;
+        referencing_limit?: number || null;
+    };
+    table: {
+        name: string;
+        access_group?: number | 'private' | 'public' | 'authorized' | 'admin';
+        subscription?: {
+            group: number;
+            exclude_from_feed?: boolean;
+            notify_subscribers?: boolean;
+        };
+    };
+    updated: number;
+    uploaded: number;
+    user_id: string;
 } }
 ```
 
