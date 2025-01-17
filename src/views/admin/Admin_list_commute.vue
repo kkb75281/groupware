@@ -42,7 +42,7 @@ hr
                     tr
                         td(colspan="5") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(e, emp.user_id)")
+                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(emp.user_id)")
                         td.list-num {{ index + 1 }}
                         td.user-name
                                 span {{ emp.name }}
@@ -241,7 +241,7 @@ const refresh = () => {
 // });
 
 // 각 직원 출퇴근 기록 상세 페이지로 이동
-const goToEmpCommute = (e, userId) => {
+const goToEmpCommute = (userId) => {
     router.push({ name: 'commute-detail', params: { userId } });        
 };
 

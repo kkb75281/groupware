@@ -93,7 +93,7 @@ hr
         input(type="checkbox" name="birthdate_public" checked hidden)
 
         //- openid 로거 id 추가
-        //- input(name='openid_id' value='by_admin' hidden)
+        input(name='openid_id' value='by_admin' hidden)
 
         .button-wrap
             button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 취소
@@ -128,7 +128,7 @@ skapi.getRecords({
         alert('부서가 등록되어 있지 않습니다. 부서를 먼저 등록해주세요.');
         router.push('/list-employee');
     } else {
-        let divisionNames = r.list[0].data;
+        let divisionNames = r.list[0].data._value;
     
         for(let key in divisionNames) {
             if(divisionNames[key] !== '') {

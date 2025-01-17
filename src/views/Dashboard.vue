@@ -1,5 +1,5 @@
 <template lang="pug">
-ul.card-wrap.gmail
+ul.card-wrap.gmail(v-if="mailList && mailList.length")
 	li.card
 		.title-wrap
 			h3.title 
@@ -22,7 +22,11 @@ ul.card-wrap.gmail
 							svg
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
 					span.mail-date {{ mail.date }}
-		p.empty(v-else) 메일이 없습니다.            
+		p.empty(v-else)
+			.icon
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+			| 더 이상 읽을 메일이 없습니다.
 
 ul.card-wrap
 	li.card
@@ -295,6 +299,20 @@ onUnmounted(() => {
         flex-wrap: wrap;
         margin-bottom: 1rem;
     }
+
+	.empty {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 4px;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--gray-color-500);
+		line-height: 1.2;
+		min-height: 150px;
+		text-align: center;
+	}
 }
 
 @media (max-width: 1200px) {
