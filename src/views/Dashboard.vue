@@ -22,7 +22,7 @@ ul.card-wrap.gmail(v-if="mailList && mailList.length")
 							svg
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
 					span.mail-date {{ mail.date }}
-		p.empty(v-else)
+		.empty(v-else)
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
