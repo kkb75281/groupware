@@ -42,7 +42,7 @@ hr
                     tr
                         td(colspan="5") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(e, emp.user_id)")
+                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(emp.user_id)")
                         td.list-num {{ index + 1 }}
                         td.user-name
                                 span {{ emp.name }}
@@ -106,7 +106,7 @@ const getEmpList = async () => {
 
         // 기준 근무시간(인사팀 근무시간) 가져오기
         const getTimestampFromTimeString = (timeString) => {
-            // console.log('=== getTimestampFromTimeString === timeString : ', timeString); // 인사팀 출근시간
+            console.log('=== getTimestampFromTimeString === timeString : ', timeString); // 인사팀 출근시간
 
             // 현재 날짜 가져오기
             const today = new Date();
@@ -241,7 +241,7 @@ const refresh = () => {
 // });
 
 // 각 직원 출퇴근 기록 상세 페이지로 이동
-const goToEmpCommute = (e, userId) => {
+const goToEmpCommute = (userId) => {
     router.push({ name: 'commute-detail', params: { userId } });        
 };
 
