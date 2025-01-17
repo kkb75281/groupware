@@ -82,7 +82,7 @@ const getEmpCommute = async (userId) => {
                 name: 'commute_record',
                 access_group: 98,
             },
-            reference: "emp_id:" + makeSafe(user.user_id),
+            reference: "emp_id:" + makeSafe(userId),
         };
 
         const fetchOptions = {
