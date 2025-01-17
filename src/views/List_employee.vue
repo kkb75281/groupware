@@ -359,8 +359,9 @@ async function arrangeEmpDivisionPosition(li) {
 }
 
 async function getEmpList(type, refresh=false){
-    console.log('run!')
+    // console.log('=== getEmpList === run !!');
     loading.value = true;
+
     if (type === '직원목록') {
         router.replace({
             path: '/list-employee',
@@ -372,6 +373,8 @@ async function getEmpList(type, refresh=false){
             value: 'by_skapi:approved',
             condition: '>='
         }, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
+
+        console.log('=== getEmpList === employee : ', employee.value);
     }
     else if (type === '숨김여부') {
         router.replace({
@@ -573,7 +576,6 @@ let employeeState = async(state) => {
 
         await Promise.all(userId.map(el => {
             return skapi.blockAccount({ user_id: el }).then(res => {
-
                 let appr_cache = getUserCache['by_skapi:approved'];
                 let sus_cache = getUserCache['by_admin:suspended'];
                 if(appr_cache.length) {
@@ -843,8 +845,6 @@ const updateScreenSize = () => {
 
 onMounted(() => {
   window.addEventListener('resize', updateScreenSize);
-
-  console.log('employee', employee.value);
 });
 
 onUnmounted(() => {
