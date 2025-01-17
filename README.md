@@ -20,7 +20,7 @@
 }
 ```
 ```typescript
-:{ [DVS_NUMBER: string]: string }
+: { [DVS_NUMBER: string]: string }
 ```
 
 - ### 부서 정보 업데이트
@@ -34,7 +34,7 @@
 }
 ```
 ```typescript
-:{ [DVS_RECORD_ID: string]: {
+: { [DVS_RECORD_ID: string]: {
     bin?: { [division_logo: string]: {
         access_group: number | 'private' | 'public' | 'authorized' | 'admin';
         filename string;
@@ -96,6 +96,20 @@
     },
 }
 ```
+```typescript
+: {
+    division_name: string;
+    division_key: string;
+    division_startTime: {
+        min: string;
+        max: string;
+    },
+    division_endTime: {
+        min: string;
+        max: string;
+    }
+}
+```
 
 
 
@@ -104,15 +118,7 @@
 
 - ### 결재 서류 저장
 
-```typescript
-data: {
-    to_audit: string; // 결재 사안 제목
-    auditors: string[]; // 결재자(들)의 user_id
-    to_audit_content: string; // 결재 내용
-}
-```
 ```javascript
-data,
 {
     readonly: true,
     table: {
@@ -129,17 +135,17 @@ data,
     tags: [] // 결재자(들)의 user_id_safe 
 }
 ```
+```typescript
+: {
+    to_audit: string; // 결재 사안 제목
+    auditors: string[]; // 결재자(들)의 user_id
+    to_audit_content: string; // 결재 내용
+}
+```
 
 - ### 결재 요청 보내기
 
-```typescript
-data: {
-    audit_id: string; // 결재 서류 record_id
-    auditor: string; // 결재자 user_id
-},
-```
 ```javascript
-data,
 {
     unique_id: `audit_request:${결재 서류 record_id}:${결재자 user_id}`,
     readonly: true,
@@ -151,22 +157,27 @@ data,
     tags: [결재자 user_id],
 }
 ```
+```typescript
+: {
+    audit_id: string; // 결재 서류 record_id
+    auditor: string; // 결재자 user_id
+}
+```
 
 - ### 결재 승인/거절 보내기
 
-```typescript
-audit_id: string;
-user_id_safe: string;
-```
 ```javascript
 {
     table: {
         name: 'audit_approval',
         access_group: 'authorized'
     },
-    reference: audit_id,
-    tags: user_id_safe, 
+    reference: audit_id, // 결재 서류 record_id
+    tags: user_id_safe, // 결재자 user_id
 }	
+```
+```typescript
+: {}
 ```
 
 
@@ -177,25 +188,34 @@ user_id_safe: string;
 
 - ### 읽은 알람 업데이트
 
-```typescript
-data: {
-    list: string[] // [읽은 알람 id, ...]
-}
-```
 ```javascript
-data, {
+{
      table: {
         name: 'notification_read_list',
         access_group: 'private'
     }
 }
 ```
+```typescript
+: {
+    list: string[] // [읽은 알람 id, ...]
+}
+```
 
 - ### 실시간 못 받은 알람 저장
 
+```javascript
+{
+    readonly: true,
+    table: {
+        name: `realtime:${sender_user_id_safe)}`,
+        access_group: "authorized",
+    },
+}
+```
 ```typescript
-// 결재 요청 알람
-data: {
+// 결재 요청 알람 경우
+: {
     noti_id: string; // 결재 요청 레코드 record_id
     noti_type: 'audit';
     send_date: new Date().getTime();
@@ -209,8 +229,8 @@ data: {
     }
 }
 
-// 결재 승인/거절 알람
-data: {
+// 결재 승인/거절 알람 경우
+: {
     noti_id: string; // 결재 승인/거절 레코드 record_id
     noti_type: 'audit';
     send_date: new Date().getTime();
@@ -223,16 +243,6 @@ data: {
     }
 }
 ```
-```javascript
-data, 
-{
-    readonly: true,
-    table: {
-        name: `realtime:${sender_user_id_safe)}`,
-        access_group: "authorized",
-    },
-}
-```
 
 
 
@@ -242,9 +252,6 @@ data,
 
 - ### 부서, 직책 업데이트 (history)
 
-```typescript
-tag_data: string[] // "[emp_pst]" + 직책, "[emp_id]" + user_id_safe, "[emp_dvs]" + 부서
-```
 ```javascript
 {
     unique_id: "[emp_division]" + user_id_safe,
@@ -252,7 +259,36 @@ tag_data: string[] // "[emp_pst]" + 직책, "[emp_id]" + user_id_safe, "[emp_dvs
         name: 'emp_division',
         access_group: 1
     },
-    tags: tag_data
+    tags: tag_data // "[emp_pst]" + 직책, "[emp_id]" + user_id_safe, "[emp_dvs]" + 부서
+}
+```
+```typescript
+{
+    bin: {}
+    ip: string;
+    readonly: boolean;
+    record_id: string;
+    referenced_count: number;
+    source: {
+        referencing_limit: number || null,
+        prevent_multiple_referencing: boolean;
+        can_remove_referencing_records: boolean;
+        only_granted_can_reference: boolean;
+        allow_referencing_to_feed: boolean;
+    }
+    table: {
+        name: string; // Table name
+        access_group: number | 'private' | 'public' | 'authorized' | 'admin';
+        subscription?: {
+            user_id: string;
+            group: number;
+        }
+    }
+    tags?: string[];
+    unique_id?: string;
+    updated: number;
+    uploaded: number;
+    user_id: string;
 }
 ```
 
