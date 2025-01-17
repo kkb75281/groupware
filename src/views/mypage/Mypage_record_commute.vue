@@ -312,6 +312,7 @@ const startWork = async () => {
     timeRecords.value = savedRecord.data;
 
     // console.log('=== startWork === timeRecords.value : ', timeRecords.value);
+    alert('출근 기록이 저장되었습니다.');
 
   } catch (error) {
     alert('출근 기록 저장에 실패했습니다.');
@@ -498,6 +499,7 @@ const endWork = async () => {
     // console.log('=== endWork === timeRecords.value : ', timeRecords.value);
 
     // calcWorkTime(savedRecord);
+    alert('퇴근 기록이 저장되었습니다.');
   } catch (error) {
     alert('퇴근 기록 저장에 실패했습니다.');
     // console.log('=== endWork === error : ', {error});

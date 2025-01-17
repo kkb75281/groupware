@@ -373,8 +373,6 @@ async function getEmpList(type, refresh=false){
             value: 'by_skapi:approved',
             condition: '>='
         }, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
-
-        console.log('=== getEmpList === employee : ', employee.value);
     }
     else if (type === '숨김여부') {
         router.replace({
@@ -483,7 +481,6 @@ async function searchEmp(refresh) {
                 }
             });
 
-            console.log('=== searchEmp === res : ', res);
             let gu = [];
 
             res.list.forEach(rec => gu.push(rec.data.user_id));
