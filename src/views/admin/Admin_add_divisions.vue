@@ -172,8 +172,8 @@ let resigterComp = (e) => {
     // }
 
     let createDivisionName = () => {
-        if(Object.keys(currentData).length) {
-            let keys = Object.keys(currentData);
+        if(Object.keys(currentData._value).length) {
+            let keys = Object.keys(currentData._value);
             let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
             // let newNumber = 1;
             
@@ -182,12 +182,11 @@ let resigterComp = (e) => {
             // }
             let maxNumber = Math.max(...numbers);
             let newNumber = maxNumber + 1; // 가장 큰 번호 다음 숫자 지정
-            
             let newKey = `DVS_${newNumber}`;
 
-            currentData[newKey] = ext.data.division_name;
+            currentData._value[newKey] = ext.data.division_name;
         } else {
-            currentData = {
+            currentData._value = {
                 'DVS_0': ext.data.division_name
             }
         }

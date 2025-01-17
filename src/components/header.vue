@@ -240,9 +240,9 @@ onMounted(() => {
 		next();
 	});
 
-	addEmailNotification(newEmail => {
-		console.log('=== addEmailNotification === newEmail : ', newEmail);
-	});
+	// addEmailNotification(newEmail => {
+	// 	console.log('=== addEmailNotification === newEmail : ', newEmail);
+	// });
 });
 
 onUnmounted(() => {
