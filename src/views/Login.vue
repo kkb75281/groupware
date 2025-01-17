@@ -145,7 +145,6 @@ function googleLogin() {
 	url += '&prompt=select_account';
 	url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
 
-	console.log('=== googleLogin === url : ', url);
 	window.location.href = url;
 }
 
@@ -173,7 +172,7 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
         return;
     }
 
-    const OPENID_LOGGER_ID = 'by_admin';
+    const OPENID_LOGGER_ID = 'by_skapi';
     const accessToken = params.get('access_token');
     sessionStorage.setItem('accessToken', accessToken);
 

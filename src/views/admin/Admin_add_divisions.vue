@@ -157,7 +157,7 @@ let resigterComp = (e) => {
     }
     
     let currentData = divisionNameList.value;
-
+    
     // let deleteDivisionName = async() => {
     //     try {
     //         await skapi.deleteRecords({
@@ -172,7 +172,7 @@ let resigterComp = (e) => {
     // }
 
     let createDivisionName = () => {
-        if(Object.keys(currentData._value).length) {
+        if(Object.keys(currentData).length) {
             let keys = Object.keys(currentData._value);
             let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
             // let newNumber = 1;
@@ -191,7 +191,7 @@ let resigterComp = (e) => {
             }
         }
 
-        return skapi.postRecord(currentData, {
+        return skapi.postRecord(currentData._value, {
             unique_id: '[division_name_list]',
             table: {
                 name: 'divisionNames',
