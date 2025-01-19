@@ -36,7 +36,7 @@ export let openCropImageDialog = (e) => {
 
 export let closeCropImageDialog = () => {
     uploadSrc.value[currentTargetId.value] = null;
-    document.querySelector('body').style.overflow = '';
+    document.querySelector('body').style.overflow = 'auto';
     openCropModal.value = false;
 }
 
@@ -53,6 +53,7 @@ export let setCroppedImage = async(croppedImage) => {
             // Blob 객체를 저장 (서버 전송용)
             croppedImages.value[currentTargetId.value] = blob;
 
+            document.querySelector('body').style.overflow = 'auto';
             openCropModal.value = false;
             currentImageSrc.value = '';
             currentTargetId.value = '';
