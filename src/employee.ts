@@ -23,7 +23,7 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
         return user;
     }
 
-    if (!user.approved.includes('by_master')) {
+    if (user.approved && !user.approved.includes('by_master')) {
         let record = (await skapi.getRecords({
             unique_id: "[emp_position_current]" + makeSafe(userId)
         }).catch(err => {
@@ -42,7 +42,7 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
             division: emp_dvs,
             position: emp_pst
         }
-        
+
         user.division = empInfo[userId].division;
         user.position = empInfo[userId].position;
     }
