@@ -23,29 +23,29 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
         return user;
     }
 
-    // if (!user.approved.includes('by_master')) {
-    //     let record = (await skapi.getRecords({
-    //         unique_id: "[emp_position_current]" + makeSafe(userId)
-    //     }).catch(err => {
-    //         console.log({err});
-    //         return {
-    //             list: [] as any[]
-    //         }
-    //     })).list?.[0];
+    if (!user.approved.includes('by_master')) {
+        let record = (await skapi.getRecords({
+            unique_id: "[emp_position_current]" + makeSafe(userId)
+        }).catch(err => {
+            console.log({err});
+            return {
+                list: [] as any[]
+            }
+        })).list?.[0];
 
-    //     if (!record) return;
+        if (!record) return;
 
-    //     let emp_dvs = record?.index?.name?.split('.')[0];
-    //     let emp_pst = record?.index?.name?.split('.')[1].replaceAll('_', ' ');
+        let emp_dvs = record?.index?.name?.split('.')[0];
+        let emp_pst = record?.index?.name?.split('.')[1].replaceAll('_', ' ');
 
-    //     empInfo[userId] = {
-    //         division: emp_dvs,
-    //         position: emp_pst
-    //     }
+        empInfo[userId] = {
+            division: emp_dvs,
+            position: emp_pst
+        }
         
-    //     user.division = empInfo[userId].division;
-    //     user.position = empInfo[userId].position;
-    // }
+        user.division = empInfo[userId].division;
+        user.position = empInfo[userId].position;
+    }
 
     return user;
 }
