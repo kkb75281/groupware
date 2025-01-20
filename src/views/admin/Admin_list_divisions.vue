@@ -5,9 +5,14 @@ hr
 
 .table-wrap
     .tb-head-wrap
-        .input-wrap.search
-            input(type="text" placeholder="검색어를 입력하세요")
-            button.btn-search
+        form#searchForm(@submit.prevent="searchEmp")
+            //- .input-wrap
+            //-     select(v-model="searchFor")
+            //-         option(value="division") 부서/직책
+            //-         option(value="name") 이름
+            .input-wrap
+                select(name="searchDivision" v-model="searchValue" @change="searchEmp")
+                    option(value="전체") 전체
 
         .tb-toolbar
             .btn-wrap
@@ -69,9 +74,9 @@ hr
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { skapi } from "@/main";
 import {
     loading,
@@ -89,12 +94,50 @@ const route = useRoute();
 
 let currentPage = ref(1);
 let selectedList = ref({});
+let searchValue = ref('');
+let searchPositionValue = ref('');
 let isAllSelected = computed(() => {
     let keys = Object.keys(divisions.value);
     return (
         keys.length > 0 &&
         keys.every((key) => Object.keys(selectedList.value).includes(key))
     );
+});
+
+let callParams = computed(() => {
+    return {
+        searchFor: 'timestamp',
+        value: new Date().getTime(),
+        condition: '<='
+    };
+});
+
+// watch(searchFor, (nv) => {
+//     if (nv) {
+//         searchValue.value = '';
+
+//         if(nv === 'division') {
+//             nextTick(() => {
+//                 displayDivisionOptions('searchDivision');
+//                 searchValue.value = '전체';
+//             });
+//         }
+//     }
+// });
+
+watch(searchValue, (nv) => {
+    if (nv) {
+        callParams.value.searchFor = 'timestamp';
+        callParams.value.value = new Date().getTime();
+        callParams.value.condition = '<=';
+
+        searchEmp();
+    }
+});
+
+nextTick(() => {
+    displayDivisionOptions('searchDivision');
+    searchValue.value = '전체';
 });
 
 let toggleSelectAll = () => {
@@ -116,9 +159,6 @@ let toggleSelect = (id, name) => {
 };
 
 let refresh = () => {
-    // loading.value = true;
-
-    // getDivisions();
     getDivisionData(true);
 };
 
@@ -204,6 +244,92 @@ let deleteDivision = async () => {
         alert("부서 삭제에 실패하였습니다.");
     }
 };
+
+let displayDivisionOptions = (selectName: string) => {
+    let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
+
+    // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
+    divisionList.innerHTML = ''; // 기존 옵션 초기화
+
+    const allOption = document.createElement('option');
+    const defaultOption = document.createElement('option');
+
+    let matchFound = false;
+
+    // 기본 옵션 추가
+    if(selectName == 'searchDivision') {
+        allOption.value = '전체';
+        allOption.innerText = '전체';
+        allOption.selected = true;
+        divisionList.appendChild(allOption);
+    } else {
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        defaultOption.innerText = '부서 선택';
+        divisionList.appendChild(defaultOption);
+    }
+
+    // 동적으로 부서 옵션 추가
+    for (let key in divisionNameList.value) {
+        if(divisionNameList.value[key] !== '') {
+            const option = document.createElement('option');
+            option.value = key;
+            option.innerText = divisionNameList.value[key];
+    
+            // 선택된 부서 처리
+            if (selectName === 'division' && key === selectedEmp.value.division) {
+                option.selected = true;
+                matchFound = true;
+            }
+    
+            divisionList.appendChild(option);
+        }
+    }
+
+    // 일치하는 키가 없으면 기본 옵션에 selected 추가
+    if (selectName === 'division' && !matchFound) {
+        defaultOption.selected = true;
+    }
+
+    // 선택박스 활성화
+    divisionList.disabled = false;
+}
+
+async function searchEmp(refresh) {
+    loading.value = true;
+    
+    if (!searchValue.value) {
+        searchValue.value = '';
+        callParams.value.searchFor = 'timestamp';
+        callParams.value.value = new Date().getTime();
+        callParams.value.condition = '<=';
+    }
+
+    try{
+        // const res = await skapi.getRecords({
+        //     table: {
+        //         name: 'emp_position_current',
+        //         access_group: 1
+        //     },
+        //     index: {
+        //         name: searchPositionValue.value ? searchValue.value + '.' + searchPositionValue.value : searchValue.value + '.',
+        //         value: ' ',
+        //         condition: '>'
+        //     }
+        // });
+
+        let gu = [];
+
+        // res.list.forEach(rec => gu.push(rec.data.user_id));
+
+        const result = [...new Set(gu)]; // 중복 제거
+
+        refresh = refresh === true;
+
+    } finally {
+        loading.value = false;
+    }
+}
 </script>
 
 <style scoped lang="less">
