@@ -148,9 +148,20 @@ export let RealtimeCallback = async (rt: any) => {
 };
 
 export let loginCheck = async (profile: any) => {
+	// console.log('=== loginCheck === profile : ', profile);
+
 	if (!profile) {
 		if(!isConnected) {
 			skapi.closeRealtime();
+		}
+
+		if (iwaslogged.value) {
+			// Object.assign(user, {}); // 이렇게 하면 지워지지 않음
+			for (let key in user) {
+				delete user[key];
+			}
+
+			iwaslogged.value = false;
 		}
 	}
 
@@ -228,15 +239,6 @@ export let loginCheck = async (profile: any) => {
 		// getRealtime();
 
 		iwaslogged.value = true;
-	} else {
-		if (iwaslogged.value) {
-			// Object.assign(user, {}); // 이렇게 하면 지워지지 않음
-			for (let key in user) {
-				delete user[key];
-			}
-
-			iwaslogged.value = false;
-		}
 	}
 	// console.log('profile', profile)
 	// console.log('iwaslogged', iwaslogged.value)
