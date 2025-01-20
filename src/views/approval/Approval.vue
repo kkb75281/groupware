@@ -25,7 +25,7 @@ ul.card-wrap
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
 	li.card
-		router-link.router(to="/approval/audit-list")
+		router-link.router(to="/approval/request-list")
 			.icon.img
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-outbox")
