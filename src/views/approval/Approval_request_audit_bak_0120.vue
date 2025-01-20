@@ -6,59 +6,21 @@ hr
 
 .form-wrap
     form#_el_request_form(@submit.prevent="requestAudit")
-        h2.title 결재 양식명
-        .table-wrap
-            .tb-overflow
-                table.table#tb-auditRequest
-                    colgroup
-                        col(style="width: 10%")
-                        col
-                        col(style="width: 10%")
-                        col
-                    tbody
-                        tr
-                            th 작성 일자
-                            td
-                                input#inp_date(type="date" name="inp_date" v-model="dateValue")
-                            th 기안자
-                            td
-                                input#inp_auditors(type="text" name="inp_auditors" placeholder="기안자" readonly :value="user.name")
-                        tr
-                            th 결재
-                            td.audit-state.left(colspan="3" style="padding: 0")
-                                .stamp-wrap
-                                    .stamp-list
-                                        span.approver ㅇㅇㅇ
-                                        .stamp
-                                            span.approved 승인
+        .input-wrap
+            p.label 작성 일자
+            input#inp_date(type="date" name="inp_date" v-model="dateValue")
 
-                        tr
-                            th 합의
-                            td.audit-state.left(colspan="3" style="padding: 0")
-                                .stamp-wrap
-                                    .stamp-list
-                                        span.approver ㅇㅇㅇ
-                                        .stamp
-                                            span.approved 승인
-                        tr
-                            th 수신 참조
-                            td.audit-state.left(colspan="3" style="padding: 0")
-                                .stamp-wrap
-                                    .stamp-list
-                                        span.approver ㅇㅇㅇ
-                                        .stamp
-                                            span.approved 승인
-                        tr
-                            th 제목
-                            td
-                                input#to_audit(type="text" placeholder="제목" required name="to_audit")
-                        tr
-                            th 결재 내용
-                            td
-                                textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content")
+        .input-wrap
+            p.label 기안자
+            input#inp_auditors(type="text" name="inp_auditors" placeholder="기안자" readonly :value="user.name")
 
-                        tr
-                            
+        .input-wrap
+            p.label.essential 제목
+            input#to_audit(type="text" placeholder="제목" required name="to_audit")
+
+        .input-wrap
+            p.label 결재 내용
+            textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content")
 
         button.btn.outline(type="button") + 사항 추가
 
