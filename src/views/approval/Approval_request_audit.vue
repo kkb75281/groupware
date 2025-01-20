@@ -91,7 +91,9 @@ async function init() {
 	});
 	console.log('=== init === divisionNameList : ', divisionNameList.value);
 	console.log('=== init === user : ', user);
-    let myDivisionTopLevel = divisionNameList.value[user.division].split("/")[0]; // 부서명/팀명/...
+	let divisionFullName = divisionNameList.value[user.division];
+	let myDivisionTopLevel = divisionFullName.includes("/") ? divisionFullName.split("/")[0] : divisionFullName;
+    // let myDivisionTopLevel = divisionNameList.value[user.division].split("/")[0]; // 부서명/팀명/...
     let divToFetch = []; // DIV_1, DIV_2, ...
     for (let k in divisionNameList.value) {
         if (divisionNameList.value[k].startsWith(myDivisionTopLevel)) {
