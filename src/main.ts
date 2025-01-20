@@ -12,6 +12,7 @@ const app = createApp(App);
 
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
+export let googleEmailUpdate = ref(false);
 let isConnected = false;
 
 // function getChanges(before:any, after:any) {
@@ -251,12 +252,15 @@ export async function updateEmails() {
 	
 	if (accessToken) {
 		try {
+			googleEmailUpdate.value = true;
 			const res = await fetchGmailEmails(accessToken);
 			console.log('=== updateEmails === res : ', res);
 			mailList.value = res;
+			googleEmailUpdate.value = false;
 
 			// console.log('=== updateEmails === res : ', res);
 		} catch (error) {
+			googleEmailUpdate.value = false;
 			console.error('=== updateEmails === error : ', {error});
 		}
 	}

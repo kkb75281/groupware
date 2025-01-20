@@ -302,6 +302,7 @@ let logout = () => {
 		Object.assign(user, {});
 		// sessionStorage.removeItem('user');
     	// sessionStorage.removeItem('iwaslogged'); 안쓰임임
+		sessionStorage.removeItem('accessToken');
         router.push({ path: "/login" });
     });
 }
