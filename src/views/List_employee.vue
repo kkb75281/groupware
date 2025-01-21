@@ -49,7 +49,7 @@ hr
             Loading#loading
         table.table#employee_list
             colgroup
-                template(v-if="user.access_group > 98")
+                template(v-if="user.access_group > 98 && empListType !== '초청여부'")
                     col(style="width: 5%;")
                 col(v-show="isDesktop" style="width: 5%;")
                 col(style="width: 10%;")
@@ -65,7 +65,7 @@ hr
                 col(v-show="isDesktop" style="min-width: 15rem;")
             thead
                 tr
-                    template(v-if="user.access_group > 98")
+                    template(v-if="user.access_group > 98 && empListType !== '초청여부'")
                         th(scope="col")
                             label.checkbox
                                 input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
@@ -89,7 +89,7 @@ hr
                     tr
                         td(colspan="10") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEditEmp(e, emp.user_id)" style="cursor: pointer;")
+                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => empListType !== '초청여부' && goToEditEmp(e, emp.user_id)" :style="{cursor: empListType !== '초청여부' ? 'pointer' : 'default'}")
                         //- 직원목록/숨김여부
                         template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
                             template(v-if="user.access_group > 98")
@@ -122,11 +122,6 @@ hr
                         
                         //- 초청여부
                         template(v-else-if="empListType === '초청여부'")
-                            template(v-if="user.access_group > 98")
-                                td
-                                    label.checkbox
-                                        input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click="toggleSelect(emp.user_id)")
-                                        span.label-checkbox
                             td.list-num(v-show="isDesktop") {{ index + 1 }}
                             td {{ emp?.position }}
                             td {{ divisionNameList?.[emp?.division] }}
