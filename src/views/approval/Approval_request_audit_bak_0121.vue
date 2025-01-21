@@ -6,9 +6,7 @@ hr
 
 .form-wrap
     form#_el_request_form(@submit.prevent="requestAudit")
-        .input-wrap.title
-            input#audit_title(type="text" placeholder="결재 양식명을 입력해주세요.  ex) 시말서" required name="to_audit")
-
+        h2.title 결재 양식명
         .table-wrap
             .tb-overflow
                 table.table#tb-auditRequest
@@ -43,23 +41,16 @@ hr
 
                         tr.approval
                             th 결재
-                            td.left(colspan="3" style="padding: 0; height: 119px;")
-                                //- span.empty 결재 라인을 추가해주세요.
+                            td.left(colspan="3" style="padding: 0" @click="openModal")
                                 ul.approver-wrap
                                     li.approver-list
                                         span.num 1
                                         span.approver 김이름
-                                    li.approver-list(@click="openModal")
-                                        span.add-approver
-                                            .icon
-                                                svg
-                                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 
                         tr.approval
                             th 합의
-                            td.left(colspan="3" style="padding: 0; height: 119px;" @click="openModal")
-                                span.empty 결재 라인을 추가해주세요.
-                                //- ul.approver-wrap
+                            td.left(colspan="3" style="padding: 0")
+                                ul.approver-wrap
                                     li.approver-list
                                         span.num 1
                                         span.approver 김이름
@@ -74,11 +65,6 @@ hr
                                             .icon
                                                 svg
                                                     use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-                                    li.reference-list
-                                        span.add-referencer
-                                            .icon
-                                                svg
-                                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
                                             
                         tr
                             th 제목
@@ -119,11 +105,10 @@ hr
                                                 li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
                             
 
-        button.btn.outline(type="button") + 작성란 추가
+        button.btn.outline(type="button") + 사항 추가
 
         .button-wrap
-            button.btn.outline.btn-preview(type="submit" style="margin-top: 0;") 미리보기
-            button.btn(type="submit" style="margin-top: 0;") 결재 요청
+            button.btn(type="submit" style="margin-top: 0;") 결재요청
 
 //- Modal
 #modal.modal.select-approver(v-if="isModalOpen" @click="closeModal")
@@ -143,9 +128,9 @@ hr
                                 th 직급
                                 th 이름
                                 th 부서
+                                th 수신 참조
                                 th 결재 여부
                                 th 합의 여부
-                                th 수신 참조
 
                         tbody
                             tr(v-for="(auditor, index) in same_division_auditors")
@@ -578,7 +563,6 @@ onUnmounted(() => {
         border-right: 1px solid var(--gray-color-300);
         border-bottom: 1px solid var(--gray-color-300);
         margin-bottom: -1px;
-        position: relative;
     }
 
     .num {
@@ -594,16 +578,11 @@ onUnmounted(() => {
         padding: 0.25rem;
     }
 
-    .add-approver {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        cursor: pointer;
-
-        .icon {
-            svg {
-                fill: var(--gray-color-400);
+    .btn {
+        &.outline {
+            &:focus,
+            &:active {
+                border: 1px solid var(--primary-color-400);
             }
         }
     }
@@ -630,27 +609,19 @@ onUnmounted(() => {
         height: 100%;
         padding: 0.25rem;
         gap: 2px;
-
-        .icon {
-            padding: 0;
-
-            &:hover {
-                cursor: pointer;
-            }
-        }
-    }
-
-    .add-referencer {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
     }
 
     .icon {
+        padding: 0;
+
         svg {
             width: 18px;
             height: 18px;
             fill: var(--gray-color-400);
+        }
+
+        &:hover {
+            cursor: pointer;
         }
     }
 }
@@ -669,17 +640,6 @@ onUnmounted(() => {
             margin-top: 0;
         }
     }
-}
-
-.empty {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    font-size: 0.875rem;
-    line-height: 1.2;
-    color: var(--gray-color-400);
-    cursor: pointer;
 }
 
 @media (max-width: 768px) {
