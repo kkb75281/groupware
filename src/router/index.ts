@@ -25,197 +25,203 @@ import Approval from '@/views/approval/Approval.vue';
 // import Approval_audit_detail from '@/views/approval/Approval_audit_detail.vue';
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/login',
-      name: 'login',
-      component: Login,
-    },
-    {
-      path: '/verification',
-      name: 'verification',
-      component: () => import('@/views/Verification.vue'),
-    },
-    {
-      path: '/change-password',
-      name: 'change-password',
-      component: () => import('@/views/Change_password.vue'),
-    },
-    {
-      path: '/forgot-password',
-      name: 'forgot-password',
-      component: () => import('@/views/Forgot_password.vue'),
-    },
-    {
-      path: '/mailing',
-      name: 'mailing',
-      component: () => import('@/views/Mailing.vue'),
-    },
-    {
-      path: '/',
-      component: Main,
-      children: [
-        {
-          path: '/',
-          name: 'home',
-          component: Dashboard,
-        },
-        // {
-        //   path: '/list-data',
-        //   name: 'list-data',
-        //   component: Mypage_list_data,
-        // },
-        {
-          path: '/list-employee',
-          name: 'list-employee',
-          component: () => import('@/views/List_employee.vue'), // List_employee,
-        },
-        {
-          path: '/detail-employee/:userId',
-          name: 'detail-employee',
-          component: () => import('@/views/List_detail_employee.vue'), // List_detail_employee,
-        },
-        {
-          path: '/approval',
-          children: [
-            {
-              path: '/approval',
-              name: 'approval',
-              component: Approval,
-            },
+	history: createWebHistory(import.meta.env.BASE_URL),
+	routes: [
+		{
+			path: '/login',
+			name: 'login',
+			component: Login,
+		},
 			{
-				path: 'request-list',
-				name: 'request-list',
-				component: () => import('@/views/approval/Approval_request_list.vue'),
-			},
-            {
-              path: 'request-audit',
-              name: 'request-audit',
-              component: () => import('@/views/approval/Approval_request_audit.vue'), // Approval_request_audit,
-            },
-            {
-              path: 'audit-list',
-              name: 'audit-list',
-			  component: () => import('@/views/approval/Approval_audit_list.vue'),
-            },
-            {
-              path: 'audit-detail/:auditId',
-              name: 'audit-detail',
-			  component: () => import('@/views/approval/Approval_audit_detail.vue'),
-            },
-          ],
-        },
-        {
-          path: '/mypage',
-          children: [
-            {
-              path: '/mypage',
-              name: 'mypage',
-              component: Mypage,
-            },
-            {
-              path: 'edit-myinfo',
-              name: 'edit-myinfo',
-              component: () => import('@/views/mypage/Mypage_edit_myinfo.vue'), // Mypage_edit_myinfo,
-            },
-            {
-              path: 'edit-mystamp',
-              name: 'edit-mystamp',
-			  component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
-            },
-            {
-              path: 'record-commute',
-              name: 'record-commute',
-              component: () => import('@/views/mypage/Mypage_record_commute.vue'), // Mypage_record_commute,
-            },
-          ],
-        },
-        {
-          path: '/admin',
-          beforeEnter: async (to, from, next) => {
-            if (user.access_group > 98) {
-              next();
-            } else {
-              next({ name: 'home' });
-            }
-          },
-          children: [
-            {
-              path: '/admin',
-              name: 'admin',
-              component: Admin,
-            },
-            {
-              path: 'add-employee',
-              name: 'add-employee',
-              component: () => import('@/views/admin/Admin_add_employee.vue'), // Admin_add_employee,
-            },
-            {
-              path: 'add-divisions',
-              name: 'add-divisions',
-              component: () => import('@/views/admin/Admin_add_divisions.vue'), // Admin_add_divisions,
-            },
-            {
-              path: 'edit-divisions',
-              name: 'edit-divisions',
-              component: () => import('@/views/admin/Admin_edit_divisions.vue'), //Admin_edit_divisions,
-            },
-            {
-              path: 'list-divisions',
-              name: 'list-divisions',
-              component: () => import('@/views/admin/Admin_list_divisions.vue'),
-            },
-            {
-              path: 'list-commute',
-              name: 'list-commute',
-              component: () => import('@/views/admin/Admin_list_commute.vue'),  //Admin_list_commute,
-            },
-            {
-              path: '/commute-detail/:userId',
-              name: 'commute-detail',
-              component: () => import('@/views/admin/Admin_commute_detail.vue'),  //Admin_commute_detail,
-            },
-            {
-              path: 'edit-worktime',
-              name: 'edit-worktime',
-              component: () => import('@/views/admin/Admin_edit_worktime.vue'), // Admin_edit_worktime,
-            },
-            // {
-            //   path: 'list-employee',
-            //   name: 'list-employee',
-            //   component: () => import('@/views/List_employee.vue'), // List_employee,
-            // },
-            // {
-            //   path: '/detail-employee/:userId',
-            //   name: 'detail-employee',
-            //   component: () => import('@/views/List_detail_employee.vue'), // List_detail_employee,
-            //   props: true,
-            // },
-          ],
-        },
-        {
-          path: '/profile',
-          name: 'profile',
-          component: Profile,
-        },
-        {
-          path: '/component',
-          name: 'component',
-          component: () => import('../components/component.vue'),
-        },
-      ],
-    },
+			path: '/verification',
+			name: 'verification',
+			component: () => import('@/views/Verification.vue'),
+		},
+		{
+			path: '/change-password',
+			name: 'change-password',
+			component: () => import('@/views/Change_password.vue'),
+		},
+		{
+			path: '/forgot-password',
+			name: 'forgot-password',
+			component: () => import('@/views/Forgot_password.vue'),
+		},
+		{
+			path: '/mailing',
+			name: 'mailing',
+			component: () => import('@/views/Mailing.vue'),
+		},
+		{
+			path: '/',
+			component: Main,
+			children: [
+				{
+					path: '/',
+					name: 'home',
+					component: Dashboard,
+				},
+				{
+					path: '/organigram',
+					name: 'organigram',
+					component: () => import('@/components/organigram.vue'),
+				},
+				// {
+				//   path: '/list-data',
+				//   name: 'list-data',
+				//   component: Mypage_list_data,
+				// },
+				{
+					path: '/list-employee',
+					name: 'list-employee',
+					component: () => import('@/views/List_employee.vue'), // List_employee,
+				},
+				{
+					path: '/detail-employee/:userId',
+					name: 'detail-employee',
+					component: () => import('@/views/List_detail_employee.vue'), // List_detail_employee,
+				},
+				{
+					path: '/approval',
+					children: [
+						{
+							path: '/approval',
+							name: 'approval',
+							component: Approval,
+						},
+						{
+							path: 'request-list',
+							name: 'request-list',
+							component: () => import('@/views/approval/Approval_request_list.vue'),
+						},
+						{
+							path: 'request-audit',
+							name: 'request-audit',
+							//   component: () => import('@/views/approval/Approval_request_audit.vue'), // Approval_request_audit,
+							component: () => import('@/views/approval/Approval_request_audit_qb.vue'), // Approval_request_audit,
+						},
+						{
+							path: 'audit-list',
+							name: 'audit-list',
+							component: () => import('@/views/approval/Approval_audit_list.vue'),
+						},
+						{
+							path: 'audit-detail/:auditId',
+							name: 'audit-detail',
+							component: () => import('@/views/approval/Approval_audit_detail.vue'),
+						},
+					],
+				},
+				{
+					path: '/mypage',
+					children: [
+						{
+						path: '/mypage',
+						name: 'mypage',
+						component: Mypage,
+						},
+						{
+						path: 'edit-myinfo',
+						name: 'edit-myinfo',
+						component: () => import('@/views/mypage/Mypage_edit_myinfo.vue'), // Mypage_edit_myinfo,
+						},
+						{
+						path: 'edit-mystamp',
+						name: 'edit-mystamp',
+						component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
+						},
+						{
+						path: 'record-commute',
+						name: 'record-commute',
+						component: () => import('@/views/mypage/Mypage_record_commute.vue'), // Mypage_record_commute,
+						},
+					],
+				},
+				{
+					path: '/admin',
+					beforeEnter: async (to, from, next) => {
+						if (user.access_group > 98) {
+							next();
+						} else {
+							next({ name: 'home' });
+						}
+					},
+					children: [
+						{
+							path: '/admin',
+							name: 'admin',
+							component: Admin,
+						},
+						{
+							path: 'add-employee',
+							name: 'add-employee',
+							component: () => import('@/views/admin/Admin_add_employee.vue'), // Admin_add_employee,
+						},
+						{
+							path: 'add-divisions',
+							name: 'add-divisions',
+							component: () => import('@/views/admin/Admin_add_divisions.vue'), // Admin_add_divisions,
+						},
+						{
+							path: 'edit-divisions',
+							name: 'edit-divisions',
+							component: () => import('@/views/admin/Admin_edit_divisions.vue'), //Admin_edit_divisions,
+						},
+						{
+							path: 'list-divisions',
+							name: 'list-divisions',
+							component: () => import('@/views/admin/Admin_list_divisions.vue'),
+						},
+						{
+							path: 'list-commute',
+							name: 'list-commute',
+							component: () => import('@/views/admin/Admin_list_commute.vue'),  //Admin_list_commute,
+						},
+						{
+							path: '/commute-detail/:userId',
+							name: 'commute-detail',
+							component: () => import('@/views/admin/Admin_commute_detail.vue'),  //Admin_commute_detail,
+						},
+							{
+							path: 'edit-worktime',
+							name: 'edit-worktime',
+							component: () => import('@/views/admin/Admin_edit_worktime.vue'), // Admin_edit_worktime,
+						},
+						// {
+						//   path: 'list-employee',
+						//   name: 'list-employee',
+						//   component: () => import('@/views/List_employee.vue'), // List_employee,
+						// },
+						// {
+						//   path: '/detail-employee/:userId',
+						//   name: 'detail-employee',
+						//   component: () => import('@/views/List_detail_employee.vue'), // List_detail_employee,
+						//   props: true,
+						// },
+					],
+				},
+				{
+					path: '/profile',
+					name: 'profile',
+					component: Profile,
+				},
+				{
+					path: '/component',
+					name: 'component',
+					component: () => import('../components/component.vue'),
+				},
+			],
+		},
 
-    // {
-    //   path: '/about',
-    //   name: 'about',
-    //   // route level code-splitting
-    //   // this generates a separate chunk (About.[hash].js) for this route
-    //   // which is lazy-loaded when the route is visited.
-    //   component: () => import('../views/AboutView.vue')
-    // }
-  ],
+		// {
+		//   path: '/about',
+		//   name: 'about',
+		//   // route level code-splitting
+		//   // this generates a separate chunk (About.[hash].js) for this route
+		//   // which is lazy-loaded when the route is visited.
+		//   component: () => import('../views/AboutView.vue')
+		// }
+	],
 });
 
 export default router;
