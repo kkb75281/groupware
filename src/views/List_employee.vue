@@ -86,7 +86,7 @@ hr
                 template(v-if="loading")
                     tr(v-for="i in 4")
                 template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
-                    tr
+                    tr.nohover
                         td(colspan="10") 데이터가 없습니다.
                 template(v-else)
                     tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => empListType !== '초청여부' && goToEditEmp(e, emp.user_id)" :style="{cursor: empListType !== '초청여부' ? 'pointer' : 'default'}")
