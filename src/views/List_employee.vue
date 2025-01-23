@@ -45,7 +45,7 @@ hr
                         button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="employeeState('delete')") 삭제
 
     .tb-overflow
-        template(v-if="loading")
+        //- template(v-if="loading")
             Loading#loading
         table.table#employee_list
             colgroup
@@ -84,7 +84,9 @@ hr
                     th(v-show="isDesktop" scope="col") 주소
             tbody
                 template(v-if="loading")
-                    tr(v-for="i in 4")
+                    tr.loading
+                        td(colspan="10")
+                            Loading#loading
                 template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
                     tr.nohover
                         td(colspan="10") 데이터가 없습니다.
@@ -377,9 +379,12 @@ async function getEmpList(type, refresh=false){
 
         let result = await getUsers({
             searchFor: 'approved',
-            value: 'by_admin:suspended',
+            // value: 'by_admin:suspended',
+            value: 'by_skapi:suspended',
             condition: '>='
         }, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
+
+		console.log('result', result);
 
         employee.value = result;
         suspendedLength.value = result.length;
@@ -568,16 +573,20 @@ let employeeState = async(state) => {
 
         await Promise.all(userId.map(el => {
             return skapi.blockAccount({ user_id: el }).then(res => {
-                let appr_cache = getUserCache['by_skapi:approved'];
-                let sus_cache = getUserCache['by_admin:suspended'];
-                if(appr_cache.length) {
-                    let index = appr_cache.findIndex(uid => uid === el);
-                    appr_cache.splice(index, 1);
-                }
-                sus_cache.push(el);
+                // let appr_cache = getUserCache['by_skapi:approved'];
+                // let sus_cache = getUserCache['by_admin:suspended'];
+				// console.log('appr_cache', appr_cache);
+				// console.log('sus_cache', sus_cache);
+                // if(appr_cache.length) {
+                //     let index = appr_cache.findIndex(uid => uid === el);
+                //     appr_cache.splice(index, 1);
+                // }
+                // sus_cache.push(el);
 
                 isSuccess.push(el);
             }).catch(err => {
+				console.log('숨김처리 진짜 실패함');
+				console.log(err);
                 isFail.push(el);
             });
         }));
@@ -586,16 +595,20 @@ let employeeState = async(state) => {
 
         await Promise.all(userId.map(el => {
             return skapi.unblockAccount({ user_id: el }).then(res => {
-                let appr_cache = getUserCache['by_skapi:approved'];
-                let sus_cache = getUserCache['by_admin:suspended'];
-                if(sus_cache.length) {
-                    let index = sus_cache.findIndex(uid => uid === el);
-                    sus_cache.splice(index, 1);
-                }
-                appr_cache.push(el);
+                // let appr_cache = getUserCache['by_skapi:approved'];
+                // let sus_cache = getUserCache['by_admin:suspended'];
+				// console.log('appr_cache', appr_cache);
+				// console.log('sus_cache', sus_cache);
+                // if(sus_cache.length) {
+                //     let index = sus_cache.findIndex(uid => uid === el);
+                //     sus_cache.splice(index, 1);
+                // }
+                // appr_cache.push(el);
 
                 isSuccess.push(el);
             }).catch(err => {
+				console.log('숨김해제 진짜 실패함');
+				console.log(err);
                 isFail.push(el);
             });
         }));
@@ -606,24 +619,34 @@ let employeeState = async(state) => {
             return skapi.deleteAccount({ user_id: el }).then(res => {
                 skapi.deleteRecords({unique_id: "[emp_position_current]" + makeSafe(el)});  // 현재 직책 삭제
 
-                let sus_cache = getUserCache['by_admin:suspended'];
-                if(sus_cache.length) {
-                    let index = sus_cache.findIndex(uid => uid === el);
-                    sus_cache.splice(index, 1);
-                }
+                // let sus_cache = getUserCache['by_admin:suspended'];
+				// console.log('sus_cache', sus_cache);
+                // if(sus_cache.length) {
+                //     let index = sus_cache.findIndex(uid => uid === el);
+                //     sus_cache.splice(index, 1);
+                // }
 
                 isSuccess.push(el);
             }).catch(err => {
+				console.log('유저삭제 진짜 실패함');
+				console.log(err);
                 isFail.push(el);
             });
         }));
     }
 
     if(isSuccess.length > 0) {
+		console.log('성공', isSuccess);
+		console.log('실패', isFail);
         alert(`${isSuccess.length}명의 직원이 ${alertMsg}되었습니다.`);
     } else {
+		console.log('성공', isSuccess);
+		console.log('실패', isFail);
         alert(`${alertMsg}에 실패하였습니다.`);
     }
+
+	selectedList.value = [];
+	getEmpList(empListType.value, true);
 }
 
 let resendInvite = (email) => {
@@ -856,21 +879,25 @@ onUnmounted(() => {
 }
 
 .table-wrap {
-    position: relative;
     margin-top: 3rem;
-
-    #loading {
-        position: absolute;
-        top: 126px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
 
     #searchForm {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
     }
+
+	.loading {
+		position: relative;
+		border-bottom: unset;
+
+		#loading {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+	}
 }
 
 .go-detail {
