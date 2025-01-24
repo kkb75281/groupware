@@ -145,6 +145,13 @@ const menuList = computed(() => [
         to: '/list-employee',
         icon: 'src/assets/icon/material-icon.svg#icon-groups',
         text: '직원 목록',
+    },
+	{
+        show: true,
+        name: 'organigram',
+        to: '/organigram',
+        icon: 'src/assets/icon/material-icon.svg#icon-account-tree',
+        text: '조직도',
     }
 ]);
 
