@@ -150,85 +150,23 @@ hr
 
 
 //- 결재 모달
-#modal.modal.modal-approve(v-if="isModalOpen")
-	.modal-cont(@click.stop)
-		.modal-header(style="border:0;padding:0")
+#modal.modal(v-if="isModalOpen")
+	form.modal-cont(@click.stop @submit.prevent="postApproval")
+		.modal-header
 			h2.modal-title 결재
 			button.btn-close(@click="closeModal")
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 		.modal-body
-			.table-wrap
-				.tb-overflow
-					table.table
-						colgroup
-							col(style="width: 25%")
-							col
-						tbody
-							tr
-								th 결재문서
-								td {{ '[김이름] 결재문서제목' }}
+			label.radio-button(style="width: 50%")
+				input(type="radio" name="approved" value="approve" checked)
+				span.label-radio 결재
+			label.radio-button
+				input(type="radio" name="approved" value="reject")
+				span.label-radio 반려
+		.modal-footer
+			button.btn.btn-edit(type="submit") 확인
 
-							tr
-								th 결재자
-								td {{ '권규비' }}
-
-							tr
-								th 결재여부
-								td
-									label.radio-button(style="width: 50%")
-										input(type="radio" name="approved" value="approve" checked)
-										span.label-radio 결재
-									label.radio-button
-										input(type="radio" name="approved" value="reject")
-										span.label-radio 반려
-							
-							tr
-								th 추가의견
-								td
-									.input-wrap(style="margin: 0")
-										textarea(name="comment" rows="5" placeholder="결재의견을 입력해주세요." style="width: 100%;resize: none;")
-
-		.modal-footer(style="border:0;padding:0")
-			button.btn.bg-gray.btn-edit(type="button" @click="isModalOpen=false") 취소
-			button.btn.btn-edit(type="submit" @click="approvalState") 확인
-
-//- 도장 입력 모달
-#modal.modal.modal-stamp(v-if="isStampModalOpen")
-	.modal-cont(@click.stop)
-		.modal-header
-			h2.modal-title 도장/서명 입력
-			button.btn-close(@click="isStampModalOpen=false")
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-		
-		.modal-body
-			.my-stamp-wrap
-				template(v-if="gettingStampList")
-					Loading#loading
-				template(v-else)
-					.stamp-wrap(v-if="myStamps.length")
-						.stamp-grid(v-for="stamp in myStamps" :key="stamp.stamp_id" @click="selectStamp(stamp.stamp_id)")
-							//- label.checkbox
-								input(type="checkbox" name="checkbox")
-								span.label-checkbox
-							.stamp
-								img#stamp-img(:src="stamp.url" alt="도장 이미지")
-					.no-stamp(v-else style="text-align: center;border: 1px solid var(--gray-color-100);padding: 3rem 1rem;border-radius: 8px;color: var(--gray-color-400);") 
-						span 현재 등록된 도장이 없습니다.
-			
-			br
-
-			.upload-stamp-btn(style="display: flex;align-items: center;justify-content: center;gap: 1rem;")
-				template(v-if="myStamps.length")
-					button.btn.btn-edit(type="button" @click="isModalOpen=false") 도장 업로드
-				template(v-else)
-					button.btn.outline.btn-edit(type="button" @click="isModalOpen=false") 파일 업로드
-					button.btn.outline.btn-edit(type="button" @click="isModalOpen=false") 서명하기
-
-		//- .modal-footer
-			button.btn.bg-gray.btn-edit(type="button" @click="isModalOpen=false") 이전
-			button.btn.btn-edit(type="button" @click="isModalOpen=false") 결재 승인
 
 </template>
 
@@ -236,9 +174,7 @@ hr
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
-import { user, makeSafe } from '@/user';
-
-import Loading from '@/components/Loading.vue';
+import { user } from '@/user';
 
 const router = useRouter();
 const route = useRoute();
@@ -250,7 +186,6 @@ const disabled = ref(true);
 const auditDoContent = ref([]);
 const auditUserList = ref([]);
 const isModalOpen = ref(false);
-const isStampModalOpen = ref(false);
 const senderUser = ref({});
 
 // 결재자 정보 저장
@@ -317,8 +252,8 @@ watch(auditDoContent, () => {
 
 let isPosting = false;
 
-const openModal = (target) => {
-	if (target && target.userId !== user.user_id) return;
+const openModal = (approver) => {
+	if (approver && approver.userId !== user.user_id) return;
 
 	isModalOpen.value = true;
 	disabled.value = false;
@@ -328,58 +263,6 @@ const closeModal = () => {
 	isModalOpen.value = false;
 	disabled.value = true;
 };
-
-let approvalState = () => {
-	const selectedValue = document.querySelector('input[name="approved"]:checked')?.value;
-
-	if(selectedValue === 'approve') {
-		console.log('결재함:', selectedValue);
-		isModalOpen.value = false;
-		isStampModalOpen.value = true;
-		// getStampList();
-	} else if(selectedValue === 'reject') {
-		console.log('반려함:', selectedValue);
-	}
-}
-
-let gettingStampList = ref(false);
-let myStamps = ref([]);
-let myStampsRecordId = ref(null);
-
-let getStampList = async () => {
-    gettingStampList.value = true;
-
-    try {
-        let res = await skapi.getRecords({
-            unique_id: '[stamp_images]' + makeSafe(user.user_id),
-            table: {
-                name: 'stamp_images',
-                access_group: 1,
-            }
-        });
-
-        console.log(res);
-
-        if(res.list.length) {
-            myStamps.value = res.list[0].bin.stamp_data;
-            myStampsRecordId.value = res.list[0].record_id;
-            gettingStampList.value = false;
-        }
-    } catch(e) {
-        console.log({e})
-
-        if(e.code === "NOT_EXISTS") {
-            myStamps.value = [];
-            myStampsRecordId.value = null;
-
-        } else {
-            alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
-        }
-
-        gettingStampList.value = false;
-    }
-}
-getStampList();
 
 // 다른 사람 결재 여부 확인
 // const approvedAudit = async () => {
@@ -657,7 +540,6 @@ onUnmounted(() => {
         display: flex;
         flex-direction: column;
         width: 100%;
-		min-width: 100px;
         min-height: 8rem;
         border-right: 1px solid var(--gray-color-300);
         border-bottom: 1px solid var(--gray-color-300);
@@ -718,6 +600,22 @@ onUnmounted(() => {
     }
 }
 
+.select-approver {
+    .modal-cont {
+        min-width: 750px;
+        max-width: 750px;
+    }
+
+    .modal-footer {
+        padding-top: 0;
+        border-top: none;
+
+        .btn {
+            margin-top: 0;
+        }
+    }
+}
+
 .empty {
     display: flex;
     justify-content: center;
@@ -733,210 +631,16 @@ onUnmounted(() => {
 	margin-top: 0;
 }
 
-.stamp-wrap {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    // grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    // grid-template-columns: repeat(4, minmax(220px, 1fr));
-    gap: 1rem;
-
-    .stamp-grid {
-        position: relative;
-        width: 100%;
-        border: 1px solid var(--gray-color-100);
-        border-radius: 0.5rem;
-
-        &::after {
-            content: '';
-            display: block;
-            padding-bottom: 100%;
-        }
-
-        &.loading {
-            border: 0;
-        }
-
-        .stamp {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-
-            .checkbox {
-                position: absolute;
-                top: 0.5rem;
-                left: 0.5rem;
-            }
-
-            .add-icon {
-                position: absolute;
-                width: 30px;
-                height: 30px;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                fill: var(--primary-color-400);
-                // transition: all 0.3s;
-                // fill: var(--gray-color-300);
-            }
-
-            .delete-icon {
-                position: absolute;
-                top: 0.5rem;
-                right: 0.5rem;
-                width: 25px;
-                height: 25px;
-                fill: var(--gray-color-300);
-                transition: all 0.3s;
-                cursor: pointer;
-
-                &:hover {
-                    fill: var(--warning-color-400);
-                }
-            }
-
-            &.upload-btn {
-                cursor: pointer;
-
-                #stamp-img {
-                    background-color: unset;
-                    // transition: all 0.3s;
-                    border-color: var(--primary-color-300);
-
-                    &::before {
-                        content: '';
-                        background-color: unset;
-                    }
-                }
-                .name {
-                    // transition: all 0.3s;
-                    // color: var(--gray-color-300);
-                    color:var(--primary-color-400);
-                }
-
-                &.disabled {
-                    cursor: default;
-                    pointer-events: none;
-
-                    #stamp-img {
-                        border-color: var(--gray-color-300);
-                    }
-                    .add-icon {
-                        fill: var(--gray-color-300);
-                    }
-                    .name {
-                        color:var(--gray-color-300);
-                    }
-                }
-
-                // &:hover {
-                //     #stamp-img {
-                //         border-color: var(--primary-color-300);
-                //     }
-                //     .add-icon {
-                //         fill: var(--primary-color-400);
-                //     }
-                //     .name {
-                //         color:var(--primary-color-400);
-                //     }
-                // }
-            }
-
-            &.upload-preview {
-                background-color: var(--primary-color-25);
-
-                #stamp-img {
-                    background-color: var(--primary-color-25);
-                    border-color: var(--gray-color-200);
-                    opacity: 0.3;
-
-                    &::before {
-                        content: '미리보기';
-                        background-color: var(--primary-color-25);
-                    }
-                }
-                .name {
-                    opacity: 0.3;
-                }
-            }
-        }
-
-        .upload-options {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translateX(-50% + 50px) translateY(-50% + 25px);
-            // right: -113px;
-            // bottom: -40px;
-            z-index: 9;
-            background-color: var(--gray-color-100);
-            border: 1px solid var(--gray-color-300);
-            padding: 5px;
-            border-radius: 4px;
-            
-            li {
-                font-size: 0.8rem;
-                text-align: left;
-                cursor: pointer;
-                padding: 4px 8px;
-                border-radius: 4px;
-
-                &:first-child {
-                    margin-bottom: 4px;
-                }
-                &:hover {
-                    background-color: var(--primary-color-400);
-                    color: #fff;
-
-                    &.disabled {
-                        background-color: unset;
-                        color: unset;
-                    }
-                }
-                &.disabled {
-                    opacity: 0.25;
-                    cursor: default;
-                    pointer-events: none;
-                }
-            }
-        }
-    }
-}
-
-#stamp-img {
-    width: 100px;
-    height: 100px;
-    border-radius: 30%;
-    display: block;
-    object-fit: contain;
-    position: relative;
-    background-color: #fff;
-    border: 2px dashed var(--gray-color-100);
-    // margin-bottom: 0.5rem;
-
-    &::before {
-        content: "도장 등록";
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        color: #888;
-        background-color: #fff;
-        font-size: 14px;
-        text-align: center;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
-}
-
 @media (max-width: 768px) {
     .approver-wrap {
         grid-template-columns: repeat(5, 1fr);
+    }
+
+    .select-approver {
+        .modal-cont {
+            min-width: 100%;
+            max-width: 100%;
+        }
     }
 }
 
@@ -964,4 +668,103 @@ onUnmounted(() => {
         }
     }
 }
+
+// .title {
+// 	display: flex;
+// 	flex-wrap: wrap;
+// 	align-items: end;
+// 	gap: 1rem;
+
+// 	span {
+// 		color: var(--gray-color-400);
+// 		line-height: 1.4;
+// 	}
+// }
+
+// .table-wrap {
+// 	tbody {
+// 		tr {
+// 			&:hover {
+// 				background-color: transparent;
+// 			}
+// 		}
+
+// 		th {
+// 			border: 1px solid var(--gray-color-300);
+
+// 			&:first-of-type {
+// 				border-left: none;
+// 			}
+// 		}
+
+// 		td {
+// 			border: 1px solid var(--gray-color-300);
+
+// 			&:last-of-type {
+// 				border-right: none;
+// 			}
+// 		}
+// 	}
+// }
+
+// .stamp-wrap {
+// 	display: flex;
+// 	flex-wrap: wrap;
+// 	text-align: center;
+// 	height: 100%;
+
+// 	.stamp-list {
+// 		display: flex;
+// 		flex-direction: column;
+// 		width: 6rem;
+// 		min-height: 7rem;
+// 		border-right: 1px solid var(--gray-color-300);
+// 	}
+
+// 	.approver {
+// 		display: inline-block;
+// 		border-bottom: 1px solid var(--gray-color-300);
+// 		color: var(--gray-color-500);
+// 		width: 100%;
+// 		padding: 8px;
+// 	}
+
+// 	.stamp {
+// 		padding: 8px;
+// 		display: flex;
+// 		justify-content: center;
+// 		align-items: center;
+// 		height: 100%;
+
+// 		> span {
+// 			display: inline-block;
+// 			padding: 8px;
+// 		}
+// 	}
+
+// 	.approved {
+// 		color: var(--primary-color-400);
+// 	}
+
+// 	.rejected {
+// 		color: var(--warning-color-400);
+// 	}
+
+// 	.waitting {
+// 		color: var(--gray-color-500);
+// 	}
+
+// 	.btn {
+// 		&.outline {
+// 			&:focus,
+// 			&:active {
+// 				border: 1px solid var(--primary-color-400);
+// 			}
+// 		}
+// 	}
+// }
+
+// @media (max-width: 768px) {
+
+// }
 </style>
