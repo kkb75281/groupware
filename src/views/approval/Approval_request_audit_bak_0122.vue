@@ -4,169 +4,136 @@
 
 hr
 
-template(v-if="step > 0 && showBackStep")
-	p.label.essential 결재 양식명
-	.input-wrap
-		input(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" placeholder="ex) 시말서, 휴가신청서" required)
+//- template(v-if="step === 1")
+p 결재 양식명을 입력해주세요.
+.input-wrap
+	input(@input="(e) => {auditTitle = e.target.value}" type="text" placeholder="ex) 시말서, 휴가신청서" required)
 
-	hr
+hr
 
-template(v-if="step > 1")
-	.form-wrap
-		form#_el_request_form(@submit.prevent="requestAudit")
-			#print-area
-				//- .input-wrap.title
-					input#audit_title(type="text" placeholder="결재 양식명을 입력해주세요.  ex) 시말서" required name="to_audit" style="font-size:2rem; font-weight:bold; text-align:center;")
+.form-wrap
+	form#_el_request_form(@submit.prevent="requestAudit")
+		#print-area
+			//- .input-wrap.title
+				input#audit_title(type="text" placeholder="결재 양식명을 입력해주세요.  ex) 시말서" required name="to_audit" style="font-size:2rem; font-weight:bold; text-align:center;")
 
-				input(:value="auditTitle" type="text" required name="to_audit" hidden)
-				//- h2.title(style="text-align:center" :style="{color: !auditTitle ? '#ddd' : 'black', fontWeight: !auditTitle ? '400' : 'bold'}") {{ auditTitle || "결재 양식명을 입력해주세요." }}
-				.title-wrap
-					.title
-						h2(style="text-align:center" :style="{color: !auditTitle ? '#ddd' : 'black', fontWeight: !auditTitle ? '400' : 'bold'}") {{ auditTitle || "결재 양식명을 입력해주세요." }}
-						.icon(v-if="!showBackStep" @click="showBackStep = !showBackStep")
-							svg
-								use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
+			input(:value="auditTitle" type="text" required name="to_audit" hidden)
+			h2.title(style="text-align:center" :style="{color: !auditTitle ? '#ddd' : 'black', fontWeight: !auditTitle ? '400' : 'bold'}") {{ auditTitle || "결재 양식명을 입력해주세요." }}
 
-				.table-wrap
-					.tb-overflow
-						table.table#tb-auditRequest
-							colgroup
-								col(style="width: 15%")
-								col
-								col(style="width: 15%")
-								col(style="width: 20%")
+			.table-wrap
+				.tb-overflow
+					table.table#tb-auditRequest
+						colgroup
+							col(style="width: 15%")
+							col
+							col(style="width: 15%")
+							col(style="width: 20%")
 
-							tbody
-								//- 작성일자 기안사 :: s
-								tr.pc(v-show="isDesktop")
-									th 작성 일자
-									td
-										.input-wrap
-											input#inp_date(type="date" name="inp_date" v-model="dateValue")
-									th 기안자
-									td
-										span.drafter {{ user.name }}
+						tbody
+							//- 작성일자 기안사 :: s
+							tr.pc(v-show="isDesktop")
+								th 작성 일자
+								td
+									.input-wrap
+										input#inp_date(type="date" name="inp_date" v-model="dateValue")
+								th 기안자
+								td
+									span.drafter {{ user.name }}
 
-								//- 모바일 경우 레이아웃
-								tr.mo(v-show="!isDesktop")
-									th 작성 일자
-									td(colspan="3")
-										.input-wrap
-											input#inp_date(type="date" name="inp_date" v-model="dateValue")
-								tr.mo(v-show="!isDesktop")
-									th 기안자
-									td(colspan="3" style="text-align: left")
-										span.drafter {{ user.name }}
-								//- 작성일자 기안사 :: e
+							//- 모바일 경우 레이아웃
+							tr.mo(v-show="!isDesktop")
+								th 작성 일자
+								td(colspan="3")
+									.input-wrap
+										input#inp_date(type="date" name="inp_date" v-model="dateValue")
+							tr.mo(v-show="!isDesktop")
+								th 기안자
+								td(colspan="3" style="text-align: left")
+									span.drafter {{ user.name }}
+							//- 작성일자 기안사 :: e
 
-								tr.approval
-									th 결재
-									td.left(colspan="3" style="padding: 0; height: 119px;")
-										//- span.empty 결재 라인을 추가해주세요.
-										ul.approver-wrap
-											li.approver-list
-												span.num 1
-												span.approver 김이름
-											li.approver-list(@click="openModal")
-												span.add-approver
-													.icon
-														svg
-															use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
+							tr.approval
+								th 결재
+								td.left(colspan="3" style="padding: 0; height: 119px;")
+									//- span.empty 결재 라인을 추가해주세요.
+									ul.approver-wrap
+										li.approver-list
+											span.num 1
+											span.approver 김이름
+										li.approver-list(@click="openModal")
+											span.add-approver
+												.icon
+													svg
+														use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 
-								tr.approval
-									th 합의
-									td.left(colspan="3" style="padding: 0; height: 119px;" @click="openModal")
-										span.empty 결재 라인을 추가해주세요.
-										//- ul.approver-wrap
-											li.approver-list
-												span.num 1
-												span.approver 김이름
+							tr.approval
+								th 합의
+								td.left(colspan="3" style="padding: 0; height: 119px;" @click="openModal")
+									span.empty 결재 라인을 추가해주세요.
+									//- ul.approver-wrap
+										li.approver-list
+											span.num 1
+											span.approver 김이름
 
-								tr.reference
-									th 수신 참조
-										.add-btn(@click="isRowModalOpen = true")
-											.icon
-												svg
-													use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
-									td.left(colspan="3")
-										ul.reference-wrap
-											li.reference-list
-												span.referencer
-													| 김이름
-													.icon
-														svg
-															use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-											li.reference-list
-												span.add-referencer
-													.icon
-														svg
-															use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
-								
-								tr.tr-hover(v-for="(row, index) in addRows" :key="index")
-									th {{ row.title }}
-									td(colspan="3")
-										.input-wrap
-											input(type="text" :name="'addRow'+index" v-model="row.value")
-
-								tr
-									th 제목
-									td(colspan="3")
-										.input-wrap
-											input#to_audit(type="text" placeholder="제목" required name="to_audit")
-								tr
-									th 결재 내용
-									td(colspan="3")
-										.input-wrap
-											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content")
-
-								tr
-									th 첨부 파일
-									td(colspan="3")
-										.input-wrap.upload-file
-											.file-wrap
-												.btn-upload-file
-													input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
-													label.btn.sm.outline.btn-upload(for="file") 파일 올리기
-
-												ul.upload-file-list
-													li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+							tr.reference
+								th 수신 참조
+								td.left(colspan="3")
+									ul.reference-wrap
+										li.reference-list
+											span.referencer
+												| 김이름
+												.icon
+													svg
+														use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+										li.reference-list
+											span.add-referencer
+												.icon
+													svg
+														use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 												
-												ul.file-list
-													template(v-if="uploadedFile.length > 0")
-														li.file-item(v-for="(file, index) in uploadedFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
-															//- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
-															a.file-name(:href="file.url" target="_blank") {{ file.filename }}
-															template(v-if="(!verifiedEmail && !disabled) && file.user_id === user.user_id")
-																button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
-																	svg
-																		use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-																button.btn-remove(v-else type="button" @click="removeFile(file)")
-																	svg
-																		use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-													template(v-if="uploadedFile.length === 0")
-														li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
+							tr
+								th 제목
+								td(colspan="3")
+									.input-wrap
+										input#to_audit(type="text" placeholder="제목" required name="to_audit")
+							tr
+								th 결재 내용
+								td(colspan="3")
+									.input-wrap
+										textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content")
 
-			//- button.btn.outline(type="button") + 작성란 추가
+							tr
+								th 첨부 파일
+								td(colspan="3")
+									.input-wrap.upload-file
+										.file-wrap
+											.btn-upload-file
+												input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
+												label.btn.sm.outline.btn-upload(for="file") 파일 올리기
 
-			.button-wrap
-				button.btn.outline.btn-preview(type="button" @click="previewAudit" style="margin-top: 0;") 미리보기
-				button.btn(type="submit" style="margin-top: 0;") 결재 요청
+											ul.upload-file-list
+												li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+											
+											ul.file-list
+												template(v-if="uploadedFile.length > 0")
+													li.file-item(v-for="(file, index) in uploadedFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
+														//- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
+														a.file-name(:href="file.url" target="_blank") {{ file.filename }}
+														template(v-if="(!verifiedEmail && !disabled) && file.user_id === user.user_id")
+															button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
+																svg
+																	use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+															button.btn-remove(v-else type="button" @click="removeFile(file)")
+																svg
+																	use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+												template(v-if="uploadedFile.length === 0")
+													li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
 
-//- Modal
-#modal.modal.row-title(v-if="isRowModalOpen" @click="closeRowModal")
-	.modal-cont(@click.stop)
-		.modal-header
-			h2.title 행 추가
-			button.btn-close(type="button" @click="closeRowModal")
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-		.modal-body
-			p 추가할 행의 제목을 입력해주세요.
-			.input-wrap(style="margin-top: 1rem;")
-				input#add_row_title(type="text" placeholder="ex. 시행자, 시행일자, ...")
-		.modal-footer(style="padding-top: 0; border-top: none;")
-			button.btn.bg-gray.btn-cancel(type="button" @click="closeRowModal") 취소
-			button.btn.btn-save(type="button" @click="addRow") 추가
+		button.btn.outline(type="button") + 작성란 추가
+
+		.button-wrap
+			button.btn.outline.btn-preview(type="button" @click="previewAudit" style="margin-top: 0;") 미리보기
+			button.btn(type="submit" style="margin-top: 0;") 결재 요청
 
 //- Modal
 #modal.modal.select-approver(v-if="isModalOpen" @click="closeModal")
@@ -218,7 +185,7 @@ template(v-if="step > 1")
 
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { skapi } from "@/main";
 import { user, makeSafe, verifiedEmail } from "@/user";
 import { getDivisionNames, divisionNameList } from "@/division";
@@ -227,8 +194,6 @@ const router = useRouter();
 const route = useRoute();
 
 const isModalOpen = ref(false);
-const isRowModalOpen = ref(false);
-const showBackStep = ref(true);
 const isDesktop = ref(window.innerWidth > 768);
 
 const same_division_auditors = ref({});
@@ -238,17 +203,10 @@ const backupUploadFile = ref([]);
 const removeFileList = ref([]);
 const originUserProfile = {};
 
-let addRows = ref([]);
 let step = ref(1);
 let auditTitle = ref("");
 let fileNames = ref([]);
 let disabled = ref(false);
-
-watch(auditTitle, (nv, ov) => {
-	if(nv) {
-		step.value = 2;
-	}
-})
 
 let previewAudit = () => {
 	let initBody;
@@ -286,6 +244,7 @@ let previewAudit = () => {
 	window.print();
 };
 
+
 const openModal = () => {
     isModalOpen.value = true;
 };
@@ -293,24 +252,6 @@ const openModal = () => {
 const closeModal = () => {
     isModalOpen.value = false;
 };
-
-const closeRowModal = () => {
-	isRowModalOpen.value = false;
-}
-
-const addRow = () => {
-	if(!document.getElementById('add_row_title').value) {
-		alert('제목을 입력해주세요.');
-		return;
-	}
-
-	addRows.value.push({
-		title: document.getElementById('add_row_title').value,
-		value: ''
-	});
-
-	isRowModalOpen.value = false;
-}
 
 // 직원 부서 가져오기
 const getEmpDivision = async(userId: string) => {
@@ -620,44 +561,13 @@ onUnmounted(() => {
 }
 
 .form-wrap {
-	position: relative;
     max-width: 900px;
 
-	
-	// .title-wrap {
-	// 	display: flex;
-	// 	justify-content: center;
-		
-	// 	.title {
-	// 	    font-size: 2rem;
-	// 	    margin-bottom: 2rem;
-	// 	    text-align: center;
-	// 	}
-	// 	.icon {
-	// 		cursor: pointer;
-	// 	}
-	// }
-
-	.title-wrap {
-		text-align: center;
-	}
-
-	.title {
-		position: relative;
-		display: inline-block;
-
-		h2 {
-			font-size: 2rem;
-		    margin-bottom: 2rem;
-		}
-		.icon {
-			position: absolute;
-			right: -30px;
-			top: 0;
-			padding: 0;
-			cursor: pointer;
-		}
-	}
+    .title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
 }
 
 .table {
@@ -668,35 +578,6 @@ onUnmounted(() => {
     }
 
     tbody {
-		th {
-			position: relative;
-
-			.add-btn {
-				position: absolute;
-				left: 50%;
-				bottom: -12px;
-				background-color: #fff;
-				border: 1px solid var(--primary-color-300);
-				border-radius: 50%;
-				transform: translateX(-50%);
-				z-index: 10;
-				cursor: pointer;
-
-				.icon {
-					padding: 0;
-
-					svg {
-						width: 18px;
-						height: 18px;
-						fill: var(--primary-color-400);
-					}
-				}
-
-				&:hover {
-					background-color: var(--primary-color-50);
-				}
-			}
-		}
         tr {
             &:hover {
                 background-color: transparent;
