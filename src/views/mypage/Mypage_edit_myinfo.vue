@@ -448,7 +448,6 @@ let registerMypage = async (e) => {
     let filebox = document.querySelector("input[name=additional_data]");
 
     if (filebox && filebox.files.length) {
-        console.log(filebox.files.length);
         for (let file of filebox.files) {
             const additionalFormData = new FormData();
 

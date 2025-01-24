@@ -1,13 +1,14 @@
 <template lang="pug">
-.title
-	h1 조직도
+template(v-if="showOrganigram")
+	.title
+		h1 조직도
 
-hr
+	hr
 
-.button-wrap(style="display: flex; justify-content: end; align-items: center;")
-	button.btn.outline(type="button" @click="toggleAllDetails") {{ allDetailsOpen ? '모두 닫기' : '모두 열기' }}
+	.button-wrap(style="display: flex; justify-content: end; align-items: center;")
+		button.btn.outline(type="button" @click="toggleAllDetails") {{ allDetailsOpen ? '모두 닫기' : '모두 열기' }}
 
-br
+	br
 
 .department-wrap
 	template(v-if="loading")
@@ -17,7 +18,7 @@ br
 </template>
 
 <script lang="ts" setup>
-import { type Ref, ref } from 'vue'
+import { type Ref, ref, watch } from 'vue'
 import { skapi } from '@/main'
 import { makeSafe } from '@/user'
 import {
@@ -31,6 +32,31 @@ import {
 
 import Loading from '@/components/loading.vue'
 import Department from '@/components/department.vue'
+
+const emit = defineEmits(['selection-change']);
+const selectedEmployees = ref([]);
+const tableUsers = ref([]);
+
+const props = defineProps({
+    showOrganigram: Boolean,
+    selectedEmployees: {
+        type: Array,
+        // default: () => [],
+    }
+});
+
+const organigramProps = {
+    showOrganigram: true,
+    selectedEmployees: tableUsers // 새로운 prop 추가
+};
+
+// watch로 selectedEmployees 변경 감지하여 체크박스 상태 업데이트
+watch(() => props.selectedEmployees, (newVal) => {
+    // 체크박스 상태 업데이트 로직
+    const selectedIds = newVal.map(emp => emp.userId);
+    // 여기서 체크박스 상태를 업데이트하는 로직 구현
+    // 예: updateCheckboxStates(selectedIds);
+}, { deep: true });
 
 type Organigram = {
     division: string | null;
@@ -181,9 +207,9 @@ async function getOrganigram() {
             await addDepartment(path, division, organigram.value);
         }
 
-        console.log('Final organigram:', organigram.value);
+        // console.log('=== getOrganigram === organigram : ', organigram.value);
     } catch (error) {
-        console.error('Error generating organigram:', error);
+        console.error('=== getOrganigram === error : ', error);
     } finally {
         loading.value = false;
     }
@@ -191,27 +217,109 @@ async function getOrganigram() {
 
 getOrganigram();
 
+// function onDepartmentCheck(obj: { type: string; target: any; isChecked: boolean }) {
+// 	const { type, target, isChecked } = obj;
+
+// 	if (type === 'department') {
+// 		// 현재 부서 및 모든 하위 부서와 멤버 상태를 동기화
+// 		updateChildrenCheckStatus(target, isChecked);
+
+// 		// 부모 부서의 체크 상태도 업데이트
+// 		updateParentCheckStatus(target);
+// 	} else if (type === 'member') {
+// 		// 멤버의 상태를 업데이트
+// 		target.isChecked = isChecked;
+
+// 		// 부모 부서의 체크 상태 업데이트
+// 		updateParentCheckStatus(target);
+// 	}
+
+// 	// 체크된 사용자 ID 업데이트
+// 	checkedUserIds.value = currentEmpData.value.filter((data) => data.isChecked).map((data) => data.data.user_id);
+
+// 	console.log(checkedUserIds.value);
+// }
+
 function onDepartmentCheck(obj: { type: string; target: any; isChecked: boolean }) {
-	const { type, target, isChecked } = obj;
+  const { type, target, isChecked } = obj;
 
-	if (type === 'department') {
-		// 현재 부서 및 모든 하위 부서와 멤버 상태를 동기화
-		updateChildrenCheckStatus(target, isChecked);
+  if (type === 'department') {
+    updateChildrenCheckStatus(target, isChecked);
+    updateParentCheckStatus(target);
 
-		// 부모 부서의 체크 상태도 업데이트
-		updateParentCheckStatus(target);
-	} else if (type === 'member') {
-		// 멤버의 상태를 업데이트
-		target.isChecked = isChecked;
+    // 팀 체크박스 선택 시 해당 팀의 모든 직원 추가
+    if (target.members?.length > 0) {
+      target.members.forEach((member: any) => {
+        const index = selectedEmployees.value.findIndex(e => e.userId === member.data.user_id);
+        if (isChecked && index === -1) {
+          selectedEmployees.value.push({
+            userId: member.data.user_id,
+            name: member.index.value,
+            position: member.index.name.split('.')[1],
+            division: divisionNameList.value[member.index.name.split('.')[0]]
+          });
+        } else if (!isChecked && index !== -1) {
+          selectedEmployees.value.splice(index, 1);
+        }
+      });
+    }
 
-		// 부모 부서의 체크 상태 업데이트
-		updateParentCheckStatus(target);
-	}
+    // 하위 부서의 직원들도 추가
+    if (target.subDepartments?.length > 0) {
+      target.subDepartments.forEach((subDept: any) => {
+        addDepartmentEmployees(subDept, isChecked);
+      });
+    }
 
-	// 체크된 사용자 ID 업데이트
-	checkedUserIds.value = currentEmpData.value.filter((data) => data.isChecked).map((data) => data.data.user_id);
+    emit('selection-change', selectedEmployees.value);
+  } else if (type === 'member') {
+    // 기존 member 체크박스 로직 유지
+    target.isChecked = isChecked;
+    updateParentCheckStatus(target);
 
-	console.log(checkedUserIds.value);
+    const index = selectedEmployees.value.findIndex(e => e.userId === target.data.user_id);
+    if (isChecked && index === -1) {
+      selectedEmployees.value.push({
+        userId: target.data.user_id,
+        name: target.index.value,
+        position: target.index.name.split('.')[1],
+        division: divisionNameList.value[target.index.name.split('.')[0]]
+      });
+    } else if (!isChecked && index !== -1) {
+      selectedEmployees.value.splice(index, 1);
+    }
+    
+    emit('selection-change', selectedEmployees.value);
+  }
+
+  checkedUserIds.value = currentEmpData.value
+    .filter((data) => data.isChecked)
+    .map((data) => data.data.user_id);
+}
+
+// 부서의 모든 직원을 재귀적으로 추가/제거하는 헬퍼 함수
+function addDepartmentEmployees(department: any, isChecked: boolean) {
+  if (department.members?.length > 0) {
+    department.members.forEach((member: any) => {
+      const index = selectedEmployees.value.findIndex(e => e.userId === member.data.user_id);
+      if (isChecked && index === -1) {
+        selectedEmployees.value.push({
+          userId: member.data.user_id,
+          name: member.index.value,
+          position: member.index.name.split('.')[1],
+          division: divisionNameList.value[member.index.name.split('.')[0]]
+        });
+      } else if (!isChecked && index !== -1) {
+        selectedEmployees.value.splice(index, 1);
+      }
+    });
+  }
+
+  if (department.subDepartments?.length > 0) {
+    department.subDepartments.forEach((subDept: any) => {
+      addDepartmentEmployees(subDept, isChecked);
+    });
+  }
 }
 
 // 자식(하위 부서 및 멤버) 상태를 업데이트하는 함수
