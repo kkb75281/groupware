@@ -201,8 +201,8 @@ template(v-if="step > 1")
 								tr(v-for="user in tableUsers" :key="user.userId")
 									td
 										button.btn-remove(@click="removeAuditor(user.userId, modalType)")
-											.icon(style="padding: 0;")
-												svg(style="width: 16px; height: 16px;")
+											.icon
+												svg
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 									td {{ user.position }}
 									td {{ user.name }}
@@ -423,6 +423,7 @@ init();
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
+	console.log('=== handleOrganigramSelection === users : ', users);
     selectedUsers.value = users;
 };
 
@@ -463,19 +464,13 @@ const saveAuditor = () => {
 
 // 결재자 제거
 const removeAuditor = (userId: string, type) => {
-    // 현재 목록에서 제거
-    const currentList = selectedAuditors.value[type];
-    const index = currentList.findIndex(auditor => auditor.userId === userId);
+    selectedAuditors.value = {
+        ...selectedAuditors.value,
+        [type]: selectedAuditors.value[type].filter(auditor => auditor.userId !== userId)
+    };
     
-    if (index > -1) {
-        currentList.splice(index, 1);
-    }
-    
-    // 테이블에서 제거
     tableUsers.value = tableUsers.value.filter(user => user.userId !== userId);
-    
-    // selectedUsers에서도 제거하여 체크박스 상태 동기화
-    selectedUsers.value = selectedUsers.value.filter(user => user.userId !== userId);
+    // selectedUsers.value = selectedUsers.value.filter(user => user.userId !== userId);
 };
 
 // 업로드 파일 삭제
@@ -1070,9 +1065,15 @@ onUnmounted(() => {
 
 .select-approver {
     .modal-cont {
-        min-width: 850px;
+        min-width: 750px;
         max-width: fit-content;
     }
+
+	.modal-body {
+		min-height: 600px;
+		height: 600px;
+		overflow: hidden;
+	}
 
     .modal-footer {
         padding-top: 0;
@@ -1088,11 +1089,15 @@ onUnmounted(() => {
 	display: flex;
 	gap: 1rem;
 	flex-wrap: wrap;
+	align-items: center;
+	height: 100%;
 
 	> div {
 		border: 1px solid var(--gray-color-300);
 		border-radius: 0.5rem;
 		padding: 1rem;
+		height: 100%;
+		overflow-y: auto;
 	}
 
 	.organigram-wrap {
@@ -1111,6 +1116,18 @@ onUnmounted(() => {
 				width: 16px;
 				height: 16px;
 				fill: var(--primary-color-400);
+			}
+		}
+	}
+
+	.btn-remove {
+		.icon {
+			padding: 0;
+
+			svg {
+				width: 16px;
+				height: 16px;
+				fill: var(--warning-color-500);
 			}
 		}
 	}
@@ -1167,7 +1184,30 @@ onUnmounted(() => {
             min-width: 100%;
             max-width: 100%;
         }
+
+		.modal-body {
+			min-height: initial;
+			height: initial;
+			overflow: auto;
+		}
     }
+
+	.select-approver-wrap {
+		flex-direction: column;
+
+		> div {
+			width: 100%;
+			height: initial;
+		}	
+
+		.organigram-wrap {
+			flex: auto;
+		}
+
+		.table-wrap {
+			flex: auto;
+		}
+	}
 }
 
 @media (max-width: 682px) {
