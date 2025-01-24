@@ -41,7 +41,7 @@ const props = defineProps({
     showOrganigram: Boolean,
     selectedEmployees: {
         type: Array,
-        // default: () => [],
+        default: () => [],
     }
 });
 
@@ -49,14 +49,6 @@ const organigramProps = {
     showOrganigram: true,
     selectedEmployees: tableUsers // 새로운 prop 추가
 };
-
-// watch로 selectedEmployees 변경 감지하여 체크박스 상태 업데이트
-watch(() => props.selectedEmployees, (newVal) => {
-    // 체크박스 상태 업데이트 로직
-    const selectedIds = newVal.map(emp => emp.userId);
-    // 여기서 체크박스 상태를 업데이트하는 로직 구현
-    // 예: updateCheckboxStates(selectedIds);
-}, { deep: true });
 
 type Organigram = {
     division: string | null;
@@ -391,6 +383,19 @@ function findParentDepartmentRecursive(department: any, item: any): any {
 	return null;
 }
 
+// watch로 selectedEmployees 변경 감지하여 체크박스 상태 업데이트
+watch(() => props.selectedEmployees, (newVal) => {
+    // console.log('=== watch newVal ===', newVal);
+
+    if (newVal) {
+      // 체크박스 상태 초기화
+        currentEmpData.value.forEach(emp => {
+          emp.isChecked = newVal.some(selected => selected.userId === emp.data.user_id);
+        });
+          // console.log('=== watch currentEmpData ===', currentEmpData.value);
+    }
+    // console.log('=== watch selectedEmployees ===', selectedEmployees.value);
+}, { deep: true, immediate: true });
 </script>
 
 <style lang="less" scoped>
