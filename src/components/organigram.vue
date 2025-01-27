@@ -385,16 +385,16 @@ function findParentDepartmentRecursive(department: any, item: any): any {
 
 // watch로 selectedEmployees 변경 감지하여 체크박스 상태 업데이트
 watch(() => props.selectedEmployees, (newVal) => {
-    // console.log('=== watch newVal ===', newVal);
+    console.log('=== watch newVal ===', newVal);
 
     if (newVal) {
       // 체크박스 상태 초기화
         currentEmpData.value.forEach(emp => {
           emp.isChecked = newVal.some(selected => selected.userId === emp.data.user_id);
         });
-          // console.log('=== watch currentEmpData ===', currentEmpData.value);
+          console.log('=== watch currentEmpData ===', currentEmpData.value);
     }
-    // console.log('=== watch selectedEmployees ===', selectedEmployees.value);
+    console.log('=== watch selectedEmployees ===', selectedEmployees.value);
 }, { deep: true, immediate: true });
 </script>
 

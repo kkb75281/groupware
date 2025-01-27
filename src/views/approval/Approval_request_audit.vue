@@ -15,7 +15,7 @@ template(v-if="step > 1")
 	.form-wrap
 		form#_el_request_form(@submit.prevent="requestAudit")
 			#printArea
-				input(:value="auditTitle" type="text" required name="to_audit" hidden)
+				input(:value="auditTitle" type="hidden" required name="to_audit" hidden)
 
 				.title
 					h2(style="text-align:center" :style="{color: !auditTitle ? '#ddd' : 'black', fontWeight: !auditTitle ? '400' : 'bold'}") {{ auditTitle || "결재 양식명을 입력해주세요." }}
@@ -304,43 +304,48 @@ const closeRowModal = () => {
 
 // 결재요청 미리보기
 const previewAudit = () => {
-	let initBody;
+  const printArea = document.getElementById("printArea");
+  
+  // 프린트 전에 input 값들을 span으로 변환
+  const prepareForPrint = () => {
+    // 모든 input과 textarea 요소 찾기
+    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+    
+    inputs.forEach(input => {
+      // 현재 입력값 저장
+      const value = input.value;
+      
+      // 입력값을 표시할 span 생성
+      const span = document.createElement('span');
+      span.className = 'print-value';
+      span.textContent = value;
+      
+      // input 바로 뒤에 span 삽입
+      input.parentNode.insertBefore(span, input.nextSibling);
+    });
+  };
 
-	window.onbeforeprint = function () {
-		// 기존 HTML 저장
-		initBody = document.body.innerHTML;
+  // 프린트 후 추가했던 span 제거
+  const cleanupAfterPrint = () => {
+    const printValues = printArea.querySelectorAll('.print-value');
+    printValues.forEach(span => span.remove());
+  };
 
-		// 입력값을 텍스트로 변환
-		document.querySelectorAll("#printArea input, #printArea textarea").forEach((el) => {
-			const textNode = document.createElement("span");
-			textNode.className = "print-value";
+  // 기존 스타일 저장
+  const originalStyle = document.body.className;
 
-			// 값이 있으면 텍스트 설정, 없으면 빈공간
-			if (el.value) {
-				textNode.textContent = el.value;
-			} else {
-				textNode.innerHTML = "&nbsp;"; // 빈공간 유지
-			}
+  window.onbeforeprint = function() {
+    prepareForPrint();
+    document.body.className = "print-mode";
+  };
 
-			// 제목은 따로 스타일 추가
-			if (el.id === "audit_title") {
-				textNode.classList.add("title-value");
-			}
+  window.onafterprint = function() {
+    cleanupAfterPrint();
+    document.body.className = originalStyle;
+  };
 
-			el.parentNode.replaceChild(textNode, el);
-		});
-
-		// 프린트 영역만 출력
-		document.body.innerHTML = document.getElementById("printArea").innerHTML;
-	};
-	window.onafterprint = function () {
-		// 원래 HTML 복원
-		document.body.innerHTML = initBody;
-	};
-	window.print();
+  window.print();
 };
-
-// 작성란 추가
 const addRow = () => {
 	if(!document.getElementById('add_row_title').value) {
 		alert('제목을 입력해주세요.');
@@ -423,7 +428,6 @@ init();
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
-	console.log('=== handleOrganigramSelection === users : ', users);
     selectedUsers.value = users;
 };
 
@@ -468,9 +472,12 @@ const removeAuditor = (userId: string, type) => {
         ...selectedAuditors.value,
         [type]: selectedAuditors.value[type].filter(auditor => auditor.userId !== userId)
     };
-    
-    tableUsers.value = tableUsers.value.filter(user => user.userId !== userId);
-    // selectedUsers.value = selectedUsers.value.filter(user => user.userId !== userId);
+
+    const newAuditors = tableUsers.value.filter(user => user.userId !== userId);
+    tableUsers.value = newAuditors;
+
+    // 조직도 컴포넌트의 선택 상태 업데이트
+    handleOrganigramSelection(newAuditors);
 };
 
 // 업로드 파일 삭제
@@ -500,36 +507,22 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     };
 
 	console.log('=== postAuditDoc === send_auditors : ', send_auditors);
+	console.log('=== postAuditDoc === send_auditors : ', JSON.stringify(send_auditors));
 
     try {
 		// 첨부파일 업로드
         const filebox = document.querySelector('input[name="additional_data"]');
 		const additionalFormData = new FormData();
 
+		additionalFormData.append('to_audit', to_audit);
+        additionalFormData.append('auditors', JSON.stringify(send_auditors));
+        additionalFormData.append('to_audit_content', to_audit_content);
+
         if (filebox && filebox.files.length) {
-			for (let file of filebox.files) {
-				console.log('=== postAuditDoc === file : ', file);
-				additionalFormData.append("additional_data", file);
-			}
-
-			console.log('=== postAuditDoc === additionalFormData : ', additionalFormData.getAll('additional_data'));
-
-			filebox.value = "";
-			fileNames.value = [];
-		} 
-		// else {
-		// 	console.log(
-		// 		"false == registerMypage == uploadedFile.value : ",
-		// 		uploadedFile.value
-		// 	);
-		// }
-
-        const params = {
-            to_audit, // 결재 사안 제목
-            auditors: send_auditors, // 결재자 목록
-            to_audit_content, // 결재 내용
-			additional_data: additionalFormData.getAll('additional_data'), // 첨부파일
-        };
+            Array.from(filebox.files).forEach(file => {
+                additionalFormData.append('additional_data', file);
+            });
+        }
 
         const options = {
             readonly: true, // 결재 올리면 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
@@ -551,10 +544,10 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 			] // 결재, 합의, 수신참조 태그를 각각 구분
         };
 
-		console.log('=== postAuditDoc === params : ', params);
+		console.log('=== postAuditDoc === additionalFormData : ', additionalFormData);
 		console.log('=== postAuditDoc === options : ', options);
 
-        const res = await skapi.postRecord(params, options);
+        const res = await skapi.postRecord(additionalFormData, options);
 
         console.log("결재 서류 레코드 생성 === postAuditDoc === res : ", res);
         return res;
@@ -779,6 +772,9 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateScreenSize);
 });
+
+
+
 </script>
 
 <style scoped lang="less">
@@ -789,9 +785,27 @@ onUnmounted(() => {
 	.icon,
 	input,
 	textarea,
-	.file-wrap {
+	.file-wrap,
+	header,
+	.title,
+	hr,
+	.approver-list:last-of-type,
+	.empty {
 		display: none !important;
 	}
+
+	// body {
+	// 	#header {
+	// 		display: none !important;
+	// 	}
+	// }
+		
+
+	// header {
+	// 	visibility: hidden !important;
+	// 	opacity: 0 !important;
+	// 	position: relative !important;
+	// }
 
 	// /* 제목 스타일 (audit_title) */
 	// #printArea .title-value {
@@ -818,6 +832,53 @@ onUnmounted(() => {
 		display: inline-block;
 		padding: 4px 0;
 		text-align: left;
+	}
+
+	body {
+		font-size: 12px;
+		line-height: 1.5;
+		color: black;
+		background: transparent;
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+
+		th,
+		tr,
+		td {
+			border: 1px solid var(--gray-color-300);
+			padding: 8px;
+			text-align: left;
+			background-color: #fff;
+		}
+
+		tr {
+			border-right: 1px solid var(--gray-color-300);
+		}
+	}
+
+	#printArea {
+		.title {
+			display: block !important;
+			margin-bottom: 2rem;
+
+			h2 {
+				text-align: center !important;
+			}
+		}
+	}
+
+	input,
+	textarea {
+		border: none;
+		background: none;
+	}
+
+	input[type="hidden"],
+	textarea {
+		display: none !important;
 	}
 }
 
@@ -1102,6 +1163,7 @@ onUnmounted(() => {
 
 	.organigram-wrap {
 		flex: none;
+		min-width: 17.5rem;
 	}
 
 	.btn-add {
