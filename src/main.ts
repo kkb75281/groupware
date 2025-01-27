@@ -167,7 +167,8 @@ export let loginCheck = async (profile: any) => {
 	}
 
 	else if (profile) {
-		console.log(profile);
+		console.log('=== loginCheck === profile : ', profile);
+		
 		let originalUser = { ...user };
 		
 		profile = await getEmpDivisionPosition(profile);
