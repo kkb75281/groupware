@@ -4,7 +4,7 @@
 
 hr
 
-.form-wrap
+.form-wrap(v-if="auditDoContent")
 	form#_el_request_form(@submit.prevent="requestAudit")
 		#printArea
 			.title
@@ -23,19 +23,19 @@ hr
 							//- 작성일자 기안사 :: s
 							tr.pc(v-show="isDesktop")
 								th 작성 일자
-								td {{ '2025.01.01' }}
+								td {{ auditDoContent?.uploaded }}
 								th 기안자
 								td
-									span.drafter {{ '김이름' }}
+									span.drafter {{ senderUser.name }}
 
 							//- 모바일 경우 레이아웃
 							tr.mo(v-show="!isDesktop")
 								th 작성 일자
-								td(colspan="3") {{ '2025.01.01' }}
+								td(colspan="3") {{ auditDoContent?.uploaded }}
 							tr.mo(v-show="!isDesktop")
 								th 기안자
 								td(colspan="3" style="text-align: left")
-									span.drafter {{ '김이름' }}
+									span.drafter {{ senderUser.name }}
 							//- 작성일자 기안사 :: e
 
 							tr.approval
@@ -50,6 +50,7 @@ hr
 												template(v-else)
 													span.waitting 대기
 											span.approver {{ approver.name }}
+									span.empty(v-else) -
 
 							tr.approval
 								th 합의
@@ -63,31 +64,25 @@ hr
 												template(v-else)
 													span.waitting 대기
 											span.approver {{ agreer.name }}
+									span.empty(v-else) -
 
 							tr.reference
 								th 수신 참조
-								td.left(colspan="3") {{ '박보영, 이수혁' }}
+								td.left(colspan="3") {{ selectedAuditors.receivers.map(receiver => receiver.name).join(', ') }}
 
 							tr
 								th 제목
-								td(colspan="3") {{ '결재서류 제목입니다' }}
+								td(colspan="3") {{ auditDoContent?.data?.to_audit }}
 
 							tr
 								th 결재 내용
-								td(colspan="3") {{ '결재서류 내용입니다' }}
+								td(colspan="3") {{ auditDoContent?.data?.to_audit_content }}
 
 							tr
 								th 첨부 파일
 								td(colspan="3")
-									//- .input-wrap.upload-file
+									.input-wrap.upload-file
 										.file-wrap
-											.btn-upload-file
-												input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
-												label.btn.sm.outline.btn-upload(for="file") 파일 올리기
-
-											ul.upload-file-list
-												li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
-											
 											ul.file-list
 												template(v-if="uploadedFile.length > 0")
 													li.file-item(v-for="(file, index) in uploadedFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
@@ -252,49 +247,19 @@ const auditUserList = ref([]);
 const isModalOpen = ref(false);
 const isStampModalOpen = ref(false);
 const senderUser = ref({});
+const uploadedFile = ref([]);
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
-    approvers: [
-		{
-			userId: '341ab5fc-a7e6-4d33-8b8a-672d366f6f4d',
-			name: '권규비',
-		},
-		{
-			userId: 'receivers_user_id',
-			name: '오민아',
-		},
-	],  // 결재
-    agreers: [
-		{
-			userId: 'receivers_user_id',
-			name: '이재욱',
-		},
-		{
-			userId: 'receivers_user_id',
-			name: '서인국',
-		},
-		{
-			userId: '341ab5fc-a7e6-4d33-8b8a-672d366f6f4d',
-			name: '차은우',
-		},
-	],    // 합의
-    receivers: [
-		{
-			userId: 'receivers_user_id',
-			name: '박보영',
-		},
-		{
-			userId: 'receivers_user_id',
-			name: '이수혁',
-		}
-	]   // 수신참조
+    approvers: [],  // 결재
+    agreers: [],    // 합의
+    receivers: []   // 수신참조
 });
 
 watch(() => (route.params.auditId as string), async(nv, ov) => {
 	if(nv !== ov) {
 		auditId.value = nv;
-		// await getAuditDetail();
+		await getAuditDetail();
 	}
 });
 
@@ -409,66 +374,123 @@ const getUserInfo = async (userId: string) => {
 	return await skapi.getUsers(params)
 }
 
-// // 결재 서류 가져오기
-// const getAuditDetail = async () => {
-// 	try {
-// 		const auditDoc = (await skapi.getRecords({
-// 			record_id: auditId.value
-// 		})).list[0];
+// 결재 서류 가져오기
+const getAuditDetail = async () => {
+	try {
+		const auditDoc = (await skapi.getRecords({
+			record_id: auditId.value
+		})).list[0];
 
-// 		if (auditDoc) {
-// 			auditDoContent.value = auditDoc;
-// 			console.log('auditDoContent : ', auditDoContent.value);
-// 		}
+		console.log('sdlksdlskjdlskjd');
+		console.log('auditDoc : ', auditDoc);
+
+		if (auditDoc) {
+			auditDoContent.value = auditDoc;
+			console.log('auditDoContent : ', auditDoContent.value);
+		}
+
+		const auditors = JSON.parse(auditDoc.data.auditors);
+		// console.log('skskskskskskauditors : ', auditors);
+
+		let getAuditorInfo = async (uid) => {
+			let user_id = uid.replaceAll('_', '-');
+			let userInfo = await getUserInfo(user_id);
+			
+			return userInfo.list[0];
+		}
+
+		let processAuditors = async (role: string) => {
+			if (auditors?.[role]) {
+				for (let uid of auditors[role]) {
+					let user = await getAuditorInfo(uid);
+					selectedAuditors.value[role].push(user);
+				}
+			}
+		};
+
+		await Promise.all([
+			processAuditors('approvers'),
+			processAuditors('agreers'),
+			processAuditors('receivers'),
+		]);
+
+		console.log('selectedAuditors : ', selectedAuditors.value);
+
+		if(auditDoc?.bin.length) {
+			let fileList = [];
+
+			auditDoc?.bin.forEach((item) => {
+				if (item.bin.additional_data && item.bin.additional_data.length > 0) {
+					function getFileUserId(str) {
+						if (!str) return "";
+						return str.split("/")[3];
+					}
+
+					const result = item.bin.additional_data.map((el) => ({
+						...el,
+						user_id: getFileUserId(el.path),
+						record_id: item.record_id,
+					}));
+
+					console.log('result : ', result);
+
+					fileList.push(...result);
+				}
+			});
+
+			uploadedFile.value = fileList;
+		} else {
+			uploadedFile.value = [];
+		}
 		
-// 		const approvals = await approvedAudit();
+		// const approvals = await approvedAudit();
 
-// 		const approvalUserList = [];
-// 		const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
+		// const approvalUserList = [];
+		// const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
 
-// 		newTags.forEach((auditor) => {
-// 			let oa_has_audited_str = null;
+		// newTags.forEach((auditor) => {
+		// 	let oa_has_audited_str = null;
 
-// 			approvals.forEach((approval) => {
-// 				if (approval.user_id === auditor) {
-// 					oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
+		// 	approvals.forEach((approval) => {
+		// 		if (approval.user_id === auditor) {
+		// 			oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
 
-// 					const result = {
-// 						user_id: auditor,
-// 						approved: approval.data.approved,
-// 						approved_str: oa_has_audited_str
-// 					}
+		// 			const result = {
+		// 				user_id: auditor,
+		// 				approved: approval.data.approved,
+		// 				approved_str: oa_has_audited_str
+		// 			}
 
-// 					approvalUserList.push(result);
-// 					return;
-// 				}
-// 			})
+		// 			approvalUserList.push(result);
+		// 			return;
+		// 		}
+		// 	})
 
-// 			if (!oa_has_audited_str) {
-// 				const result = {
-// 					user_id: auditor,
-// 					approved: null,
-// 					approved_str: '결제대기중'
-// 				}
+		// 	if (!oa_has_audited_str) {
+		// 		const result = {
+		// 			user_id: auditor,
+		// 			approved: null,
+		// 			approved_str: '결제대기중'
+		// 		}
 
-// 				approvalUserList.push(result);
-// 			}
-// 		})
+		// 		approvalUserList.push(result);
+		// 	}
+		// })
 
-// 		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
-// 		const userInfoList = userList.map(user => user.list[0]);                     
+		// const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
+		// const userInfoList = userList.map(user => user.list[0]);                     
 
-// 		const newAuditUserList = approvalUserList.map((auditor) => ({
-// 			...auditor,
-// 			user_info: userInfoList.find((user) => user.user_id === auditor.user_id)
-// 		}))
+		// const newAuditUserList = approvalUserList.map((auditor) => ({
+		// 	...auditor,
+		// 	user_info: userInfoList.find((user) => user.user_id === auditor.user_id)
+		// }))
 
-// 		console.log('newAuditUserList : ', newAuditUserList);
-// 		auditUserList.value = newAuditUserList;
-// 	} catch (error) {
-// 		console.error(error);
-// 	}
-// }
+		// console.log('newAuditUserList : ', newAuditUserList);
+		// auditUserList.value = newAuditUserList;
+	} catch (error) {
+		console.error(error);
+	}
+}
 
 // // 결재 하기
 // const postApproval = async (e: SubmitEvent) => {
@@ -557,7 +579,7 @@ onMounted(() => {
 	window.addEventListener('resize', updateScreenSize);
 
 	auditId.value = (route.params.auditId as string);
-	// getAuditDetail();
+	getAuditDetail();
 });
 
 onUnmounted(() => {
@@ -726,7 +748,7 @@ onUnmounted(() => {
     font-size: 0.875rem;
     line-height: 1.2;
     color: var(--gray-color-400);
-    cursor: pointer;
+    // cursor: pointer;
 }
 
 .btn {
