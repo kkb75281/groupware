@@ -42,15 +42,20 @@ hr
 								th 결재
 								td.left(colspan="3" style="padding: 0; height: 119px;")
 									ul.approver-wrap
-										li.approver-list(v-for="(approver, index) in selectedAuditors.approvers" :key="approver.user_id")
+										li.approver-list(v-for="(approver, index) in auditUserList" :key="approver.user_id")
 											span.num {{ index + 1 }}
 											span.sign
-												template(v-if="approver.user_id === user.user_id")
-													button.btn.sm.outline.btn-approve(type="button" @click="openModal(approver)") 결재
-												template(v-else)
-													span.waitting 대기
-											span.approver {{ approver.name }}
-									//- span.empty(v-else) -
+												template(v-if="approver.approved === 'approve'")
+													img(v-if="approver?.stamp" :src="approver.stamp" alt="도장 이미지")
+													span.approved(v-else) 승인
+												template(v-else-if="approver.approved === 'reject'")
+													span.rejected 반려
+												template(v-else="!approver.approved || approver.approved === null")
+													template(v-if="approver.user_id === user.user_id")
+														button.btn.sm.outline.btn-approve(type="button" @click="openModal(approver)") 결재
+													template(v-else)
+														span.waitting 대기
+											span.approver {{ approver.user_info?.name }}
 
 							tr.approval(v-if="selectedAuditors.agreers.length > 0")
 								th 합의
@@ -165,17 +170,17 @@ hr
 								th.essential 결재여부
 								td
 									label.radio-button(style="width: 50%")
-										input(type="radio" name="approved" value="approve" checked)
+										input(type="radio" name="approved" value="approve" :checked="approveAudit")
 										span.label-radio 결재
 									label.radio-button
-										input(type="radio" name="approved" value="reject")
+										input(type="radio" name="approved" value="reject" :checked="!approveAudit")
 										span.label-radio 반려
 							
 							tr
 								th 추가의견
 								td
 									.input-wrap(style="margin: 0")
-										textarea(name="comment" rows="5" placeholder="결재의견을 입력해주세요." style="width: 100%;resize: none;")
+										textarea(name="comment" rows="5" placeholder="결재의견을 입력해주세요." v-model="approvedComment" style="width: 100%;resize: none;")
 
 		.modal-footer(style="border:0;padding:0")
 			button.btn.bg-gray.btn-edit(type="button" @click="isModalOpen=false") 취소
@@ -183,7 +188,7 @@ hr
 
 //- 도장 입력 모달
 #modal.modal.modal-stamp(v-if="isStampModalOpen")
-	.modal-cont(@click.stop)
+	form.modal-cont(@click.stop @submit.prevent="postApproval")
 		.modal-header
 			h2.modal-title 도장/서명 선택하기
 			button.btn-close(@click="isStampModalOpen=false")
@@ -191,6 +196,9 @@ hr
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 		
 		.modal-body
+			p(v-if="myStamps.length || previewStamp") 도장을 선택해주세요.
+			p(v-else) 현재 등록된 도장이 없습니다. 새로운 도장을 생성해주세요.
+
 			.my-stamp-wrap
 				template(v-if="gettingStampList")
 					Loading#loading
@@ -205,25 +213,23 @@ hr
 					.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
 						img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
 					.no-stamp(v-else style="text-align: center;border: 1px solid var(--gray-color-100);padding: 3rem 1rem;border-radius: 8px;color: var(--gray-color-400); font-size:0.9rem") 
-						span 현재 등록된 도장이 없습니다.
+						//- span 현재 등록된 도장이 없습니다.
+						button.btn.outline(type="button" v-if="!myStamps.length && !previewStamp" @click="createStamp" :disabled="previewStamp" style="margin:0 auto") 도장 생성
 						//- button.btn 기본 도장 생성하기
 
 			canvas#stampCanvas(width="100" height="100" style="display: none;")
+			input(type="radio" name="approved" value="approve" :checked="approveAudit" style="display: none;")
+			input(type="radio" name="approved" value="reject" :checked="!approveAudit" style="display: none;")
 			
 			br
 
-			.upload-stamp-btn(style="display: flex;align-items: center;justify-content: center;gap: 1rem;")
-				//- template(v-if="myStamps.length")
-				//- 	button.btn.btn-edit(type="button" @click="isModalOpen=false") 도장 업로드
-				//- template(v-else)
-					//- button.btn.outline.btn-edit(type="button" @click="isModalOpen=false") 파일 업로드
-				button.btn.bg-gray.btn-edit(type="button" @click="isStampModalOpen=false") 취소
-				button.btn.outline(v-if="!myStamps.length && !previewStamp" @click="createStamp" :disabled="previewStamp") 도장 생성
-				button.btn.btn-edit(:disabled="(!myStamps.length && !previewStamp) || !selectedStamp" type="button" @click="isStampModalOpen=false") 서명하기
+			//- .upload-stamp-btn(style="display: flex;align-items: center;justify-content: center;gap: 1rem;")
 
-		//- .modal-footer
-			button.btn.bg-gray.btn-edit(type="button" @click="isModalOpen=false") 이전
-			button.btn.btn-edit(type="button" @click="isModalOpen=false") 결재 승인
+		.modal-footer(style="border:0;padding-top:10px;margin:0")
+			button.btn.bg-gray.btn-edit(type="button" @click="isStampModalOpen=false") 취소
+			button.btn.btn-edit(type="submit" :disabled="(!myStamps.length && !previewStamp) || !selectedStamp") 서명하기
+			//- button.btn.bg-gray.btn-edit(type="button" @click="isModalOpen=false") 이전
+			//- button.btn.btn-edit(type="button" @click="isModalOpen=false") 결재 승인
 
 </template>
 
@@ -249,6 +255,8 @@ const isStampModalOpen = ref(false);
 const senderUser = ref({});
 const uploadedFile = ref([]);
 const previewStamp = ref(null);
+const approveAudit = ref(true);
+const approvedComment = ref('');
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
@@ -287,12 +295,13 @@ const openModal = (target) => {
 	if (target && target.user_id !== user.user_id) return;
 
 	isModalOpen.value = true;
-	disabled.value = false;
+	// disabled.value = false;
 };
 
 const closeModal = () => {
 	isModalOpen.value = false;
-	disabled.value = true;
+	isStampModalOpen.value = false;
+	// disabled.value = true;
 };
 
 function formatTimestampToDate(timestamp:number) {
@@ -415,23 +424,23 @@ let selectStamp = (url) => {
 }
 
 // 다른 사람 결재 여부 확인
-// const approvedAudit = async () => {
-// 	try {
-// 		const res = await skapi.getRecords({
-// 			table: {
-// 				name: 'audit_approval',
-// 				access_group: 'authorized'
-// 			},
-// 			reference: auditId.value
-// 		})
+const approvedAudit = async () => {
+	try {
+		const res = await skapi.getRecords({
+			table: {
+				name: 'audit_approval',
+				access_group: 'authorized'
+			},
+			reference: auditId.value
+		})
 
-// 		return res.list;
-// 	} catch (error) {
-// 		console.error(error);
-// 	}
+		return res.list;
+	} catch (error) {
+		console.error(error);
+	}
 	
-// 	isModalOpen.value = false;
-// }
+	isModalOpen.value = false;
+}
 
 const getUserInfo = async (userId: string) => {
 	const params = {
@@ -513,134 +522,150 @@ const getAuditDetail = async () => {
 
 		getAuditDetailRunning.value = false;
 		
-		// const approvals = await approvedAudit();
+		const approvals = await approvedAudit();
 
-		// const approvalUserList = [];
-		// const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
+		console.log('!!!!@!@approvals : ', approvals);
 
-		// newTags.forEach((auditor) => {
-		// 	let oa_has_audited_str = null;
+		const approvalUserList = [];
+		const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
 
-		// 	approvals.forEach((approval) => {
-		// 		if (approval.user_id === auditor) {
-		// 			oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
+		newTags.forEach((auditor) => {
+			let oa_has_audited_str = null;
 
-		// 			const result = {
-		// 				user_id: auditor,
-		// 				approved: approval.data.approved,
-		// 				approved_str: oa_has_audited_str
-		// 			}
+			if(auditor.includes('receiver')) return;
 
-		// 			approvalUserList.push(result);
-		// 			return;
-		// 		}
-		// 	})
+			approvals.forEach((approval) => {
+				if (approval.user_id === auditor.split(':')[1]) {
+					oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
 
-		// 	if (!oa_has_audited_str) {
-		// 		const result = {
-		// 			user_id: auditor,
-		// 			approved: null,
-		// 			approved_str: '결제대기중'
-		// 		}
+					const result = {
+						user_id: auditor.split(':')[1],
+						approved: approval.data.approved,
+						stamp: approval.data.stamp,
+						approved_str: oa_has_audited_str
+					}
 
-		// 		approvalUserList.push(result);
-		// 	}
-		// })
+					approvalUserList.push(result);
+					return;
+				}
+			})
 
-		// const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
-		// const userInfoList = userList.map(user => user.list[0]);                     
+			if (!oa_has_audited_str) {
+				const result = {
+					user_id: auditor.split(':')[1],
+					approved: null,
+					stamp: null,
+					approved_str: '결제대기중'
+				}
 
-		// const newAuditUserList = approvalUserList.map((auditor) => ({
-		// 	...auditor,
-		// 	user_info: userInfoList.find((user) => user.user_id === auditor.user_id)
-		// }))
+				approvalUserList.push(result);
+			}
+		})
 
-		// console.log('newAuditUserList : ', newAuditUserList);
-		// auditUserList.value = newAuditUserList;
+		console.log('!!!!@!@ååapprovalUserList : ', approvalUserList);
+
+		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
+		console.log('!!!@#@#@userList : ', userList);
+		const userInfoList = userList.map(user => user.list[0]);                     
+
+		const newAuditUserList = approvalUserList.map((auditor) => ({
+			...auditor,
+			user_info: userInfoList.find((user) => user.user_id === auditor.user_id)
+		}))
+
+		auditUserList.value = newAuditUserList;
+		console.log('auditUserList : ', newAuditUserList);
 	} catch (error) {
 		getAuditDetailRunning.value = false;
 		console.error(error);
 	}
 }
 
-// // 결재 하기
-// const postApproval = async (e: SubmitEvent) => {
-// 	if (isPosting) return; // 중복 호출 방지
-// 	isPosting = true;
+// 결재 하기
+const postApproval = async (e: SubmitEvent) => {
+	if (isPosting) return; // 중복 호출 방지
+	isPosting = true;
   
-// 	e.preventDefault();
+	e.preventDefault();
 
-// 	try {
-// 		if (!auditId.value) return;
+	try {
+		if (!auditId.value) return;
 
-// 		const userId = user.user_id;
+		const userId = user.user_id;
+		const approved = (document.querySelector('input[name="approved"]:checked') as HTMLInputElement)?.value;
 
-// 		// 결재 하는 요청
-// 		const res = await skapi.postRecord(e, {
-// 			table: {
-// 				name: 'audit_approval',
-// 				access_group: 'authorized'
-// 			},
-// 			reference: auditId.value,
-// 			tags: [(userId as string).replaceAll('-', '_')], 
-// 		});
+		const data = {
+			approved: approved,
+			comment: approvedComment.value,
+			stamp: selectedStamp.value,
+		}
 
-// 		console.log('결재 === postRecord === res : ', res);
+		// 결재 하는 요청
+		const res = await skapi.postRecord(data, {
+			table: {
+				name: 'audit_approval',
+				access_group: 'authorized'
+			},
+			reference: auditId.value,
+			tags: [(userId as string).replaceAll('-', '_')], 
+		});
+
+		console.log('결재 === postRecord === res : ', res);
 		
-// 		// 실시간 알림 보내기
-// 		skapi.postRealtime(
-// 			{
-// 				audit_approval: {
-// 					noti_id: res.record_id,
-// 					noti_type: 'audit',
-// 					send_date: new Date().getTime(),
-// 					send_user: user.user_id,
-// 					audit_info: {
-// 						audit_type: 'approved',
-// 						to_audit: auditDoContent.value?.data?.to_audit,
-// 						audit_doc_id: auditId.value,
-// 						approval: res.data.approved,
-// 					}
-// 				}
-// 			},
-// 			auditDoContent.value.user_id
-// 		).then(res => {
-// 			console.log('결재알림 === postRealtime === res : ', res);
-// 		});
+		// 실시간 알림 보내기
+		skapi.postRealtime(
+			{
+				audit_approval: {
+					noti_id: res.record_id,
+					noti_type: 'audit',
+					send_date: new Date().getTime(),
+					send_user: user.user_id,
+					audit_info: {
+						audit_type: 'approved',
+						to_audit: auditDoContent.value?.data?.to_audit,
+						audit_doc_id: auditId.value,
+						approval: res.data.approved,
+					}
+				}
+			},
+			auditDoContent.value.user_id
+		).then(res => {
+			console.log('결재알림 === postRealtime === res : ', res);
+		});
 
-// 		// 실시간 못 받을 경우 알림 기록 저장
-// 		skapi.postRecord(
-// 			{
-// 				noti_id: res.record_id,
-// 				noti_type: 'audit',
-// 				send_date: new Date().getTime(),
-// 				send_user: user.user_id,
-// 				audit_info: {
-// 					audit_type: 'approved',
-// 					to_audit: auditDoContent.value?.data?.to_audit,
-// 					audit_doc_id: auditId.value,
-// 					approval: res.data.approved,
-// 				}
-// 			},
-// 			{
-// 				readonly: true,
-// 				table: {
-// 					name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
-// 					access_group: "authorized",
-// 				},
-// 			}
-// 		)
-// 		.then((res) => {
-// 			console.log("결재알림기록 === postRecord === res : ", res);
-// 		});
+		// 실시간 못 받을 경우 알림 기록 저장
+		skapi.postRecord(
+			{
+				noti_id: res.record_id,
+				noti_type: 'audit',
+				send_date: new Date().getTime(),
+				send_user: user.user_id,
+				audit_info: {
+					audit_type: 'approved',
+					to_audit: auditDoContent.value?.data?.to_audit,
+					audit_doc_id: auditId.value,
+					approval: res.data.approved,
+				}
+			},
+			{
+				readonly: true,
+				table: {
+					name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+					access_group: "authorized",
+				},
+			}
+		)
+		.then((res) => {
+			console.log("결재알림기록 === postRecord === res : ", res);
+		});
 
-// 		window.alert('결재가 완료되었습니다.');
-// 		closeModal();
-// 		getAuditDetail();
-// 	} catch (error) {
-// 		console.error(error);
-// 	}
-// }
+		window.alert('결재가 완료되었습니다.');
+		closeModal();
+		getAuditDetail();
+	} catch (error) {
+		console.error(error);
+	}
+}
 
 const updateScreenSize = () => {
 	isDesktop.value = window.innerWidth > 768;
@@ -824,6 +849,15 @@ onUnmounted(() => {
 
 .btn {
 	margin-top: 0;
+}
+
+.modal-stamp {
+	.modal-body {
+		p {
+			font-size: 0.9rem;
+			margin-bottom: 0.5rem;
+		}
+	}
 }
 
 .stamp-wrap {
