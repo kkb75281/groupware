@@ -826,6 +826,18 @@
             background-color: var(--gray-color-50);
             color: var(--gray-color-900);
             // border-bottom: 1px solid var(--gray-color-400);
+
+			&.essential {
+				position: relative;
+
+				&::after {
+					position: absolute;
+					content: '*';
+					top: 8px;
+					font-size: 1rem;
+					color: #fb9804;
+				}
+			}
         }
 
         td {
