@@ -14,7 +14,7 @@ template(v-if="showOrganigram")
 	template(v-if="loading")
 		Loading
 	template(v-else)
-		Department(v-for="(department, index) in organigram" :key="index" :department="department" @update-check="onDepartmentCheck")
+		Department(v-for="(department, index) in organigram" :key="index" :department="department" :selectedAuditors="selectedAuditors" :modalType="modalType" @update-check="onDepartmentCheck")
 </template>
 
 <script lang="ts" setup>
@@ -46,6 +46,14 @@ const props = defineProps({
     excludeCurrentUser: { // 결재요청시 본인 제외
         type: Boolean,
         default: false
+    },
+    modalType: {  // modalType prop 추가
+        type: String,
+        required: true
+    },
+    selectedAuditors: {  // selectedAuditors prop 추가
+        type: Object,
+        required: true
     }
 });
 
@@ -428,7 +436,7 @@ watch(() => props.selectedEmployees, (newVal) => {
         currentEmpData.value.forEach(emp => {
           emp.isChecked = newVal.some(selected => selected.userId === emp.data.user_id);
         });
-          console.log('=== watch currentEmpData ===', currentEmpData.value);
+        console.log('=== watch currentEmpData ===', currentEmpData.value);
     }
     console.log('=== watch selectedEmployees ===', selectedEmployees.value);
 }, { deep: true, immediate: true });
