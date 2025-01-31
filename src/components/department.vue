@@ -7,6 +7,7 @@ details(:class="{ 'disabled-department': isDepartmentDisabled }")
         type="checkbox" 
         name="checkbox" 
         v-model="department.isChecked"
+		:checked="department.isChecked"
         :disabled="isDepartmentDisabled"
         @change="$emit('update-check', { type: 'department', target: department, isChecked: department.isChecked })" 
         @click.stop
@@ -27,6 +28,7 @@ details(:class="{ 'disabled-department': isDepartmentDisabled }")
           type="checkbox" 
           name="checkbox" 
           v-model="member.isChecked"
+		  :checked="member.isChecked"
           :disabled="isUserDisabled(member)"
           @change="$emit('update-check', { type: 'member', target: member, isChecked: member.isChecked })" 
           @click.stop
@@ -50,7 +52,7 @@ details(:class="{ 'disabled-department': isDepartmentDisabled }")
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, watch, onMounted } from 'vue';
 import {
   loading,
   divisions,
@@ -74,6 +76,24 @@ const props = defineProps({
     required: true
   }
 });
+
+// 초기 체크 상태 설정
+const initializeCheckState = () => {
+    // 현재 모달 타입의 선택된 사용자들 가져오기
+    const selectedUsers = props.selectedAuditors[props.modalType] || [];
+    const selectedUserIds = selectedUsers.map(user => user.userId);
+
+    // 부서 멤버들의 체크 상태 설정
+    props.department.members.forEach(member => {
+        member.isChecked = selectedUserIds.includes(member.data.user_id);
+    });
+
+    // 모든 멤버가 선택된 경우 부서 체크박스도 체크
+    if (props.department.members.length > 0 && 
+        props.department.members.every(member => member.isChecked)) {
+        props.department.isChecked = true;
+    }
+};
 
 // 사용자가 이미 다른 역할에 선택되었는지 확인하는 함수
 const isUserDisabled = (item) => {
@@ -114,6 +134,11 @@ const isDepartmentDisabled = computed(() => {
 
   // 모든 구성원이 disabled이고 하위 부서도 비어있거나 모든 구성원이 disabled인 경우
   return allMembersDisabled && allSubDepartmentsEmpty;
+});
+
+// 컴포넌트 마운트 시 초기화
+onMounted(() => {
+    initializeCheckState();
 });
 </script>
 
