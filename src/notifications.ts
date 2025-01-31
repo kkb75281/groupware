@@ -33,6 +33,7 @@ export const readAudit: Ref<{
 
 export const mailList = ref([]);
 export const auditList = ref([]);
+export const auditListRunning = ref(false);
 export const sendAuditList = ref([]);
 
 export const getUserInfo = async (userId: string): Promise<object> => {
@@ -172,6 +173,7 @@ export const getReadList = async() => {
 
 export async function getAuditList() {
 	let audits, auditDocs;
+	auditListRunning.value = true;
 
 	try {
 		// 내가 받은 결재 요청건 가져오기
@@ -185,20 +187,26 @@ export async function getAuditList() {
 			ascending: false,   // 최신순
 		});
 	} catch (err) {
+		auditListRunning.value = false;
 		console.error({err});
 	}
 
 	console.log({audits});
 
 	try {
+		if (!audits.list.length) {
+			auditListRunning.value = false;
+			return;
+		}
+		
+		// 내가 받은 결재 요청건의 결재 서류 가져오기
 		auditDocs = await Promise.all(audits.list.map(async (list) => {
 			if(!list.data.audit_id) return;
-			console.log({list});
+			
 			// 결재 서류 가져오기
 			const audit_doc = (await skapi.getRecords({ 
 				record_id: list.data.audit_id 
 			})).list[0];
-			console.log({audit_doc});
 	
 			// 다른 사람 결재 여부 확인
 			const approvals = (await skapi.getRecords({
@@ -212,33 +220,53 @@ export async function getAuditList() {
 	
 			// 결재자 목록에서 각 결재자 ID 가져오기
 			const auditors = audit_doc.tags.map(a => a.replaceAll('_', '-'));
+			console.log({auditors});
+
+			const auditors_type = auditors.reduce((acc, item) => {
+				const [key, value] = item.split(":");
+
+				if (!acc[key]) acc[key] = [];
+				acc[key].push(value);
+
+				return acc;
+			}, {});
+			console.log({auditors_type});
+
+			let has_approved_data = true;
 	
 			auditors.forEach((auditor) => {
 				let oa_has_audited_str = null;
+				console.log({auditor});
 	
 				approvals.forEach((approval) => {
+					if (approval.user_id !== auditor.split(':')[1]) {
+						has_approved_data = false;
+					}
+
 					if (approval.user_id === user.user_id) {
 						oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
 	
-						audit_doc.approved = oa_has_audited_str;
-						audit_doc.user_id = auditor;
-						
-						return;
+						// audit_doc.approved = oa_has_audited_str;
+						audit_doc.my_state = oa_has_audited_str;
+						// audit_doc.user_id = auditor;
 					}
 				})
 	
 				if (!oa_has_audited_str) {
-					audit_doc.approved = '대기중';
-					audit_doc.user_id = auditor;
+					// audit_doc.approved = '대기중';
+					audit_doc.my_state = '대기중';
+					// audit_doc.user_id = auditor;
 				}
 			})
 			
 			return {
 				...audit_doc,
+				approved: has_approved_data,
 				draftUserId: list.user_id
 			};
 		}));
 	} catch (err) {
+		auditListRunning.value = false;
 		console.error({err});
 	}
 
@@ -255,8 +283,11 @@ export async function getAuditList() {
 
 		console.log({auditList: auditList.value});
 	} catch (err) {
+		auditListRunning.value = false;
 		console.error({err});
 	}
+
+	auditListRunning.value = false;
 }
 
 export async function getSendAuditList() {
