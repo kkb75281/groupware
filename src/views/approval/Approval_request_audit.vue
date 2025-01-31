@@ -263,7 +263,6 @@ watch(auditTitle, (nv, ov) => {
 // 결재라인 모달 열기
 const openModal = (type) => {
     modalType.value = type;
-    // selectedUsers.value = [];
     
     // 현재 선택된 사용자들로 테이블 초기화
     tableUsers.value = [...selectedAuditors.value[type]];
@@ -274,6 +273,12 @@ const openModal = (type) => {
         agreers: [...selectedAuditors.value.agreers],
         receivers: [...selectedAuditors.value.receivers]
     };
+    
+    // 현재 모달 타입의 선택된 결재자들 ID 목록 생성
+    // const selectedUserIds = selectedAuditors.value[type].map(user => user.userId);
+    
+    // // 조직도의 체크박스 상태 초기화를 위해 selectedEmployees 업데이트
+    // selectedUsers.value = [...selectedAuditors.value[type]];
     
     isModalOpen.value = true;
 };
