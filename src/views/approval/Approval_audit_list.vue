@@ -20,13 +20,12 @@ hr
 				button.btn.outline.md(type="button") 등록
 
 	.tb-overflow
-		template(v-if="loading")
-			Loading#loading
 		table.table#tb-auditList
 			colgroup
 				//- col(style="width: 2.4rem")
 				col(style="width: 3rem")
 				col
+				col(style="width: 12%")
 				col(style="width: 12%")
 				col(style="width: 12%")
 				col(style="width: 10%")
@@ -38,12 +37,20 @@ hr
 					//-         span.label-checkbox
 					th(scope="col") NO
 					th.left(scope="col") 결재 사안
+					th(scope="col") 나의 현황
 					th(scope="col") 결재 현황
 					th(scope="col") 합의 현황
 					th(scope="col") 기안자
 
 			tbody
-				template(v-if="auditList.length")
+				template(v-if="auditListRunning")
+					tr.loading
+						td(colspan="6")
+							Loading#loading
+				template(v-else-if="!auditList || !auditList.length")
+					tr.nohover
+						td(colspan="6") 결재 목록이 없습니다.
+				template(v-else)
 					tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
 						//- td 
 						//-     label.checkbox
@@ -52,13 +59,12 @@ hr
 						td {{ index + 1 }}
 						td.left {{ audit.data.to_audit }}
 						td
-							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.approved }}
+							span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함' }") {{ audit.my_state }}
 						td
-							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.approved }}
+							span.audit-state(:class="{ approve: audit.approved }") {{ audit.approved ? '완료됨' : '진행중' }}
+						td
+							span.audit-state(:class="{ approve: audit.approved }") {{ audit.approved ? '완료됨' : '진행중' }}
 						td {{ audit.user_info?.name }}
-				template(v-else)
-					tr.nohover
-						td(colspan="4") 결재 목록이 없습니다.
 
 </template>
 
@@ -67,7 +73,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, watch } from 'vue';
 import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
-import { auditList, sendAuditList, goToAuditDetail, getAuditList } from '@/notifications';
+import { auditListRunning, auditList, sendAuditList, goToAuditDetail, getAuditList } from '@/notifications';
 import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
@@ -75,35 +81,10 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
-let loading = ref(false);
-
 const audit_doc_list = {};
 
-// getAuditList();
-
-// // 내가 올린 결재 서류 가져오기
-// skapi.getRecords({
-//     table: {
-//         name: 'audit_doc',
-//         access_group: 'private',
-//     },
-//     reference: user.user_id // 본인 아이디 참조해야 가지고 와짐
-// }).then(r => {
-//     console.log('ㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇ',r)
-// })
-
-// 기안자 정보 가져오기
-const getUserInfo = async (userId: string) => {
-    const params = {
-        searchFor: 'user_id',
-        value: userId
-    }
-
-    return await skapi.getUsers(params);
-}
-
 onMounted(async () => {
-    // await getAuditList();
+    await getAuditList();
 });
 
 // 결재 상세 페이지로 이동
@@ -131,5 +112,21 @@ onMounted(async () => {
         color: var(--warning-color-400);
         border-color: var(--warning-color-400);
     }
+}
+
+.table-wrap {
+    margin-top: 3rem;
+
+	.loading {
+		position: relative;
+		border-bottom: unset;
+
+		#loading {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+	}
 }
 </style>
