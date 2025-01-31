@@ -174,7 +174,7 @@ template(v-if="step > 1")
 		.modal-body
 			.select-approver-wrap
 				.organigram-wrap
-					<Organigram :showOrganigram="false" :selectedEmployees="tableUsers" @selection-change="handleOrganigramSelection"/>
+					<Organigram :showOrganigram="false" :selectedEmployees="tableUsers" :excludeCurrentUser="true" @selection-change="handleOrganigramSelection"/>
 
 				button.btn.outline.btn-add(type="button" @click="addSelectedToTable")
 					| 추가
