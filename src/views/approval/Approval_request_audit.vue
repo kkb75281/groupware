@@ -305,47 +305,117 @@ const closeRowModal = () => {
 // 결재요청 미리보기
 const previewAudit = () => {
   const printArea = document.getElementById("printArea");
-  
+
   // 프린트 전에 input 값들을 span으로 변환
   const prepareForPrint = () => {
-    // 모든 input과 textarea 요소 찾기
+    cleanupAfterPrint(); // 기존에 추가된 span 제거
+
     const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
-    
     inputs.forEach(input => {
-      // 현재 입력값 저장
       const value = input.value;
-      
+
       // 입력값을 표시할 span 생성
       const span = document.createElement('span');
       span.className = 'print-value';
       span.textContent = value;
-      
+
       // input 바로 뒤에 span 삽입
       input.parentNode.insertBefore(span, input.nextSibling);
+
+      // input을 숨김
+      input.style.display = "none";
     });
   };
 
-  // 프린트 후 추가했던 span 제거
+  // 프린트 후 추가했던 span 제거 및 input 복원
   const cleanupAfterPrint = () => {
     const printValues = printArea.querySelectorAll('.print-value');
     printValues.forEach(span => span.remove());
+
+    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+    inputs.forEach(input => {
+      input.style.display = "";
+    });
   };
 
-  // 기존 스타일 저장
-  const originalStyle = document.body.className;
+  // 동적으로 스타일 추가
+  const addPrintStyle = () => {
+    const style = document.createElement("style");
+    style.id = "print-style";
+    style.textContent = `
+      @media print {
+        body * { visibility: hidden !important; }
+        #printArea, #printArea * { visibility: visible !important; }
+        #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+      }
+    `;
+    document.head.appendChild(style);
+  };
 
-  window.onbeforeprint = function() {
+  // 스타일 제거
+  const removePrintStyle = () => {
+    const style = document.getElementById("print-style");
+    if (style) {
+      style.remove();
+    }
+  };
+
+  window.onbeforeprint = function () {
     prepareForPrint();
-    document.body.className = "print-mode";
+    addPrintStyle();
   };
 
-  window.onafterprint = function() {
+  window.onafterprint = function () {
     cleanupAfterPrint();
-    document.body.className = originalStyle;
+    removePrintStyle();
   };
 
   window.print();
 };
+
+// const previewAudit = () => {
+//   const printArea = document.getElementById("printArea");
+  
+//   // 프린트 전에 input 값들을 span으로 변환
+//   const prepareForPrint = () => {
+//     // 모든 input과 textarea 요소 찾기
+//     const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+    
+//     inputs.forEach(input => {
+//       // 현재 입력값 저장
+//       const value = input.value;
+      
+//       // 입력값을 표시할 span 생성
+//       const span = document.createElement('span');
+//       span.className = 'print-value';
+//       span.textContent = value;
+      
+//       // input 바로 뒤에 span 삽입
+//       input.parentNode.insertBefore(span, input.nextSibling);
+//     });
+//   };
+
+//   // 프린트 후 추가했던 span 제거
+//   const cleanupAfterPrint = () => {
+//     const printValues = printArea.querySelectorAll('.print-value');
+//     printValues.forEach(span => span.remove());
+//   };
+
+//   // 기존 스타일 저장
+//   const originalStyle = document.body.className;
+
+//   window.onbeforeprint = function() {
+//     prepareForPrint();
+//     document.body.className = "print-mode";
+//   };
+
+//   window.onafterprint = function() {
+//     cleanupAfterPrint();
+//     document.body.className = originalStyle;
+//   };
+
+//   window.print();
+// };
 
 // 작성란 추가
 const addRow = () => {
@@ -826,6 +896,19 @@ onUnmounted(() => {
 	// 	padding: 4px 0;
 	// 	min-height: 20px; /* 빈공간 유지 */
 	// }
+
+	body * {
+		visibility: hidden;  /* 모든 요소 숨김 */
+	}
+	#printArea, #printArea * {
+		visibility: visible; /* printArea와 그 내부 요소만 보이게 설정 */
+	}
+	#printArea {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+	}
 
 	/* input 대체 텍스트 스타일 */
 	.print-value {
