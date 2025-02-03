@@ -864,6 +864,7 @@ onUnmounted(() => {
 	.title,
 	hr,
 	.approver-list:last-of-type,
+	.reference-list:last-of-type,
 	.empty {
 		display: none !important;
 	}
