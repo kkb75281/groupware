@@ -1,4 +1,4 @@
-<template lang="pug">
+? '완료됨' : '진행중'<template lang="pug">
 h1.title 결재 수신함
 
 hr
@@ -61,9 +61,9 @@ hr
 						td
 							span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함' }") {{ audit.my_state }}
 						td
-							span.audit-state(:class="{ approve: audit.approved }") {{ audit.approved ? '완료됨' : '진행중' }}
+							span.audit-state(:class="{ approve: audit.referenced_count === JSON.parse(audit.data.auditors).approvers.length }") {{ audit.referenced_count === JSON.parse(audit.data.auditors).approvers.length ? '완료됨' : audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).approvers.length }}
 						td
-							span.audit-state(:class="{ approve: audit.approved }") {{ audit.approved ? '완료됨' : '진행중' }}
+							span.audit-state(:class="{ approve: JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length }") {{ JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length ? '완료됨' : audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
 						td {{ audit.user_info?.name }}
 
 </template>
