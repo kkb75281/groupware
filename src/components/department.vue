@@ -2,7 +2,7 @@
 details(:class="{ 'disabled-department': isDepartmentDisabled }")
   //- 상위 부서
   summary(:class="{ 'disabled-summary': isDepartmentDisabled }")
-    label.checkbox(v-if="department.total > 0")
+    label.checkbox(v-if="useCheckbox && department.total > 0")
       input(
         type="checkbox" 
         name="checkbox" 
@@ -23,7 +23,7 @@ details(:class="{ 'disabled-department': isDepartmentDisabled }")
       :key="index"
       :class="{ 'disabled-member': isUserDisabled(member) }"
     )
-      label.checkbox
+      label.checkbox(v-if="useCheckbox")
         input(
           type="checkbox" 
           name="checkbox" 
@@ -46,6 +46,7 @@ details(:class="{ 'disabled-department': isDepartmentDisabled }")
         :department="sub"
         :modalType="modalType"
         :selectedAuditors="selectedAuditors"
+		:useCheckbox="useCheckbox"
         @update-check="$emit('update-check', $event)"
         @click.stop
       )
@@ -69,18 +70,22 @@ const props = defineProps({
   },
   modalType: {
     type: String,
-    required: true
+    required: false,
   },
   selectedAuditors: {
     type: Object,
-    required: true
+    required: false,
+  },
+  useCheckbox: {
+	type: Boolean,
+	default: false
   }
 });
 
 // 초기 체크 상태 설정
 const initializeCheckState = () => {
     // 현재 모달 타입의 선택된 사용자들 가져오기
-    const selectedUsers = props.selectedAuditors[props.modalType] || [];
+    const selectedUsers = props.selectedAuditors && props.modalType ? props.selectedAuditors[props.modalType] : [];
     const selectedUserIds = selectedUsers.map(user => user.userId);
 
     // 부서 멤버들의 체크 상태 설정
