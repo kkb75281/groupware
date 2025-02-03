@@ -174,7 +174,7 @@ template(v-if="step > 1")
 		.modal-body
 			.select-approver-wrap
 				.organigram-wrap
-					<Organigram :showOrganigram="false" :selectedEmployees="tableUsers" @selection-change="handleOrganigramSelection"/>
+					<Organigram :showOrganigram="false" :selectedEmployees="tableUsers" :excludeCurrentUser="true" :modalType="modalType" :selectedAuditors="selectedAuditors" @selection-change="handleOrganigramSelection"/>
 
 				button.btn.outline.btn-add(type="button" @click="addSelectedToTable")
 					| 추가
@@ -223,16 +223,11 @@ import { getDivisionNames, divisionNameList } from "@/division";
 
 import Organigram from '@/components/organigram.vue';
 
-// 결재자 선택 모달 UI 변경
-// -> 조직도 데이터로 모든 직원 가져와서 결재자 선택 가능하도록 변경 예정
-// 첨부파일 업로드는 postAuditDoc 함수에서 data로 같이 보내면 될 듯
-// 결재 요청 > 알림 확인
-
 const router = useRouter();
 const route = useRoute();
 
 const isModalOpen = ref(false);
-const isRowModalOpen = ref(false);
+const isRowModalOpen = ref(false); // 작성란 추가 모달
 const showBackStep = ref(true);
 const isDesktop = ref(window.innerWidth > 768);
 
@@ -268,7 +263,6 @@ watch(auditTitle, (nv, ov) => {
 // 결재라인 모달 열기
 const openModal = (type) => {
     modalType.value = type;
-    // selectedUsers.value = [];
     
     // 현재 선택된 사용자들로 테이블 초기화
     tableUsers.value = [...selectedAuditors.value[type]];
@@ -279,6 +273,12 @@ const openModal = (type) => {
         agreers: [...selectedAuditors.value.agreers],
         receivers: [...selectedAuditors.value.receivers]
     };
+    
+    // 현재 모달 타입의 선택된 결재자들 ID 목록 생성
+    // const selectedUserIds = selectedAuditors.value[type].map(user => user.userId);
+    
+    // // 조직도의 체크박스 상태 초기화를 위해 selectedEmployees 업데이트
+    // selectedUsers.value = [...selectedAuditors.value[type]];
     
     isModalOpen.value = true;
 };
@@ -346,6 +346,8 @@ const previewAudit = () => {
 
   window.print();
 };
+
+// 작성란 추가
 const addRow = () => {
 	if(!document.getElementById('add_row_title').value) {
 		alert('제목을 입력해주세요.');

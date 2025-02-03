@@ -14,13 +14,13 @@ template(v-if="showOrganigram")
 	template(v-if="loading")
 		Loading
 	template(v-else)
-		Department(v-for="(department, index) in organigram" :key="index" :department="department" @update-check="onDepartmentCheck")
+		Department(v-for="(department, index) in organigram" :key="index" :department="department" :selectedAuditors="selectedAuditors" :modalType="modalType" @update-check="onDepartmentCheck")
 </template>
 
 <script lang="ts" setup>
 import { type Ref, ref, watch } from 'vue'
 import { skapi } from '@/main'
-import { makeSafe } from '@/user'
+import { user, makeSafe } from '@/user'
 import {
     loading,
     divisions,
@@ -42,6 +42,18 @@ const props = defineProps({
     selectedEmployees: {
         type: Array,
         default: () => [],
+    },
+    excludeCurrentUser: { // 결재요청시 본인 제외
+        type: Boolean,
+        default: false
+    },
+    modalType: {  // modalType prop 추가
+        type: String,
+        required: true
+    },
+    selectedAuditors: {  // selectedAuditors prop 추가
+        type: Object,
+        required: true
     }
 });
 
@@ -159,7 +171,8 @@ async function addDepartment(path: string[], division: string | null, currentLev
 
     // 하위 경로가 있으면 재귀적으로 처리
     if (restPath.length > 0) {
-        addDepartment(restPath, division, department.subDepartments);
+        // addDepartment(restPath, division, department.subDepartments);
+        await addDepartment(restPath, division, department.subDepartments);
     }
 
 	// 하위 부서의 데이터를 상위 부서로 합산
@@ -167,14 +180,26 @@ async function addDepartment(path: string[], division: string | null, currentLev
 
 	// 마지막 레벨이면 멤버 추가
 	if (restPath.length === 0) {
-		for (let data of currentEmpData.value) {
-			if (data.index.name.includes(division)) {
-				department.members.push(data);
-			}
-		}
+		// for (let data of currentEmpData.value) {
+		// 	if (data.index.name.includes(division)) {
+		// 		department.members.push(data);
+		// 	}
+		// }
+
+    // 현재 부서의 모든 직원 데이터를 가져옴
+    const departmentMembers = currentEmpData.value.filter(data => 
+        data.index.name.includes(division)
+    );
+
+    // excludeCurrentUser가 true일 때만 현재 사용자 제외
+    department.members = props.excludeCurrentUser 
+        ? departmentMembers.filter(data => data.data.user_id !== user.user_id)
+        : departmentMembers;
 
 		// 멤버 수 업데이트
 		department.total = department.members.length + department.subDepartments.reduce((sum, subDept) => sum + subDept.total, 0);
+
+    return department;
 	}
 }
 
@@ -188,7 +213,7 @@ async function getOrganigram() {
         }
 
 		if (getEmpPositionCurrentRunning instanceof Promise) {
-			await getEmpPositionCurrentRunning;
+			  await getEmpPositionCurrentRunning;
 		}
 
         for (const division in divisionNameList.value) {
@@ -199,6 +224,20 @@ async function getOrganigram() {
             await addDepartment(path, division, organigram.value);
         }
 
+        // 빈 부서 제거 (멤버가 0명이고 하위 부서도 없는 경우)
+        const filterEmptyDepartments = (departments: Organigram[]) => {
+            return departments.filter(dept => {
+                // 하위 부서가 있으면 재귀적으로 필터링
+                if (dept.subDepartments.length > 0) {
+                  dept.subDepartments = filterEmptyDepartments(dept.subDepartments);
+                }
+                
+                // 멤버가 있거나 하위 부서가 있는 경우만 유지
+                return dept.members.length > 0 || dept.subDepartments.length > 0;
+            });
+        };
+
+        organigram.value = filterEmptyDepartments(organigram.value);
         // console.log('=== getOrganigram === organigram : ', organigram.value);
     } catch (error) {
         console.error('=== getOrganigram === error : ', error);
@@ -206,6 +245,11 @@ async function getOrganigram() {
         loading.value = false;
     }
 }
+
+// Watch props.excludeCurrentUser 변경을 감지하여 조직도 다시 로드
+watch(() => props.excludeCurrentUser, () => {
+    getOrganigram();
+});
 
 getOrganigram();
 
@@ -392,7 +436,7 @@ watch(() => props.selectedEmployees, (newVal) => {
         currentEmpData.value.forEach(emp => {
           emp.isChecked = newVal.some(selected => selected.userId === emp.data.user_id);
         });
-          console.log('=== watch currentEmpData ===', currentEmpData.value);
+        console.log('=== watch currentEmpData ===', currentEmpData.value);
     }
     console.log('=== watch selectedEmployees ===', selectedEmployees.value);
 }, { deep: true, immediate: true });
