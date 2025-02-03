@@ -174,7 +174,7 @@ template(v-if="step > 1")
 		.modal-body
 			.select-approver-wrap
 				.organigram-wrap
-					<Organigram :showOrganigram="false" :selectedEmployees="tableUsers" :excludeCurrentUser="true" :modalType="modalType" :selectedAuditors="selectedAuditors" @selection-change="handleOrganigramSelection"/>
+					Organigram(:selectedEmployees="tableUsers" :excludeCurrentUser="true" :modalType="modalType" :useCheckbox="true" :selectedAuditors="selectedAuditors" @selection-change="handleOrganigramSelection")
 
 				button.btn.outline.btn-add(type="button" @click="addSelectedToTable")
 					| 추가
@@ -544,6 +544,8 @@ const removeAuditor = (userId: string, type) => {
         ...selectedAuditors.value,
         [type]: selectedAuditors.value[type].filter(auditor => auditor.userId !== userId)
     };
+
+	console.log('=== removeAuditor === selectedAuditors : ', selectedAuditors.value);
 
     const newAuditors = tableUsers.value.filter(user => user.userId !== userId);
     tableUsers.value = newAuditors;

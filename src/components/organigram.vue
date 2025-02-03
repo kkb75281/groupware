@@ -1,20 +1,9 @@
 <template lang="pug">
-template(v-if="showOrganigram")
-	.title
-		h1 조직도
-
-	hr
-
-	.button-wrap(style="display: flex; justify-content: end; align-items: center;")
-		button.btn.outline(type="button" @click="toggleAllDetails") {{ allDetailsOpen ? '모두 닫기' : '모두 열기' }}
-
-	br
-
-.department-wrap
+.organigram-wrap
 	template(v-if="loading")
 		Loading
 	template(v-else)
-		Department(v-for="(department, index) in organigram" :key="index" :department="department" :selectedAuditors="selectedAuditors" :modalType="modalType" @update-check="onDepartmentCheck")
+		Department(v-for="(department, index) in organigram" :key="index" :useCheckbox="useCheckbox" :department="department" :selectedAuditors="selectedAuditors" :modalType="modalType" @update-check="onDepartmentCheck")
 </template>
 
 <script lang="ts" setup>
@@ -38,7 +27,6 @@ const selectedEmployees = ref([]);
 const tableUsers = ref([]);
 
 const props = defineProps({
-    showOrganigram: Boolean,
     selectedEmployees: {
         type: Array,
         default: () => [],
@@ -49,16 +37,19 @@ const props = defineProps({
     },
     modalType: {  // modalType prop 추가
         type: String,
-        required: true
+        required: false
     },
     selectedAuditors: {  // selectedAuditors prop 추가
         type: Object,
-        required: true
-    }
+        required: false
+    },
+	useCheckbox: {
+		type: Boolean,
+		default: false
+	}
 });
 
 const organigramProps = {
-    showOrganigram: true,
     selectedEmployees: tableUsers // 새로운 prop 추가
 };
 
@@ -76,19 +67,6 @@ let getEmpPositionCurrentRunning: Promise<any> | null = null;
 let organigram: Ref<Organigram[]> = ref([]);
 let checkedUserIds = ref<string[]>([]);
 let loading = ref(false);
-let allDetailsOpen = ref(false);
-
-function toggleAllDetails() {
-	allDetailsOpen.value = !allDetailsOpen.value;
-
-	document.querySelectorAll('details').forEach(detail => {
-		if(allDetailsOpen.value) {
-			detail.open = true;
-		} else {
-			detail.open = false;
-		}
-	});
-}
 
 async function getEmpPositionCurrent() {
 	if(getEmpPositionCurrentRunning instanceof Promise) { // 이미 실행중인 경우
