@@ -77,8 +77,7 @@ export async function getDivisionNames(refresh = false) {
     let res = await getDivisionNamesRunning;
     if (res.list.length) {
         if (res.list[0].data) {
-            divisionNameList.value = res.list[0].data;
-			console.log('!!!!!받아옴')
+            divisionNameList.value = res.list[0].data._value;
         }
     }
 
