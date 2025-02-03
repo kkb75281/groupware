@@ -35,6 +35,7 @@ export const mailList = ref([]);
 export const auditList = ref([]);
 export const auditListRunning = ref(false);
 export const sendAuditList = ref([]);
+export const sendAuditListRunning = ref(false);
 
 export const getUserInfo = async (userId: string): Promise<object> => {
     const params = {
@@ -291,6 +292,8 @@ export async function getAuditList() {
 }
 
 export async function getSendAuditList() {
+	sendAuditListRunning.value = true;
+
 	try {
 		// 내가 올린 결재 서류 가져오기
 		const audits = await skapi.getRecords({
@@ -307,8 +310,11 @@ export async function getSendAuditList() {
 
 		console.log('내가 올린 결재 서류 가져오기', sendAuditList.value);
 	} catch (err) {
+		sendAuditListRunning.value = false;
 		console.error({err});
 	}
+
+	sendAuditListRunning.value = false;
 }
 
 export const goToAuditDetail = (e, auditId, router) => {
