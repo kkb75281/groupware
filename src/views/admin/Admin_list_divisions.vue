@@ -166,6 +166,7 @@ let deleteDivision = async () => {
     let userId = Object.keys(selectedList.value);
     console.log({ userId });
     let name = Object.values(selectedList.value);
+    console.log('=== deleteDivision === name : ', name);
 
     let filteredData = {};
     let isSuccess = [];
@@ -177,6 +178,7 @@ let deleteDivision = async () => {
             return skapi
                 .deleteRecords({ record_id: el })
                 .then((res) => {
+                    console.log('=== deleteDivision === res : ', res);
                     isSuccess.push(el);
                     delete divisions.value[el];
                 })
@@ -230,6 +232,9 @@ let deleteDivision = async () => {
                 name: "divisionNames",
                 access_group: 1,
             },
+        }).then((res) => {
+            console.log('=== deleteDivision === res : ', res);
+            // divisionNameList.value = res.data;
         });
     } catch (error) {
         alert("부서명 리스트를 업데이트하는데 실패하였습니다. 관리자에게 문의해주세요.");
