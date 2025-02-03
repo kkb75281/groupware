@@ -41,7 +41,14 @@ hr
 					th(scope="col") 기안자
 
 			tbody
-				template(v-if="sendAuditList.length")
+				template(v-if="sendAuditListRunning")
+					tr.loading
+						td(colspan="5")
+							Loading#loading
+				template(v-else-if="!sendAuditList || !sendAuditList.length")
+					tr.nohover
+						td(colspan="5") 결재 목록이 없습니다.
+				template(v-else)
 					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
 						//- td 
 						//-     label.checkbox
@@ -54,9 +61,6 @@ hr
 						td
 							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
 						td {{ user.name }}
-				template(v-else)
-					tr.nohover
-						td(colspan="4") 결재 목록이 없습니다.
 
 </template>
 
@@ -65,7 +69,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import { skapi } from '@/main';
 import { user, profileImage, verifiedEmail } from '@/user';
-import { sendAuditList, getSendAuditList, goToAuditDetail } from '@/notifications';
+import { sendAuditList, getSendAuditList, sendAuditListRunning, goToAuditDetail } from '@/notifications';
+
+import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -74,26 +80,14 @@ const route = useRoute();
 
 const audit_doc_list = {};
 
-// 기안자 정보 가져오기
-const getUserInfo = async (userId: string) => {
-    const params = {
-        searchFor: 'user_id',
-        value: userId
-    }
-
-    return await skapi.getUsers(params);
-}
-
 onMounted(async () => {
 	await getSendAuditList();
 
 	console.log('!!!!!sendAuditList', sendAuditList.value);
-	console.log('!!!!!sendAuditList', sendAuditList.value[0].data.auditors);
 	
-	const auditors = JSON.parse(sendAuditList.value[0].data.auditors)
+	const auditors = sendAuditList.value[0]?.data?.auditors ? JSON.parse(sendAuditList.value[0]?.data?.auditors) : null;
 
 	console.log('!!!!!auditors', auditors);	
-
 
 	try {
 		const results = await Promise.all(
@@ -119,12 +113,6 @@ onMounted(async () => {
 		throw error; // 필요에 따라 에러를 다시 던짐
 	}
 });
-
-// 결재 상세 페이지로 이동
-// const goToAuditDetail = (e, auditId) => {
-//     // if(e.target.classList.contains('label-checkbox')) return;
-//     router.push({ name: 'audit-detail', params: { auditId } });
-// };
 </script>
 
 <style scoped lang="less">
@@ -145,5 +133,21 @@ onMounted(async () => {
         color: var(--warning-color-400);
         border-color: var(--warning-color-400);
     }
+}
+
+.table-wrap {
+    margin-top: 3rem;
+
+	.loading {
+		position: relative;
+		border-bottom: unset;
+
+		#loading {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+		}
+	}
 }
 </style>

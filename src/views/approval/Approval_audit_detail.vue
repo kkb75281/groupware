@@ -4,6 +4,8 @@
 
 hr
 
+Loading#loading(v-if="getAuditDetailRunning")
+
 .form-wrap(v-if="!getAuditDetailRunning")
 	form#_el_request_form(@submit.prevent="requestAudit")
 		#printArea
@@ -38,37 +40,45 @@ hr
 									span.drafter {{ senderUser.name }}
 							//- 작성일자 기안사 :: e
 
-							tr.approval(v-if="selectedAuditors.approvers.length > 0")
+							tr.approval(v-if="approverList.length > 0")
 								th 결재
 								td.left(colspan="3" style="padding: 0; height: 119px;")
 									ul.approver-wrap
-										li.approver-list(v-for="(approver, index) in auditUserList" :key="approver.user_id")
-											span.num {{ index + 1 }}
-											span.sign
-												template(v-if="approver.approved === 'approve'")
-													img(v-if="approver?.stamp" :src="approver.stamp" alt="도장 이미지")
-													span.approved(v-else) 승인
-												template(v-else-if="approver.approved === 'reject'")
-													span.rejected 반려
-												template(v-else="!approver.approved || approver.approved === null")
-													template(v-if="approver.user_id === user.user_id")
-														button.btn.sm.outline.btn-approve(type="button" @click="openModal(approver)") 결재
-													template(v-else)
-														span.waitting 대기
-											span.approver {{ approver.user_info?.name }}
+										li.approver-list(v-for="(approver, index) in approverList" :key="approver.user_id")
+											template(v-if="approver.approved_type === 'approver'")
+												span.num {{ index + 1 }}
+												span.sign
+													template(v-if="approver.approved === 'approve'")
+														img(v-if="approver?.stamp" :src="approver.stamp" alt="도장 이미지")
+														span.approved(v-else) 승인
+													template(v-else-if="approver.approved === 'reject'")
+														span.rejected 반려
+													template(v-else="!approver.approved || approver.approved === null")
+														template(v-if="approver.user_id === user.user_id")
+															button.btn.sm.outline.btn-approve(type="button" @click="openModal(approver)") 결재
+														template(v-else)
+															span.waitting 대기
+												span.approver {{ approver.user_info?.name }}
 
-							tr.approval(v-if="selectedAuditors.agreers.length > 0")
+							tr.approval(v-if="agreerList.length > 0")
 								th 합의
 								td.left(colspan="3" style="padding: 0; height: 119px;")
 									ul.approver-wrap
-										li.approver-list(v-for="(agreer, index) in selectedAuditors.agreers" :key="agreer.user_id")
-											span.num {{ index + 1 }}
-											span.sign
-												template(v-if="agreer.user_id === user.user_id")
-													button.btn.sm.outline.btn-approve(type="button" @click="openModal(agreer)") 합의
-												template(v-else)
-													span.waitting 대기
-											span.approver {{ agreer.name }}
+										li.approver-list(v-for="(agreer, index) in agreerList" :key="agreer.user_id")
+											template(v-if="agreer.approved_type === 'agreer'")
+												span.num {{ index + 1 }}
+												span.sign
+													template(v-if="agreer.approved === 'approve'")
+														img(v-if="agreer?.stamp" :src="agreer.stamp" alt="도장 이미지")
+														span.approved(v-else) 승인
+													template(v-else-if="agreer.approved === 'reject'")
+														span.rejected 반려
+													template(v-else="!agreer.approved || agreer.approved === null")
+														template(v-if="agreer.user_id === user.user_id")
+															button.btn.sm.outline.btn-approve(type="button" @click="openModal(agreer)") 합의
+														template(v-else)
+															span.waitting 대기
+												span.approver {{ agreer.user_info?.name }}
 									//- span.empty(v-else) -
 
 							tr.reference(v-if="selectedAuditors.receivers.length > 0")
@@ -102,44 +112,6 @@ hr
 
 		.button-wrap
 			button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
-
-//- .form-wrap
-	form#_el_approved_form
-		.table-wrap
-			.tb-overflow
-				table.table#tb-auditDetail
-					colgroup
-						col(style="width: 10%")
-						col
-						col(style="width: 10%")
-						col
-					tbody
-						tr
-							th 결재 사안
-							td.left.audit-title(v-if="auditDoContent.data?.to_audit") {{ auditDoContent.data.to_audit }}
-							th 기안자
-							td.left.drafter {{ senderUser?.name || '' }}
-
-						tr(style="height: 140px")
-							th 결재선
-							td.audit-state.left(colspan="3" style="padding: 0")
-								.stamp-wrap
-									.stamp-list(v-for="approver in auditUserList" :key="approver.user_id")
-										span.approver {{ approver.user_info?.name }}
-										.stamp
-											template(v-if="approver.approved === 'approve'")
-												span.approved 승인
-											template(v-else-if="approver.approved === 'reject'")
-												span.rejected 반려
-											template(v-else="!approver.approved || approver.approved === null")
-												template(v-if="approver.user_id === user.user_id")
-													button.btn.sm.outline.btn-approve(type="button" @click="openModal(approver)") 결재
-												template(v-else)
-													span.waitting 대기
-
-						tr
-							th 결재 내용
-							td.left.audit-content(colspan="3" v-if="auditDoContent.data?.to_audit_content") {{ auditDoContent.data.to_audit_content }}
 
 
 //- 결재 모달
@@ -249,7 +221,8 @@ const isDesktop = ref(window.innerWidth > 768);
 
 const disabled = ref(true);
 const auditDoContent = ref([]);
-const auditUserList = ref([]);
+const approverList = ref([]);
+const agreerList = ref([]);
 const isModalOpen = ref(false);
 const isStampModalOpen = ref(false);
 const senderUser = ref({});
@@ -476,6 +449,8 @@ const getAuditDetail = async () => {
 
 		const auditors = JSON.parse(auditDoc.data.auditors);
 
+		console.log('dududududududududuauditors : ', auditors);
+
 		let getAuditorInfo = async (uid) => {
 			let user_id = uid.replaceAll('_', '-');
 			let userInfo = await getUserInfo(user_id);
@@ -540,6 +515,7 @@ const getAuditDetail = async () => {
 
 					const result = {
 						user_id: auditor.split(':')[1],
+						approved_type: auditor.split(':')[0],
 						approved: approval.data.approved,
 						stamp: approval.data.stamp,
 						approved_str: oa_has_audited_str
@@ -553,11 +529,12 @@ const getAuditDetail = async () => {
 			if (!oa_has_audited_str) {
 				const result = {
 					user_id: auditor.split(':')[1],
+					approved_type: auditor.split(':')[0],
 					approved: null,
 					stamp: null,
 					approved_str: '결제대기중'
 				}
-
+				
 				approvalUserList.push(result);
 			}
 		})
@@ -573,8 +550,12 @@ const getAuditDetail = async () => {
 			user_info: userInfoList.find((user) => user.user_id === auditor.user_id)
 		}))
 
-		auditUserList.value = newAuditUserList;
-		console.log('auditUserList : ', newAuditUserList);
+		// newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
+		approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
+		agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
+
+		console.log('approverList : ', approverList.value);
+		console.log('agreerList : ', agreerList.value);
 	} catch (error) {
 		getAuditDetailRunning.value = false;
 		console.error(error);
