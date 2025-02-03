@@ -61,8 +61,8 @@ template(v-if="step > 1")
 										ul.approver-wrap(v-if="selectedAuditors.approvers.length > 0")
 											li.approver-list(v-for="(approver, index) in selectedAuditors.approvers" :key="approver.userId")
 												span.num {{ index + 1 }}
-												span.approver {{ approver.name }}
-													button.btn-remove(@click="removeAuditor(approver.userId, 'approvers')")
+												span.approver {{ approver.index.value }}
+													button.btn-remove(@click="removeAuditor(approver.data.user_id, 'approvers')")
 														.icon
 															svg
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
@@ -198,15 +198,15 @@ template(v-if="step > 1")
 									th 부서
 
 							tbody
-								tr(v-for="user in tableUsers" :key="user.userId")
+								tr(v-for="user in tableUsers" :key="user.user_id")
 									td
-										button.btn-remove(@click="removeAuditor(user.userId, modalType)")
+										button.btn-remove(@click="removeAuditor(user, modalType)")
 											.icon
 												svg
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-									td {{ user.position }}
-									td {{ user.name }}
-									td {{ user.division }}
+									td {{ user.index.name.split('.')[1] }}
+									td {{ user.index.value }}
+									td {{ divisionNameList[user.index.name.split('.')[0]] }}
 
 		.modal-footer
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
@@ -263,22 +263,25 @@ watch(auditTitle, (nv, ov) => {
 // 결재라인 모달 열기
 const openModal = (type) => {
     modalType.value = type;
-    
+
+	console.log(tableUsers.value);
+
     // 현재 선택된 사용자들로 테이블 초기화
     tableUsers.value = [...selectedAuditors.value[type]];
+
     
-    // 백업
-    backupSelected.value = {
-        approvers: [...selectedAuditors.value.approvers],
-        agreers: [...selectedAuditors.value.agreers],
-        receivers: [...selectedAuditors.value.receivers]
-    };
+    // // 백업
+    // backupSelected.value = {
+    //     approvers: [...selectedAuditors.value.approvers],
+    //     agreers: [...selectedAuditors.value.agreers],
+    //     receivers: [...selectedAuditors.value.receivers]
+    // };
     
-    // 현재 모달 타입의 선택된 결재자들 ID 목록 생성
-    // const selectedUserIds = selectedAuditors.value[type].map(user => user.userId);
+    // // 현재 모달 타입의 선택된 결재자들 ID 목록 생성
+    // // const selectedUserIds = selectedAuditors.value[type].map(user => user.userId);
     
-    // // 조직도의 체크박스 상태 초기화를 위해 selectedEmployees 업데이트
-    // selectedUsers.value = [...selectedAuditors.value[type]];
+    // // // 조직도의 체크박스 상태 초기화를 위해 selectedEmployees 업데이트
+    // // selectedUsers.value = [...selectedAuditors.value[type]];
     
     isModalOpen.value = true;
 };
@@ -459,7 +462,7 @@ async function init() {
 	// console.log('=== init === divisionNameList : ', divisionNameList.value);
 	// console.log('=== init === user : ', user);
 	let divisionFullName = divisionNameList.value[user.division];
-	let myDivisionTopLevel = divisionFullName.includes("/") ? divisionFullName.split("/")[0] : divisionFullName;
+	let myDivisionTopLevel = divisionFullName && divisionFullName.includes("/") ? divisionFullName.split("/")[0] : divisionFullName;
     // let myDivisionTopLevel = divisionNameList.value[user.division].split("/")[0]; // 부서명/팀명/...
     let divToFetch = []; // DIV_1, DIV_2, ...
     for (let k in divisionNameList.value) {
@@ -517,6 +520,7 @@ const addSelectedToTable = () => {
     
 	// 테이블 목록에 추가
     tableUsers.value = [...tableUsers.value, ...newUsers];
+	console.log(tableUsers.value)
     // selectedUsers.value = [];
 };
 
@@ -539,19 +543,21 @@ const saveAuditor = () => {
 };
 
 // 결재자 제거
-const removeAuditor = (userId: string, type) => {
-    selectedAuditors.value = {
-        ...selectedAuditors.value,
-        [type]: selectedAuditors.value[type].filter(auditor => auditor.userId !== userId)
-    };
+const removeAuditor = (user:object, type:string) => {
+	console.log('=== removeAuditor === user : ', user, ' / type : ', type);
+    // selectedAuditors.value = {
+    //     ...selectedAuditors.value,
+    //     [type]: selectedAuditors.value[type].filter(auditor => auditor.userId !== userId)
+    // };
 
-	console.log('=== removeAuditor === selectedAuditors : ', selectedAuditors.value);
+	// console.log('=== removeAuditor === selectedAuditors : ', selectedAuditors.value);
 
-    const newAuditors = tableUsers.value.filter(user => user.userId !== userId);
+    const newAuditors = tableUsers.value.filter(u => u.data.user_id !== user.data.user_id);
+	console.log('=== removeAuditor === newAuditors : ', newAuditors);
     tableUsers.value = newAuditors;
 
     // 조직도 컴포넌트의 선택 상태 업데이트
-    handleOrganigramSelection(newAuditors);
+    // handleOrganigramSelection(newAuditors);
 };
 
 // 업로드 파일 삭제
