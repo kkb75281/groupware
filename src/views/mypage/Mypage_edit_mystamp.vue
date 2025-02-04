@@ -81,6 +81,7 @@ let selectFile = () => {
     showOptions.value = false;
     stamp_file_input.value.click();
 }
+
 let getStampList = async () => {
     loading.value = true;
 
@@ -93,7 +94,7 @@ let getStampList = async () => {
             }
         });
 
-        console.log(res);
+        console.log('=== getStampList === res : ', res);
 
         if(res.list.length) {
             uploadedStamp.value = res.list[0].bin.stamp_data;
@@ -101,7 +102,7 @@ let getStampList = async () => {
             loading.value = false;
         }
     } catch(e) {
-        console.log({e})
+        console.log('=== getStampList === err : ', {e})
 
         if(e.code === "NOT_EXISTS") {
             uploadedStamp.value = [];
@@ -123,6 +124,7 @@ let uploadStampImage = async(imageUrl) => {
     isSignImage.value = true;
     uploadStamp();
 }
+
 let uploadStamp = async () => {
     uploading.value = true;
 
