@@ -10,7 +10,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 	form#_el_request_form(@submit.prevent="requestAudit")
 		#printArea
 			.title
-				h2 {{ '결재양식명' }}
+				h2 {{ auditDoContent?.index?.value }}
 
 			.table-wrap
 				.tb-overflow
@@ -316,8 +316,7 @@ let getStampList = async () => {
                 access_group: 1,
             }
         });
-
-        console.log(res);
+        console.log('=== getStampList === res : ', res);
 
         if(res.list.length) {
             myStamps.value = res.list[0].bin.stamp_data;
@@ -325,12 +324,11 @@ let getStampList = async () => {
             gettingStampList.value = false;
         }
     } catch(e) {
-        console.log({e})
+        console.log('=== getStampList === err : ', {e});
 
         if(e.code === "NOT_EXISTS") {
             myStamps.value = [];
             myStampsRecordId.value = null;
-
         } else {
             alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
         }
@@ -444,12 +442,12 @@ const getAuditDetail = async () => {
 
 		if (auditDoc) {
 			auditDoContent.value = auditDoc;
-			console.log('auditDoContent : ', auditDoContent.value);
+			console.log('=== getAuditDetail === auditDoContent.value : ', auditDoContent.value);
 		}
 
 		const auditors = JSON.parse(auditDoc.data.auditors);
 
-		console.log('dududududududududuauditors : ', auditors);
+		console.log('=== getAuditDetail === auditors : ', auditors);
 
 		let getAuditorInfo = async (uid) => {
 			let user_id = uid.replaceAll('_', '-');
