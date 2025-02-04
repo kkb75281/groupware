@@ -85,8 +85,12 @@ const props = defineProps({
 // 초기 체크 상태 설정
 const initializeCheckState = () => {
     // 현재 모달 타입의 선택된 사용자들 가져오기
-    const selectedUsers = props.selectedAuditors && props.modalType ? props.selectedAuditors[props.modalType] : [];
-    const selectedUserIds = selectedUsers.map(user => user.userId);
+    // const selectedUsers = props.selectedAuditors && props.modalType ? props.selectedAuditors[props.modalType] : [];
+	const selectedUsers = [];
+	for (const key in props.selectedAuditors) {
+		selectedUsers.push(...props.selectedAuditors[key]);
+	}
+    const selectedUserIds = selectedUsers.map(user => user.data.user_id);
 
     // 부서 멤버들의 체크 상태 설정
     props.department.members.forEach(member => {
@@ -105,23 +109,33 @@ const isUserDisabled = (item) => {
   const userId = item.data?.user_id;
   if (!userId) return false;
 
-  // 현재 모달 타입에 따라 다른 역할들 체크
-  switch (props.modalType) {
-    case 'approvers':
-      return isSelectedInOtherRoles(userId, ['agreers', 'receivers']);
-    case 'agreers':
-      return isSelectedInOtherRoles(userId, ['approvers', 'receivers']);
-    case 'receivers':
-      return isSelectedInOtherRoles(userId, ['approvers', 'agreers']);
-    default:
-      return false;
+//   // 현재 모달 타입에 따라 다른 역할들 체크
+//   switch (props.modalType) {
+//     case 'approvers':
+//       return isSelectedInOtherRoles(userId, ['agreers', 'receivers']);
+//     case 'agreers':
+//       return isSelectedInOtherRoles(userId, ['approvers', 'receivers']);
+//     case 'receivers':
+//       return isSelectedInOtherRoles(userId, ['approvers', 'agreers']);
+//     default:
+//       return false;
+//   }
+
+  // 다른 역할들 체크
+  let keys = [];
+  for (const key in props.selectedAuditors) {
+	if(key !== item.role) {
+		keys.push(key);
+	}
   }
+
+  return isSelectedInOtherRoles(userId, keys);
 };
 
 // 다른 역할에서 선택되었는지 확인하는 헬퍼 함수
 const isSelectedInOtherRoles = (userId, rolesToCheck) => {
   return rolesToCheck.some(role => 
-    props.selectedAuditors[role].some(user => user.userId === userId)
+    props.selectedAuditors[role].some(user => user.data.user_id === userId)
   );
 };
 
@@ -156,7 +170,9 @@ summary {
   margin-bottom: 1rem;
   cursor: pointer;
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
+  white-space: nowrap;
   gap: 8px;
 
   &::-webkit-details-marker {
@@ -172,11 +188,15 @@ summary {
     background: url('@/assets/img/arrow_right.svg') no-repeat center center / contain;
     width: 1.2rem;
     height: 1.2rem;
+    min-width: 21px;
+    min-height: 21px;
   }
 
   .folder {
     width: 1.2rem;
     height: 1.2rem;
+    min-width: 21px;
+    min-height: 21px;
     background: url('@/assets/img/icon_folder.svg') no-repeat center center / contain;
   }
 
@@ -235,11 +255,12 @@ ul {
   li {    
     &.member {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       gap: 0.5rem;
       margin-bottom: 1rem;
       padding-left: 1.8rem;
+      white-space: nowrap;
 
       .icon {
         padding: 0;
@@ -247,6 +268,8 @@ ul {
         svg {
           width: 1.2rem;
           height: 1.2rem;
+          min-width: 21px;
+          min-height: 21px;
         }
       }
     }

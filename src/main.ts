@@ -6,8 +6,10 @@ import { user, profileImage } from './user';
 import { fetchGmailEmails } from "@/utils/mail";
 import App from './App.vue';
 import router from './router';
-import { notifications, getAuditList, realtimes, getUserInfo, unreadCount, readList, mailList } from './notifications';
-import { employeeDict, getEmpDivisionPosition } from './employee';
+import { notifications, realtimes, unreadCount, readList, mailList } from './notifications';
+import { getUserInfo, employeeDict, getEmpDivisionPosition } from './employee';
+import { getAuditList, getSendAuditList } from './audit';
+
 const app = createApp(App);
 
 export let iwaslogged = ref(false);

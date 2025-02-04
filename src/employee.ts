@@ -132,6 +132,14 @@ export const getUsers = async (
 
     return userCached.concat(res.list);
 }
+export const getUserInfo = async (userId: string): Promise<object> => {
+    const params = {
+        searchFor: 'user_id',
+        value: userId
+    }
+
+    return await skapi.getUsers(params);
+}
 
 export const getInvitationsCache: string[] = [];
 export const getInvitations = async (refresh: boolean = false, options: { [k: string]: any } = {}): Promise<any[]> => {

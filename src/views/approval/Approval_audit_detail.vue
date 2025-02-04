@@ -210,6 +210,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
+import { getUserInfo } from '@/employee';
 
 import Loading from '@/components/Loading.vue';
 
@@ -411,15 +412,6 @@ const approvedAudit = async () => {
 	}
 	
 	isModalOpen.value = false;
-}
-
-const getUserInfo = async (userId: string) => {
-	const params = {
-		searchFor: 'user_id',
-		value: userId
-	}
-
-	return await skapi.getUsers(params)
 }
 
 let getAuditDetailRunning = ref(false);
