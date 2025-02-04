@@ -66,19 +66,15 @@ hr
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { skapi } from '@/main';
-import { user, profileImage, verifiedEmail } from '@/user';
-import { sendAuditList, getSendAuditList, sendAuditListRunning, goToAuditDetail } from '@/notifications';
+import { user } from '@/user';
+import { sendAuditList, sendAuditListRunning, getSendAuditList, goToAuditDetail } from '@/audit';
 
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
-
-// const auditList = ref([]);
-
-const audit_doc_list = {};
 
 onMounted(async () => {
 	await getSendAuditList();
