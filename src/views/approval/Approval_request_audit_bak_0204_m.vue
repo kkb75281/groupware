@@ -128,9 +128,8 @@ template(v-if="step > 1")
 								tr
 									th 결재 내용
 									td(colspan="3")
-										.wysiwyg-wrap
-											Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
-											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
+										.input-wrap
+											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content")
 
 								tr
 									th 첨부 파일
@@ -223,7 +222,6 @@ import { user, makeSafe, verifiedEmail } from "@/user";
 import { getDivisionNames, divisionNameList } from "@/division";
 
 import Organigram from '@/components/organigram.vue';
-import Wysiwyg from '@/components/wysiwyg.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -255,10 +253,6 @@ const addRows = ref([]);
 const step = ref(1);
 const auditTitle = ref("");
 const disabled = ref(false);
-
-// 에디터 상태 관리
-const editorContent = ref('');
-const editorIsReady = ref(false);
 
 watch(auditTitle, (nv, ov) => {
 	if(nv) {
@@ -566,11 +560,6 @@ const removeAuditor = (user:object, type:string) => {
     // handleOrganigramSelection(newAuditors);
 };
 
-// 에디터 준비
-const handleEditorReady = (status: boolean) => {
-  editorIsReady.value = status;
-};
-
 // 업로드 파일 삭제
 let removeFile = (item) => {
     removeFileList.value.push(item.record_id);
@@ -775,7 +764,6 @@ const requestAudit = async (e) => {
 
     try {
         const formData = new FormData(e.target);
-    		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
         const formValues = Object.fromEntries(formData.entries());
 
         if (!formValues) return;
@@ -864,6 +852,9 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateScreenSize);
 });
+
+
+
 </script>
 
 <style scoped lang="less">
@@ -983,29 +974,11 @@ onUnmounted(() => {
 	textarea {
 		display: none !important;
 	}
-
-	.wysiwyg-wrap {
-    border: none !important;
-    
-    // wysiwyg 컴포넌트 내용만 표시
-    :deep(.wysiwyg) {
-      // 에디터 내용 컨테이너
-      ._wysiwyg4all {
-        visibility: visible !important;
-        padding: 0 !important;
-      }
-
-      .btn-wrap {
-        display: none !important;
-      }
-    }
-  }
 }
 
 .form-wrap {
 	position: relative;
-    // max-width: 900px;
-    max-width: 950px;
+    max-width: 900px;
 
 	.title {
 		position: relative;
@@ -1355,13 +1328,6 @@ onUnmounted(() => {
 			margin-top: 16px;
 		}
 	}
-}
-
-.wysiwyg-wrap {
-  text-align: left;
-	border: 1px solid var(--gray-color-200);
-	border-radius: 0.5rem;
-	overflow: hidden;
 }
 
 @media (max-width: 768px) {
