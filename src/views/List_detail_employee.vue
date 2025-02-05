@@ -10,6 +10,10 @@ hr
             .image
                 img#profile-img(:src="currentEmp?.picture" alt="profile image")
 
+            a.btn-call(:href="'tel:' + currentEmp?.phone_number" style="display: block;")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
+
         .input-wrap
             p.label 직책
             input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled")
@@ -43,11 +47,14 @@ hr
 
         .input-wrap
             p.label 생년월일
-            input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled)
+            input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled style="width:100% !important")
 
         .input-wrap
             p.label 전화번호
             input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
+            //- a.btn-call(:href="'tel:' + currentEmp?.phone_number")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
 
         .input-wrap
             p.label 주소
@@ -378,6 +385,9 @@ onMounted(async () => {
 }
 
 #_el_empDetail_form {
+    .btn-call {
+        
+    }
     .input-wrap {
         margin-top: 16px;
 
@@ -402,6 +412,18 @@ onMounted(async () => {
         select {
             border-color: var(--primary-color-400);
         }
+
+		// .btn-call {
+		// 	position: absolute;
+		// 	right: 0.55rem;
+		// 	bottom: 0.55rem;
+			
+		// 	svg {
+		// 		width: 1.2rem;
+		// 		height: 1.2rem;
+		// 		fill: var(--primary-color-400-dark);
+		// 	}
+		// }
     }
 
     .image {
