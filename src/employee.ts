@@ -33,7 +33,9 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
             }
         })).list?.[0];
 
-        if (!record) return;
+		console.log({record})
+
+        if (!record) return user;
 
         let emp_dvs = record?.index?.name?.split('.')[0];
         let emp_pst = record?.index?.name?.split('.')[1].replaceAll('_', ' ');
