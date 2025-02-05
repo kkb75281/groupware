@@ -173,7 +173,7 @@ export let loginCheck = async (profile: any) => {
 		
 		let originalUser = { ...user };
 		
-		profile = await getEmpDivisionPosition(profile);
+		profile = await getEmpDivisionPosition(profile); // user profile에 현재 유저 부서, 직책을 추가 (없으면 추가 안하고 다시 user profile return)
 		employeeDict[profile.user_id] = profile;
 		
 		Object.assign(user, profile);
