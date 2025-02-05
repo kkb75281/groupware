@@ -1,4 +1,4 @@
-import { type Ref, ref, defineEmits, defineProps } from "vue";
+import { type Ref, ref } from "vue";
 import { skapi } from "@/main";
 import { user } from "@/user";
 import {
