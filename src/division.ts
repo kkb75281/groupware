@@ -26,6 +26,8 @@ export async function getDivisionNames(refresh = false) {
         return divisionNameList.value;
     }
 
+    console.log('divisionNameList.value', divisionNameList.value)
+
     if (Object.keys(divisionNameList.value).length && !refresh) { // 받아온적 없거나, 데이터가 없는경우 + 새로고침을 요청하지 않은 경우
 		console.log('!!!!!이미 있음')
         loading.value = false;
@@ -77,7 +79,8 @@ export async function getDivisionNames(refresh = false) {
     let res = await getDivisionNamesRunning;
     if (res.list.length) {
         if (res.list[0].data) {
-            divisionNameList.value = res.list[0].data._value;
+            console.log('res.list[0].data', res.list[0].data)
+            divisionNameList.value = res.list[0].data;
         }
     }
 

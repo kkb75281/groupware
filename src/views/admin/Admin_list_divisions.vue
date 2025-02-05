@@ -164,7 +164,8 @@ let refresh = () => {
 
 let deleteDivision = async () => {
     let userId = Object.keys(selectedList.value);
-    console.log({ userId });
+    console.log('=== deleteDivision === userId : ', userId);
+
     let name = Object.values(selectedList.value);
     console.log('=== deleteDivision === name : ', name);
 
@@ -196,11 +197,12 @@ let deleteDivision = async () => {
     //     unique_id: '[division_name_list]'
     // });
 
-    let data = divisionNameList; // res.list[0].data;          // { 'DF1': '부서명1', 'DF2': '부서명2', ... }
+
+    let data = divisionNameList.value; // res.list[0].data;          // { 'DF1': '부서명1', 'DF2': '부서명2', ... }
     let keys = Object.keys(data); // 'DF1', 'DF2', ...
     let values = Object.values(data); // '부서명1', '부서명2', ...
     let nameSet = new Set(name); // Set으로 변환 (빠른 검색)
-
+    
     // 값 비교 및 제외 로직
     for (let i = 0; i < values.length; i++) {
         if (!nameSet.has(values[i])) {
@@ -209,10 +211,6 @@ let deleteDivision = async () => {
             filteredData[keys[i]] = "";
         }
     }
-    // } catch (error) {
-    //     alert('부서명 리스트를 불러오는데 실패하였습니다. 관리자에게 문의해주세요.');
-    //     throw error;
-    // }
 
     // 부서명 리스트 삭제
     try {
@@ -234,20 +232,20 @@ let deleteDivision = async () => {
             },
         }).then((res) => {
             console.log('=== deleteDivision === res : ', res);
-            // divisionNameList.value = res.data;
         });
     } catch (error) {
         alert("부서명 리스트를 업데이트하는데 실패하였습니다. 관리자에게 문의해주세요.");
         throw error;
     }
 
-    // getDivisions(); // 이미 promise.all에서 삭제되었으므로 불필요
-
     if (isSuccess.length > 0) {
         alert(`${isSuccess.length}개의 부서가 삭제되었습니다.`);
     } else {
         alert("부서 삭제에 실패하였습니다.");
     }
+
+    // 삭제 버튼 비활성화
+    selectedList.value = {};
 };
 
 let displayDivisionOptions = (selectName: string) => {
