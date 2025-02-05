@@ -10,15 +10,15 @@ hr
                 select(v-model="searchFor")
                     option(value="name") 이름
                     option(value="division") 부서/직책
-                    option(value="email") 이메일
+                    //- option(value="email") 이메일
             .input-wrap.search(v-if="searchFor !== 'division'")
-                input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요")
+                input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요.")
                 button.btn-search
             template(v-else)
                 .input-wrap
                     select(name="searchDivision" v-model="searchValue" @change="searchEmp")
                 .input-wrap.search(style="width: 176px;")
-                    input(v-model="searchPositionValue" type="text" placeholder="직책을 입력하세요" :disabled="searchValue === '전체'")
+                    input(v-model="searchPositionValue" type="text" placeholder="직책을 입력하세요." :disabled="searchValue === '전체'")
                     button.btn-search
 
         .tb-toolbar
@@ -116,12 +116,12 @@ const callParams = computed(() => {
                 value: new Date().getTime(),
                 condition: '<='
             };
-        case 'email':
-            return {
-                searchFor: 'email',
-                value: searchValue.value,
-                condition: '='
-            };
+        // case 'email':
+        //     return {
+        //         searchFor: 'email',
+        //         value: searchValue.value,
+        //         condition: '='
+        //     };
     }
 });
 
@@ -373,60 +373,61 @@ async function searchEmp(refresh) {
             // 3. 각 직원의 상세 정보와 출퇴근 기록 가져오기
             const detailedResults = await Promise.all(searchResults.list.map(async (emp) => {
                 const user_id_safe = makeSafe(emp.user_id);
+                console.log('=== searchEmp === user_id_safe : ', user_id_safe);
 
                 // 직원의 부서, 직급 정보 가져오기
-                const positionRes = await skapi.getRecords({
-                    table: {
-                        name: 'emp_position_current',
-                        access_group: 1
-                    },
-                    unique_id: "[emp_position_current]" + user_id_safe,
-                });
+                // const positionRes = await skapi.getRecords({
+                //     table: {
+                //         name: 'emp_position_current',
+                //         access_group: 1
+                //     },
+                //     unique_id: "[emp_position_current]" + user_id_safe,
+                // });
 
-                // 직원별 출퇴근 기록 가져오기
-                const query = {
-                    table: {
-                        name: 'commute_record',
-                        access_group: 98,
-                    },
-                    index: {
-                        name: '$uploaded',
-                        value: getTimestampFromTimeString(getBasicStartTime),
-                        condition: '>='
-                    },
-                    reference: "emp_id:" + user_id_safe,
-                };
+                // // 직원별 출퇴근 기록 가져오기
+                // const query = {
+                //     table: {
+                //         name: 'commute_record',
+                //         access_group: 98,
+                //     },
+                //     index: {
+                //         name: '$uploaded',
+                //         value: getTimestampFromTimeString(getBasicStartTime),
+                //         condition: '>='
+                //     },
+                //     reference: "emp_id:" + user_id_safe,
+                // };
 
-                const commuteRecords = await skapi.getRecords(query, { ascending: false });
-                const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
+                // const commuteRecords = await skapi.getRecords(query, { ascending: false });
+                // const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
 
-                // 출퇴근 시간 설정
-                if (commuteList && commuteList.length > 0) {
-                    const lastCommute = commuteList[commuteList.length - 1];
-                    emp.startWork = lastCommute?.data?.startTime || '-';
-                    emp.endWork = lastCommute?.data?.endTime || '-';
-                } else {
-                    emp.startWork = '-';
-                    emp.endWork = '-';
-                }
+                // // 출퇴근 시간 설정
+                // if (commuteList && commuteList.length > 0) {
+                //     const lastCommute = commuteList[commuteList.length - 1];
+                //     emp.startWork = lastCommute?.data?.startTime || '-';
+                //     emp.endWork = lastCommute?.data?.endTime || '-';
+                // } else {
+                //     emp.startWork = '-';
+                //     emp.endWork = '-';
+                // }
 
-                // 부서 정보 추가
-                if (positionRes && positionRes.list.length > 0) {
-                    const empInfo = positionRes.list[0].index.name;
-                    const empSplit = empInfo.split('.');
+                // // 부서 정보 추가
+                // if (positionRes && positionRes.list.length > 0) {
+                //     const empInfo = positionRes.list[0].index.name;
+                //     const empSplit = empInfo.split('.');
                     
-                    return {
-                        ...emp,
-                        position: empSplit[1],
-                        division: empSplit[0],
-                        divisionName: divisionNameList.value[empSplit[0]]
-                    };
-                }
+                //     return {
+                //         ...emp,
+                //         position: empSplit[1],
+                //         division: empSplit[0],
+                //         divisionName: divisionNameList.value[empSplit[0]]
+                //     };
+                // }
 
                 return emp;
             }));
 
-            employee.value = detailedResults;
+            // employee.value = detailedResults;
         }
     } catch (error) {
         console.error('=== searchEmp === error:', error);

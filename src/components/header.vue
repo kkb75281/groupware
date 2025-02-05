@@ -124,6 +124,13 @@ header#header
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
 					p 직원 목록
+			
+			li
+				router-link.router(to="/organigram" @click="closePopup")
+					.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+					p 조직도
 
 			li(@click="logout")
 				.router

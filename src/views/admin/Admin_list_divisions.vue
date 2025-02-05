@@ -5,14 +5,9 @@ hr
 
 .table-wrap
     .tb-head-wrap
-        form#searchForm(@submit.prevent="searchEmp")
-            //- .input-wrap
-            //-     select(v-model="searchFor")
-            //-         option(value="division") 부서/직책
-            //-         option(value="name") 이름
-            .input-wrap
-                select(name="searchDivision" v-model="searchValue" @change="searchEmp")
-                    option(value="전체") 전체
+        form#searchForm(@submit.prevent="searchDivision")
+            .input-wrap.search
+                input(type="text" v-model="searchValue" placeholder="부서명을 입력하세요.")
 
         .tb-toolbar
             .btn-wrap
@@ -76,7 +71,7 @@ hr
 
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { ref, computed, onMounted, watch, nextTick } from "vue";
+import { ref, computed, watch } from "vue";
 import { skapi } from "@/main";
 import {
     loading,
@@ -95,7 +90,6 @@ const route = useRoute();
 let currentPage = ref(1);
 let selectedList = ref({});
 let searchValue = ref('');
-let searchPositionValue = ref('');
 let isAllSelected = computed(() => {
     let keys = Object.keys(divisions.value);
     return (
@@ -104,40 +98,12 @@ let isAllSelected = computed(() => {
     );
 });
 
-let callParams = computed(() => {
+const callParams = computed(() => {
     return {
-        searchFor: 'timestamp',
-        value: new Date().getTime(),
-        condition: '<='
+        searchFor: 'divisionName',
+        value: searchValue.value,
+        condition: '>='
     };
-});
-
-// watch(searchFor, (nv) => {
-//     if (nv) {
-//         searchValue.value = '';
-
-//         if(nv === 'division') {
-//             nextTick(() => {
-//                 displayDivisionOptions('searchDivision');
-//                 searchValue.value = '전체';
-//             });
-//         }
-//     }
-// });
-
-watch(searchValue, (nv) => {
-    if (nv) {
-        callParams.value.searchFor = 'timestamp';
-        callParams.value.value = new Date().getTime();
-        callParams.value.condition = '<=';
-
-        searchEmp();
-    }
-});
-
-nextTick(() => {
-    displayDivisionOptions('searchDivision');
-    searchValue.value = '전체';
 });
 
 let toggleSelectAll = () => {
@@ -192,12 +158,6 @@ let deleteDivision = async () => {
     );
 
     // 부서명 리스트 비교 및 지울 항목 제외한 데이터 생성
-    // try {
-    // let res = await skapi.getRecords({
-    //     unique_id: '[division_name_list]'
-    // });
-
-
     let data = divisionNameList.value; // res.list[0].data;          // { 'DF1': '부서명1', 'DF2': '부서명2', ... }
     let keys = Object.keys(data); // 'DF1', 'DF2', ...
     let values = Object.values(data); // '부서명1', '부서명2', ...
@@ -248,91 +208,24 @@ let deleteDivision = async () => {
     selectedList.value = {};
 };
 
-let displayDivisionOptions = (selectName: string) => {
-    let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
+// 부서명 검색
+const searchDivision = async () => {
+    console.log('=== searchDivision === searchValue : ', searchValue.value);
 
-    // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
-    divisionList.innerHTML = ''; // 기존 옵션 초기화
+    const res = await skapi.getRecords({
+        table: {
+            name: 'divisions',
+            access_group: 99,
+        },
+        index: {
+            name: 'divisionName',
+            value: searchValue.value,
+            condition: '>='
+        },
+    });
 
-    const allOption = document.createElement('option');
-    const defaultOption = document.createElement('option');
-
-    let matchFound = false;
-
-    // 기본 옵션 추가
-    if(selectName == 'searchDivision') {
-        allOption.value = '전체';
-        allOption.innerText = '전체';
-        allOption.selected = true;
-        divisionList.appendChild(allOption);
-    } else {
-        defaultOption.disabled = true;
-        defaultOption.selected = true;
-        defaultOption.innerText = '부서 선택';
-        divisionList.appendChild(defaultOption);
-    }
-
-    // 동적으로 부서 옵션 추가
-    for (let key in divisionNameList.value) {
-        if(divisionNameList.value[key] !== '') {
-            const option = document.createElement('option');
-            option.value = key;
-            option.innerText = divisionNameList.value[key];
-    
-            // 선택된 부서 처리
-            if (selectName === 'division' && key === selectedEmp.value.division) {
-                option.selected = true;
-                matchFound = true;
-            }
-    
-            divisionList.appendChild(option);
-        }
-    }
-
-    // 일치하는 키가 없으면 기본 옵션에 selected 추가
-    if (selectName === 'division' && !matchFound) {
-        defaultOption.selected = true;
-    }
-
-    // 선택박스 활성화
-    divisionList.disabled = false;
-}
-
-async function searchEmp(refresh) {
-    loading.value = true;
-    
-    if (!searchValue.value) {
-        searchValue.value = '';
-        callParams.value.searchFor = 'timestamp';
-        callParams.value.value = new Date().getTime();
-        callParams.value.condition = '<=';
-    }
-
-    try{
-        // const res = await skapi.getRecords({
-        //     table: {
-        //         name: 'emp_position_current',
-        //         access_group: 1
-        //     },
-        //     index: {
-        //         name: searchPositionValue.value ? searchValue.value + '.' + searchPositionValue.value : searchValue.value + '.',
-        //         value: ' ',
-        //         condition: '>'
-        //     }
-        // });
-
-        let gu = [];
-
-        // res.list.forEach(rec => gu.push(rec.data.user_id));
-
-        const result = [...new Set(gu)]; // 중복 제거
-
-        refresh = refresh === true;
-
-    } finally {
-        loading.value = false;
-    }
-}
+    console.log('=== searchDivision === res : ', res);
+};
 </script>
 
 <style scoped lang="less">
