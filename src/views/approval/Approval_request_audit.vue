@@ -261,7 +261,7 @@ const removeFileList = ref([]);
 const fileNames = ref([]);
 
 const addRows = ref([]);
-const step = ref(2);
+const step = ref(1);
 const auditTitle = ref("");
 const disabled = ref(false);
 
