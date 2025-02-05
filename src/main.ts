@@ -1,6 +1,6 @@
 import './assets/less/main.less';
 
-import { createApp, nextTick, ref, watch } from 'vue';
+import { createApp, nextTick, onMounted, ref, watch } from 'vue';
 import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
 import { fetchGmailEmails } from "@/utils/mail";
@@ -269,6 +269,19 @@ export async function updateEmails() {
 	}
 }
 
+// if ('serviceWorker' in navigator) {
+// 	navigator.serviceWorker.getRegistrations().then(registrations => {
+// 	  for (let registration of registrations) {
+// 		registration.unregister(); // 기존 서비스 워커 삭제
+// 	  }
+// 	});
+// 	caches.keys().then(names => {
+// 	  for (let name of names) {
+// 		caches.delete(name); // 모든 캐시 삭제
+// 	  }
+// 	});
+//   }
+
 // setInterval(() => {
 // 	updateEmails();
 // }, 10000);
@@ -301,6 +314,14 @@ const skapi = new Skapi(
 //   { autoLogin: false },
 //   { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
 // );
+
+onMounted(() => {
+	if ("setAppBadge" in navigator) {
+		navigator.setAppBadge(unreadCount.value); // 5개의 알림이 있다고 표시
+	} else {
+		console.log("setAppBadge()를 지원하지 않는 브라우저입니다.");
+	}
+})
 
 app.use(router);
 
