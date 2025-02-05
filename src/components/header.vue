@@ -139,8 +139,8 @@ import { onUnmounted, onMounted, ref, nextTick, watch, reactive, computed } from
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-// import { notifications, auditList, readList, goToAuditDetail, getReadListRunning, getReadList, getAuditList, getSendAuditList } from '@/notifications'
-import { notifications, realtimes, readList, unreadCount, getReadList, goToAuditDetail, readAudit, createReadListRecord, addEmailNotification } from '@/notifications'
+import { notifications, realtimes, readList, unreadCount, getReadList, readAudit, createReadListRecord, addEmailNotification } from '@/notifications'
+import { goToAuditDetail } from '@/audit'
 
 const router = useRouter();
 const route = useRoute();

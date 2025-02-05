@@ -1,16 +1,14 @@
-import { get, request } from "http";
-import { skapi } from "./main";
-import { user } from "./user";
 import { Reactive, reactive, type Ref, ref, watch } from "vue";
+import { skapi } from "@/main";
+import { user } from "@/user";
+import { getUserInfo } from "@/employee";
 
 export const notifications:Reactive<{messages: {fromUserId:string; msg: any }[], audits: {fromUserId:string; msg: any }[]}> = reactive({
     audits: [],
     messages: [],
 	emails: [],
 });
-export const unreadCount = ref(0);
-export const realtimes = ref([]);
-export const readList = ref([]);
+
 export const readAudit: Ref<{
 	noti_id: string; // 알람 ID
 	noti_type: string; // 'audit' | 'message' | 'notice'
@@ -31,23 +29,8 @@ export const readAudit: Ref<{
 	send_user: '',
 });
 
-export const mailList = ref([]);
-export const auditList = ref([]);
-export const auditListRunning = ref(false);
-export const sendAuditList = ref([]);
-export const sendAuditListRunning = ref(false);
-
-export const getUserInfo = async (userId: string): Promise<object> => {
-    const params = {
-        searchFor: 'user_id',
-        value: userId
-    }
-
-    return await skapi.getUsers(params);
-}
-
+export const realtimes = ref([]);
 export let getRealtimeRunning: Promise<any> | null = null;
-export let getReadListRunning: Promise<any> | null = null;
 
 export const getRealtime = (refresh = false) => {
 	if(getRealtimeRunning instanceof Promise) {	// 이미 실행중인 경우
@@ -105,30 +88,9 @@ export const getRealtime = (refresh = false) => {
 	return getRealtimeRunning;
 };
 
-export const createReadListRecord = (read = false) => {
-	let updateData = readList.value || [];
-	console.log('1updateData', updateData);
-
-	if(read && !updateData.includes(readAudit.value.noti_id)) {
-		updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
-		console.log('2updateData', updateData);
-		console.log(readAudit.value.noti_id)
-		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
-	}
-
-	return skapi.postRecord(
-		{
-			list: updateData
-		},
-		{
-			unique_id: '[notification_read_list]' + user.user_id,
-			table: {
-				name: 'notification_read_list',
-				access_group: 'private'
-			}
-		}
-	)
-}
+export const readList = ref([]);
+export const unreadCount = ref(0);
+export let getReadListRunning: Promise<any> | null = null;
 
 export const getReadList = async() => {
 	if(getReadListRunning instanceof Promise) { // 이미 실행중인 경우
@@ -171,157 +133,32 @@ export const getReadList = async() => {
 
 	return readList.value;
 }
+export const createReadListRecord = (read = false) => {
+	let updateData = readList.value || [];
+	console.log('1updateData', updateData);
 
-export async function getAuditList() {
-	let audits, auditDocs;
-	auditListRunning.value = true;
-
-	try {
-		// 내가 받은 결재 요청건 가져오기
-		audits = await skapi.getRecords({
-			table: {
-				name: 'audit_request',
-				access_group: 'authorized'
-			},
-			reference: `audit:${user.user_id}`
-		}, {
-			ascending: false,   // 최신순
-		});
-	} catch (err) {
-		auditListRunning.value = false;
-		console.error({err});
+	if(read && !updateData.includes(readAudit.value.noti_id)) {
+		updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
+		console.log('2updateData', updateData);
+		console.log(readAudit.value.noti_id)
+		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
 	}
 
-	console.log({audits});
-
-	try {
-		if (!audits.list.length) {
-			auditListRunning.value = false;
-			return;
+	return skapi.postRecord(
+		{
+			list: updateData
+		},
+		{
+			unique_id: '[notification_read_list]' + user.user_id,
+			table: {
+				name: 'notification_read_list',
+				access_group: 'private'
+			}
 		}
-		
-		// 내가 받은 결재 요청건의 결재 서류 가져오기
-		auditDocs = await Promise.all(audits.list.map(async (list) => {
-			if(!list.data.audit_id) return;
-			
-			// 결재 서류 가져오기
-			const audit_doc = (await skapi.getRecords({ 
-				record_id: list.data.audit_id 
-			})).list[0];
-	
-			// 다른 사람 결재 여부 확인
-			const approvals = (await skapi.getRecords({
-				table: {
-					name: 'audit_approval',
-					access_group: 'authorized'
-				},
-				reference: list.data.audit_id
-			})).list;
-			console.log({approvals});
-	
-			// 결재자 목록에서 각 결재자 ID 가져오기
-			const auditors = audit_doc.tags.map(a => a.replaceAll('_', '-'));
-			console.log({auditors});
-
-			const auditors_type = auditors.reduce((acc, item) => {
-				const [key, value] = item.split(":");
-
-				if (!acc[key]) acc[key] = [];
-				acc[key].push(value);
-
-				return acc;
-			}, {});
-			console.log({auditors_type});
-
-			let has_approved_data = true;
-	
-			auditors.forEach((auditor) => {
-				let oa_has_audited_str = null;
-				console.log({auditor});
-	
-				approvals.forEach((approval) => {
-					if (approval.user_id !== auditor.split(':')[1]) {
-						has_approved_data = false;
-					}
-
-					if (approval.user_id === user.user_id) {
-						oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
-	
-						// audit_doc.approved = oa_has_audited_str;
-						audit_doc.my_state = oa_has_audited_str;
-						// audit_doc.user_id = auditor;
-					}
-				})
-	
-				if (!oa_has_audited_str) {
-					// audit_doc.approved = '대기중';
-					audit_doc.my_state = '대기중';
-					// audit_doc.user_id = auditor;
-				}
-			})
-			
-			return {
-				...audit_doc,
-				approved: has_approved_data,
-				draftUserId: list.user_id
-			};
-		}));
-	} catch (err) {
-		auditListRunning.value = false;
-		console.error({err});
-	}
-
-	try {
-		const userList = await Promise.all(auditDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId)))
-		const userInfoList = userList.map(user => user.list[0]).filter((user) => user)
-	
-		const newAuditUserList = auditDocs.map((auditor) => ({
-			...auditor,
-			user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId)
-		}))
-	
-		auditList.value = newAuditUserList;        
-
-		console.log({auditList: auditList.value});
-	} catch (err) {
-		auditListRunning.value = false;
-		console.error({err});
-	}
-
-	auditListRunning.value = false;
+	)
 }
 
-export async function getSendAuditList() {
-	sendAuditListRunning.value = true;
-
-	try {
-		// 내가 올린 결재 서류 가져오기
-		const audits = await skapi.getRecords({
-			table: {
-				name: 'audit_doc',
-				access_group: 'private',
-			},
-			reference: user.user_id // 본인 아이디 참조해야 가지고 와짐
-		}, {
-			ascending: false,   // 최신순
-		});
-
-		sendAuditList.value = audits.list;
-
-		console.log('내가 올린 결재 서류 가져오기', sendAuditList.value);
-	} catch (err) {
-		sendAuditListRunning.value = false;
-		console.error({err});
-	}
-
-	sendAuditListRunning.value = false;
-}
-
-export const goToAuditDetail = (e, auditId, router) => {
-    // if(e.target.classList.contains('label-checkbox')) return;
-    router.push({ name: 'audit-detail', params: { auditId } });
-};
-
+export const mailList = ref([]);
 // 이메일 알림
 export const addEmailNotification = (emailData) => {
 	// console.log('=== addEmailNotification === emailData : ', emailData);

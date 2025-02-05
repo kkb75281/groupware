@@ -1,4 +1,4 @@
-? '완료됨' : '진행중'<template lang="pug">
+<template lang="pug">
 h1.title 결재 수신함
 
 hr
@@ -70,28 +70,18 @@ hr
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, watch } from 'vue';
+import { onMounted } from 'vue';
 import { skapi } from '@/main';
-import { user, profileImage, verifiedEmail } from '@/user';
-import { auditListRunning, auditList, sendAuditList, goToAuditDetail, getAuditList } from '@/notifications';
-import type { Ref } from 'vue';
+import { auditList, auditListRunning, getAuditList, goToAuditDetail } from '@/audit';
 
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
 
-const audit_doc_list = {};
-
 onMounted(async () => {
     await getAuditList();
 });
-
-// 결재 상세 페이지로 이동
-// const goToAuditDetail = (e, auditId) => {
-//     // if(e.target.classList.contains('label-checkbox')) return;
-//     router.push({ name: 'audit-detail', params: { auditId } });
-// };
 </script>
 
 <style scoped lang="less">
