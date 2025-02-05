@@ -69,7 +69,9 @@ function onDepartmentCheck(obj: { type: string; target: any; isChecked: boolean 
 
 		// 체크된 멤버를 checkedUsers 배열에 추가
 		if (isChecked) {
-			checkedUsers.value.push(target);
+			if(!checkedUsers.value.some((user: any) => user.data.user_id === target.data.user_id)) {
+				checkedUsers.value.push(target);
+			}
 		} else {
 			// 체크 해제된 멤버를 checkedUsers 배열에서 제거
 			const index = checkedUsers.value.findIndex((user: any) => user.data.user_id === target.data.user_id);
@@ -98,7 +100,9 @@ function updateChildrenCheckStatus(department: any, isChecked: boolean) {
 
 			// 체크된 멤버를 checkedUsers 배열에 추가
 			if (isChecked) {
-				checkedUsers.value.push(member);
+				if(!checkedUsers.value.some((user: any) => user.data.user_id === member.data.user_id)) {
+					checkedUsers.value.push(member);
+				}
 			} else {
 				// 체크 해제된 멤버를 checkedUsers 배열에서 제거
 				const index = checkedUsers.value.findIndex((user: any) => user.data.user_id === member.data.user_id);
