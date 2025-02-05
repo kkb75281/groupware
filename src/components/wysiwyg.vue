@@ -70,11 +70,11 @@
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-align-center")
-		button.btn-custom(type="button" @click="handleCommand('alignRight')" style="border-right: 1px solid #e4e4e7;")
+		button.btn-custom(type="button" @click="handleCommand('alignRight')")
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-align-right")
-		button.btn-custom(type="button" @click="handleCommand('image')")
+		//- button.btn-custom(type="button" @click="handleCommand('image')")
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
@@ -148,7 +148,9 @@ const initEditor = async () => {
           callback: (c) => {
             if (c.commandTracker) {
               // 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
-              emit('update:content', wysiwyg.value.export());
+			  wysiwyg.value.export().then(r => {
+				emit('update:content', r.html);
+			  });
             }
             return c;
           }
@@ -175,12 +177,12 @@ const handleBlur = () => {
   }
 };
 
-const exportData = () => {
-  if (wysiwyg.value && editorReady.value) {
-    const content = wysiwyg.value.export();
-    emit('update:content', content);
-  }
-};
+// const exportData = () => {
+//   if (wysiwyg.value && editorReady.value) {
+//     const content = wysiwyg.value.export();
+//     emit('update:content', content);
+//   }
+// };
 
 onMounted(() => {
   initEditor();

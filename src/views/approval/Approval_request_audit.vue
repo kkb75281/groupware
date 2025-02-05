@@ -56,7 +56,7 @@ template(v-if="step > 1")
 								//- 작성일자 기안사 :: e
 
 								tr(v-if="selectedAuditors.approvers.length === 0 && selectedAuditors.agreers.length === 0 && selectedAuditors.receivers.length === 0" style="height: 119px;")
-									th 
+									th 결재 라인
 									td.left(colspan="3")
 										span.empty(@click="openModal") 이곳을 눌러 [ 결재/합의/수신참조 ] 라인을 추가해주세요.
 
@@ -131,7 +131,8 @@ template(v-if="step > 1")
 									th 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap
-											Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
+											//- Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
+											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -472,6 +473,12 @@ const handleEditorReady = (status: boolean) => {
   editorIsReady.value = status;
 };
 
+// 에디터 내보내기
+const exportWysiwygData = (content) => {
+    console.log('=== exportWysiwygData === content : ', content);
+	editorContent.value = content;
+};
+
 // 업로드 파일 삭제
 let removeFile = (item) => {
     removeFileList.value.push(item.record_id);
@@ -672,9 +679,11 @@ const postAuditDocRecordId = async (auditId, userId) => {
 const requestAudit = async (e) => {
     e.preventDefault();
 
+	// console.log('=== requestAudit === editorContent : ', editorContent.value);
+
     try {
         const formData = new FormData(e.target);
-    		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
+		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
         const formValues = Object.fromEntries(formData.entries());
 
         if (!formValues) return;
@@ -781,43 +790,14 @@ onUnmounted(() => {
 		display: none !important;
 	}
 
-	// body {
-	// 	#header {
-	// 		display: none !important;
-	// 	}
-	// }
-		
-
-	// header {
-	// 	visibility: hidden !important;
-	// 	opacity: 0 !important;
-	// 	position: relative !important;
-	// }
-
-	// /* 제목 스타일 (audit_title) */
-	// #printArea .title-value {
-	// 	text-align: center;
-	// 	font-size: 24px;
-	// 	font-weight: bold;
-	// 	margin-bottom: 16px;
-	// }
-
-	// /* 일반 입력값 정렬 */
-	// #printArea .print-value {
-	// 	text-align: left; /* 기본 왼쪽 정렬 */
-	// 	font-size: 14px;
-	// 	color: #000;
-	// 	display: block;
-	// 	padding: 4px 0;
-	// 	min-height: 20px; /* 빈공간 유지 */
-	// }
-
 	body * {
-		visibility: hidden;  /* 모든 요소 숨김 */
+		visibility: hidden;
 	}
+
 	#printArea, #printArea * {
 		visibility: visible; /* printArea와 그 내부 요소만 보이게 설정 */
 	}
+
 	#printArea {
 		position: absolute;
 		left: 0;
@@ -901,8 +881,7 @@ onUnmounted(() => {
 
 .form-wrap {
 	position: relative;
-    // max-width: 900px;
-    max-width: 950px;
+    max-width: 900px;
 
 	.title {
 		position: relative;
@@ -1032,12 +1011,6 @@ onUnmounted(() => {
     margin-top: 1rem;
 }
 
-// .form-item {
-//     margin-top: 2rem;
-//     padding-top: 2rem;
-//     border-top: 1px solid var(--gray-color-200);
-// }
-
 .approver-wrap {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -1166,9 +1139,6 @@ onUnmounted(() => {
 	}
 
 	.organigram-wrap {
-		// flex: none;
-		// min-width: 17.5rem;
-		// max-height: 400px;
 		padding-right: 1.5rem;
 	}
 
@@ -1223,7 +1193,7 @@ onUnmounted(() => {
 }
 
 .wysiwyg-wrap {
-  text-align: left;
+  	text-align: left;
 	border: 1px solid var(--gray-color-200);
 	border-radius: 0.5rem;
 	overflow: hidden;
@@ -1254,8 +1224,6 @@ onUnmounted(() => {
             .file-item {
                 width: 100%;
             }
-        }
-        &.upload-stamp {
         }
     }
 }
