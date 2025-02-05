@@ -91,7 +91,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 							tr
 								th 결재 내용
-								td.left(colspan="3") {{ auditDoContent?.data?.to_audit_content }}
+								td.left(colspan="3")
+									._wysiwyg4all(v-html="auditDoContent?.data?.to_audit_content")
 
 							tr
 								th 첨부 파일
@@ -642,11 +643,29 @@ const updateScreenSize = () => {
 	isDesktop.value = window.innerWidth > 768;
 };
 
+const loadStylesheet = () => {
+  return new Promise((resolve) => {
+    if (document.getElementById('wysiwyg4all-style')) {
+      resolve();
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.id = 'wysiwyg4all-style';
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/wysiwyg4all.css';
+    
+    link.onload = () => resolve();
+    document.head.appendChild(link);
+  });
+};
+
 onMounted(() => {
 	window.addEventListener('resize', updateScreenSize);
 
 	auditId.value = (route.params.auditId as string);
 	getAuditDetail();
+	loadStylesheet();
 });
 
 onUnmounted(() => {
@@ -1091,5 +1110,26 @@ onUnmounted(() => {
         &.upload-stamp {
         }
     }
+}
+</style>
+
+<style lang="less">
+._wysiwyg4all {
+	ul {
+		list-style: disc !important;
+		padding: initial !important;
+		padding-inline-start: 40px !important;
+	}
+
+	ol {
+		list-style: decimal !important;
+		padding: initial !important;
+		padding-inline-start: 40px !important;
+	}
+
+	li {
+		list-style: inherit !important;
+		padding: initial !important;
+	}
 }
 </style>
