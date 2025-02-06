@@ -102,21 +102,20 @@ hr
                             td.list-num(v-show="isDesktop") {{ index + 1 }}
                             td {{ emp?.position }}
                             td {{ divisionNameList?.[emp?.division] }}
-                            template(v-if='user.access_group > 98')
-                                td {{ emp.name }}
-                            template(v-else)
-                                td
-                                    .name-wrap
-                                        .img-wrap(style="width: 36px; height: 36px;")
-                                            template(v-if="emp.picture")
-                                                img(:src="emp.picture" alt="img-profile")
-                                            template(v-else)
-                                                .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
-                                                    svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
-                                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+                            //- template(v-if='user.access_group > 98')
+                            //-     td {{ emp.name }}
+                            //- template(v-else)
+                            td
+                                .name-wrap
+                                    .img-wrap(style="width: 36px; height: 36px;")
+                                        template(v-if="emp.picture")
+                                            img(:src="emp.picture" alt="img-profile")
+                                        template(v-else)
+                                            .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
+                                                svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
+                                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+                                    span {{ emp.name }}
 
-                                        span {{ emp.name }}
-                            
                             td(v-show="isDesktop") {{ emp.email }}
                             td(v-show="isDesktop") {{ emp.birthdate }}
                             td(v-show="isDesktop") {{ emp.phone_number }}
@@ -1062,6 +1061,7 @@ onUnmounted(() => {
 .name-wrap {
     display: flex;
     align-items: center;
+	justify-content: center;
     gap: 12px;
 
     .img-wrap {
