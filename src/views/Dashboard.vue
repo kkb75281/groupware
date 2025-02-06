@@ -83,8 +83,9 @@ ul.card-wrap
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
-button.btn(@click="viviTest" style="display:inline-block; margin-right:1rem") admin email endpoint
-button.btn(@click="getAdminEmailList" style="display:inline-block") get admin email list
+template(v-if="user.access_group > 98")
+	button.btn(@click="viviTest" style="display:inline-block; margin-right:1rem") admin email endpoint
+	button.btn(@click="getAdminEmailList" style="display:inline-block") get admin email list
 </template>
 
 <script setup lang="ts">
