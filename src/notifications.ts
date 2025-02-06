@@ -34,12 +34,10 @@ export let getRealtimeRunning: Promise<any> | null = null;
 
 export const getRealtime = (refresh = false) => {
 	if(getRealtimeRunning instanceof Promise) {	// 이미 실행중인 경우
-		// console.log('!!!!!실행중')
 		return getRealtimeRunning;
 	}
 	
 	if (Object.keys(realtimes.value).length && !refresh) {	// 기존 데이터가 있고 새로고침이 필요 없는 경우
-		// console.log('!!!!!데이터 있음')
 		return realtimes.value;
 	}
 
@@ -59,8 +57,6 @@ export const getRealtime = (refresh = false) => {
 					try {
 						const senderInfo = await getUserInfo(request.data.send_user);
 
-						// console.log({ senderInfo });
-
 						return {
 							...request.data,
 							send_name: senderInfo.list[0].name,
@@ -72,9 +68,7 @@ export const getRealtime = (refresh = false) => {
 			);
 
 			realtimes.value = realtime_list;
-			// realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 
-			// console.log('!!!!!realtimes', realtimes.value);
 			return realtimes.value;
 		} catch (err) {
 			console.error("Error fetching realtime data:", err);
@@ -88,7 +82,8 @@ export const getRealtime = (refresh = false) => {
 	return getRealtimeRunning;
 };
 
-export const readList = ref([]);
+// export const readList = ref([]);
+export const readList = ref({});
 export const unreadCount = ref(0);
 export let getReadListRunning: Promise<any> | null = null;
 
@@ -106,7 +101,8 @@ export const getReadList = async() => {
 		unique_id: '[notification_read_list]' + user.user_id
 	}).catch(async(err) => {
 		if(err.code === 'NOT_EXISTS') {
-			readList.value = [];
+			// readList.value = [];
+			readList.value = {};
 			await createReadListRecord();
 		}
 	}).finally(() => {
@@ -122,26 +118,23 @@ export const getReadList = async() => {
 
 	if (res.list.length && res.list[0].data && res.list[0].data.list) {
 		readList.value = res.list[0].data.list;
-	} 
-	// else {
-	// 	// 레코드가 없으면 빈 배열 생성
-	// 	readList.value = [];
-	// 	await createReadListRecord(); // 초기 빈 레코드 생성
-	// }
-
-	// console.log('readList', readList.value);
+	}
 
 	return readList.value;
 }
 export const createReadListRecord = (read = false) => {
-	let updateData = readList.value || [];
-	// console.log('1updateData', updateData);
+	// let updateData = readList.value || [];
+	let updateData: { [key:string]: any } = readList.value || {};
 
-	if(read && !updateData.includes(readAudit.value.noti_id)) {
-		updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
-		// console.log('2updateData', updateData);
-		// console.log(readAudit.value.noti_id)
-		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
+	// if(read && !updateData.includes(readAudit.value.noti_id)) {
+	// 	updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
+	// 	unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
+	// }
+
+	if(read && !Object.keys(updateData).includes(readAudit.value.noti_id)) {
+		// updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
+		updateData[readAudit.value.noti_id] = readAudit.value;
+		unreadCount.value = realtimes.value.filter((audit) => !Object.keys(updateData).includes(audit.noti_id)).length;
 	}
 
 	return skapi.postRecord(
@@ -209,7 +202,7 @@ watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 
 watch([realtimes, readList, notifications.emails], () => {
     // 기존 알림 개수
-    const auditCount = realtimes.value.filter((audit) => !readList.value.includes(audit.noti_id)).length;
+    const auditCount = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
     
     // 읽지 않은 이메일 개수
     const emailCount = notifications.emails.length;
