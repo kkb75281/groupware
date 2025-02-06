@@ -283,11 +283,11 @@ let registerEmp = async(e) => {
             },
             tags: ["[emp_pst]" + currentEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + currentEmpTags.value.emp_dvs]
         }).then(r => {
-            console.log('history 부서직책업데이트', r);
+            // console.log('history 부서직책업데이트', r);
         })
 
         await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
-            console.log(r)
+            // console.log(r)
         }).catch(err=>err);
 
         await skapi.postRecord({
@@ -303,7 +303,7 @@ let registerEmp = async(e) => {
                 value: currentEmp.value.name
             }
         }).then(r => {
-            console.log('current 부서직책업데이트', r);
+            // console.log('current 부서직책업데이트', r);
         })
         
         needUpdate = true;
@@ -315,7 +315,7 @@ let registerEmp = async(e) => {
             user_id: currentEmp.value.user_id,
             access_group: currentEmp.value.access_group
         }).then(r => {
-            console.log('권한업데이트' ,r)
+            // console.log('권한업데이트' ,r)
         })
     }
 
@@ -355,7 +355,6 @@ let registerEmp = async(e) => {
 
     employeeDict[currentEmp.value.user_id] = currentEmp.value;
 
-    console.log('=== registerEmp === currentEmp.value : ', currentEmp.value);
     getAdditionalData();
     window.alert('직원 정보 수정이 완료되었습니다.');
 

@@ -248,7 +248,6 @@ watch(() => (route.params.auditId as string), async(nv, ov) => {
 });
 
 watch(auditDoContent, () => {
-	console.log('!!!!!auditDoContent 변경:', auditDoContent.value.data.to_audit);
 	let userId = auditDoContent.value?.user_id;
 
 	if (userId) {
@@ -292,13 +291,13 @@ function formatTimestampToDate(timestamp:number) {
 let approvalState = () => {
 	const selectedValue = document.querySelector('input[name="approved"]:checked')?.value;
 
+	console.log({selectedValue});
+
 	if(selectedValue === 'approve') {
-		console.log('결재함:', selectedValue);
 		isModalOpen.value = false;
 		isStampModalOpen.value = true;
 		// getStampList();
 	} else if(selectedValue === 'reject') {
-		console.log('반려함:', selectedValue);
 	}
 }
 
@@ -318,7 +317,7 @@ let getStampList = async () => {
                 access_group: 1,
             }
         });
-        console.log('=== getStampList === res : ', res);
+        // console.log('=== getStampList === res : ', res);
 
         if(res.list.length) {
             myStamps.value = res.list[0].bin.stamp_data;
@@ -431,16 +430,15 @@ const getAuditDetail = async () => {
 			record_id: auditId.value
 		})).list[0];
 
-		console.log('auditDoc : ', auditDoc);
+		console.log({auditDoc});
 
 		if (auditDoc) {
 			auditDoContent.value = auditDoc;
-			console.log('=== getAuditDetail === auditDoContent.value : ', auditDoContent.value);
 		}
 
 		const auditors = JSON.parse(auditDoc.data.auditors);
 
-		console.log('=== getAuditDetail === auditors : ', auditors);
+		console.log({auditors});
 
 		let getAuditorInfo = async (uid) => {
 			let user_id = uid.replaceAll('_', '-');
@@ -481,7 +479,7 @@ const getAuditDetail = async () => {
 			fileList.push(...result);
 
 			uploadedFile.value = fileList;
-			console.log('uploadedFile : ', uploadedFile.value);
+			// console.log('uploadedFile : ', uploadedFile.value);
 		} else {
 			uploadedFile.value = [];
 		}
@@ -490,7 +488,7 @@ const getAuditDetail = async () => {
 		
 		const approvals = await approvedAudit();
 
-		console.log('!!!!@!@approvals : ', approvals);
+		console.log({approvals});
 
 		const approvalUserList = [];
 		const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
@@ -530,10 +528,9 @@ const getAuditDetail = async () => {
 			}
 		})
 
-		console.log('!!!!@!@ååapprovalUserList : ', approvalUserList);
+		console.log({approvalUserList});
 
 		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
-		console.log('!!!@#@#@userList : ', userList);
 		const userInfoList = userList.map(user => user.list[0]);                     
 
 		const newAuditUserList = approvalUserList.map((auditor) => ({
@@ -544,9 +541,6 @@ const getAuditDetail = async () => {
 		// newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
 		approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
 		agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
-
-		console.log('approverList : ', approverList.value);
-		console.log('agreerList : ', agreerList.value);
 	} catch (error) {
 		getAuditDetailRunning.value = false;
 		console.error(error);
@@ -582,8 +576,6 @@ const postApproval = async (e: SubmitEvent) => {
 			tags: [(userId as string).replaceAll('-', '_')], 
 		});
 
-		console.log('결재 === postRecord === res : ', res);
-		
 		// 실시간 알림 보내기
 		skapi.postRealtime(
 			{

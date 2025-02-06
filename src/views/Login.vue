@@ -75,19 +75,14 @@ let error = ref(null);
 let enableAccount = ref(false);
 let loading = ref(false);
 
-// skapi.logout();
-
-// onMounted(() => { // Dom을 기다릴 필요 없음
 if (window.localStorage.getItem('remember') === 'true') {
 	remVal.value = true;
 } else {
 	remVal.value = false;
 }
-// });
 
 let setLocalStorage = (e) => {
     localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
-	console.log(window.localStorage.getItem('remember'))
 };
 
 let login = (e) => {
@@ -117,14 +112,6 @@ let login = (e) => {
 		loading.value = false;
     })
 };
-
-// watch 필요없음, 로그인 성공시 위 코드에서 router.push('/')로 이동하므로, 페이지 방문시만 한번 확인하면 됨.
-
-// watch(iwaslogged, (nv) => {
-// 	if(nv && Object.keys(user).length > 0) {
-// 		router.push('/');
-// 	}
-// }, { immediate: true });
 
 // google login
 function googleLogin() {
@@ -161,9 +148,9 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
     const state = params.get('state');
     const storedState = sessionStorage.getItem('oauth_state');
 
-    console.log('=== handleOAuthCallback === parms : ', params);
-    console.log('=== handleOAuthCallback === state : ', state);
-    console.log('=== handleOAuthCallback === storedState : ', storedState);
+    // console.log('=== handleOAuthCallback === parms : ', params);
+    // console.log('=== handleOAuthCallback === state : ', state);
+    // console.log('=== handleOAuthCallback === storedState : ', storedState);
 
     loading.value = true;
 
@@ -176,10 +163,10 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
     const accessToken = params.get('access_token');
     sessionStorage.setItem('accessToken', accessToken);
 
-	console.log('=== handleOAuthCallback === accessToken : ', accessToken);
+	// console.log('=== handleOAuthCallback === accessToken : ', accessToken);
 
     skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
-		console.log('=== handleOAuthCallback === u : ', u);
+		// console.log('=== handleOAuthCallback === u : ', u);
         window.location.href = '/';
     }).finally(() => {
         loading.value = false;

@@ -177,13 +177,13 @@ let readNoti = async(e: Event, rt: any) => {
 		readAudit.value[key] = rt[key];
 	}
 
-	console.log('=== readNoti === readAudit : ', readAudit.value);
-	console.log('=== readNoti === rt : ', rt);
+	// console.log('=== readNoti === readAudit : ', readAudit.value);
+	// console.log('=== readNoti === rt : ', rt);
 
 	window.open(rt.link, "_blank");
 
 	// 읽은 알람 리스트를 업데이트
-	if (!readList.value.includes(readAudit.value.id)) {
+	if (!Object.keys(readList.value).includes(readAudit.value.id)) {
 		await skapi.deleteRecords({
 			unique_id: '[notification_read_list]' + user.user_id
 		});

@@ -124,18 +124,14 @@ skapi.getRecords({
         access_group: 1
     }
 }).then(r => {
-    // console.log('=== divisionNames === r : ', r);
-
     if(!r.list.length) {
         alert('부서가 등록되어 있지 않습니다. 부서를 먼저 등록해주세요.');
         router.push('/list-employee');
     } else {
         let divisionNames = r.list[0].data;
-        // console.log('=== divisionNames === divisionNames : ', divisionNames);
+		console.log({divisionNames})
     
         for(let key in divisionNames) {
-            // console.log('=== divisionNames === key : ', key);
-
             if(divisionNames[key] !== '') {
                 const option = document.createElement('option');
                 option.value = key;
@@ -167,7 +163,7 @@ function makeSafe(str) {
 }
 
 const inviteUserMail = (e) => {
-    console.log('=== inviteUserMail === e : ', e);
+    // console.log('=== inviteUserMail === e : ', e);
     // inviteUser({openid_id: 'openid 로거 id'})
     return skapi.inviteUser(e, {confirmation_url: '/mailing'});
 }
@@ -335,7 +331,7 @@ const registerEmp = async (e) => {
         // 직원을 초대한다.
         const added = await inviteUserMail(e);
         // SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
-        console.log('=== registerEmp === added : ', added);
+        // console.log('=== registerEmp === added : ', added);
 
         if (!added) {
             console.log('직원 초대에 실패하였습니다.');

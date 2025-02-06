@@ -426,8 +426,6 @@ const handleOrganigramSelection = (users) => {
 			user.role = 'approvers';
 		}
 	});
-
-	console.log('seseselect', selectedUsers.value);
 };
 
 // 선택된 모든 결재자 ID 목록 가져오기
@@ -452,9 +450,6 @@ const saveAuditor = () => {
 		selectedAuditors.value[user.role].push(user);
 	});
 
-	console.log(selectedUsers.value);
-	console.log(selectedAuditors.value);
-
 	backupSelected.value = null;
     closeModal();
 };
@@ -462,8 +457,6 @@ const saveAuditor = () => {
 // 결재자 제거
 const removeAuditor = (user:object, type:string) => {
 	const newAuditors = selectedUsers.value.filter(u => u.data.user_id !== user.data.user_id);
-
-	console.log('=== removeAuditor === newAuditors : ', newAuditors);
 
     selectedUsers.value = newAuditors;
 };
@@ -475,7 +468,6 @@ const handleEditorReady = (status: boolean) => {
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
-    console.log('=== exportWysiwygData === content : ', content);
 	editorContent.value = content;
 };
 
@@ -511,9 +503,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 		...send_auditors_data.receivers.map(id => `receiver:${id}`)
 	]
 
-	console.log('=== postAuditDoc === send_auditors : ', send_auditors_data);
-	console.log('=== postAuditDoc === send_auditors : ', JSON.stringify(send_auditors_data));
-
     try {
 		// 첨부파일 업로드
         const filebox = document.querySelector('input[name="additional_data"]');
@@ -545,12 +534,8 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
             tags: send_auditors_arr // 결재, 합의, 수신참조 태그를 각각 구분
         };
 
-		console.log('=== postAuditDoc === additionalFormData : ', additionalFormData);
-		console.log('=== postAuditDoc === options : ', options);
-
         const res = await skapi.postRecord(additionalFormData, options);
 
-        console.log("결재 서류 레코드 생성 === postAuditDoc === res : ", res);
         return res;
     } catch (error) {
         console.error(error);
@@ -559,9 +544,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 
 // 결재자에게 권한을 부여하는 함수
 const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
-	console.log('=== grantAuditorAccess === audit_id : ', audit_id);
-	console.log('=== grantAuditorAccess === auditor_id : ', auditor_id);
-	
     return skapi.grantPrivateRecordAccess({
         record_id: audit_id,
         user_id: auditor_id,
@@ -589,8 +571,6 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
             tags: [audit_id],
         }
     );
-
-    console.log("요청1 === postRecord === res : ", res);
 
     skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
@@ -620,7 +600,7 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
             auditor_id
         )
         .then((res) => {
-            console.log("요청2 === postRealtime === res : ", res);
+            // console.log("요청2 === postRealtime === res : ", res);
         });
 
 	// 실시간 못 받을 경우 알림 기록 저장
@@ -648,7 +628,7 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 			}
 		)
 		.then((res) => {
-            console.log("요청3 === postRecord === res : ", res);
+            // console.log("요청3 === postRecord === res : ", res);
         });
 
     return res;
@@ -713,9 +693,6 @@ const requestAudit = async (e) => {
 
         const auditId = auditDoc.record_id;
 
-		console.log('=== requestAudit === auditId : ', auditId);
-		console.log('=== requestAudit === auditDoc : ', auditDoc);
-
         // 각 역할별 권한 부여 및 알림 전송
         const processRoles = [
 			// 결재
@@ -739,8 +716,6 @@ const requestAudit = async (e) => {
 				order: null
 			}))
 		];
-
-		console.log('=== requestAudit === processRoles : ', processRoles);
 
 		await Promise.all(processRoles.map(roleInfo => 
 			postAuditDocRecordId(auditId, roleInfo.userId)

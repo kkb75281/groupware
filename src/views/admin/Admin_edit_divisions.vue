@@ -152,7 +152,7 @@ onMounted(() => {
             uploadSrc.value.division_used_seal = record?.bin.division_used_seal ? record?.bin.division_used_seal[0].url : '';
             uploadSrc.value.division_official_seal = record?.bin.division_official_seal ? record?.bin.division_official_seal[0].url : '';
         }
-        console.log(record)
+        console.log({record})
         loading.value = false;
     }
 })
