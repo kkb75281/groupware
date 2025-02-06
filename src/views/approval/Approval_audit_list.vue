@@ -51,7 +51,7 @@ hr
 					tr.nohover
 						td(colspan="6") 결재 목록이 없습니다.
 				template(v-else)
-					tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
+					tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;")
 						//- td 
 						//-     label.checkbox
 						//-         input(type="checkbox" name="checkbox")
@@ -72,12 +72,25 @@ hr
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted } from 'vue';
 import { skapi } from '@/main';
+import { user } from '@/user';
 import { auditList, auditListRunning, getAuditList, goToAuditDetail } from '@/audit';
+import { readAudit, readList, realtimes, readNoti } from '@/notifications';
 
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+let showAuditDoc = (e:Event, audit: any) => {
+	let searchCurrentAuditNoti = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id)[0];
+	let checkCurrentAuditNotiRead = Object.keys(readList.value).includes(searchCurrentAuditNoti.noti_id);
+	
+	if(!checkCurrentAuditNotiRead) {
+		readNoti(searchCurrentAuditNoti);
+	}
+
+	goToAuditDetail(e, audit.record_id, router);
+}
 
 onMounted(async () => {
     await getAuditList();
