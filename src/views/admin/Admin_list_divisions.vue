@@ -118,10 +118,10 @@ const refresh = () => {
 
 let deleteDivision = async () => {
     let userId = Object.keys(selectedList.value);
-    console.log('=== deleteDivision === userId : ', userId);
+    // console.log('=== deleteDivision === userId : ', userId);
 
     let name = Object.values(selectedList.value);
-    console.log('=== deleteDivision === name : ', name);
+    // console.log('=== deleteDivision === name : ', name);
 
     let filteredData = {};
     let isSuccess = [];
@@ -133,7 +133,7 @@ let deleteDivision = async () => {
             return skapi
                 .deleteRecords({ record_id: el })
                 .then((res) => {
-                    console.log('=== deleteDivision === res : ', res);
+                    // console.log('=== deleteDivision === res : ', res);
                     isSuccess.push(el);
                     delete divisions.value[el];
                 })

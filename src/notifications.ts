@@ -34,12 +34,10 @@ export let getRealtimeRunning: Promise<any> | null = null;
 
 export const getRealtime = (refresh = false) => {
 	if(getRealtimeRunning instanceof Promise) {	// 이미 실행중인 경우
-		console.log('!!!!!실행중')
 		return getRealtimeRunning;
 	}
 	
 	if (Object.keys(realtimes.value).length && !refresh) {	// 기존 데이터가 있고 새로고침이 필요 없는 경우
-		console.log('!!!!!데이터 있음')
 		return realtimes.value;
 	}
 
@@ -59,8 +57,6 @@ export const getRealtime = (refresh = false) => {
 					try {
 						const senderInfo = await getUserInfo(request.data.send_user);
 
-						console.log({ senderInfo });
-
 						return {
 							...request.data,
 							send_name: senderInfo.list[0].name,
@@ -72,9 +68,7 @@ export const getRealtime = (refresh = false) => {
 			);
 
 			realtimes.value = realtime_list;
-			// realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 
-			console.log('!!!!!realtimes', realtimes.value);
 			return realtimes.value;
 		} catch (err) {
 			console.error("Error fetching realtime data:", err);
@@ -88,7 +82,8 @@ export const getRealtime = (refresh = false) => {
 	return getRealtimeRunning;
 };
 
-export const readList = ref([]);
+// export const readList = ref([]);
+export const readList = ref({});
 export const unreadCount = ref(0);
 export let getReadListRunning: Promise<any> | null = null;
 
@@ -106,7 +101,8 @@ export const getReadList = async() => {
 		unique_id: '[notification_read_list]' + user.user_id
 	}).catch(async(err) => {
 		if(err.code === 'NOT_EXISTS') {
-			readList.value = [];
+			// readList.value = [];
+			readList.value = {};
 			await createReadListRecord();
 		}
 	}).finally(() => {
@@ -122,26 +118,23 @@ export const getReadList = async() => {
 
 	if (res.list.length && res.list[0].data && res.list[0].data.list) {
 		readList.value = res.list[0].data.list;
-	} 
-	// else {
-	// 	// 레코드가 없으면 빈 배열 생성
-	// 	readList.value = [];
-	// 	await createReadListRecord(); // 초기 빈 레코드 생성
-	// }
-
-	console.log('readList', readList.value);
+	}
 
 	return readList.value;
 }
 export const createReadListRecord = (read = false) => {
-	let updateData = readList.value || [];
-	console.log('1updateData', updateData);
+	// let updateData = readList.value || [];
+	let updateData: { [key:string]: any } = readList.value || {};
 
-	if(read && !updateData.includes(readAudit.value.noti_id)) {
-		updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
-		console.log('2updateData', updateData);
-		console.log(readAudit.value.noti_id)
-		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
+	// if(read && !updateData.includes(readAudit.value.noti_id)) {
+	// 	updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
+	// 	unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
+	// }
+
+	if(read && !Object.keys(updateData).includes(readAudit.value.noti_id)) {
+		// updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
+		updateData[readAudit.value.noti_id] = readAudit.value;
+		unreadCount.value = realtimes.value.filter((audit) => !Object.keys(updateData).includes(audit.noti_id)).length;
 	}
 
 	return skapi.postRecord(
@@ -161,7 +154,7 @@ export const createReadListRecord = (read = false) => {
 export const mailList = ref([]);
 // 이메일 알림
 export const addEmailNotification = (emailData) => {
-	// console.log('=== addEmailNotification === emailData : ', emailData);
+	// // console.log('=== addEmailNotification === emailData : ', emailData);
 	let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
 
 	if(checkOrigin) return;
@@ -178,7 +171,7 @@ export const addEmailNotification = (emailData) => {
 	realtimes.value.push(emailData);
 	realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 
-	console.log('Updated realtimes:', realtimes.value);
+	// console.log('Updated realtimes:', realtimes.value);
 
     // notifications.emails.unshift({
     //     type: 'email',
@@ -209,7 +202,7 @@ watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 
 watch([realtimes, readList, notifications.emails], () => {
     // 기존 알림 개수
-    const auditCount = realtimes.value.filter((audit) => !readList.value.includes(audit.noti_id)).length;
+    const auditCount = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
     
     // 읽지 않은 이메일 개수
     const emailCount = notifications.emails.length;
@@ -220,32 +213,32 @@ watch([realtimes, readList, notifications.emails], () => {
 
 // 컴포넌트 마운트 시 이메일 업데이트 되는 거에 따른 mails.value 변경 감지
 watch(mailList, (newVal, oldVal) => {
-	console.log('=== watch === newVal : ', newVal);
-	console.log('=== watch === oldVal : ', oldVal);
-	console.log('========== 확인 !! ==========')
-	console.log(!oldVal);
+	// console.log('=== watch === newVal : ', newVal);
+	// console.log('=== watch === oldVal : ', oldVal);
+	// console.log('========== 확인 !! ==========')
+	// console.log(!oldVal);
 
 	if(!newVal) {
 		return;
 	}
 
 	if((newVal.length && !oldVal) || (newVal.length > oldVal.length)) {
-		// console.log('=== watch === new email');
-		console.log('dddd')
+		// // console.log('=== watch === new email');
+		// console.log('dddd')
 		for(let i in newVal) {
 			addEmailNotification(newVal[i]);
 		}
 	} else {
-		console.log('wwww');
+		// console.log('wwww');
 	}
 
 	// if(newVal[0].dateTimeStamp > oldVal[0].dateTimeStamp) {
-	//     console.log('=== watch === new email');
+	//     // console.log('=== watch === new email');
 	//     // addEmailNotification(newVal[0]);
 	// 	for(let i in newVal) {
 	// 		addEmailNotification(newVal[i]);
 	// 	}
 	// } else {
-	//     console.log('=== watch === no new email');
+	//     // console.log('=== watch === no new email');
 	// }
 });
