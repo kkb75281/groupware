@@ -79,11 +79,7 @@ const route = useRoute();
 onMounted(async () => {
 	await getSendAuditList();
 
-	console.log('!!!!!sendAuditList', sendAuditList.value);
-	
 	const auditors = sendAuditList.value[0]?.data?.auditors ? JSON.parse(sendAuditList.value[0]?.data?.auditors) : null;
-
-	console.log('!!!!!auditors', auditors);	
 
 	try {
 		const results = await Promise.all(
@@ -97,12 +93,10 @@ onMounted(async () => {
 					reference: audit.record_id,
 				});
 
-				console.log('!!!!!rerere', response);
 				return response;
 			})
 		);
 
-		console.log('All audit records fetched:', results);
 		return results; // 필요에 따라 반환
 	} catch (error) {
 		console.error('Error fetching audit records:', error);

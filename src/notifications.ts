@@ -34,12 +34,12 @@ export let getRealtimeRunning: Promise<any> | null = null;
 
 export const getRealtime = (refresh = false) => {
 	if(getRealtimeRunning instanceof Promise) {	// 이미 실행중인 경우
-		console.log('!!!!!실행중')
+		// console.log('!!!!!실행중')
 		return getRealtimeRunning;
 	}
 	
 	if (Object.keys(realtimes.value).length && !refresh) {	// 기존 데이터가 있고 새로고침이 필요 없는 경우
-		console.log('!!!!!데이터 있음')
+		// console.log('!!!!!데이터 있음')
 		return realtimes.value;
 	}
 
@@ -59,7 +59,7 @@ export const getRealtime = (refresh = false) => {
 					try {
 						const senderInfo = await getUserInfo(request.data.send_user);
 
-						console.log({ senderInfo });
+						// console.log({ senderInfo });
 
 						return {
 							...request.data,
@@ -74,7 +74,7 @@ export const getRealtime = (refresh = false) => {
 			realtimes.value = realtime_list;
 			// realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 
-			console.log('!!!!!realtimes', realtimes.value);
+			// console.log('!!!!!realtimes', realtimes.value);
 			return realtimes.value;
 		} catch (err) {
 			console.error("Error fetching realtime data:", err);
@@ -129,18 +129,18 @@ export const getReadList = async() => {
 	// 	await createReadListRecord(); // 초기 빈 레코드 생성
 	// }
 
-	console.log('readList', readList.value);
+	// console.log('readList', readList.value);
 
 	return readList.value;
 }
 export const createReadListRecord = (read = false) => {
 	let updateData = readList.value || [];
-	console.log('1updateData', updateData);
+	// console.log('1updateData', updateData);
 
 	if(read && !updateData.includes(readAudit.value.noti_id)) {
 		updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
-		console.log('2updateData', updateData);
-		console.log(readAudit.value.noti_id)
+		// console.log('2updateData', updateData);
+		// console.log(readAudit.value.noti_id)
 		unreadCount.value = realtimes.value.filter((audit) => !updateData.includes(audit.noti_id)).length;
 	}
 
@@ -161,7 +161,7 @@ export const createReadListRecord = (read = false) => {
 export const mailList = ref([]);
 // 이메일 알림
 export const addEmailNotification = (emailData) => {
-	// console.log('=== addEmailNotification === emailData : ', emailData);
+	// // console.log('=== addEmailNotification === emailData : ', emailData);
 	let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
 
 	if(checkOrigin) return;
@@ -178,7 +178,7 @@ export const addEmailNotification = (emailData) => {
 	realtimes.value.push(emailData);
 	realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 
-	console.log('Updated realtimes:', realtimes.value);
+	// console.log('Updated realtimes:', realtimes.value);
 
     // notifications.emails.unshift({
     //     type: 'email',
@@ -220,32 +220,32 @@ watch([realtimes, readList, notifications.emails], () => {
 
 // 컴포넌트 마운트 시 이메일 업데이트 되는 거에 따른 mails.value 변경 감지
 watch(mailList, (newVal, oldVal) => {
-	console.log('=== watch === newVal : ', newVal);
-	console.log('=== watch === oldVal : ', oldVal);
-	console.log('========== 확인 !! ==========')
-	console.log(!oldVal);
+	// console.log('=== watch === newVal : ', newVal);
+	// console.log('=== watch === oldVal : ', oldVal);
+	// console.log('========== 확인 !! ==========')
+	// console.log(!oldVal);
 
 	if(!newVal) {
 		return;
 	}
 
 	if((newVal.length && !oldVal) || (newVal.length > oldVal.length)) {
-		// console.log('=== watch === new email');
-		console.log('dddd')
+		// // console.log('=== watch === new email');
+		// console.log('dddd')
 		for(let i in newVal) {
 			addEmailNotification(newVal[i]);
 		}
 	} else {
-		console.log('wwww');
+		// console.log('wwww');
 	}
 
 	// if(newVal[0].dateTimeStamp > oldVal[0].dateTimeStamp) {
-	//     console.log('=== watch === new email');
+	//     // console.log('=== watch === new email');
 	//     // addEmailNotification(newVal[0]);
 	// 	for(let i in newVal) {
 	// 		addEmailNotification(newVal[i]);
 	// 	}
 	// } else {
-	//     console.log('=== watch === no new email');
+	//     // console.log('=== watch === no new email');
 	// }
 });

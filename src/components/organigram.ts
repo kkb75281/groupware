@@ -29,7 +29,7 @@ export async function getOrganigram() {
 	}
 
 	if (organigram.value.length) { // 받아온적 없거나, 데이터가 없는경우 + 새로고침을 요청하지 않은 경우
-		console.log('!!!!!이미 있음')
+		// console.log('!!!!!이미 있음')
 		getOrganigramRunning.value = false;
 		return organigram.value; // 이미 데이터가 존재하면 불러오지 않음
 	}
@@ -60,7 +60,7 @@ export async function getOrganigram() {
         };
 
         organigram.value = filterEmptyDepartments(organigram.value);
-        console.log('=== getOrganigram === organigram : ', organigram.value);
+        // console.log('=== getOrganigram === organigram : ', organigram.value);
     } catch (error) {
         console.error('=== getOrganigram === error : ', error);
     } finally {
