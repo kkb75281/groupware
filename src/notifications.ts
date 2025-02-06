@@ -83,7 +83,7 @@ export const getRealtime = (refresh = false) => {
 };
 
 // export const readList = ref([]);
-export const readList = ref({});
+export const readList: Ref<{ [key:string]: {} }> = ref({});
 export const unreadCount = ref(0);
 export let getReadListRunning: Promise<any> | null = null;
 
@@ -124,7 +124,7 @@ export const getReadList = async() => {
 }
 export const createReadListRecord = (read = false) => {
 	// let updateData = readList.value || [];
-	let updateData: { [key:string]: any } = readList.value || {};
+	let updateData: { [key:string]: {} } = readList.value || {};
 
 	// if(read && !updateData.includes(readAudit.value.noti_id)) {
 	// 	updateData.push(readAudit.value.noti_id);	// 읽지 않은 알람일 경우 추가
@@ -136,6 +136,30 @@ export const createReadListRecord = (read = false) => {
 		updateData[readAudit.value.noti_id] = readAudit.value;
 		unreadCount.value = realtimes.value.filter((audit) => !Object.keys(updateData).includes(audit.noti_id)).length;
 	}
+
+	function removeOldReadList(data: {}) {
+		const currentDate = new Date(); // 현재 날짜 가져오기
+		const fourteenDaysAgo = currentDate.setDate(currentDate.getDate() - 14); // 14일 전 날짜 계산
+
+		// 새로운 객체 생성 (원본 데이터 수정 방지)
+		const filteredData = { ...updateData };
+
+		// 객체를 순회하며 timestamp가 14일 지난 항목 제거
+		Object.keys(filteredData).forEach(key => {
+			const item = filteredData[key];
+			if (item.timestamp) {
+				const itemDate = new Date(item.timestamp);
+				if (itemDate < fourteenDaysAgo) {
+					delete filteredData[key]; // 14일 지난 항목 삭제
+				}
+			}
+		});
+
+		return filteredData;
+	}
+
+	// 오래된 알람 데이터 삭제
+	updateData = removeOldReadList(updateData);
 
 	return skapi.postRecord(
 		{
@@ -149,6 +173,36 @@ export const createReadListRecord = (read = false) => {
 			}
 		}
 	)
+}
+export const readNoti = async(rt) => {
+	// 기존 readAudit 초기화
+	for (let key in readAudit.value) {
+		delete readAudit.value[key];
+	}
+
+	// 현재 읽은 알람 저장
+	for (let key in rt) {
+		readAudit.value[key] = rt[key];
+	}
+
+	// 읽은 알람 리스트를 업데이트
+	updateReadList(rt.audit_info.audit_type);
+}
+async function updateReadList (type: string) {
+	let id;
+
+	if(type === 'email') {
+		id = readAudit.value.id;
+	} else {
+		id = readAudit.value.audit_info.audit_doc_id;
+	}
+
+	if (!Object.keys(readList.value).includes(id)) {
+		await skapi.deleteRecords({
+			unique_id: '[notification_read_list]' + user.user_id
+		});
+		createReadListRecord(true); // 새로 읽은 알람 추가
+	}
 }
 
 export const mailList = ref([]);
