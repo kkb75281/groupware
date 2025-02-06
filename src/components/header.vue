@@ -28,7 +28,7 @@ header#header
 	template(v-if="realtimes.length > 0")
 		.popup-main
 			ul
-				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
+				li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, rt)")
 					.router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
 						template(v-if="rt.audit_info.audit_type === 'request'")
 							h4.noti-type [결재 요청]
@@ -139,17 +139,12 @@ import { onUnmounted, onMounted, ref, nextTick, watch, reactive, computed } from
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { notifications, realtimes, readList, unreadCount, getReadList, readAudit, createReadListRecord, addEmailNotification } from '@/notifications'
+import { notifications, realtimes, readList, unreadCount, readNoti, readAudit, createReadListRecord, addEmailNotification } from '@/notifications'
 import { goToAuditDetail } from '@/audit'
 
 const router = useRouter();
 const route = useRoute();
 
-// onMounted(async() => {
-// 	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.audit_doc_id)).length;
-// })
-
-// let newNoti = ref(false);
 let isNotiOpen = ref(false);
 let btnNoti = ref(null);
 let isProfileOpen = ref(false);
@@ -251,34 +246,7 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
-let updateReadList = async(type) => {
-	let id;
-
-	if(type === 'email') {
-		id = readAudit.value.id;
-	} else {
-		id = readAudit.value.audit_info.audit_doc_id;
-	}
-
-	if (!Object.keys(readList.value).includes(id)) {
-		await skapi.deleteRecords({
-			unique_id: '[notification_read_list]' + user.user_id
-		});
-		createReadListRecord(true); // 새로 읽은 알람 추가
-	}
-}
-
-let readNoti = async(e, rt) => {
-	// 기존 readAudit 초기화
-    for (let key in readAudit.value) {
-        delete readAudit.value[key];
-    }
-
-	// 현재 읽은 알람 저장
-	for (let key in rt) {
-		readAudit.value[key] = rt[key];
-	}
-
+let showRealtimeNoti = (e, rt) => {
 	if(rt.audit_info.audit_type === 'request') {
 		goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
 	} else if(rt.audit_info.audit_type === 'email') {
@@ -287,22 +255,12 @@ let readNoti = async(e, rt) => {
 		router.push({ name: 'request-list' });
 	}
 
-	// 읽은 알람 리스트를 업데이트
-	// await getReadList(); // 기존 리스트 로드
-	updateReadList(rt.audit_info.audit_type);
-	// if (!readList.value.includes(rt.audit_info.audit_doc_id)) {
-	// 	await skapi.deleteRecords({
-	// 		unique_id: '[notification_read_list]' + user.user_id
-    //     });
-	// 	createReadListRecord(true); // 새로 읽은 알람 추가
-	// }
+	readNoti(rt);
 }
 
 let logout = () => {
 	skapi.logout().then(() => {
 		Object.assign(user, {});
-		// sessionStorage.removeItem('user');
-    	// sessionStorage.removeItem('iwaslogged'); 안쓰임임
 		realtimes.value = [];
 		sessionStorage.removeItem('accessToken');
         router.push({ path: "/login" });
