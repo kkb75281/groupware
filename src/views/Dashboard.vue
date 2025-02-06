@@ -19,7 +19,7 @@ ul.card-wrap.gmail
 			//- 	Loading#loading
 			//- template(v-else)
 			ul.unread-mail(v-if="mailList && mailList.length")
-				li.mail(v-for="mail in mailList" :key="mail.id" @click="readNoti(e, mail)")
+				li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
 					.link
 						span.from {{ mail.from }}
 						span.mail-title {{ mail.subject }}
@@ -90,7 +90,7 @@ import { skapi, updateEmails, googleEmailUpdate } from "@/main";
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { user } from "@/user";
 import { fetchGmailEmails } from "@/utils/mail";
-import { mailList, readAudit, readList, addEmailNotification, createReadListRecord } from "@/notifications";
+import { mailList, readAudit, readList, readNoti, addEmailNotification, createReadListRecord } from "@/notifications";
 
 import Loading from '@/components/loading.vue';
 
@@ -166,29 +166,9 @@ function googleLogin() {
 //     });
 // }
 
-let readNoti = async(e: Event, rt: any) => {
-	// 기존 readAudit 초기화
-    for (let key in readAudit.value) {
-        delete readAudit.value[key];
-    }
-
-	// 현재 읽은 알람 저장
-	for (let key in rt) {
-		readAudit.value[key] = rt[key];
-	}
-
-	// console.log('=== readNoti === readAudit : ', readAudit.value);
-	// console.log('=== readNoti === rt : ', rt);
-
+let showMailDoc = (e: Event, rt: any) => {
 	window.open(rt.link, "_blank");
-
-	// 읽은 알람 리스트를 업데이트
-	if (!Object.keys(readList.value).includes(readAudit.value.id)) {
-		await skapi.deleteRecords({
-			unique_id: '[notification_read_list]' + user.user_id
-		});
-		createReadListRecord(true); // 새로 읽은 알람 추가
-	}
+	readNoti(rt);
 }
 
 onMounted(async () => {

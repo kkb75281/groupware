@@ -49,7 +49,8 @@ hr
 					tr.nohover
 						td(colspan="5") 결재 목록이 없습니다.
 				template(v-else)
-					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
+					//- tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
+					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;")
 						//- td 
 						//-     label.checkbox
 						//-         input(type="checkbox" name="checkbox")
@@ -70,11 +71,28 @@ import { onMounted } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { sendAuditList, sendAuditListRunning, getSendAuditList, goToAuditDetail } from '@/audit';
+import { readAudit, readList, realtimes, readNoti } from '@/notifications';
 
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+let showSendAuditDoc = (e:Event, audit: any) => {
+	let searchCurrentAuditNotis = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id);
+
+	// 읽지 않은 알람만 필터링
+	let unreadNotis = searchCurrentAuditNotis.filter(noti => 
+		!Object.keys(readList.value).includes(noti.noti_id)
+	);
+
+	console.log({unreadNotis})
+
+	// 모든 읽지 않은 알람을 병렬로 처리
+	Promise.all(unreadNotis.map(noti => readNoti(noti)));
+
+	goToAuditDetail(e, audit.record_id, router)
+}
 
 onMounted(async () => {
 	await getSendAuditList();
