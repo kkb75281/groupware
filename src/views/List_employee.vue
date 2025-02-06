@@ -330,9 +330,9 @@ watch(searchFor, (nv) => {
 watch(searchValue, (nv) => {
     if (nv) {
         if (nv === '전체' && searchFor.value === 'division') {
-            callParams.value.searchFor = 'timestamp';
-            callParams.value.value = new Date().getTime();
-            callParams.value.condition = '<=';
+            callParams.value.searchFor = 'approved';
+            callParams.value.value = 'by_skapi:approved';
+            callParams.value.condition = '>=';
 
             searchEmp();
         }
@@ -453,9 +453,9 @@ async function searchEmp(refresh) {
     if (!searchValue.value) {
         searchFor.value = 'name';
         searchValue.value = '';
-        callParams.value.searchFor = 'timestamp';
-        callParams.value.value = new Date().getTime();
-        callParams.value.condition = '<=';
+        callParams.value.searchFor = 'approved';
+        callParams.value.value = 'by_skapi:approved';
+        callParams.value.condition = '>=';
     }
 
     if (searchFor.value === 'division' && searchValue.value !== '전체') {
@@ -478,13 +478,12 @@ async function searchEmp(refresh) {
                 }
             });
 
+            // user_id만 추출
             let gu = [];
 
             res.list.forEach(rec => gu.push(rec.data.user_id));
 
             const result = [...new Set(gu)]; // 중복 제거
-
-            refresh = refresh === true;
 
             employee.value = await getUsers({
                 searchFor: 'user_id',

@@ -78,6 +78,7 @@ hr
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import { ref, computed, onMounted, watch, nextTick } from "vue";
+import type { Ref } from 'vue';
 import { skapi } from "@/main";
 import {
     loading,
@@ -293,7 +294,128 @@ const getEmpList = async () => {
     }
 };
 
-const displayDivisionOptions = (selectName: string) => {
+// 직원 검색
+// async function searchEmp(refresh) {
+//     loading.value = true;
+    
+//     try {
+//         if (!searchValue.value) {
+//             searchFor.value = 'name';
+//             searchValue.value = '';
+//             // // 검색어가 없을 때는 전체 목록 가져오기
+//             // const allEmpList = await getEmpList();
+//             // employee.value = allEmpList;
+//             callParams.value.searchFor = 'timestamp';
+//             callParams.value.value = new Date().getTime();
+//             callParams.value.condition = '<=';
+//         } else {
+//             // 1. 먼저 검색 조건에 맞는 직원 목록 가져오기
+//             const searchResults = await skapi.getUsers(callParams.value);
+            
+//             // 2. 부서별 설정된 출퇴근시간 가져오기
+//             const workTime = await skapi.getRecords({
+//                 table: {
+//                     name: 'dvs_workTime_setting',
+//                     access_group: 1
+//                 },
+//             });
+
+//             // 기준 근무시간(인사팀 근무시간) 가져오기
+//             const getBasicStartTime = workTime.list.find(wt => 
+//                 (wt.data?.division_name === '인사팀'))?.data.division_startTime.min;
+
+//             // 3. 각 직원의 상세 정보와 출퇴근 기록 가져오기
+//             const detailedResults = await Promise.all(searchResults.list.map(async (emp) => {
+//                 const user_id_safe = makeSafe(emp.user_id);
+//                 console.log('=== searchEmp === user_id_safe : ', user_id_safe);
+
+//                 // 직원의 부서, 직급 정보 가져오기
+//                 const positionRes = await skapi.getRecords({
+//                     table: {
+//                         name: 'emp_position_current',
+//                         access_group: 1
+//                     },
+//                     unique_id: "[emp_position_current]" + user_id_safe,
+//                 });
+
+//                 // 직원별 출퇴근 기록 가져오기
+//                 const query = {
+//                     table: {
+//                         name: 'commute_record',
+//                         access_group: 98,
+//                     },
+//                     index: {
+//                         name: '$uploaded',
+//                         value: getTimestampFromTimeString(getBasicStartTime),
+//                         condition: '>='
+//                     },
+//                     reference: "emp_id:" + user_id_safe,
+//                 };
+
+//                 const commuteRecords = await skapi.getRecords(query, { ascending: false });
+//                 const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
+
+//                 // 출퇴근 시간 설정
+//                 if (commuteList && commuteList.length > 0) {
+//                     const lastCommute = commuteList[commuteList.length - 1];
+//                     emp.startWork = lastCommute?.data?.startTime || '-';
+//                     emp.endWork = lastCommute?.data?.endTime || '-';
+//                 } else {
+//                     emp.startWork = '-';
+//                     emp.endWork = '-';
+//                 }
+
+//                 // 부서 정보 추가
+//                 if (positionRes && positionRes.list.length > 0) {
+//                     const empInfo = positionRes.list[0].index.name;
+//                     const empSplit = empInfo.split('.');
+                    
+//                     return {
+//                         ...emp,
+//                         position: empSplit[1],
+//                         division: empSplit[0],
+//                         divisionName: divisionNameList.value[empSplit[0]]
+//                     };
+//                 }
+
+//                 return emp;
+//             }));
+
+//             // employee.value = detailedResults;
+//         }
+//     } catch (error) {
+//         console.error('=== searchEmp === error:', error);
+//         employee.value = [];
+//     } finally {
+//         loading.value = false;
+//     }
+// }
+
+// 시간 문자열을 타임스탬프로 변환하는 유틸리티 함수
+function getTimestampFromTimeString(timeString) {
+    const today = new Date();
+    const [hours, minutes, seconds] = timeString.split(':').map(Number);
+    today.setHours(hours, minutes, seconds, 0);
+    return today.getTime();
+}
+
+async function arrangeEmpDivisionPosition(li) {
+    let list = await Promise.all(li.map((l: any) => {
+        if(l) {
+            return getEmpDivisionPosition(l).catch(err => err)
+        }
+        return null;
+    }));
+    let toReturn = [];
+    list.forEach((l: any) => {
+        if (l) {
+            toReturn.push(l);
+        }
+    });
+    return toReturn;
+}
+
+let displayDivisionOptions = (selectName: string) => {
     let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
 
     // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
@@ -343,124 +465,59 @@ const displayDivisionOptions = (selectName: string) => {
     divisionList.disabled = false;
 }
 
-// 직원 검색
 async function searchEmp(refresh) {
     loading.value = true;
     
-    try {
-        if (!searchValue.value) {
-            searchFor.value = 'name';
-            searchValue.value = '';
-            // 검색어가 없을 때는 전체 목록 가져오기
-            const allEmpList = await getEmpList();
-            employee.value = allEmpList;
-        } else {
-            // 1. 먼저 검색 조건에 맞는 직원 목록 가져오기
-            const searchResults = await skapi.getUsers(callParams.value);
-            
-            // 2. 부서별 설정된 출퇴근시간 가져오기
-            const workTime = await skapi.getRecords({
+    if (!searchValue.value) {
+        searchFor.value = 'name';
+        searchValue.value = '';
+        callParams.value.searchFor = 'timestamp';
+        callParams.value.value = new Date().getTime();
+        callParams.value.condition = '<=';
+    }
+
+    if (searchFor.value === 'division' && searchValue.value !== '전체') {
+        employee.value = [];
+
+        try{
+            const res = await skapi.getRecords({
                 table: {
-                    name: 'dvs_workTime_setting',
+                    name: 'emp_position_current',
                     access_group: 1
                 },
+                index: {
+                    name: searchPositionValue.value ? searchValue.value + '.' + searchPositionValue.value : searchValue.value + '.',
+                    value: ' ',
+                    condition: '>'
+
+                    // 이름도 검색할거면
+                    // value: searchNameValue.value ? searchNameValue.value : ' ',
+                    // condition: searchNameValue.value ? '>=' : '>'
+                }
             });
 
-            // 기준 근무시간(인사팀 근무시간) 가져오기
-            const getBasicStartTime = workTime.list.find(wt => 
-                (wt.data?.division_name === '인사팀'))?.data.division_startTime.min;
+            let gu = [];
 
-            // 3. 각 직원의 상세 정보와 출퇴근 기록 가져오기
-            const detailedResults = await Promise.all(searchResults.list.map(async (emp) => {
-                const user_id_safe = makeSafe(emp.user_id);
-                console.log('=== searchEmp === user_id_safe : ', user_id_safe);
+            res.list.forEach(rec => gu.push(rec.data.user_id));
 
-                // 직원의 부서, 직급 정보 가져오기
-                // const positionRes = await skapi.getRecords({
-                //     table: {
-                //         name: 'emp_position_current',
-                //         access_group: 1
-                //     },
-                //     unique_id: "[emp_position_current]" + user_id_safe,
-                // });
+            const result = [...new Set(gu)]; // 중복 제거
 
-                // // 직원별 출퇴근 기록 가져오기
-                // const query = {
-                //     table: {
-                //         name: 'commute_record',
-                //         access_group: 98,
-                //     },
-                //     index: {
-                //         name: '$uploaded',
-                //         value: getTimestampFromTimeString(getBasicStartTime),
-                //         condition: '>='
-                //     },
-                //     reference: "emp_id:" + user_id_safe,
-                // };
+            refresh = refresh === true;
 
-                // const commuteRecords = await skapi.getRecords(query, { ascending: false });
-                // const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
+            employee.value = await getUsers({
+                searchFor: 'user_id',
+                value: result // 절대값 검색(user_id)는 어레이 가능
+            }, refresh).then(li => arrangeEmpDivisionPosition(li));
 
-                // // 출퇴근 시간 설정
-                // if (commuteList && commuteList.length > 0) {
-                //     const lastCommute = commuteList[commuteList.length - 1];
-                //     emp.startWork = lastCommute?.data?.startTime || '-';
-                //     emp.endWork = lastCommute?.data?.endTime || '-';
-                // } else {
-                //     emp.startWork = '-';
-                //     emp.endWork = '-';
-                // }
-
-                // // 부서 정보 추가
-                // if (positionRes && positionRes.list.length > 0) {
-                //     const empInfo = positionRes.list[0].index.name;
-                //     const empSplit = empInfo.split('.');
-                    
-                //     return {
-                //         ...emp,
-                //         position: empSplit[1],
-                //         division: empSplit[0],
-                //         divisionName: divisionNameList.value[empSplit[0]]
-                //     };
-                // }
-
-                return emp;
-            }));
-
-            // employee.value = detailedResults;
+        } finally {
+            loading.value = false;
         }
-    } catch (error) {
-        console.error('=== searchEmp === error:', error);
-        employee.value = [];
-    } finally {
-        loading.value = false;
+    }
+    else {
+        // division이 아닌 다른 검색 조건일 경우 처리
+        employee.value = await getUsers(callParams.value, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(() => loading.value=false);
     }
 }
-
-// 시간 문자열을 타임스탬프로 변환하는 유틸리티 함수
-function getTimestampFromTimeString(timeString) {
-    const today = new Date();
-    const [hours, minutes, seconds] = timeString.split(':').map(Number);
-    today.setHours(hours, minutes, seconds, 0);
-    return today.getTime();
-}
-
-// async function searchEmp(refresh) {
-//     loading.value = true;
-    
-//     if (!searchValue.value) {
-//         searchFor.value = 'name';
-//         searchValue.value = '';
-//         callParams.value.searchFor = 'timestamp';
-//         callParams.value.value = new Date().getTime();
-//         callParams.value.condition = '<=';
-//     }
-//     else {
-//         employee.value = await getUsers(callParams.value, refresh).finally(() => loading.value=false);
-
-//         console.log('=== searchEmp === employee : ', employee.value);
-//     }
-// }
 
 // 새로고침
 const refresh = () => {
