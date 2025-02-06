@@ -230,6 +230,11 @@ let resigterComp = (e) => {
         table: {
             name: 'divisions',
             access_group: 99
+        },
+        index: {
+            name: 'divisionName',
+            // value: ext.data.division_name,
+            value: ext.data.division_name.replace(/\//g, '_')
         }
     }).then((r) => {
         console.log('=== resigterComp === r : ', r);
