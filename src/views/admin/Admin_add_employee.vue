@@ -355,6 +355,31 @@ const registerEmp = async (e) => {
         await createReference({ user_id_safe, user_division_name, user_id });
 
         await getInvitations(true); // refresh invitation list
+        // const invitations = await getInvitations(true);
+
+        // // 초대된 직원 정보와 부서/직책 정보를 결합
+        // const currentPositions = await skapi.getRecords({
+        //     table: {
+        //         name: 'emp_position_current',
+        //         access_group: 1
+        //     },
+        //     index: {
+        //         name: user_division_name + '.' + _el_position.value,
+        //         value: user_name
+        //     }
+        // });
+
+        // console.log('AA === registerEmp === invitations : ', invitations);
+        // console.log('=== registerEmp === currentPositions : ', currentPositions);
+
+        // invitations.list = invitations.list.filter(inv => inv.user_id === user_id);
+        // invitations.list = invitations.list.map(inv => {
+        //     inv.division = currentPositions.list[0].index.name.split('.')[0];
+        //     inv.position = currentPositions.list[0].index.name.split('.')[1];
+        //     return inv;
+        // });
+
+        // console.log('BB === registerEmp === invitations : ', invitations);
 
         // 직원별 출퇴근 기록을 위한 저장소 레코드 생성하기
         const res = await skapi.postRecord(null, {
