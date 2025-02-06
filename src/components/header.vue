@@ -29,7 +29,7 @@ header#header
 		.popup-main
 			ul
 				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
-					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.noti_id)}")
+					.router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
 						template(v-if="rt.audit_info.audit_type === 'request'")
 							h4.noti-type [결재 요청]
 							h5.noti-title {{ rt.audit_info.to_audit }}
@@ -67,7 +67,7 @@ header#header
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 				| 새로운 알림이 없습니다.
 
-	.popup-bottom
+	//- .popup-bottom
 		router-link.router.view-all(to="/approval/audit-list" @click="closePopup")
 			p 전체보기
 			.icon
@@ -177,8 +177,9 @@ function formatTimeAgo(timestamp) {
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
-	// console.log('=== openNotification === realtimes.value : ', realtimes.value)
-	// console.log('=== openNotification === readList.value : ', readList.value)
+	console.log({realtimes})
+	console.log({readList})
+	console.log({readAudit})
 };
 
 let closeNotification = (event) => {
@@ -259,7 +260,7 @@ let updateReadList = async(type) => {
 		id = readAudit.value.audit_info.audit_doc_id;
 	}
 
-	if (!readList.value.includes(id)) {
+	if (!Object.keys(readList.value).includes(id)) {
 		await skapi.deleteRecords({
 			unique_id: '[notification_read_list]' + user.user_id
 		});
@@ -528,6 +529,8 @@ watch(() => route.path, (newPath, oldPath) => {
 		}
 
 		.popup-main {
+			padding-bottom: 1.5rem;
+
 			ul {
 					max-height: 240px;
 					overflow-y: scroll;
