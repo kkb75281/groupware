@@ -24,8 +24,6 @@ hr
                 col(style="width: 3rem")
                 col(style="width: 3rem")
                 col
-                col(style="width: 10%")
-                col(style="width: 10%")
             thead
                 tr
                     th(scope="col")
@@ -34,8 +32,6 @@ hr
                             span.label-checkbox
                     th(scope="col") NO
                     th.left(scope="col") 부서명
-                    th(scope="col") 미결
-                    th(scope="col") 수신참조
 
             tbody
                 template(v-if="loading")
@@ -56,8 +52,6 @@ hr
                                 .img-wrap
                                     img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
                                 span {{ division.data.division_name }}
-                        td.pending
-                        td.received
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -78,6 +72,7 @@ import {
     divisions,
     divisionNameList,
     getDivisionData,
+    getDivisionNames,
     getDivisionDataRunning,
     getDivisionNamesRunning,
 } from "@/division";
@@ -98,14 +93,6 @@ let isAllSelected = computed(() => {
     );
 });
 
-const callParams = computed(() => {
-    return {
-        searchFor: 'divisionName',
-        value: searchValue.value,
-        condition: '>='
-    };
-});
-
 let toggleSelectAll = () => {
     if (isAllSelected.value) {
         selectedList.value = {};
@@ -124,8 +111,9 @@ let toggleSelect = (id, name) => {
     }
 };
 
-let refresh = () => {
-    getDivisionData(true);
+const refresh = () => {
+    getDivisionData(true); // 부서 정보
+    getDivisionNames(true); // 부서명 리스트
 };
 
 let deleteDivision = async () => {
@@ -210,7 +198,7 @@ let deleteDivision = async () => {
 
 // 부서명 검색
 const searchDivision = async () => {
-    console.log('=== searchDivision === searchValue : ', searchValue.value);
+    loading.value = true;
 
     const res = await skapi.getRecords({
         table: {
@@ -219,12 +207,26 @@ const searchDivision = async () => {
         },
         index: {
             name: 'divisionName',
-            value: searchValue.value,
+            // value: searchValue.value,
+            value: searchValue.value.replace(/\//g, '_'),
             condition: '>='
         },
     });
 
-    console.log('=== searchDivision === res : ', res);
+    if (res.list.length > 0) {
+        divisions.value = res.list.reduce((acc, cur) => {
+            acc[cur.record_id] = cur;
+            return acc;
+        }, {});
+    } else {
+        divisions.value = {};
+    }
+
+    if (!searchValue.value) {
+        getDivisionData(true);
+    }
+
+    loading.value = false;
 };
 </script>
 
