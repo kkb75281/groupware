@@ -94,8 +94,6 @@ let getStampList = async () => {
             }
         });
 
-        console.log('=== getStampList === res : ', res);
-
         if(res.list.length) {
             uploadedStamp.value = res.list[0].bin.stamp_data;
             uploadedRecordId.value = res.list[0].record_id;
@@ -195,8 +193,6 @@ let deleteStamp = async(stamp: object) => {
     if(!uploadedRecordId.value) return;
     if(!selectedStamp.value) return;
 
-    console.log(selectedStamp.value)
-
     let post_params = {
         table: {
             name: 'stamp_images',
@@ -213,8 +209,6 @@ let deleteStamp = async(stamp: object) => {
     // //         post_params.remove_bin.push(stamp);
     // //     }
     // // });
-
-    console.log(post_params);
 
     try {
         await skapi.postRecord(null, post_params);

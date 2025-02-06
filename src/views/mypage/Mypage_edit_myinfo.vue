@@ -306,8 +306,6 @@ let getProfileImage = async () => {
             dataType: "endpoint",
         });
 
-        console.log(res);
-
         profileImage.value = res;
         uploadSrc.value.profile_pic = res;
     } catch (err) {
@@ -386,10 +384,6 @@ let registerMypage = async (e) => {
     let profile_pic_postParams = {};
     let samePerson = false;
 
-    console.log(uploadSrc.value.profile_pic);
-    console.log(croppedImages.value["profile_pic"]);
-    console.log(_el_picture_input.value);
-
     if (user.user_id === getFileInfo.value?.uploader) {
         samePerson = true;
         profile_pic_postParams.record_id = getFileInfo.value.record_id;
@@ -408,7 +402,6 @@ let registerMypage = async (e) => {
 
     if (croppedImages.value["profile_pic"]) {
         // 사진 수정할때 새로운 사진을 넣어줌
-        console.log("here");
         // 새로 선택한 사진이 있고 본인이 이전에 올린 사진이 있을 경우 레코드에서 이전 사진을 삭제하는 파라미터를 추가한다.
         if (samePerson && getFileInfo.value?.uploader === user.user_id) {
             profile_pic_postParams.remove_bin = null;
@@ -428,8 +421,6 @@ let registerMypage = async (e) => {
         // 새 이미지를 레코드에 업로드하고 보안키를 제외한 이미지 주소를 userprofile의 picture에 넣어준다.
         let picRec = await skapi.postRecord(imgFormData, profile_pic_postParams);
         _el_picture_input.value = picRec.bin.profile_pic.at(-1).url.split("?")[0];
-        console.log(picRec);
-        console.log(_el_picture_input.value);
     }
 
     // 기존 사진을 기본 이미지로 변경했을 경우
@@ -469,10 +460,10 @@ let registerMypage = async (e) => {
         document.querySelector('input[name="additional_data"]').value = "";
         fileNames.value = [];
     } else {
-        console.log(
-            "false == registerMypage == uploadedFile.value : ",
-            uploadedFile.value
-        );
+        // console.log(
+        //     "false == registerMypage == uploadedFile.value : ",
+        //     uploadedFile.value
+        // );
     }
 
     // document.querySelector('input[name="additional_data"]').value = '';
@@ -518,7 +509,6 @@ onMounted(async () => {
     resetCropImage();
 
     if (user.picture) {
-        console.log(profileImage.value);
         if (profileImage.value) {
             uploadSrc.value.profile_pic = profileImage.value;
         } else {

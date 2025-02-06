@@ -356,7 +356,6 @@ async function arrangeEmpDivisionPosition(li) {
 }
 
 async function getEmpList(type, refresh=false){
-    // console.log('=== getEmpList === run !!');
     loading.value = true;
 
     if (type === '직원목록') {
@@ -383,8 +382,6 @@ async function getEmpList(type, refresh=false){
             value: 'by_skapi:suspended',
             condition: '>='
         }, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
-
-		console.log('result', result);
 
         employee.value = result;
         suspendedLength.value = result.length;
@@ -585,8 +582,7 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log('숨김처리 진짜 실패함');
-				console.log(err);
+				console.log({err});
                 isFail.push(el);
             });
         }));
@@ -607,8 +603,7 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log('숨김해제 진짜 실패함');
-				console.log(err);
+				console.log({err});
                 isFail.push(el);
             });
         }));
@@ -628,20 +623,15 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log('유저삭제 진짜 실패함');
-				console.log(err);
+				console.log({err});
                 isFail.push(el);
             });
         }));
     }
 
     if(isSuccess.length > 0) {
-		console.log('성공', isSuccess);
-		console.log('실패', isFail);
         alert(`${isSuccess.length}명의 직원이 ${alertMsg}되었습니다.`);
     } else {
-		console.log('성공', isSuccess);
-		console.log('실패', isFail);
         alert(`${alertMsg}에 실패하였습니다.`);
     }
 
@@ -755,11 +745,11 @@ let registerEmp = async(e) => {
             },
             tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
         }).then(r => {
-            console.log('history 부서직책업데이트', r);
+            // console.log('history 부서직책업데이트', r);
         })
 
         await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(async(r) => {
-            console.log(r)
+            // console.log(r)
             // current
             await skapi.postRecord({
                 user_id: selectedEmp.value.user_id,
@@ -774,7 +764,7 @@ let registerEmp = async(e) => {
                     value: selectedEmp.value.name
                 }
             }).then(r => {
-                console.log('current 부서직책업데이트', r);
+                // console.log('current 부서직책업데이트', r);
             })
         });
         needUpdate = true;
@@ -786,7 +776,7 @@ let registerEmp = async(e) => {
             user_id: selectedEmp.value.user_id,
             access_group: selectedEmp.value.access_group
         }).then(r => {
-            console.log('권한업데이트' ,r)
+            // console.log('권한업데이트' ,r)
         })
     }
 

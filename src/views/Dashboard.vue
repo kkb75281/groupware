@@ -177,8 +177,8 @@ let readNoti = async(e: Event, rt: any) => {
 		readAudit.value[key] = rt[key];
 	}
 
-	console.log('=== readNoti === readAudit : ', readAudit.value);
-	console.log('=== readNoti === rt : ', rt);
+	// console.log('=== readNoti === readAudit : ', readAudit.value);
+	// console.log('=== readNoti === rt : ', rt);
 
 	window.open(rt.link, "_blank");
 

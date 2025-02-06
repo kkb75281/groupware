@@ -84,7 +84,7 @@ function onDepartmentCheck(obj: { type: string; target: any; isChecked: boolean 
 		updateParentCheckStatus(target);
 	}
 
-	console.log('chchchchchchch', checkedUsers.value);
+	// console.log('chchchchchchch', checkedUsers.value);
 
 	emit('selection-change', checkedUsers.value);
 }
@@ -173,7 +173,7 @@ function findParentDepartmentRecursive(department: any, item: any): any {
 
 watch(() => props.selectedEmployees, async(nv, ov) => {
 	if (!ov) {
-		console.log('ov없음', nv)
+		// console.log('ov없음', nv)
 
 		// 모달 열었을때 체크된 사용자가 있을 경우
 		if(nv && nv.length > 0) {
@@ -184,7 +184,7 @@ watch(() => props.selectedEmployees, async(nv, ov) => {
 			});
 		}
 	} else {
-		console.log('ov있음', nv, ov);
+		// console.log('ov있음', nv, ov);
 	
 		if(nv.length !== ov.length) {
 			// 삭제된 유저 찾기 (oldValue에는 있지만 newValue에는 없는 항목)

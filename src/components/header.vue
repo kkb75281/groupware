@@ -177,8 +177,8 @@ function formatTimeAgo(timestamp) {
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
-	console.log('=== openNotification === realtimes.value : ', realtimes.value)
-	console.log('=== openNotification === readList.value : ', readList.value)
+	// console.log('=== openNotification === realtimes.value : ', realtimes.value)
+	// console.log('=== openNotification === readList.value : ', readList.value)
 };
 
 let closeNotification = (event) => {
