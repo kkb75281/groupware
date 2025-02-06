@@ -1,6 +1,20 @@
 <template lang="pug">
 ul.card-wrap.gmail
 	li.card
+		.title-wrap
+			h3.title
+				.icon.img
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
+				| 공지사항
+			.go-detail 더보기
+				.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+		ul.newsletter-mail
+			li.mail aa
+ul.card-wrap.gmail
+	li.card
 		.title-wrap(:style="{ marginBottom: googleAccountCheck ? '1rem' : '0' }")
 			h3.title 
 				.icon.img
