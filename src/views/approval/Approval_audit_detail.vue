@@ -111,9 +111,27 @@ Loading#loading(v-if="getAuditDetailRunning")
 		br
 		br
 
+		//- 결재 승인/반려에 대한 의견 영역
+		template(v-if="senderUser.user_id === user.user_id")
+			.talbe-wrap
+				.tb-overflow
+					table.table
+						colgroup
+							col(style="width: 25%")
+							col
+						tbody
+							tr
+								th 결재자
+								td
+									span.drafter dd
+
+			ul.reply-list
+				li.reply-item(v-for="(approver, index) in approverList" :key="approver.user_id")
+					span.approver {{ approver.user_info?.name }}
+					span.comment {{ approver.data.comment }}
+
 		.button-wrap
 			button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
-
 
 //- 결재 모달
 #modal.modal.modal-approve(v-if="isModalOpen")
