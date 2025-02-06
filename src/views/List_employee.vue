@@ -71,8 +71,9 @@ hr
                                 input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
                                 span.label-checkbox
                     th(v-show="isDesktop" scope="col") NO
-                    th(scope="col") 직책<br>(직급)
-                    th(scope="col") 부서
+                    template(v-if="user.access_group > 98 && empListType !== '초청여부'")
+                        th(scope="col") 직책<br>(직급)
+                        th(scope="col") 부서
                     th(scope="col") 이름
                     th(v-show="isDesktop" scope="col") 이메일
                     template(v-if='empListType === "초청여부"')
@@ -125,8 +126,8 @@ hr
                         //- 초청여부
                         template(v-else-if="empListType === '초청여부'")
                             td.list-num(v-show="isDesktop") {{ index + 1 }}
-                            td {{ emp?.position }}
-                            td {{ divisionNameList?.[emp?.division] }}
+                            //- td {{ emp?.position }}
+                            //- td {{ divisionNameList?.[emp?.division] }}
                             td {{ emp.name }}
                             td(v-show="isDesktop") {{ emp.email }}
                             td
@@ -387,7 +388,8 @@ async function getEmpList(type, refresh=false){
         suspendedLength.value = result.length;
     }
     else if (type === '초청여부') {
-        employee.value = await getInvitations().then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
+        employee.value = await getInvitations().then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);        
+        // console.log('=== getEmpList === employee.value : ', employee.value);
     }
 }
 
