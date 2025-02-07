@@ -67,6 +67,12 @@ const router = createRouter({
 					// component: () => import('@/components/organigram.vue'),
 					component: () => import('@/views/Organ.vue'),
 				},
+				{
+					path: '/newsletter',
+					name: 'newsletter',
+					// component: () => import('@/components/organigram.vue'),
+					component: () => import('@/views/Newsletter.vue'),
+				},
 				// {
 				//   path: '/list-data',
 				//   name: 'list-data',

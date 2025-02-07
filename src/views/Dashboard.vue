@@ -7,13 +7,18 @@ ul.card-wrap.gmail
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
 				| 공지사항
-			.go-detail 더보기
+			router-link.go-detail(to="/newsletter") 더보기
 				.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 		ul.newsletter-mail
-			li.mail aa
-ul.card-wrap.gmail
+			li.mail(v-for="news in newsletterList" :key="news.id" @click="(e) => showMailDoc(e, news)")
+				.link
+					//- span.from {{ news.from }}
+					span.mail-title {{ news.subject }}
+					//- p.mail-cont {{ news.snippet }}
+					span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
+ul.card-wrap.gmail(v-if="googleAccountCheck")
 	li.card
 		.title-wrap(:style="{ marginBottom: googleAccountCheck ? '1rem' : '0' }")
 			h3.title 
@@ -99,7 +104,7 @@ ul.card-wrap
 
 template(v-if="user.access_group > 98")
 	button.btn(@click="viviTest" style="display:inline-block; margin-right:1rem") admin email endpoint
-	button.btn(@click="getAdminEmailList" style="display:inline-block") get admin email list
+	button.btn(@click="getNewsletterList" style="display:inline-block") get admin email list
 </template>
 
 <script setup lang="ts">
@@ -108,7 +113,8 @@ import { skapi, updateEmails, googleEmailUpdate } from "@/main";
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { user } from "@/user";
 import { fetchGmailEmails } from "@/utils/mail";
-import { mailList, readAudit, readList, readNoti, addEmailNotification, createReadListRecord } from "@/notifications";
+import { convertTimestampToDateMillis } from "@/utils/time";
+import { mailList, readAudit, readList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
 
 import Loading from '@/components/loading.vue';
 import { getCombinedNodeFlags } from 'typescript';
@@ -125,13 +131,6 @@ let viviTest = () => {
 	skapi.adminNewsletterRequest().then(response => {
 		console.log("Your newsletter endpoint:", response)
 	});
-}
-
-let getAdminEmailList = () => {
-	skapi.getNewsletters().then(r => {
-		let getAdminMailList = r;
-		console.log({getAdminMailList})
-	})
 }
 
 // 구글 계정 연동하기
@@ -206,6 +205,7 @@ let showMailDoc = (e: Event, rt: any) => {
 
 onMounted(async () => {
     await updateEmails();
+	getNewsletterList();
     
     // 30초마다 이메일 업데이트
     emailCheckInterval = setInterval(() => {
@@ -220,37 +220,6 @@ onUnmounted(() => {
     // }
 });
 
-// // 컴포넌트 마운트 시 이메일 업데이트 되는 거에 따른 mails.value 변경 감지
-// watch(mailList, (newVal, oldVal) => {
-//     console.log('=== watch === newVal : ', newVal);
-//     console.log('=== watch === oldVal : ', oldVal);
-//     console.log('========== 확인 !! ==========')
-// 	console.log(!oldVal);
-
-//     if(!newVal) {
-//         return;
-//     }
-
-// 	if((newVal.length && !oldVal) || (newVal.length > oldVal.length)) {
-// 		// console.log('=== watch === new email');
-// 		console.log('dddd')
-// 		for(let i in newVal) {
-// 			addEmailNotification(newVal[i]);
-// 		}
-// 	} else {
-// 		console.log('wwww');
-// 	}
-
-//     // if(newVal[0].dateTimeStamp > oldVal[0].dateTimeStamp) {
-//     //     console.log('=== watch === new email');
-//     //     // addEmailNotification(newVal[0]);
-// 	// 	for(let i in newVal) {
-// 	// 		addEmailNotification(newVal[i]);
-// 	// 	}
-//     // } else {
-//     //     console.log('=== watch === no new email');
-//     // }
-// });
 </script>
 
 <style scoped lang="less">
@@ -304,6 +273,7 @@ onUnmounted(() => {
         .mail {
             border-top: 1px solid var(--gray-color-200);
             padding: 0.75rem 0.5rem;
+			cursor: pointer;
 
             &:hover {
                 background-color: var(--primary-color-25);
