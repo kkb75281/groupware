@@ -64,14 +64,17 @@ const router = createRouter({
 				{
 					path: '/organigram',
 					name: 'organigram',
-					// component: () => import('@/components/organigram.vue'),
 					component: () => import('@/views/Organ.vue'),
 				},
 				{
 					path: '/newsletter',
 					name: 'newsletter',
-					// component: () => import('@/components/organigram.vue'),
 					component: () => import('@/views/Newsletter.vue'),
+				},
+				{
+					path: '/newsletter-detail/:messageId',
+					name: 'newsletter-detail',
+					component: () => import('@/views/Newsletter_detail.vue'),
 				},
 				// {
 				//   path: '/list-data',

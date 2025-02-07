@@ -264,6 +264,7 @@ export const getNewsletterList = async() => {
 
 	if (res && res.list) {
 		newsletterList.value = res.list;
+		console.log('newsletterList.value : ', newsletterList.value);
 	}
 
 	return newsletterList.value;
