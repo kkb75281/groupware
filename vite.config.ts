@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import vue from '@vitejs/plugin-vue'
+import fs from 'fs';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -71,7 +72,10 @@ export default defineConfig({
 		}
 	},
 	server: {
-		https: false,
+		https: {
+			key: fs.readFileSync('./certs/key.pem'),
+			cert: fs.readFileSync('./certs/cert.pem')
+		},
 		host: 'localhost',
 		port: 5173,
 		middlewareMode: false, // true면 Vite가 `dev-sw.js`를 서빙하지 않을 수도 있음
