@@ -101,10 +101,6 @@ ul.card-wrap
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
-template(v-if="user.access_group > 98")
-	button.btn(@click="viviTest" style="display:inline-block; margin-right:1rem") admin email endpoint
-	button.btn(@click="getNewsletterList" style="display:inline-block") get admin email list
 </template>
 
 <script setup lang="ts">
@@ -117,7 +113,6 @@ import { convertTimestampToDateMillis } from "@/utils/time";
 import { mailList, readAudit, readList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
 
 import Loading from '@/components/loading.vue';
-import { getCombinedNodeFlags } from 'typescript';
 
 const router = useRouter();
 const route = useRoute();
@@ -125,13 +120,6 @@ const route = useRoute();
 let loading = ref(false);
 let googleAccountCheck = sessionStorage.getItem('accessToken') ? true : false;
 let emailCheckInterval;  // interval 저장용 변수
-
-let viviTest = () => {
-	// 어드민 이상 계정이여야 하고 이메일이 + 계정이면 안됨
-	skapi.adminNewsletterRequest().then(response => {
-		console.log("Your newsletter endpoint:", response)
-	});
-}
 
 // 구글 계정 연동하기
 let googleConnect = async() => {
