@@ -82,6 +82,8 @@ ul.card-wrap
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+button.btn(@click="updateBadge") 새 알림 표시
 </template>
 
 <script setup lang="ts">
@@ -100,6 +102,18 @@ const route = useRoute();
 let loading = ref(false);
 let googleAccountCheck = sessionStorage.getItem('accessToken') ? true : false;
 let emailCheckInterval;  // interval 저장용 변수
+
+// PWA에서 뱃지 표시하기
+async function updateBadge() {
+  try {
+    let badgeCount = await navigator.getAppBadge().catch(() => 0); // 기존 뱃지 수 확인
+    badgeCount += 1; // 새로운 알림 추가
+    await navigator.setAppBadge(badgeCount); // 뱃지 업데이트
+    console.log("뱃지 업데이트됨:", badgeCount);
+  } catch (err) {
+    console.error("뱃지 업데이트 오류:", err);
+  }
+}
 
 // 구글 계정 연동하기
 let googleConnect = async() => {

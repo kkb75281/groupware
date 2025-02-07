@@ -1,4 +1,4 @@
-import { unreadCount } from './../src/notifications.ts';
+// import { unreadCount } from './../src/notifications.ts'; 
 
 /**
  * Copyright 2018 Google Inc. All Rights Reserved.
@@ -110,7 +110,7 @@ self.addEventListener("push", function (event) {
   
 	// 🔥 뱃지 업데이트 (Android & Windows 지원)
 	if ("setAppBadge" in navigator) {
-		navigator.setAppBadge(unreadCount.value); // 예제: 새 알림이 3개 있다고 설정
+		// navigator.setAppBadge(unreadCount.value); // 예제: 새 알림이 3개 있다고 설정
 	}
 });
 
@@ -127,3 +127,15 @@ self.addEventListener("notificationclick", function (event) {
 		clients.openWindow(event.notification.data.url || "/")
 	);
 });
+
+if (Notification.permission === 'granted') {
+	navigator.serviceWorker.ready.then(function(registration) {
+	  registration.showNotification('테스트 푸시 알림', {
+		body: '이건 테스트용 알림입니다.',
+		icon: '/icons/icon-192x192.png',
+		badge: '/icons/badge-72x72.png'
+	  });
+	});
+  } else {
+	console.log('알림 권한이 없습니다.');
+  }
