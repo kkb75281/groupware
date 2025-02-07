@@ -241,6 +241,35 @@ export const addEmailNotification = (emailData) => {
 	// return notifications.emails;
 }
 
+export const newsletterList = ref([]);
+export let getNewsletterListRunning: Promise<any> | null = null;
+
+export const getNewsletterList = async() => {
+	if(getNewsletterListRunning instanceof Promise) {	// 이미 실행중인 경우
+		await getNewsletterListRunning;
+		return newsletterList.value;
+	}
+	
+	if (newsletterList.value.length) {	// 기존 데이터가 있는 경우
+		return newsletterList.value;
+	}
+
+	getNewsletterListRunning = skapi.getNewsletters().catch(err => 
+		console.log(err)
+	).finally(() => {
+		getNewsletterListRunning = null;
+	});
+
+	let res = await getNewsletterListRunning;
+
+	if (res && res.list) {
+		newsletterList.value = res.list;
+		console.log('newsletterList.value : ', newsletterList.value);
+	}
+
+	return newsletterList.value;
+}
+
 watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 	if (u && Object.keys(u).length) {
 		await Promise.all([
