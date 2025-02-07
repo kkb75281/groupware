@@ -6,7 +6,22 @@ hr
 
 .table-wrap
 	.tb-head-wrap(v-if="user.access_group > 98")
-		.tb-toolbar
+		form#searchForm(@submit.prevent="searchNewsletter")
+			.input-wrap.what
+				select(v-model="searchFor" :disabled="loading || !newsletterList || newsletterList.length === 0")
+					option(value="subject") 제목
+					option(value="timestamp") 작성일
+					//- option(value="message_id") 
+					//- option(value="read") 
+					//- option(value="complaint") 
+			.input-wrap.search(v-if="searchFor == 'subject'")
+				input(v-model="searchValue.subject" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList || newsletterList.length === 0")
+				button.btn-search
+			.input-wrap.date(v-else-if="searchFor == 'timestamp'")
+				input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList || newsletterList.length === 0")
+				span ~
+				input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList || newsletterList.length === 0")
+		.tb-toolbar(v-if="user.access_group > 98")
 			.btn-wrap
 				button.btn.outline.md(type="button" @click="sendAdminNewsletter") 등록
 	.tb-overflow
@@ -21,7 +36,7 @@ hr
 					th 제목
 					th 작성일
 			tbody
-				template(v-if="getNewsletterListRunning")
+				template(v-if="loading")
 					tr.loading
 						td(colspan="10")
 							Loading#loading
@@ -36,7 +51,7 @@ hr
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue';
+import { type Ref, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { newsletterList, getNewsletterListRunning, getNewsletterList } from '@/notifications'
 import { convertTimestampToDateMillis } from "@/utils/time";
@@ -48,6 +63,39 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
+let loading = ref(false);
+let searchFor: Ref<"subject" | "timestamp" | "message_id" | "read" | "complaint"> = ref('subject');
+let searchValue = ref({
+	subject: '',
+	timestamp: {
+		start: '',
+		end: ''
+	}
+});
+
+let searchNewsletter = async() => {
+	// loading.value = true;
+
+	console.log(searchValue.value);
+
+	// await skapi.getNewsletters({
+	// 	searchFor: 'message_id' | 'timestamp' | 'read' | 'complaint' | 'subject';
+    //     value: string | number;
+    //     group: 'public' | 'authorized' | number;
+    //     range?: string | number;
+	// })
+
+	// if(searchValue.value === '') {
+	// 	await getNewsletterList();
+	// 	searching.value = false;
+	// } else {
+	// 	newsletterList.value = newsletterList.value.filter((news: any) => {
+	// 		return news.subject.includes(searchValue.value);
+	// 	});
+	// 	searching.value = false;
+	// }
+}
+
 let sendAdminNewsletter = async() => {
 	let endpoint = await skapi.adminNewsletterRequest();
 	const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${endpoint}`;
@@ -57,14 +105,45 @@ let sendAdminNewsletter = async() => {
 	// console.log(endpoint)
 }
 
-onMounted(() => {
-	getNewsletterList();
+watch(searchFor, (nv, ov) => {
+	if(nv && nv !== ov) {
+		searchValue.value = {
+			subject: '',
+			timestamp: {
+				start: '',
+				end: ''
+			}
+		}
+	}
+})
+
+onMounted(async() => {
+	loading.value = true;
+	await getNewsletterList();
+	loading.value = false;
 })
 </script>
 
 <style lang="less" scoped>
 .table-wrap {
     margin-top: 3rem;
+
+	#searchForm {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+		.what {
+			flex: 1;
+			min-width: 100px;
+		}
+		.date {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+    }
 
 	.loading {
 		position: relative;
