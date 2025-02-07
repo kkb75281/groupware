@@ -107,17 +107,28 @@ Loading#loading(v-if="getAuditDetailRunning")
 												template(v-if="uploadedFile.length === 0")
 													li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
 
+		br
+		br
+		br
+
 		//- 결재 승인/반려에 대한 의견 영역
 		template(v-if="senderUser.user_id === user.user_id")
-			ul.reply-list(v-if="auditorList.length > 0")
-				li.reply-item(v-for="(auditor, index) in auditorList" :key="auditor.user_id")
-					.icon
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
-					.reply-cont-wrap
-						span.approver {{ auditor.user_info?.name }}
-						//- span.reply-cont {{ auditor.comment || '-' }}
-						span.reply-cont(:class="{ 'reject-comment': auditor.approved === 'reject' }") {{ auditor.comment || '-' }}
+			.talbe-wrap
+				.tb-overflow
+					table.table
+						colgroup
+							col(style="width: 25%")
+							col
+						tbody
+							tr
+								th 결재자
+								td
+									span.drafter dd
+
+			//- ul.reply-list
+			//- 	li.reply-item(v-for="(approver, index) in approverList" :key="approver.user_id")
+			//- 		span.approver {{ approver.user_info?.name }}
+			//- 		span.comment {{ approver.data.comment }}
 
 		.button-wrap
 			button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
@@ -151,7 +162,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 								td
 									label.radio-button(style="width: 50%")
 										input(type="radio" name="approved" value="approve" :checked="approveAudit")
-										span.label-radio 승인
+										span.label-radio 결재
 									label.radio-button
 										input(type="radio" name="approved" value="reject" :checked="!approveAudit")
 										span.label-radio 반려
@@ -232,7 +243,6 @@ const disabled = ref(true);
 const auditDoContent = ref([]);
 const approverList = ref([]);
 const agreerList = ref([]);
-const auditorList = ref([]); // 전체 결재자 리스트
 const isModalOpen = ref(false);
 const isStampModalOpen = ref(false);
 const senderUser = ref({});
@@ -296,18 +306,16 @@ function formatTimestampToDate(timestamp:number) {
   return `${year}-${month}-${day}`; // 형식화된 문자열 반환
 }
 
-let approvalState = async () => {
+let approvalState = () => {
 	const selectedValue = document.querySelector('input[name="approved"]:checked')?.value;
 
-	console.log('=== approvalState === selectedValue : ', selectedValue);
+	console.log({selectedValue});
 
 	if(selectedValue === 'approve') {
 		isModalOpen.value = false;
 		isStampModalOpen.value = true;
 		// getStampList();
 	} else if(selectedValue === 'reject') {
-		console.log('=== approvalState === 반려');
-		postApproval();
 	}
 }
 
@@ -440,7 +448,7 @@ const getAuditDetail = async () => {
 			record_id: auditId.value
 		})).list[0];
 
-		console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
+		console.log({auditDoc});
 
 		if (auditDoc) {
 			auditDoContent.value = auditDoc;
@@ -498,7 +506,7 @@ const getAuditDetail = async () => {
 		
 		const approvals = await approvedAudit();
 
-		console.log('결재자 리스트 === getAuditDetail === : approvals', approvals);
+		console.log({approvals});
 
 		const approvalUserList = [];
 		const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
@@ -538,29 +546,15 @@ const getAuditDetail = async () => {
 			}
 		})
 
-		console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
+		console.log({approvalUserList});
 
 		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
 		const userInfoList = userList.map(user => user.list[0]);                     
 
-		// 결재자 정보와 결재 결과 합치기
 		const newAuditUserList = approvalUserList.map((auditor) => ({
 			...auditor,
-			user_info: userInfoList.find((user) => user.user_id === auditor.user_id),
-			comment: approvals.find((user) => user.user_id === auditor.user_id)?.data.comment,
-		}));
-
-		console.log('결재자 정보 === getAuditDetail === newAuditUserList : ', newAuditUserList);
-
-		// 전체 결재자 리스트
-		auditorList.value = newAuditUserList;
-
-		// auditorList 결재, 합의 순서대로
-		auditorList.value.sort((a, b) => {
-			if (a.approved_type === 'approver' && b.approved_type === 'agreer') return -1;
-			if (a.approved_type === 'agreer' && b.approved_type === 'approver') return 1;
-			return 0;
-		});
+			user_info: userInfoList.find((user) => user.user_id === auditor.user_id)
+		}))
 
 		// newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
 		approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
@@ -572,14 +566,12 @@ const getAuditDetail = async () => {
 }
 
 // 결재 하기
-const postApproval = async (e?: SubmitEvent) => {
+const postApproval = async (e: SubmitEvent) => {
 	if (isPosting) return; // 중복 호출 방지
 	isPosting = true;
-
-	if (e) {
-        e.preventDefault();
-    }
   
+	e.preventDefault();
+
 	try {
 		if (!auditId.value) return;
 
@@ -657,8 +649,6 @@ const postApproval = async (e?: SubmitEvent) => {
 		getAuditDetail();
 	} catch (error) {
 		console.error(error);
-	} finally {
-		isPosting = false;
 	}
 }
 
@@ -701,9 +691,9 @@ onUnmounted(() => {
 	padding: 3rem 2.4rem;
 }
 
-#printArea {
-	margin-bottom: 3rem;
-}
+// .form-wrap {
+// 	max-width: 100%;
+// }
 
 .form-wrap {
 	position: relative;
@@ -847,51 +837,6 @@ onUnmounted(() => {
             }
         }
     }
-}
-
-// 추가의견 영역
-.reply-list {
-	margin-bottom: 3rem;
-
-	.reply-item {
-		border: 1px dashed var(--gray-color-300);
-		border-radius: 8px;
-		padding: 0.5rem;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.5rem;
-
-		&:last-of-type {
-			margin-bottom: 0;
-		}
-	}
-
-	.icon {
-		padding: 0;
-	}
-
-	.reply-cont-wrap {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.approver {
-		font-size: 0.9rem;
-
-		&::after {
-			content: ' : ';
-			display: inline-block;
-			margin-left: 0.5rem;
-		}
-	}
-
-	.reply-cont {
-		font-size: 0.9rem;
-		color: var(--gray-color-500);
-		line-height: 1.2;
-	}
 }
 
 .empty {
@@ -1147,14 +1092,6 @@ onUnmounted(() => {
         top: 0;
         left: 0;
     }
-}
-
-.rejected {
-	color: var(--warning-color-400);
-}
-
-.waitting {
-	color: var(--gray-color-500);
 }
 
 @media (max-width: 768px) {

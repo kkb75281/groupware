@@ -531,7 +531,7 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
             source: {
                 prevent_multiple_referencing: true, // 중복 결재 방지
             },
-            tags: send_auditors_arr // 결재, 합의, 수신참조 태그를 각각 구분
+            tags: send_auditors_arr, // 결재, 합의, 수신참조 태그를 각각 구분,
         };
 
         const res = await skapi.postRecord(additionalFormData, options);
