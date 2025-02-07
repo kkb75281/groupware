@@ -65,7 +65,13 @@ const route = useRoute();
 
 let loading = ref(false);
 let searchFor: Ref<"subject" | "timestamp" | "message_id" | "read" | "complaint"> = ref('subject');
-let searchValue = ref({
+let searchValue: Ref<{
+	subject: string;
+	timestamp: {
+		start: string;
+		end: string;
+	}
+}> = ref({
 	subject: '',
 	timestamp: {
 		start: '',
@@ -113,6 +119,11 @@ watch(searchFor, (nv, ov) => {
 				start: '',
 				end: ''
 			}
+		}
+
+		if(nv === 'timestamp') {
+			searchValue.value.timestamp.start = new Date().toISOString().substring(0, 10);
+			searchValue.value.timestamp.end = new Date().toISOString().substring(0, 10);
 		}
 	}
 })
