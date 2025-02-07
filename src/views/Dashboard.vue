@@ -12,7 +12,7 @@ ul.card-wrap.gmail
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 		ul.newsletter-mail
-			li.mail(v-for="news in newsletterList" :key="news.id" @click="(e) => showMailDoc(e, news)")
+			li.mail(v-for="news in newsletterList" :key="news.message_id" @click="(e) => router.push('/newsletter-detail/' + news.message_id)")
 				.link
 					//- span.from {{ news.from }}
 					span.mail-title {{ news.subject }}
