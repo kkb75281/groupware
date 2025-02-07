@@ -148,6 +148,13 @@ const menuList = computed(() => [
     },
 	{
         show: true,
+        name: 'newsletter',
+        to: '/newsletter',
+        icon: 'src/assets/icon/material-icon.svg#icon-campaign',
+        text: '공지사항',
+    },
+	{
+        show: true,
         name: 'organigram',
         to: '/organigram',
         icon: 'src/assets/icon/material-icon.svg#icon-account-tree',
