@@ -330,10 +330,10 @@ let getStampList = async () => {
                 access_group: 1,
             }
         });
-        // console.log('=== getStampList === res : ', res);
+        console.log('=== getStampList === res : ', res);
 
         if(res.list.length) {
-            myStamps.value = res.list[0].bin.stamp_data;
+            myStamps.value = res.list[0]?.bin?.stamp_data || [];
             myStampsRecordId.value = res.list[0].record_id;
             gettingStampList.value = false;
         }
@@ -390,18 +390,33 @@ let createStamp = () => {
     // 초기 도장 생성
     drawStamp(user.name);
 
-	const imageData = canvas.toDataURL('image/png'); // 캔버스 데이터를 Base64로 변환
-	previewStamp.value = imageData; // 미리보기 이미지로 설정
-	// previewDiv.style.display = 'block';
+	// 캔버스에서 Blob 생성 후 서버로 업로드
+	canvas.toBlob(async(blob) => {
+		let stamp_postParams = {
+			table: {
+				name: 'stamp_images',
+				access_group: 1,
+			}
+		}
 
-    // 이미지 다운로드
-    // const downloadBtn = document.getElementById('downloadBtn');
-    // downloadBtn.addEventListener('click', () => {
-    //   const link = document.createElement('a');
-    //   link.download = 'stamp.png';
-    //   link.href = canvas.toDataURL();
-    //   link.click();
-    // });
+		if(myStampsRecordId.value) {
+			stamp_postParams.record_id = myStampsRecordId.value;
+		} else {
+			stamp_postParams.unique_id = '[stamp_images]' + makeSafe(user.user_id);
+		}
+
+		let stampImageData = new FormData();
+		const file = new File([blob], "generated-image.png", { type: "image/png" });
+		stampImageData.append("stamp_data", file);
+
+		try {
+			let uploadGeneratedStamp = await skapi.postRecord(stampImageData, stamp_postParams);
+			previewStamp.value = uploadGeneratedStamp.bin.stamp_data[0].url;
+		} catch(e) {
+			alert('도장 등록 중 오류가 발생했습니다.');
+			throw e;
+		}
+	}, "image/png");
 }
 
 let selectStamp = (url) => {
