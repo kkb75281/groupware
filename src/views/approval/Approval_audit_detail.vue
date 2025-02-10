@@ -350,7 +350,10 @@ let getStampList = async () => {
         gettingStampList.value = false;
     }
 }
-getStampList();
+// getStampList();
+
+// 결재를 완료하지 않은 결재자만 getStampList 실행
+
 
 let createStamp = () => {
 // 캔버스와 컨텍스트 가져오기
@@ -557,6 +560,12 @@ const getAuditDetail = async () => {
 
 		// 전체 결재자 리스트
 		auditorList.value = newAuditUserList;
+
+		// 현재 로그인한 사용자가 결재자 목록에 있고, 아직 결재하지 않은 경우에만 getStampList 실행
+		const currentUserAudit = newAuditUserList.find(auditor => auditor.user_id === user.user_id);
+		if (currentUserAudit && !currentUserAudit.approved) {
+			getStampList();
+		}
 
 		// auditorList 결재, 합의 순서대로
 		auditorList.value.sort((a, b) => {
