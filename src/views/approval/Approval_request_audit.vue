@@ -148,7 +148,10 @@ template(v-if="step > 1")
 													li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
 			.button-wrap
-				button.btn.outline.btn-preview(type="button" @click="previewAudit") 미리보기
+				button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
+					.icon(style="padding: 0;")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 				button.btn(type="submit") 결재 요청
 
 //- Modal - 작성란 추가

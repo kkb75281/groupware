@@ -107,8 +107,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 												template(v-if="uploadedFile.length === 0")
 													li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
 
-		//- 결재 승인/반려에 대한 의견 영역
-		template(v-if="senderUser.user_id === user.user_id")
+			//- 결재 승인/반려에 대한 의견 영역
+			//- template(v-if="senderUser.user_id === user.user_id")
 			ul.reply-list(v-if="auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '').length > 0")
 				li.reply-item(v-for="(auditor, index) in auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '')")
 					.icon
@@ -119,6 +119,10 @@ Loading#loading(v-if="getAuditDetailRunning")
 						span.reply-cont(:class="{ 'reject': auditor.approved === 'reject' }") {{ auditor.comment || '-' }}
 
 		.button-wrap
+			button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
+				.icon(style="padding: 0")
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 			button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
 
 //- 결재 모달
@@ -682,6 +686,77 @@ const loadStylesheet = () => {
   });
 };
 
+// 결재요청 미리보기
+const previewAudit = () => {
+  const printArea = document.getElementById("printArea");
+
+  // 프린트 전에 input 값들을 span으로 변환
+  const prepareForPrint = () => {
+    cleanupAfterPrint(); // 기존에 추가된 span 제거
+
+    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+    inputs.forEach(input => {
+      const value = input.value;
+
+      // 입력값을 표시할 span 생성
+      const span = document.createElement('span');
+      span.className = 'print-value';
+      span.textContent = value;
+
+      // input 바로 뒤에 span 삽입
+      input.parentNode.insertBefore(span, input.nextSibling);
+
+      // input을 숨김
+      input.style.display = "none";
+    });
+  };
+
+  // 프린트 후 추가했던 span 제거 및 input 복원
+  const cleanupAfterPrint = () => {
+    const printValues = printArea.querySelectorAll('.print-value');
+    printValues.forEach(span => span.remove());
+
+    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+    inputs.forEach(input => {
+      input.style.display = "";
+    });
+  };
+
+  // 동적으로 스타일 추가
+  const addPrintStyle = () => {
+    const style = document.createElement("style");
+    style.id = "print-style";
+    style.textContent = `
+      @media print {
+        body * { visibility: hidden !important; }
+        #printArea, #printArea * { visibility: visible !important; }
+        #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+      }
+    `;
+    document.head.appendChild(style);
+  };
+
+  // 스타일 제거
+  const removePrintStyle = () => {
+    const style = document.getElementById("print-style");
+    if (style) {
+      style.remove();
+    }
+  };
+
+  window.onbeforeprint = function () {
+    prepareForPrint();
+    addPrintStyle();
+  };
+
+  window.onafterprint = function () {
+    cleanupAfterPrint();
+    removePrintStyle();
+  };
+
+  window.print();
+};
+
 onMounted(() => {
 	window.addEventListener('resize', updateScreenSize);
 
@@ -700,9 +775,9 @@ onUnmounted(() => {
 	padding: 3rem 2.4rem;
 }
 
-#printArea {
-	margin-bottom: 3rem;
-}
+// #printArea {
+// 	margin-bottom: 3rem;
+// }
 
 .form-wrap {
 	position: relative;
@@ -850,7 +925,8 @@ onUnmounted(() => {
 
 // 추가의견 영역
 .reply-list {
-	margin-bottom: 3rem;
+	// margin-bottom: 3rem;
+	margin-top: 3rem;
 
 	.reply-item {
 		border: 1px dashed var(--gray-color-300);
@@ -906,6 +982,10 @@ onUnmounted(() => {
     line-height: 1.2;
     color: var(--gray-color-400);
     // cursor: pointer;
+}
+
+.button-wrap {
+	margin-top: 3rem;
 }
 
 .btn {
