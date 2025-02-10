@@ -129,7 +129,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { onMounted, ref } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
-import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage, deleteList } from '@/components/crop_image';
 import { getDivisionNames, divisionNameList, divisions } from '@/division';
 import CropImage from '@/components/crop_image.vue';
 
