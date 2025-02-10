@@ -178,8 +178,6 @@ export let loginCheck = async (profile: any) => {
 		
 		Object.assign(user, profile);
 
-		// sessionStorage.setItem('userId', profile['user_id']); // 사용되고 있지 않음
-
 		for (const key in originalUser) {
 			if (!profile.hasOwnProperty(key)) {
 				delete user[key];
@@ -242,10 +240,17 @@ export let loginCheck = async (profile: any) => {
 		// skapi.connectRealtime(RealtimeCallback);
 		// getRealtime();
 
-		iwaslogged.value = true;
+		// iwaslogged.value = true;
 	}
 	// // console.log('profile', profile)
 	// // console.log('iwaslogged', iwaslogged.value)
+
+	if(!loaded.value) {
+		app.use(router);
+
+		app.mount('#app');
+	}
+
 	loaded.value = true;
 };
 
@@ -302,8 +307,8 @@ const skapi = new Skapi(
 //   { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
 // );
 
-app.use(router);
+// app.use(router);
 
-app.mount('#app');
+// app.mount('#app');
 
 export { skapi };
