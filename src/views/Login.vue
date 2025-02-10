@@ -43,6 +43,9 @@
 			span Google 로그인 중...
 		template(v-else)
 			| Google 로그인
+
+	button.btn(@click="permissionAlert") 푸시 알림 허용
+	button.btn(@click="testSend") 테스트 알람 보내기
 </template>
 
 <script setup>
@@ -67,6 +70,97 @@ if(iwaslogged.value) {
 else {
 	// window.sessionStorage.clear();
 }
+
+// 알람 메세지 내용
+function testSend(t) {
+    const title = t;
+    const options = {
+        body: "Additional text with some description",
+        icon: "https://andreinwald.github.io/webpush-ios-example/images/push_icon.jpg",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Orange_tabby_cat_sitting_on_fallen_leaves-Hisashi-01A.jpg/1920px-Orange_tabby_cat_sitting_on_fallen_leaves-Hisashi-01A.jpg",
+        data: {
+            "url": "https://andreinwald.github.io/webpush-ios-example/?page=success",
+            "message_id": "your_internal_unique_message_id_for_tracking"
+        },
+    };
+    navigator.serviceWorker.ready.then(async function (serviceWorker) {
+        await serviceWorker.showNotification(title, options);
+    });
+}
+
+// 알람 권한 설정
+let permissionAlert = async() => {
+	try {
+		// 알림 권한 요청
+		const permission = await Notification.requestPermission();
+		console.log('알림 권한 상태:', permission);
+	} catch (error) {
+		console.error('알림 권한 요청 중 오류 발생:', error);
+	}
+}
+
+function showNotification(title, body) {
+	console.log(Notification.permission)
+	if (Notification.permission === 'granted') {
+		new Notification(title, {
+		body: body,
+		// icon: '/icons/icon-192x192.png'
+		icon: '/favicon-icon.png'
+		});
+	} else {
+		console.log('알림 권한이 없습니다.');
+	}
+}
+
+async function testAppBadge() {
+	// 알림 권한 요청
+	if (Notification.permission !== 'granted') {
+		const permission = await Notification.requestPermission();
+		if (permission !== 'granted') {
+		console.log('알림 권한이 거부되었습니다.');
+		return;
+		}
+	}
+
+	// 알림 및 뱃지 설정 함수
+	async function triggerNotifications() {
+		try {
+			for (let i = 1; i <= 3; i++) {
+				// 알림 표시
+				let title = i + '번째 테스트 알림';
+				testSend(title);
+
+				// 앱 아이콘 뱃지 업데이트
+				if ('setAppBadge' in navigator) {
+					await navigator.setAppBadge(i).then(() => {
+						console.log(`뱃지 설정 성공: ${i}`);
+					});
+				} else {
+					console.log('현재 환경에서 setAppBadge를 지원하지 않습니다.');
+				}
+
+				// 1초 대기
+				await new Promise(resolve => setTimeout(resolve, 1000));
+			}
+
+			// 5초 후 뱃지 제거
+			// await new Promise(resolve => setTimeout(resolve, 2000)); // 추가 2초 대기
+			// if ('clearAppBadge' in navigator) {
+			// 	await navigator.clearAppBadge().then(() => {
+			// 			console.log('뱃지 제거 성공');
+			// 	});
+			// }
+		} catch (error) {
+			console.error('알림 또는 뱃지 처리 중 오류 발생:', error);
+		}
+	}
+
+	// 실행
+	triggerNotifications();
+}
+
+// 테스트 실행
+testAppBadge();
 
 let showPassword = ref(false);
 let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위함
