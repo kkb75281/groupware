@@ -67,7 +67,7 @@ template(v-if="step > 1")
 											li.approver-list(v-for="(approver, index) in selectedAuditors.approvers" :key="approver.data.user_id")
 												span.num {{ index + 1 }}
 												span.approver {{ approver.index.value }}
-													button.btn-remove(@click="removeAuditor(approver.data.user_id, 'approvers')")
+													//- button.btn-remove(@click="removeAuditor(approver.data.user_id, 'approvers')")
 														.icon
 															svg
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
@@ -85,7 +85,7 @@ template(v-if="step > 1")
 											li.approver-list(v-for="(agreer, index) in selectedAuditors.agreers" :key="agreer.data.user_id")
 												span.num {{ index + 1 }}
 												span.approver {{ agreer.index.value }}
-													button.btn-remove(@click="removeAuditor(agreer.data.user_id, 'agreers')")
+													//- button.btn-remove(@click="removeAuditor(agreer.data.user_id, 'agreers')")
 														.icon
 															svg
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
@@ -102,7 +102,7 @@ template(v-if="step > 1")
 										ul.reference-wrap
 											li.reference-list(v-for="(receiver, index) in selectedAuditors.receivers" :key="receiver.data.user_id")
 												span.referencer {{ receiver.index.value }}
-													button.btn-remove(@click="removeAuditor(receiver.data.user_id, 'receivers')")
+													//- button.btn-remove(@click="removeAuditor(receiver.data.user_id, 'receivers')")
 														.icon
 															svg
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
@@ -331,6 +331,7 @@ const previewAudit = () => {
       const span = document.createElement('span');
       span.className = 'print-value';
       span.textContent = value;
+	  span.style.display = "none";
 
       // input 바로 뒤에 span 삽입
       input.parentNode.insertBefore(span, input.nextSibling);
@@ -758,7 +759,7 @@ onUnmounted(() => {
 	.icon,
 	input,
 	textarea,
-	.file-wrap,
+	.file-wrap .btn-upload-file,
 	header,
 	.title,
 	hr,
@@ -781,15 +782,6 @@ onUnmounted(() => {
 		left: 0;
 		top: 0;
 		width: 100%;
-	}
-
-	/* input 대체 텍스트 스타일 */
-	.print-value {
-		font-size: 14px;
-		color: #000;
-		display: inline-block;
-		padding: 4px 0;
-		text-align: left;
 	}
 
 	body {
@@ -840,19 +832,19 @@ onUnmounted(() => {
 	}
 
 	.wysiwyg-wrap {
-    border: none !important;
-    
-    // wysiwyg 컴포넌트 내용만 표시
-    :deep(.wysiwyg) {
-      // 에디터 내용 컨테이너
-      ._wysiwyg4all {
-        visibility: visible !important;
-        padding: 0 !important;
-      }
+		border: none !important;
 
-      .btn-wrap {
-        display: none !important;
-      }
+		// wysiwyg 컴포넌트 내용만 표시
+		:deep(.wysiwyg) {
+			// 에디터 내용 컨테이너
+			._wysiwyg4all {
+			visibility: visible !important;
+			padding: 0 !important;
+		}
+
+		.btn-wrap {
+			display: none !important;
+		}
     }
   }
 }
