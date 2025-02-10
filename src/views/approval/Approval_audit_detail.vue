@@ -109,15 +109,14 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 		//- 결재 승인/반려에 대한 의견 영역
 		template(v-if="senderUser.user_id === user.user_id")
-			ul.reply-list(v-if="auditorList.length > 0")
-				li.reply-item(v-for="(auditor, index) in auditorList" :key="auditor.user_id")
+			ul.reply-list(v-if="auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '').length > 0")
+				li.reply-item(v-for="(auditor, index) in auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '')")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
 					.reply-cont-wrap
 						span.approver {{ auditor.user_info?.name }}
-						//- span.reply-cont {{ auditor.comment || '-' }}
-						span.reply-cont(:class="{ 'reject-comment': auditor.approved === 'reject' }") {{ auditor.comment || '-' }}
+						span.reply-cont(:class="{ 'reject': auditor.approved === 'reject' }") {{ auditor.comment || '-' }}
 
 		.button-wrap
 			button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
@@ -891,6 +890,10 @@ onUnmounted(() => {
 		font-size: 0.9rem;
 		color: var(--gray-color-500);
 		line-height: 1.2;
+
+		&.reject {
+			color: var(--warning-color-400);
+		}
 	}
 }
 
