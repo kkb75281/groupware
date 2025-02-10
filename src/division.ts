@@ -62,7 +62,9 @@ export async function getDivisionNames(refresh = false) {
 						access_group: 1
 					}
 				})
-			}
+			} else {
+                return;
+            }
 		}
 	}).finally(() => {
         getDivisionNamesRunning = null;

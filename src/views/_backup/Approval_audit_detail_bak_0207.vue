@@ -107,22 +107,30 @@ Loading#loading(v-if="getAuditDetailRunning")
 												template(v-if="uploadedFile.length === 0")
 													li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
 
-			//- 결재 승인/반려에 대한 의견 영역
-			//- template(v-if="senderUser.user_id === user.user_id")
-			ul.reply-list(v-if="auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '').length > 0")
-				li.reply-item(v-for="(auditor, index) in auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '')")
-					.icon
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
-					.reply-cont-wrap
-						span.approver {{ auditor.user_info?.name }}
-						span.reply-cont(:class="{ 'reject': auditor.approved === 'reject' }") {{ auditor.comment || '-' }}
+		br
+		br
+		br
+
+		//- 결재 승인/반려에 대한 의견 영역
+		template(v-if="senderUser.user_id === user.user_id")
+			.talbe-wrap
+				.tb-overflow
+					table.table
+						colgroup
+							col(style="width: 25%")
+							col
+						tbody
+							tr
+								th 결재자
+								td
+									span.drafter dd
+
+			//- ul.reply-list
+			//- 	li.reply-item(v-for="(approver, index) in approverList" :key="approver.user_id")
+			//- 		span.approver {{ approver.user_info?.name }}
+			//- 		span.comment {{ approver.data.comment }}
 
 		.button-wrap
-			button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
-				.icon(style="padding: 0")
-					svg
-						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 			button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
 
 //- 결재 모달
@@ -154,7 +162,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 								td
 									label.radio-button(style="width: 50%")
 										input(type="radio" name="approved" value="approve" :checked="approveAudit")
-										span.label-radio 승인
+										span.label-radio 결재
 									label.radio-button
 										input(type="radio" name="approved" value="reject" :checked="!approveAudit")
 										span.label-radio 반려
@@ -235,7 +243,6 @@ const disabled = ref(true);
 const auditDoContent = ref([]);
 const approverList = ref([]);
 const agreerList = ref([]);
-const auditorList = ref([]); // 전체 결재자 리스트
 const isModalOpen = ref(false);
 const isStampModalOpen = ref(false);
 const senderUser = ref({});
@@ -299,18 +306,16 @@ function formatTimestampToDate(timestamp:number) {
   return `${year}-${month}-${day}`; // 형식화된 문자열 반환
 }
 
-let approvalState = async () => {
+let approvalState = () => {
 	const selectedValue = document.querySelector('input[name="approved"]:checked')?.value;
 
-	console.log('=== approvalState === selectedValue : ', selectedValue);
+	console.log({selectedValue});
 
 	if(selectedValue === 'approve') {
 		isModalOpen.value = false;
 		isStampModalOpen.value = true;
 		// getStampList();
 	} else if(selectedValue === 'reject') {
-		console.log('=== approvalState === 반려');
-		postApproval();
 	}
 }
 
@@ -350,10 +355,7 @@ let getStampList = async () => {
         gettingStampList.value = false;
     }
 }
-// getStampList();
-
-// 결재를 완료하지 않은 결재자만 getStampList 실행
-
+getStampList();
 
 let createStamp = () => {
 // 캔버스와 컨텍스트 가져오기
@@ -446,7 +448,7 @@ const getAuditDetail = async () => {
 			record_id: auditId.value
 		})).list[0];
 
-		console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
+		console.log({auditDoc});
 
 		if (auditDoc) {
 			auditDoContent.value = auditDoc;
@@ -504,7 +506,7 @@ const getAuditDetail = async () => {
 		
 		const approvals = await approvedAudit();
 
-		console.log('결재자 리스트 === getAuditDetail === : approvals', approvals);
+		console.log({approvals});
 
 		const approvalUserList = [];
 		const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
@@ -544,35 +546,15 @@ const getAuditDetail = async () => {
 			}
 		})
 
-		console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
+		console.log({approvalUserList});
 
 		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
 		const userInfoList = userList.map(user => user.list[0]);                     
 
-		// 결재자 정보와 결재 결과 합치기
 		const newAuditUserList = approvalUserList.map((auditor) => ({
 			...auditor,
-			user_info: userInfoList.find((user) => user.user_id === auditor.user_id),
-			comment: approvals.find((user) => user.user_id === auditor.user_id)?.data.comment,
-		}));
-
-		console.log('결재자 정보 === getAuditDetail === newAuditUserList : ', newAuditUserList);
-
-		// 전체 결재자 리스트
-		auditorList.value = newAuditUserList;
-
-		// 현재 로그인한 사용자가 결재자 목록에 있고, 아직 결재하지 않은 경우에만 getStampList 실행
-		const currentUserAudit = newAuditUserList.find(auditor => auditor.user_id === user.user_id);
-		if (currentUserAudit && !currentUserAudit.approved) {
-			getStampList();
-		}
-
-		// auditorList 결재, 합의 순서대로
-		auditorList.value.sort((a, b) => {
-			if (a.approved_type === 'approver' && b.approved_type === 'agreer') return -1;
-			if (a.approved_type === 'agreer' && b.approved_type === 'approver') return 1;
-			return 0;
-		});
+			user_info: userInfoList.find((user) => user.user_id === auditor.user_id)
+		}))
 
 		// newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
 		approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
@@ -584,14 +566,12 @@ const getAuditDetail = async () => {
 }
 
 // 결재 하기
-const postApproval = async (e?: SubmitEvent) => {
+const postApproval = async (e: SubmitEvent) => {
 	if (isPosting) return; // 중복 호출 방지
 	isPosting = true;
-
-	if (e) {
-        e.preventDefault();
-    }
   
+	e.preventDefault();
+
 	try {
 		if (!auditId.value) return;
 
@@ -669,8 +649,6 @@ const postApproval = async (e?: SubmitEvent) => {
 		getAuditDetail();
 	} catch (error) {
 		console.error(error);
-	} finally {
-		isPosting = false;
 	}
 }
 
@@ -695,77 +673,6 @@ const loadStylesheet = () => {
   });
 };
 
-// 결재요청 미리보기
-const previewAudit = () => {
-  const printArea = document.getElementById("printArea");
-
-  // 프린트 전에 input 값들을 span으로 변환
-  const prepareForPrint = () => {
-    cleanupAfterPrint(); // 기존에 추가된 span 제거
-
-    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
-    inputs.forEach(input => {
-      const value = input.value;
-
-      // 입력값을 표시할 span 생성
-      const span = document.createElement('span');
-      span.className = 'print-value';
-      span.textContent = value;
-
-      // input 바로 뒤에 span 삽입
-      input.parentNode.insertBefore(span, input.nextSibling);
-
-      // input을 숨김
-      input.style.display = "none";
-    });
-  };
-
-  // 프린트 후 추가했던 span 제거 및 input 복원
-  const cleanupAfterPrint = () => {
-    const printValues = printArea.querySelectorAll('.print-value');
-    printValues.forEach(span => span.remove());
-
-    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
-    inputs.forEach(input => {
-      input.style.display = "";
-    });
-  };
-
-  // 동적으로 스타일 추가
-  const addPrintStyle = () => {
-    const style = document.createElement("style");
-    style.id = "print-style";
-    style.textContent = `
-      @media print {
-        body * { visibility: hidden !important; }
-        #printArea, #printArea * { visibility: visible !important; }
-        #printArea { position: absolute; left: 0; top: 0; width: 100%; }
-      }
-    `;
-    document.head.appendChild(style);
-  };
-
-  // 스타일 제거
-  const removePrintStyle = () => {
-    const style = document.getElementById("print-style");
-    if (style) {
-      style.remove();
-    }
-  };
-
-  window.onbeforeprint = function () {
-    prepareForPrint();
-    addPrintStyle();
-  };
-
-  window.onafterprint = function () {
-    cleanupAfterPrint();
-    removePrintStyle();
-  };
-
-  window.print();
-};
-
 onMounted(() => {
 	window.addEventListener('resize', updateScreenSize);
 
@@ -784,8 +691,8 @@ onUnmounted(() => {
 	padding: 3rem 2.4rem;
 }
 
-// #printArea {
-// 	margin-bottom: 3rem;
+// .form-wrap {
+// 	max-width: 100%;
 // }
 
 .form-wrap {
@@ -932,56 +839,6 @@ onUnmounted(() => {
     }
 }
 
-// 추가의견 영역
-.reply-list {
-	// margin-bottom: 3rem;
-	margin-top: 3rem;
-
-	.reply-item {
-		border: 1px dashed var(--gray-color-300);
-		border-radius: 8px;
-		padding: 0.5rem;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.5rem;
-
-		&:last-of-type {
-			margin-bottom: 0;
-		}
-	}
-
-	.icon {
-		padding: 0;
-	}
-
-	.reply-cont-wrap {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.approver {
-		font-size: 0.9rem;
-
-		&::after {
-			content: ' : ';
-			display: inline-block;
-			margin-left: 0.5rem;
-		}
-	}
-
-	.reply-cont {
-		font-size: 0.9rem;
-		color: var(--gray-color-500);
-		line-height: 1.2;
-
-		&.reject {
-			color: var(--warning-color-400);
-		}
-	}
-}
-
 .empty {
     display: flex;
     justify-content: center;
@@ -991,10 +848,6 @@ onUnmounted(() => {
     line-height: 1.2;
     color: var(--gray-color-400);
     // cursor: pointer;
-}
-
-.button-wrap {
-	margin-top: 3rem;
 }
 
 .btn {
@@ -1239,14 +1092,6 @@ onUnmounted(() => {
         top: 0;
         left: 0;
     }
-}
-
-.rejected {
-	color: var(--warning-color-400);
-}
-
-.waitting {
-	color: var(--gray-color-500);
 }
 
 @media (max-width: 768px) {

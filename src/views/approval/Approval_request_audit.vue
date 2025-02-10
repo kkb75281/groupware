@@ -148,7 +148,10 @@ template(v-if="step > 1")
 													li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
 			.button-wrap
-				button.btn.outline.btn-preview(type="button" @click="previewAudit") 미리보기
+				button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
+					.icon(style="padding: 0;")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 				button.btn(type="submit") 결재 요청
 
 //- Modal - 작성란 추가
@@ -531,7 +534,7 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
             source: {
                 prevent_multiple_referencing: true, // 중복 결재 방지
             },
-            tags: send_auditors_arr // 결재, 합의, 수신참조 태그를 각각 구분
+            tags: send_auditors_arr, // 결재, 합의, 수신참조 태그를 각각 구분,
         };
 
         const res = await skapi.postRecord(additionalFormData, options);
