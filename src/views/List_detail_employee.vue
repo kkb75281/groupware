@@ -1,103 +1,108 @@
 <template lang="pug">
 .title
-    h1 직원 상세
+	h1 직원 상세
 
 hr
 
 .form-wrap(v-if="currentEmp")
-    form#_el_empDetail_form
-        div(style="text-align: center;")
-            .image
-                img#profile-img(:src="currentEmp?.picture" alt="profile image")
+	form#_el_empDetail_form
+		.imgbtn-wrap
+			.image
+				img#profile-img(:src="currentEmp?.picture" alt="profile image")
 
-            a.btn-call(:href="'tel:' + currentEmp?.phone_number" style="display: block;")
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
+			.util-wrap
+				.util-btn
+					a.click-btn(:href="'tel:' + currentEmp?.phone_number" style="display: block;")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
+					span 전화걸기
+				.util-btn
+					button.click-btn(type="button" @click="sendMail(currentEmp?.email)" :disanbled="!currentEmp?.email || disabled")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+					span 이메일전송
 
-        .input-wrap
-            p.label 직책
-            input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled")
+		.input-wrap
+			p.label 직책
+			input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled")
 
-        .input-wrap
-            p.label 부서
-            template(v-if="disabled")
-                input(type="text" name="division" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division] === '' ? '' : '부서를 선택해주세요.'" readonly)
-            template(v-else)
-                select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
-                    option(value="" disabled) 부서 선택
-        
-        .input-wrap
-            p.label 권한
-            template(v-if="disabled")
-                input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
-            template(v-else)
-                select(name="access_group" v-model="currentEmp.access_group")
-                    option(value="" disabled selected) 권한선택
-                    option(value="1") 직원
-                    option(value="98") 관리자
-                    option(value="99") 마스터
-            
-        .input-wrap
-            p.label 이름
-            input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
+		.input-wrap
+			p.label 부서
+			template(v-if="disabled")
+				input(type="text" name="division" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division] === '' ? '' : '부서를 선택해주세요.'" readonly)
+			template(v-else)
+				select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
+					option(value="" disabled) 부서 선택
+		
+		.input-wrap
+			p.label 권한
+			template(v-if="disabled")
+				input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
+			template(v-else)
+				select(name="access_group" v-model="currentEmp.access_group")
+					option(value="" disabled selected) 권한선택
+					option(value="1") 직원
+					option(value="98") 관리자
+					option(value="99") 마스터
+			
+		.input-wrap
+			p.label 이름
+			input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
 
-        .input-wrap
-            p.label 이메일
-            input(type="email" name="email" :value="currentEmp?.email || '-' " placeholder="예) user@email.com" disabled)
+		.input-wrap
+			p.label 이메일
+			input(type="email" name="email" :value="currentEmp?.email || '-' " placeholder="예) user@email.com" disabled)
 
-        .input-wrap
-            p.label 생년월일
-            input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled style="width:100% !important")
+		.input-wrap
+			p.label 생년월일
+			input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled style="width:100% !important")
 
-        .input-wrap
-            p.label 전화번호
-            input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
-            //- a.btn-call(:href="'tel:' + currentEmp?.phone_number")
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
+		.input-wrap
+			p.label 전화번호
+			input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
 
-        .input-wrap
-            p.label 주소
-            input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
+		.input-wrap
+			p.label 주소
+			input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
 
-        .input-wrap.upload-file
-            p.label(style="margin-bottom: 0;") 기타자료
-            template(v-if="!disabled")
-                .btn-upload-file
-                    input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-                    label.btn.outline.btn-upload(for="file") 파일 추가
-                    ul.upload-file-list
-                        li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+		.input-wrap.upload-file
+			p.label(style="margin-bottom: 0;") 기타자료
+			template(v-if="!disabled")
+				.btn-upload-file
+					input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+					label.btn.outline.btn-upload(for="file") 파일 추가
+					ul.upload-file-list
+						li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
-            .file-wrap
-                ul.file-list
-                    template(v-if="uploadFile.length === 0")
-                        li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
-                    template(v-else)
-                        li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
-                            a.file-name(:href="file.url" target="_blank") {{ file.filename }}
-                            template(v-if="!disabled")
-                                button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
-                                    svg
-                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-                                button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
-                                    svg
-                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+			.file-wrap
+				ul.file-list
+					template(v-if="uploadFile.length === 0")
+						li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
+					template(v-else)
+						li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
+							a.file-name(:href="file.url" target="_blank") {{ file.filename }}
+							template(v-if="!disabled")
+								button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
+									svg
+										use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+								button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
+									svg
+										use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
-        br
-        br
-        br
+		br
+		br
+		br
 
-        .button-wrap
-            template(v-if="user.access_group > 98")
-                template(v-if="disabled")
-                    button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
-                    button.btn.btn-edit(type="button" @click="startEditEmp") 수정
-                template(v-else)
-                    button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
-                    button.btn.btn-register(type="submit" @click="registerEmp") 저장
-            template(v-else)
-                button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
+		.button-wrap
+			template(v-if="user.access_group > 98")
+				template(v-if="disabled")
+					button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
+					button.btn.btn-edit(type="button" @click="startEditEmp") 수정
+				template(v-else)
+					button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
+					button.btn.btn-register(type="submit" @click="registerEmp") 저장
+			template(v-else)
+				button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
 
 
 br  
@@ -118,8 +123,8 @@ const route = useRoute();
 let currentEmp = ref(null);
 let currentEmpOriginal = {};
 let currentEmpTags = ref({
-    emp_dvs: '',
-    emp_pst: '',
+	emp_dvs: '',
+	emp_pst: '',
 });
 let uploadFile = ref([]);
 let backupUploadFile = ref([]);
@@ -127,23 +132,23 @@ let disabled = ref(true);
 let removeFileList = ref([]);
 let fileNames = ref([]);
 let access_group = {
-    1: '직원',
-    98: '관리자',
-    99: '마스터',
+	1: '직원',
+	98: '관리자',
+	99: '마스터',
 };
 
 const userId = route.params.userId;
 getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l)))).then(res=>{
-    if(res.length === 0) {
-        window.alert('해당 직원을 찾을 수 없습니다.');
-        router.push('/list-employee');
-    }
+	if(res.length === 0) {
+		window.alert('해당 직원을 찾을 수 없습니다.');
+		router.push('/list-employee');
+	}
 
-    let emp = res[0];
-    currentEmp.value = emp;
-    
-    currentEmpTags.value.emp_dvs = emp.division;
-    currentEmpTags.value.emp_pst = emp.position;
+	let emp = res[0];
+	currentEmp.value = emp;
+	
+	currentEmpTags.value.emp_dvs = emp.division;
+	currentEmpTags.value.emp_pst = emp.position;
 });
 
 // 부서 목록 가져오기
@@ -151,394 +156,378 @@ getDivisionNames();
 
 // 추가자료 가져오기    
 let getAdditionalData = () => {
-    skapi.getRecords({
-        table: {
-            name: 'emp_additional_data',
-            access_group: 99,
-        },
-        reference: "[emp_additional_data]" + makeSafe(userId),
-    }).then(res => {
-        if(res.list.length > 0) {
-            let fileList = [];
+	skapi.getRecords({
+		table: {
+			name: 'emp_additional_data',
+			access_group: 99,
+		},
+		reference: "[emp_additional_data]" + makeSafe(userId),
+	}).then(res => {
+		if(res.list.length > 0) {
+			let fileList = [];
 
-            function getFileUserId(str: string) {
-                if (!str) return '';
+			function getFileUserId(str: string) {
+				if (!str) return '';
 
-                return str.split('/')[3]
-            }
+				return str.split('/')[3]
+			}
 
-            res.list.forEach((item) => {
-                if (item.bin.additional_data && item.bin.additional_data.length > 0) {       
-                    const result = item.bin.additional_data.map((el) => ({
-                        ...el,
-                        user_id: getFileUserId(el.path),
-                        record_id: item.record_id,
-                    }));    
+			res.list.forEach((item) => {
+				if (item.bin.additional_data && item.bin.additional_data.length > 0) {       
+					const result = item.bin.additional_data.map((el) => ({
+						...el,
+						user_id: getFileUserId(el.path),
+						record_id: item.record_id,
+					}));    
 
-                    fileList.push(...result);
-                }
-            })
+					fileList.push(...result);
+				}
+			})
 
-            uploadFile.value = fileList;
-        }
-    })
+			uploadFile.value = fileList;
+		}
+	})
 }
 getAdditionalData();
 
 // 부서 목록 옵션으로 가져오기 (회원 수정시 사용)
 let displayDivisionOptions = () => {
-    let divisionList = document.querySelector(`select[name="division"]`) as HTMLSelectElement;
+	let divisionList = document.querySelector(`select[name="division"]`) as HTMLSelectElement;
 
-    // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
-    divisionList.innerHTML = ''; // 기존 옵션 초기화
+	// 기존 옵션을 제거하지 않고 새로운 옵션을 추가
+	divisionList.innerHTML = ''; // 기존 옵션 초기화
 
-    const allOption = document.createElement('option');
-    const defaultOption = document.createElement('option');
+	const allOption = document.createElement('option');
+	const defaultOption = document.createElement('option');
 
-    let matchFound = false;
+	let matchFound = false;
 
-    // 기본 옵션 추가
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    defaultOption.innerText = '부서 선택';
-    divisionList.appendChild(defaultOption);
+	// 기본 옵션 추가
+	defaultOption.disabled = true;
+	defaultOption.selected = true;
+	defaultOption.innerText = '부서 선택';
+	divisionList.appendChild(defaultOption);
 
-    // 동적으로 부서 옵션 추가
-    for (let key in divisionNameList.value) {
-        if(divisionNameList.value[key] !== '') {
-            const option = document.createElement('option');
-            option.value = key;
-            option.innerText = divisionNameList.value[key];
+	// 동적으로 부서 옵션 추가
+	for (let key in divisionNameList.value) {
+		if(divisionNameList.value[key] !== '') {
+			const option = document.createElement('option');
+			option.value = key;
+			option.innerText = divisionNameList.value[key];
+	
+			// 선택된 부서 처리
+			if (key === currentEmp.value.division) {
+				option.selected = true;
+				matchFound = true;
+			}
+	
+			divisionList.appendChild(option);
+		}
+	}
+
+	// 일치하는 키가 없으면 기본 옵션에 selected 추가
+	if (!matchFound) {
+		defaultOption.selected = true;
+	}
+
+	// 선택박스 활성화
+	divisionList.disabled = false;
+}
+
+let sendMail = async (mail: string) => {
+	const maillink = encodeURIComponent(mail);
+	const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
     
-            // 선택된 부서 처리
-            if (key === currentEmp.value.division) {
-                option.selected = true;
-                matchFound = true;
-            }
-    
-            divisionList.appendChild(option);
-        }
-    }
-
-    // 일치하는 키가 없으면 기본 옵션에 selected 추가
-    if (!matchFound) {
-        defaultOption.selected = true;
-    }
-
-    // 선택박스 활성화
-    divisionList.disabled = false;
+    window.open(gmailUrl, "_blank"); // 새 탭에서 Gmail 열기
 }
 
 // 파일 업로드 리스트 업데이트
 let updateFileList = (e) => {
-    let target = e.target;
-    if (target.files) {
-        fileNames.value = Array.from(target.files).map(file => file.name);
-    }
+	let target = e.target;
+	if (target.files) {
+		fileNames.value = Array.from(target.files).map(file => file.name);
+	}
 };
 
 // 수정 시작
 let startEditEmp = async() => {
-    disabled.value = false;
-    currentEmpOriginal = { ...currentEmp.value };
-    currentEmpOriginal.division = currentEmpTags.value.emp_dvs;
-    currentEmpOriginal.position = currentEmpTags.value.emp_pst;
-    fileNames.value = [];
-    removeFileList.value = [];
+	disabled.value = false;
+	currentEmpOriginal = { ...currentEmp.value };
+	currentEmpOriginal.division = currentEmpTags.value.emp_dvs;
+	currentEmpOriginal.position = currentEmpTags.value.emp_pst;
+	fileNames.value = [];
+	removeFileList.value = [];
 
-    nextTick(() => {
-        displayDivisionOptions();
-    });
+	nextTick(() => {
+		displayDivisionOptions();
+	});
 
-    if(uploadFile.value){
-        backupUploadFile.value = [...uploadFile.value];
-    }
+	if(uploadFile.value){
+		backupUploadFile.value = [...uploadFile.value];
+	}
 }
 
 // 수정 취소
 let cancelEdit = () => {
-    disabled.value = true;
-    currentEmp.value = { ...currentEmpOriginal };
-    currentEmpTags.value.emp_dvs = currentEmpOriginal.division;
-    currentEmpTags.value.emp_pst = currentEmpOriginal.position;
-    fileNames.value = [];
-    removeFileList.value = [];
-    uploadFile.value = [...backupUploadFile.value];
+	disabled.value = true;
+	currentEmp.value = { ...currentEmpOriginal };
+	currentEmpTags.value.emp_dvs = currentEmpOriginal.division;
+	currentEmpTags.value.emp_pst = currentEmpOriginal.position;
+	fileNames.value = [];
+	removeFileList.value = [];
+	uploadFile.value = [...backupUploadFile.value];
 }
 
 // 수정사항 저장
 let registerEmp = async(e) => {
-    e.preventDefault();
-    disabled.value = true;
+	e.preventDefault();
+	disabled.value = true;
 
-    let user_id_safe = makeSafe(currentEmp.value.user_id);
-    let needUpdate = false;
+	let user_id_safe = makeSafe(currentEmp.value.user_id);
+	let needUpdate = false;
 
-    // 부서, 직책 업데이트 (history/current)
-    if(currentEmpOriginal.division !== currentEmpTags.value.emp_dvs || currentEmpOriginal.position !== currentEmpTags.value.emp_pst) {
-        skapi.postRecord(null, {
-            table: {
-                name: 'emp_division',
-                access_group: 1
-            },
-            tags: ["[emp_pst]" + currentEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + currentEmpTags.value.emp_dvs]
-        }).then(r => {
-            // console.log('history 부서직책업데이트', r);
-        })
+	// 부서, 직책 업데이트 (history/current)
+	if(currentEmpOriginal.division !== currentEmpTags.value.emp_dvs || currentEmpOriginal.position !== currentEmpTags.value.emp_pst) {
+		skapi.postRecord(null, {
+			table: {
+				name: 'emp_division',
+				access_group: 1
+			},
+			tags: ["[emp_pst]" + currentEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + currentEmpTags.value.emp_dvs]
+		}).then(r => {
+			// console.log('history 부서직책업데이트', r);
+		})
 
-        await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
-            // console.log(r)
-        }).catch(err=>err);
+		await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
+			// console.log(r)
+		}).catch(err=>err);
 
-        await skapi.postRecord({
-            user_id: currentEmp.value.user_id,
-        }, {
-            unique_id: "[emp_position_current]" + user_id_safe,
-            table: {
-                name: 'emp_position_current',
-                access_group: 1
-            },
-            index: {
-                name: currentEmpTags.value.emp_dvs + '.' + currentEmpTags.value.emp_pst,
-                value: currentEmp.value.name
-            }
-        }).then(r => {
-            // console.log('current 부서직책업데이트', r);
-        })
-        
-        needUpdate = true;
-    }
+		await skapi.postRecord({
+			user_id: currentEmp.value.user_id,
+		}, {
+			unique_id: "[emp_position_current]" + user_id_safe,
+			table: {
+				name: 'emp_position_current',
+				access_group: 1
+			},
+			index: {
+				name: currentEmpTags.value.emp_dvs + '.' + currentEmpTags.value.emp_pst,
+				value: currentEmp.value.name
+			}
+		}).then(r => {
+			// console.log('current 부서직책업데이트', r);
+		})
+		
+		needUpdate = true;
+	}
 
-    // 권한 업데이트
-    if(currentEmpOriginal.access_group !== currentEmp.value.access_group) {
-        skapi.grantAccess({
-            user_id: currentEmp.value.user_id,
-            access_group: currentEmp.value.access_group
-        }).then(r => {
-            // console.log('권한업데이트' ,r)
-        })
-    }
+	// 권한 업데이트
+	if(currentEmpOriginal.access_group !== currentEmp.value.access_group) {
+		skapi.grantAccess({
+			user_id: currentEmp.value.user_id,
+			access_group: currentEmp.value.access_group
+		}).then(r => {
+			// console.log('권한업데이트' ,r)
+		})
+	}
 
-    // 추가자료 업데이트
-    let filebox = document.querySelector('input[name=additional_data]');
+	// 추가자료 업데이트
+	let filebox = document.querySelector('input[name=additional_data]');
 
-    if (filebox && filebox.files.length) {
-        for(let file of filebox.files) {
-            const formData = new FormData();
+	if (filebox && filebox.files.length) {
+		for(let file of filebox.files) {
+			const formData = new FormData();
 
-            formData.append('additional_data', file);
-            
-            await skapi.postRecord(formData, {
-                table: {
-                    name: 'emp_additional_data',
-                    access_group: 99
-                },
-                reference: "[emp_additional_data]" + makeSafe(currentEmp.value.user_id),
-            })
-        }
+			formData.append('additional_data', file);
+			
+			await skapi.postRecord(formData, {
+				table: {
+					name: 'emp_additional_data',
+					access_group: 99
+				},
+				reference: "[emp_additional_data]" + makeSafe(currentEmp.value.user_id),
+			})
+		}
 
-        if(uploadFile.value && uploadFile.value.length) {
-            backupUploadFile.value = [...uploadFile.value];
-        }
-    }
+		if(uploadFile.value && uploadFile.value.length) {
+			backupUploadFile.value = [...uploadFile.value];
+		}
+	}
 
-    if(removeFileList.value.length) {
-        await skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
-            uploadFile.value = uploadFile.value.filter(file => !removeFileList.value.includes(file.record_id));
-            
-            removeFileList.value = [];
-        });
-    }
+	if(removeFileList.value.length) {
+		await skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
+			uploadFile.value = uploadFile.value.filter(file => !removeFileList.value.includes(file.record_id));
+			
+			removeFileList.value = [];
+		});
+	}
 
-    currentEmp.value.division = currentEmpTags.value.emp_dvs;
-    currentEmp.value.position = currentEmpTags.value.emp_pst;
+	currentEmp.value.division = currentEmpTags.value.emp_dvs;
+	currentEmp.value.position = currentEmpTags.value.emp_pst;
 
-    employeeDict[currentEmp.value.user_id] = currentEmp.value;
+	employeeDict[currentEmp.value.user_id] = currentEmp.value;
 
-    getAdditionalData();
-    window.alert('직원 정보 수정이 완료되었습니다.');
+	getAdditionalData();
+	window.alert('직원 정보 수정이 완료되었습니다.');
 
-    disabled.value = true;
+	disabled.value = true;
 }
 
 onMounted(async () => {
-    window.scrollTo(0, 0);
+	window.scrollTo(0, 0);
 });
 </script>
 
 <style scoped lang="less">
 .wrap {
-    padding: 3rem 2.4rem 0;
+	padding: 3rem 2.4rem 0;
 }
 
 .title {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 1rem;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	gap: 1rem;
 
-    span {
-        color: var(--gray-color-400);
-        line-height: 1.4;
-    }
+	span {
+		color: var(--gray-color-400);
+		line-height: 1.4;
+	}
 }
 
 #_el_empDetail_form {
-    .btn-call {
-        
-    }
-    .input-wrap {
-        margin-top: 16px;
+	.imgbtn-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+	.input-wrap {
+		margin-top: 16px;
 
-        input {
-            border-color: var(--primary-color-400);
-            cursor: initial;
+		input {
+			border-color: var(--primary-color-400);
+			cursor: initial;
 
-            &:read-only {
-                border-color: var(--gray-color-200);
-                cursor: default;
+			&:read-only {
+				border-color: var(--gray-color-200);
+				cursor: default;
 
-                &:hover {
-                    border-color: var(--gray-color-200);
-                }
-            }
+				&:hover {
+					border-color: var(--gray-color-200);
+				}
+			}
 
-            &:hover {
-                border-color: var(--primary-color-400);
-            }
-        }
+			&:hover {
+				border-color: var(--primary-color-400);
+			}
+		}
 
-        select {
-            border-color: var(--primary-color-400);
-        }
+		select {
+			border-color: var(--primary-color-400);
+		}
+	}
 
-		// .btn-call {
-		// 	position: absolute;
-		// 	right: 0.55rem;
-		// 	bottom: 0.55rem;
-			
-		// 	svg {
-		// 		width: 1.2rem;
-		// 		height: 1.2rem;
-		// 		fill: var(--primary-color-400-dark);
-		// 	}
-		// }
-    }
+	.util-wrap {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		margin-top: 1rem;
+		padding: 1rem;
+		border-radius: 0.5rem;
 
-    .image {
-        position: relative;
-        display: inline-block;
+		.util-btn {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 0.5rem;
 
-        label {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            background-color: var(--primary-color-400);
-            border-radius: 50%;
-            cursor: pointer;
 
-            .icon {
-                padding: 4px;
-                width: 32px;
-                height: 32px;
-                position: relative;
+			.click-btn {
+				padding: 0.5rem;
+				border-radius: 50%;
+				background-color: var(--primary-color-400);
 
-                svg {
-                    width: 18px;
-                    height: 18px;
-                    transform: translate(-50%, -50%);
-                    top: 50%;
-                    left: 50%;
-                    position: absolute;
-                }
-            }
-        }
-    }
+				svg {
+					width: 1.2rem;
+					height: 1.2rem;
+					fill: #fff;
+				}
+			}
+			span {
+				font-size: 0.8rem;
+				color: var(--gray-color-400);
+			}
+		}
+	}
 
-    img {
-        width: 100px;
-        height: 100px;
-        border-radius: 30%;
-        display: block;
-        object-fit: contain;
-        position: relative;
-        background-color: var(--gray-color-100);
+	img {
+		width: 100px;
+		height: 100px;
+		border-radius: 30%;
+		display: block;
+		object-fit: contain;
+		position: relative;
+		background-color: var(--gray-color-100);
 
-        &::before {
-            content: "No Image";
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            background-color: var(--gray-color-100);
-            color: #888;
-            font-size: 14px;
-            text-align: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+		&::before {
+			content: "No Image";
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			height: 100%;
+			background-color: var(--gray-color-100);
+			color: #888;
+			font-size: 14px;
+			text-align: center;
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
 
-        &#profile-img {
-            border-radius: 50%;
+		&#profile-img {
+			border-radius: 50%;
 
-            &::before {
-                content: "No Image";
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                height: 100%;
-                background-color: var(--gray-color-100);
-                color: #888;
-                font-size: 14px;
-                text-align: center;
-                position: absolute;
-                top: 0;
-                left: 0;
-            }
-        }
-    }
-
-    .image-wrap {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        // justify-content: center;
-        gap: 1rem;
-
-        .seal {
-            img {
-                background-color: unset;
-                border: 2px dashed var(--gray-color-100);
-    
-                &::before {
-                    background-color: #fff;
-                }
-            }
-        }
-    }
+			&::before {
+				content: "No Image";
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 100%;
+				height: 100%;
+				background-color: var(--gray-color-100);
+				color: #888;
+				font-size: 14px;
+				text-align: center;
+				position: absolute;
+				top: 0;
+				left: 0;
+			}
+		}
+	}
 }
 
 .upload-file {
-    .file-item {
-        &.remove {
-            background-color: var(--warning-color-50);
-            border: 1px dashed var(--warning-color-400);
-            color: var(--warning-color-500);
-        }
-    }
+	.file-item {
+		&.remove {
+			background-color: var(--warning-color-50);
+			border: 1px dashed var(--warning-color-400);
+			color: var(--warning-color-500);
+		}
+	}
 }
 
 .btn-upload-file {
-    margin-top: 12px;
+	margin-top: 12px;
 }
 
 @media (max-width: 768px) {
-    .wrap {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
+	.wrap {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
 }
 </style>

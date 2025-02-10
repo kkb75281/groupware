@@ -267,7 +267,10 @@ let showRealtimeNoti = (e, rt) => {
 
 let logout = () => {
 	skapi.logout().then(() => {
-		Object.assign(user, {});
+		// Object.assign(user, {});
+		for (let key in user) {
+			delete user[key];
+		}
 		realtimes.value = [];
 		sessionStorage.removeItem('accessToken');
         router.push({ path: "/login" });

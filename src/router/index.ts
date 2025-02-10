@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-// import { loaded } from '@/main';
 import { user } from '@/user';
 
 import Login from '@/views/Login.vue';
@@ -159,7 +158,7 @@ const router = createRouter({
 				},
 				{
 					path: '/admin',
-					beforeEnter: async (to, from, next) => {
+					beforeEnter: (to, from, next) => {
 						if (user.access_group > 98) {
 							next();
 						} else {
