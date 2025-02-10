@@ -230,8 +230,14 @@ let resigterComp = (e) => {
         table: {
             name: 'divisions',
             access_group: 99
+        },
+        index: {
+            name: 'divisionName',
+            // value: ext.data.division_name,
+            value: ext.data.division_name.replace(/\//g, '_')
         }
     }).then((r) => {
+        console.log('=== resigterComp === r : ', r);
         // let sessionDivisions = window.sessionStorage.getItem('divisions'); // 세션 스토리지 쓸 이유가 없음.
 
         // if(sessionDivisions == 'no data' || !JSON.parse(sessionDivisions)) {
