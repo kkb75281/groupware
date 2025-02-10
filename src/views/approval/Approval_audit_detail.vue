@@ -123,7 +123,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.icon(style="padding: 0")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-			button.btn.bg-gray.btn-cancel(type="button" @click="senderUser.user_id === user.user_id ? $router.push('/approval/request-list') : $router.push('/approval/audit-list')") 이전
+			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
 #modal.modal.modal-approve(v-if="isModalOpen")
@@ -287,6 +287,21 @@ const closeModal = () => {
 	isModalOpen.value = false;
 	isStampModalOpen.value = false;
 	// disabled.value = true;
+};
+
+const goToPrev = () => {
+		// 결재 발신함
+	if (senderUser.value.user_id === user.user_id) {
+		router.push('/approval/request-list');
+
+		// 수신참조
+	} else if (route.path.includes('audit-detail-reference')) {
+		router.push('/approval/audit-reference');
+
+		// 결재 수신함
+	} else {
+		router.push('/approval/audit-list');
+	}
 };
 
 function formatTimestampToDate(timestamp:number) {
