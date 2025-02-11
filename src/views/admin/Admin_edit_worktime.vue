@@ -69,9 +69,6 @@ hr
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
-
-            
-
 //- Modal
 #modal.modal(v-if="isModalOpen" @click="closeModal")
     .modal-cont(@click.stop)
