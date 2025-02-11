@@ -80,16 +80,9 @@ import { useRoute, useRouter } from "vue-router";
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import type { Ref } from 'vue';
 import { skapi } from "@/main";
-import {
-    loading,
-    divisions,
-    divisionNameList,
-    getDivisionData,
-    getDivisionDataRunning,
-    getDivisionNamesRunning,
-} from "@/division";
+import { loading, divisions, divisionNameList, getDivisionData } from "@/division";
 import { user, makeSafe } from '@/user';
-import { getEmpDivisionPosition, empInfo, employeeDict, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
+import { extractTimeFromDateTime } from "@/utils/time";
 
 import Loading from "@/components/loading.vue";
 
@@ -164,6 +157,8 @@ const getEmpList = async () => {
             },
         });
 
+        // console.log('=== getEmpList === workTime : ', workTime);
+
         // 기준 근무시간(인사팀 근무시간) 가져오기
         const getTimestampFromTimeString = (timeString) => {
             // console.log('=== getTimestampFromTimeString === timeString : ', timeString); // 인사팀 출근시간
@@ -182,8 +177,7 @@ const getEmpList = async () => {
         }
 
         const getBasicStartTime = workTime.list.find(wt => (wt.data?.division_name === '인사팀'))?.data.division_startTime.min; // 인사팀 출근시간
-
-        console.log('=== getEmpList === getBasicStartTime : ', getBasicStartTime);
+        // console.log('=== getEmpList === getBasicStartTime : ', getBasicStartTime);
 
         const empPromises = empList.list.map(async (emp) => {
             const user_id_safe = makeSafe(emp.user_id);
