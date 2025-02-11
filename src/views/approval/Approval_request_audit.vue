@@ -331,10 +331,14 @@ const previewAudit = () => {
       const span = document.createElement('span');
       span.className = 'print-value';
       span.textContent = value;
-	  span.style.display = "none";
 
       // input 바로 뒤에 span 삽입
       input.parentNode.insertBefore(span, input.nextSibling);
+
+			if (span.previousElementSibling?.classList.contains('print-value') || 
+          span.previousElementSibling?.id === 'inp_content') {
+        span.style.display = "none";
+      }
 
       // input을 숨김
       input.style.display = "none";
@@ -778,10 +782,10 @@ onUnmounted(() => {
 	}
 
 	#printArea {
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
 	}
 
 	body {
@@ -838,15 +842,37 @@ onUnmounted(() => {
 		:deep(.wysiwyg) {
 			// 에디터 내용 컨테이너
 			._wysiwyg4all {
-			visibility: visible !important;
-			padding: 0 !important;
-		}
+				visibility: visible !important;
+				padding: 0 !important;
+			}
 
-		.btn-wrap {
-			display: none !important;
-		}
+			.btn-wrap {
+				display: none !important;
+			}
     }
   }
+
+	#main,
+	.wrap {
+		padding: 0 !important;
+	}
+
+	.wrap {
+		+ .title {
+			display: none !important;
+		}
+	}
+
+	hr {
+		display: none !important;
+	}
+
+	.form-wrap {
+		position: absolute !important;
+		top: 5% !important;
+		left: 0 !important;
+		width: 100% !important;
+	}
 }
 
 .form-wrap {
