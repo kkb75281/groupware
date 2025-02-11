@@ -1,5 +1,5 @@
 <template lang="pug">
-h1.title {{ currentPage === 'audit-list' ? '결재 수신함' : '수신참조' }}
+h1.title 결재 수신함
 
 hr
 
@@ -25,8 +25,7 @@ hr
 				//- col(style="width: 2.4rem")
 				col(style="width: 3rem")
 				col
-				template(v-if="currentPage === 'audit-list'")
-					col(style="width: 12%")
+				col(style="width: 12%")
 				col(style="width: 12%")
 				col(style="width: 12%")
 				col(style="width: 10%")
@@ -38,8 +37,7 @@ hr
 					//-         span.label-checkbox
 					th(scope="col") NO
 					th.left(scope="col") 결재 사안
-					template(v-if="currentPage === 'audit-list'")
-						th(scope="col") 나의 현황
+					th(scope="col") 나의 현황
 					th(scope="col") 결재 현황
 					th(scope="col") 합의 현황
 					th(scope="col") 기안자
@@ -49,20 +47,19 @@ hr
 					tr.loading
 						td(colspan="6")
 							Loading#loading
-				template(v-else-if="!filterAuditList || !filterAuditList.length")
+				template(v-else-if="!auditList || !auditList.length")
 					tr.nohover
-						td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : '수신참조 목록이 없습니다.' }}
+						td(colspan="6") 결재 목록이 없습니다.
 				template(v-else)
-					tr(v-for="(audit, index) of filterAuditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;")
+					tr(v-for="(audit, index) of auditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;")
 						//- td 
 						//-     label.checkbox
 						//-         input(type="checkbox" name="checkbox")
 						//-         span.label-checkbox
 						td {{ index + 1 }}
 						td.left {{ audit.data.to_audit }}
-						template(v-if="currentPage === 'audit-list'")
-							td
-								span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함' }") {{ audit.my_state }}
+						td
+							span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함' }") {{ audit.my_state }}
 						td
 							span.audit-state(:class="{ approve: audit.referenced_count === JSON.parse(audit.data.auditors).approvers.length }") {{ audit.referenced_count === JSON.parse(audit.data.auditors).approvers.length ? '완료됨' : audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).approvers.length }}
 						td
@@ -73,7 +70,7 @@ hr
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, computed } from 'vue';
+import { onMounted } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { auditList, auditListRunning, getAuditList, goToAuditDetail } from '@/audit';
@@ -84,34 +81,9 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
-// 현재 페이지가 결재 수신함인지 수신참조인지 구분
-const currentPage = computed(() => {
-  	return route.path.includes('audit-list') ? 'audit-list' : 'reference';
-});
-
-const filterAuditList = computed(() => {
-	if (!auditList.value) return [];
-
-	console.log('=== filterAuditList === auditList.value : ', auditList.value);
-	
-	return auditList.value.filter(audit => {
-		const auditors = JSON.parse(audit.data.auditors);
-		console.log('=== filterAuditList === auditors : ', auditors);
-
-		if (currentPage.value === 'audit-list') {
-		// 결재 수신함: approvers나 agreers에 포함된 문서
-		return auditors.approvers?.includes(user.user_id.replaceAll('-', '_')) || 
-				auditors.agreers?.includes(user.user_id.replaceAll('-', '_'));
-		} else {
-		// 수신참조함: receivers에 포함된 문서
-		return auditors.receivers?.includes(user.user_id.replaceAll('-', '_'));
-		}
-	});
-});
-
-const showAuditDoc = (e:Event, audit: any) => {
-	const searchCurrentAuditNoti = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id)[0];
-	const checkCurrentAuditNotiRead = Object.keys(readList.value).includes(searchCurrentAuditNoti.noti_id);
+let showAuditDoc = (e:Event, audit: any) => {
+	let searchCurrentAuditNoti = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id)[0];
+	let checkCurrentAuditNotiRead = Object.keys(readList.value).includes(searchCurrentAuditNoti.noti_id);
 	
 	if(!checkCurrentAuditNotiRead) {
 		readNoti(searchCurrentAuditNoti);
@@ -122,8 +94,6 @@ const showAuditDoc = (e:Event, audit: any) => {
 
 onMounted(async () => {
     await getAuditList();
-
-	// console.log({filterAuditList: filterAuditList.value});
 });
 </script>
 
