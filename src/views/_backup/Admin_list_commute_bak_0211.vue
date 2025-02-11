@@ -183,8 +183,6 @@ const getEmpList = async () => {
 
         const getBasicStartTime = workTime.list.find(wt => (wt.data?.division_name === '인사팀'))?.data.division_startTime.min; // 인사팀 출근시간
 
-        console.log('=== getEmpList === getBasicStartTime : ', getBasicStartTime);
-
         const empPromises = empList.list.map(async (emp) => {
             const user_id_safe = makeSafe(emp.user_id);
 
@@ -288,7 +286,7 @@ const getEmpList = async () => {
         return newEmpList
     } finally {
         loading.value = false;
-    };
+    }
 };
 
 // 시간 문자열을 타임스탬프로 변환하는 유틸리티 함수
@@ -297,9 +295,25 @@ function getTimestampFromTimeString(timeString) {
     const [hours, minutes, seconds] = timeString.split(':').map(Number);
     today.setHours(hours, minutes, seconds, 0);
     return today.getTime();
-};
+}
 
-const displayDivisionOptions = (selectName: string) => {
+async function arrangeEmpDivisionPosition(li) {
+    let list = await Promise.all(li.map((l: any) => {
+        if(l) {
+            return getEmpDivisionPosition(l).catch(err => err)
+        }
+        return null;
+    }));
+    let toReturn = [];
+    list.forEach((l: any) => {
+        if (l) {
+            toReturn.push(l);
+        }
+    });
+    return toReturn;
+}
+
+let displayDivisionOptions = (selectName: string) => {
     let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
 
     // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
@@ -347,17 +361,17 @@ const displayDivisionOptions = (selectName: string) => {
 
     // 선택박스 활성화
     divisionList.disabled = false;
-};
+}
 
 // 직원 검색
-const searchEmp = async(refresh) => {
+async function searchEmp(refresh) {
     loading.value = true;
     
     try {
         const empList = await getEmpList();  // getEmpList는 이미 부서정보와 출퇴근 기록을 모두 가져옴
         
-        // 검색어가 없거나 전체 선택시 모든 직원 표시
         if (!searchValue.value || (searchFor.value === 'division' && searchValue.value === '전체')) {
+            // 검색어가 없거나 전체 선택시 모든 직원 표시
             employee.value = empList;
             return;
         }
@@ -386,7 +400,56 @@ const searchEmp = async(refresh) => {
     } finally {
         loading.value = false;
     }
-};
+}
+
+// async function searchEmp(refresh) {
+//     loading.value = true;
+    
+//     if (!searchValue.value) {
+//         searchFor.value = 'name';
+//         searchValue.value = '';
+//         callParams.value.searchFor = 'approved';
+//         callParams.value.value = 'by_skapi:approved';
+//         callParams.value.condition = '>=';
+//     }
+
+//     if (searchFor.value === 'division' && searchValue.value !== '전체') {
+//         employee.value = [];
+
+//         try{
+//             const res = await skapi.getRecords({
+//                 table: {
+//                     name: 'emp_position_current',
+//                     access_group: 1
+//                 },
+//                 index: {
+//                     name: searchPositionValue.value ? searchValue.value + '.' + searchPositionValue.value : searchValue.value + '.',
+//                     value: ' ',
+//                     condition: '>'
+//                 }
+//             });
+
+//             // user_id만 추출
+//             let gu = [];
+
+//             res.list.forEach(rec => gu.push(rec.data.user_id));
+
+//             const result = [...new Set(gu)]; // 중복 제거
+
+//             employee.value = await getUsers({
+//                 searchFor: 'user_id',
+//                 value: result // 절대값 검색(user_id)는 어레이 가능
+//             }, refresh).then(li => arrangeEmpDivisionPosition(li));
+
+//         } finally {
+//             loading.value = false;
+//         }
+//     }
+//     else {
+//         // division이 아닌 다른 검색 조건일 경우 처리
+//         employee.value = await getUsers(callParams.value, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(() => loading.value=false);
+//     }
+// }
 
 // 새로고침
 const refresh = async() => {
@@ -399,6 +462,12 @@ const refresh = async() => {
     const res = await getEmpList();
     employee.value = res;
 };
+
+// const getDivisionName = computed(() => {
+//     return (divisionId) => {
+//         return divisionNameList.value?.[divisionId] || '-';
+//     }
+// });
 
 // 각 직원 출퇴근 기록 상세 페이지로 이동
 const goToEmpCommute = (userId) => {
