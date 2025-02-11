@@ -128,13 +128,18 @@ Loading#loading(v-if="getAuditDetailRunning")
 //- 결재 모달
 #modal.modal.modal-approve(v-if="isModalOpen")
 	.modal-cont(@click.stop)
-		.modal-header(style="border:0;padding:0")
-			h2.modal-title 결재
+		.modal-header(style="margin: 0")
+			h2.modal-title(v-if="approvalStep === 1") 결재
+			h2.modal-title(v-if="approvalStep === 2") 서명하기
 			button.btn-close(@click="closeModal")
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 		.modal-body
-			.table-wrap
+			template(v-if="approvalStep === 1")
+				.input-wrap(style="margin: 0")
+					p.label 결재의견
+					textarea(name="comment" rows="5" placeholder="결재의견을 추가하고 싶다면 입력해주세요." v-model="approvedComment" style="width: 100%;resize: none;")
+			//- .table-wrap(v-if="approvalStep === 1")
 				.tb-overflow
 					table.table
 						colgroup
@@ -165,12 +170,52 @@ Loading#loading(v-if="getAuditDetailRunning")
 									.input-wrap(style="margin: 0")
 										textarea(name="comment" rows="5" placeholder="결재의견을 입력해주세요." v-model="approvedComment" style="width: 100%;resize: none;")
 
-		.modal-footer(style="border:0;padding:0")
-			button.btn.bg-gray.btn-edit(type="button" @click="isModalOpen=false") 취소
-			button.btn.btn-edit(type="submit" @click="approvalState") 확인
+			template(v-if="approvalStep === 2")
+				.tab-menu
+					ul(:class="{ 'stamp': stempType === 'stamp', 'sign': stempType === 'sign' }")
+						li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 도장/서명 선택
+						li(:class="{ 'active': stempType === 'sign' }" @click="stempType = 'sign'; openStampModal = true; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 직접 서명
+				br
+				.tab-cont
+					template(v-if="stempType === 'stamp'")
+						.my-stamp-wrap
+							template(v-if="gettingStampList")
+								Loading#loading
+							template(v-else)
+								.stamp-wrap(v-if="myStamps.length")
+									.stamp-grid(v-for="stamp in myStamps" :key="stamp.url" @click="selectStamp(stamp.url)")
+										//- label.checkbox
+											input(type="checkbox" name="checkbox")
+											span.label-checkbox
+										.stamp(:class="{'selected' : selectedStamp === stamp.url}")
+											img#stamp-img(:src="stamp.url" alt="도장 이미지")
+								.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
+									img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
+								.no-stamp(v-else style="text-align: center;border: 1px solid var(--gray-color-100);padding: 3rem 1rem;border-radius: 8px;color: var(--gray-color-400); font-size:0.9rem") 
+									template(v-if="makeStampRunning")
+										Loading#loading
+									template(v-else)
+										span 현재 등록된 도장이 없습니다.
+										br
+										br
+										button.btn.outline(type="button" @click="createStamp" :disabled="previewStamp" style="margin:0 auto") 도장 생성
+						canvas#stampCanvas(width="100" height="100" style="display: none;")
+						//- input(type="radio" name="approved" value="approve" :checked="approveAudit" style="display: none;")
+						//- input(type="radio" name="approved" value="reject" :checked="!approveAudit" style="display: none;")
+					template(v-if="stempType === 'sign'")
+						MakeStamp(v-if="openStampModal" :onlySign="true" @upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
+						.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
+							img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
+		.modal-footer(style="margin: 0")
+			template(v-if="approvalStep === 1")
+				button.btn.warning.btn-edit(type="button" @click="rejectAudit") 반려하기
+				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++") 승인하기
+			template(v-if="approvalStep === 2")
+				button.btn.bg-gray.btn-edit(type="button" @click="approvalStep--") 이전
+				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재 승인
 
 //- 도장 입력 모달
-#modal.modal.modal-stamp(v-if="isStampModalOpen")
+//- #modal.modal.modal-stamp(v-if="isStampModalOpen")
 	form.modal-cont(@click.stop @submit.prevent="postApproval")
 		.modal-header
 			h2.modal-title 도장/서명 선택하기
@@ -179,34 +224,37 @@ Loading#loading(v-if="getAuditDetailRunning")
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 		
 		.modal-body
-			p(v-if="myStamps.length || previewStamp") 도장을 선택해주세요.
-			p(v-else) 현재 등록된 도장이 없습니다. 새로운 도장을 생성해주세요.
+			template(v-if="stempStep === 1")
+				button.btn(type="button") 도장 찍기
+				button.btn(type="button") 서명 하기
+			//- p(v-if="myStamps.length || previewStamp") 도장을 선택해주세요.
+			//- p(v-else) 현재 등록된 도장이 없습니다. 새로운 도장을 생성해주세요.
 
-			.my-stamp-wrap
-				template(v-if="gettingStampList")
-					Loading#loading
-				template(v-else)
-					.stamp-wrap(v-if="myStamps.length")
-						.stamp-grid(v-for="stamp in myStamps" :key="stamp.url" @click="selectStamp(stamp.url)")
-							//- label.checkbox
-								input(type="checkbox" name="checkbox")
-								span.label-checkbox
-							.stamp(:class="{'selected' : selectedStamp === stamp.url}")
-								img#stamp-img(:src="stamp.url" alt="도장 이미지")
-					.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
-						img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
-					.no-stamp(v-else style="text-align: center;border: 1px solid var(--gray-color-100);padding: 3rem 1rem;border-radius: 8px;color: var(--gray-color-400); font-size:0.9rem") 
-						//- span 현재 등록된 도장이 없습니다.
-						button.btn.outline(type="button" v-if="!myStamps.length && !previewStamp" @click="createStamp" :disabled="previewStamp" style="margin:0 auto") 도장 생성
-						//- button.btn 기본 도장 생성하기
+			//- .my-stamp-wrap
+			//- 	template(v-if="gettingStampList")
+			//- 		Loading#loading
+			//- 	template(v-else)
+			//- 		.stamp-wrap(v-if="myStamps.length")
+			//- 			.stamp-grid(v-for="stamp in myStamps" :key="stamp.url" @click="selectStamp(stamp.url)")
+			//- 				//- label.checkbox
+			//- 					input(type="checkbox" name="checkbox")
+			//- 					span.label-checkbox
+			//- 				.stamp(:class="{'selected' : selectedStamp === stamp.url}")
+			//- 					img#stamp-img(:src="stamp.url" alt="도장 이미지")
+			//- 		.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
+			//- 			img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
+			//- 		.no-stamp(v-else style="text-align: center;border: 1px solid var(--gray-color-100);padding: 3rem 1rem;border-radius: 8px;color: var(--gray-color-400); font-size:0.9rem") 
+			//- 			//- span 현재 등록된 도장이 없습니다.
+			//- 			button.btn.outline(type="button" v-if="!myStamps.length && !previewStamp" @click="createStamp" :disabled="previewStamp" style="margin:0 auto") 도장 생성
+			//- 			//- button.btn 기본 도장 생성하기
 
-			canvas#stampCanvas(width="100" height="100" style="display: none;")
-			input(type="radio" name="approved" value="approve" :checked="approveAudit" style="display: none;")
-			input(type="radio" name="approved" value="reject" :checked="!approveAudit" style="display: none;")
+			//- canvas#stampCanvas(width="100" height="100" style="display: none;")
+			//- input(type="radio" name="approved" value="approve" :checked="approveAudit" style="display: none;")
+			//- input(type="radio" name="approved" value="reject" :checked="!approveAudit" style="display: none;")
 			
-			br
+			//- br
 
-			//- .upload-stamp-btn(style="display: flex;align-items: center;justify-content: center;gap: 1rem;")
+			//- //- .upload-stamp-btn(style="display: flex;align-items: center;justify-content: center;gap: 1rem;")
 
 		.modal-footer(style="border:0;padding-top:10px;margin:0")
 			button.btn.bg-gray.btn-edit(type="button" @click="isStampModalOpen=false") 취소
@@ -222,8 +270,10 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
+import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc, onlyStampFile } from '@/components/make_stamp';
 
 import Loading from '@/components/Loading.vue';
+import MakeStamp from '@/components/make_stamp.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -241,14 +291,16 @@ const isStampModalOpen = ref(false);
 const senderUser = ref({});
 const uploadedFile = ref([]);
 const previewStamp = ref(null);
-const approveAudit = ref(true);
+const approveAudit = ref(false);
 const approvedComment = ref('');
+const approvalStep = ref(1);
+const stempType = ref('stamp');
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
-    approvers: [],  // 결재
-    agreers: [],    // 합의
-    receivers: []   // 수신참조
+	approvers: [],  // 결재
+	agreers: [],    // 합의
+	receivers: []   // 수신참조
 });
 
 watch(() => (route.params.auditId as string), async(nv, ov) => {
@@ -314,128 +366,179 @@ function formatTimestampToDate(timestamp:number) {
   return `${year}-${month}-${day}`; // 형식화된 문자열 반환
 }
 
-let approvalState = async () => {
-	const selectedValue = document.querySelector('input[name="approved"]:checked')?.value;
-
-	console.log('=== approvalState === selectedValue : ', selectedValue);
-
-	if(selectedValue === 'approve') {
-		isModalOpen.value = false;
-		isStampModalOpen.value = true;
-		// getStampList();
-	} else if(selectedValue === 'reject') {
-		console.log('=== approvalState === 반려');
-		postApproval();
-	}
+let rejectAudit = () => {
+	isModalOpen.value = false;
+	approveAudit.value = false;
+	postApproval();
 }
 
+// let approvalState = async () => {
+// 	const selectedValue = document.querySelector('input[name="approved"]:checked')?.value;
+
+// 	console.log('=== approvalState === selectedValue : ', selectedValue);
+
+// 	if(selectedValue === 'approve') {
+// 		// isModalOpen.value = false;
+// 		// isStampModalOpen.value = true;
+// 		// // getStampList();
+// 		approvalStep.value++;
+// 	} else if(selectedValue === 'reject') {
+// 		console.log('=== approvalState === 반려');
+// 		postApproval();
+// 	}
+// }
+
 let gettingStampList = ref(false);
+let makeStampRunning = ref(false);
 let myStamps = ref([]);
 let myStampsRecordId = ref(null);
 let selectedStamp = ref(null);
+let selectedStampComplete = ref(false);
 
 let getStampList = async () => {
-    gettingStampList.value = true;
+	gettingStampList.value = true;
 
-    try {
-        let res = await skapi.getRecords({
-            unique_id: '[stamp_images]' + makeSafe(user.user_id),
-            table: {
-                name: 'stamp_images',
-                access_group: 1,
-            }
-        });
-        console.log('=== getStampList === res : ', res);
-
-        if(res.list.length) {
-            myStamps.value = res.list[0]?.bin?.stamp_data || [];
-            myStampsRecordId.value = res.list[0].record_id;
-            gettingStampList.value = false;
-        }
-    } catch(e) {
-        console.log('=== getStampList === err : ', {e});
-
-        if(e.code === "NOT_EXISTS") {
-            myStamps.value = [];
-            myStampsRecordId.value = null;
-        } else {
-            alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
-        }
-
-        gettingStampList.value = false;
-    }
-}
-// getStampList();
-
-// 결재를 완료하지 않은 결재자만 getStampList 실행
-
-
-let createStamp = () => {
-// 캔버스와 컨텍스트 가져오기
-	const canvas = document.getElementById('stampCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // 도장 생성 함수
-    function drawStamp(name:string) {
-      const radius = 30; // 원의 반지름
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-
-      // 캔버스 초기화
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // 원 그리기
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      ctx.closePath();
-
-      // 이름 텍스트 그리기
-      ctx.font = 'bold 18px Arial';
-      ctx.fillStyle = 'red';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-    //   ctx.fillText(name, centerX, centerY);
-      const textOffsetY = radius * 0.05; // 텍스트를 약간 위로 올림
-      ctx.fillText(name, centerX, centerY + textOffsetY);
-    }
-
-    // 초기 도장 생성
-    drawStamp(user.name);
-
-	// 캔버스에서 Blob 생성 후 서버로 업로드
-	canvas.toBlob(async(blob) => {
-		let stamp_postParams = {
+	try {
+		let res = await skapi.getRecords({
+			unique_id: '[stamp_images]' + makeSafe(user.user_id),
 			table: {
 				name: 'stamp_images',
 				access_group: 1,
 			}
-		}
+		});
+		console.log('=== getStampList === res : ', res);
 
-		if(myStampsRecordId.value) {
-			stamp_postParams.record_id = myStampsRecordId.value;
+		if(res.list.length) {
+			myStamps.value = res.list[0]?.bin?.stamp_data || [];
+			myStampsRecordId.value = res.list[0].record_id;
+			gettingStampList.value = false;
+		}
+	} catch(e) {
+		console.log('=== getStampList === err : ', {e});
+
+		if(e.code === "NOT_EXISTS") {
+			myStamps.value = [];
+			myStampsRecordId.value = null;
 		} else {
-			stamp_postParams.unique_id = '[stamp_images]' + makeSafe(user.user_id);
+			alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
 		}
 
-		let stampImageData = new FormData();
-		const file = new File([blob], "generated-image.png", { type: "image/png" });
-		stampImageData.append("stamp_data", file);
+		gettingStampList.value = false;
+	}
+}
+// getStampList();
+
+let uploadCreatedStamp = async(file) => {
+	let stamp_postParams = {
+		table: {
+			name: 'stamp_images',
+			access_group: 1,
+		}
+	}
+
+	if(myStampsRecordId.value) {
+		stamp_postParams.record_id = myStampsRecordId.value;
+	} else {
+		stamp_postParams.unique_id = '[stamp_images]' + makeSafe(user.user_id);
+	}
+
+	let stampImageData = new FormData();
+	stampImageData.append("stamp_data", file);
+	console.log({stampImageData});
+
+	return await skapi.postRecord(stampImageData, stamp_postParams);
+}
+
+let uploadStampImage = async(imageUrl) => {
+	makeStampRunning.value = true;
+
+	console.log({imageUrl})
+
+	await handleStampBlob(imageUrl);
+
+	if(!onlyStampFile.value) return;
+
+	try {
+		let uploadGeneratedStamp = await uploadCreatedStamp(onlyStampFile.value);
+		console.log({uploadGeneratedStamp});
+		if(uploadGeneratedStamp?.bin?.stamp_data?.length) {
+			previewStamp.value = uploadGeneratedStamp.bin.stamp_data[0].url;
+		} else {
+			getStampList();
+		}
+		selectedStampComplete.value = true;
+	} catch(e) {
+		selectedStampComplete.value = false;
+		alert('도장 등록 중 오류가 발생했습니다.');
+		throw e;
+	} finally {
+		makeStampRunning.value = false;
+	}
+}
+
+let createStamp = () => {
+	makeStampRunning.value = true;
+
+	// 캔버스와 컨텍스트 가져오기
+	const canvas = document.getElementById('stampCanvas');
+	const ctx = canvas.getContext('2d');
+
+	// 도장 생성 함수
+	function drawStamp(name:string) {
+	  const radius = 30; // 원의 반지름
+	  const centerX = canvas.width / 2;
+	  const centerY = canvas.height / 2;
+
+	  // 캔버스 초기화
+	  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+	  // 원 그리기
+	  ctx.beginPath();
+	  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+	  ctx.strokeStyle = 'red';
+	  ctx.lineWidth = 3;
+	  ctx.stroke();
+	  ctx.closePath();
+
+	  // 이름 텍스트 그리기
+	  ctx.font = 'bold 18px Arial';
+	  ctx.fillStyle = 'red';
+	  ctx.textAlign = 'center';
+	  ctx.textBaseline = 'middle';
+	//   ctx.fillText(name, centerX, centerY);
+	  const textOffsetY = radius * 0.05; // 텍스트를 약간 위로 올림
+	  ctx.fillText(name, centerX, centerY + textOffsetY);
+	}
+
+	// 초기 도장 생성
+	drawStamp(user.name);
+
+	// 캔버스에서 Blob 생성 후 서버로 업로드
+	canvas.toBlob(async(blob) => {
+		let file = new File([blob], "generated-stamp.png", { type: "image/png" });
 
 		try {
-			let uploadGeneratedStamp = await skapi.postRecord(stampImageData, stamp_postParams);
-			previewStamp.value = uploadGeneratedStamp.bin.stamp_data[0].url;
+			let uploadGeneratedStamp = await uploadCreatedStamp(file);
+			console.log({uploadGeneratedStamp});
+			if(uploadGeneratedStamp?.bin?.stamp_data?.length) {
+				previewStamp.value = uploadGeneratedStamp.bin.stamp_data[0].url;
+			} else {
+				getStampList();
+			}
+			selectedStampComplete.value = true;
 		} catch(e) {
+			selectedStampComplete.value = false;
 			alert('도장 등록 중 오류가 발생했습니다.');
 			throw e;
+		} finally {
+			makeStampRunning.value = false;
 		}
 	}, "image/png");
 }
 
 let selectStamp = (url) => {
 	selectedStamp.value = url;
+	selectedStampComplete.value = true;
 	// console.log('stampId:', stampId);
 	// previewStamp.value = null;
 	// isStampModalOpen.value = false;
@@ -614,19 +717,20 @@ const getAuditDetail = async () => {
 }
 
 // 결재 하기
-const postApproval = async (e?: SubmitEvent) => {
+const postApproval = async () => {
 	if (isPosting) return; // 중복 호출 방지
 	isPosting = true;
 
-	if (e) {
-        e.preventDefault();
-    }
+	// if (e) {
+	// 	e.preventDefault();
+	// }
   
 	try {
 		if (!auditId.value) return;
 
 		const userId = user.user_id;
-		const approved = (document.querySelector('input[name="approved"]:checked') as HTMLInputElement)?.value;
+		// const approved = (document.querySelector('input[name="approved"]:checked') as HTMLInputElement)?.value;
+		const approved = approveAudit.value ? 'approve' : 'reject';
 
 		console.log('=== postApproval === approved : ', approved);
 
@@ -710,18 +814,18 @@ const updateScreenSize = () => {
 
 const loadStylesheet = () => {
   return new Promise((resolve) => {
-    if (document.getElementById('wysiwyg4all-style')) {
-      resolve();
-      return;
-    }
+	if (document.getElementById('wysiwyg4all-style')) {
+	  resolve();
+	  return;
+	}
 
-    const link = document.createElement('link');
-    link.id = 'wysiwyg4all-style';
-    link.rel = 'stylesheet';
-    link.href = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/wysiwyg4all.css';
-    
-    link.onload = () => resolve();
-    document.head.appendChild(link);
+	const link = document.createElement('link');
+	link.id = 'wysiwyg4all-style';
+	link.rel = 'stylesheet';
+	link.href = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/wysiwyg4all.css';
+	
+	link.onload = () => resolve();
+	document.head.appendChild(link);
   });
 };
 
@@ -731,66 +835,66 @@ const previewAudit = () => {
 
   // 프린트 전에 input 값들을 span으로 변환
   const prepareForPrint = () => {
-    cleanupAfterPrint(); // 기존에 추가된 span 제거
+	cleanupAfterPrint(); // 기존에 추가된 span 제거
 
-    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
-    inputs.forEach(input => {
-      const value = input.value;
+	const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+	inputs.forEach(input => {
+	  const value = input.value;
 
-      // 입력값을 표시할 span 생성
-      const span = document.createElement('span');
-      span.className = 'print-value';
-      span.textContent = value;
+	  // 입력값을 표시할 span 생성
+	  const span = document.createElement('span');
+	  span.className = 'print-value';
+	  span.textContent = value;
 
-      // input 바로 뒤에 span 삽입
-      input.parentNode.insertBefore(span, input.nextSibling);
+	  // input 바로 뒤에 span 삽입
+	  input.parentNode.insertBefore(span, input.nextSibling);
 
-      // input을 숨김
-      input.style.display = "none";
-    });
+	  // input을 숨김
+	  input.style.display = "none";
+	});
   };
 
   // 프린트 후 추가했던 span 제거 및 input 복원
   const cleanupAfterPrint = () => {
-    const printValues = printArea.querySelectorAll('.print-value');
-    printValues.forEach(span => span.remove());
+	const printValues = printArea.querySelectorAll('.print-value');
+	printValues.forEach(span => span.remove());
 
-    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
-    inputs.forEach(input => {
-      input.style.display = "";
-    });
+	const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+	inputs.forEach(input => {
+	  input.style.display = "";
+	});
   };
 
   // 동적으로 스타일 추가
   const addPrintStyle = () => {
-    const style = document.createElement("style");
-    style.id = "print-style";
-    style.textContent = `
-      @media print {
-        body * { visibility: hidden !important; }
-        #printArea, #printArea * { visibility: visible !important; }
-        #printArea { position: absolute; left: 0; top: 0; width: 100%; }
-      }
-    `;
-    document.head.appendChild(style);
+	const style = document.createElement("style");
+	style.id = "print-style";
+	style.textContent = `
+	  @media print {
+		body * { visibility: hidden !important; }
+		#printArea, #printArea * { visibility: visible !important; }
+		#printArea { position: absolute; left: 0; top: 0; width: 100%; }
+	  }
+	`;
+	document.head.appendChild(style);
   };
 
   // 스타일 제거
   const removePrintStyle = () => {
-    const style = document.getElementById("print-style");
-    if (style) {
-      style.remove();
-    }
+	const style = document.getElementById("print-style");
+	if (style) {
+	  style.remove();
+	}
   };
 
   window.onbeforeprint = function () {
-    prepareForPrint();
-    addPrintStyle();
+	prepareForPrint();
+	addPrintStyle();
   };
 
   window.onafterprint = function () {
-    cleanupAfterPrint();
-    removePrintStyle();
+	cleanupAfterPrint();
+	removePrintStyle();
   };
 
   window.print();
@@ -820,7 +924,7 @@ onUnmounted(() => {
 
 .form-wrap {
 	position: relative;
-    max-width: 900px;
+	max-width: 900px;
 
 	.title {
 		position: relative;
@@ -843,13 +947,13 @@ onUnmounted(() => {
 }
 
 .table {
-    tr {
-        td {
-            padding: 0.75rem;
-        }
-    }
+	tr {
+		td {
+			padding: 0.75rem;
+		}
+	}
 
-    tbody {
+	tbody {
 		th {
 			position: relative;
 
@@ -879,87 +983,87 @@ onUnmounted(() => {
 				}
 			}
 		}
-        tr {
-            &:hover {
-                background-color: transparent;
-            }
+		tr {
+			&:hover {
+				background-color: transparent;
+			}
 
-            &:first-of-type {
-                border-top: 1px solid var(--gray-color-300);
-            }
-        }
-    }
+			&:first-of-type {
+				border-top: 1px solid var(--gray-color-300);
+			}
+		}
+	}
 }
 
 .approver-wrap {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    text-align: center;
-    height: 100%;
+	display: grid;
+	grid-template-columns: repeat(8, 1fr);
+	text-align: center;
+	height: 100%;
 
-    .approver-list {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
+	.approver-list {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
 		min-width: 100px;
-        min-height: 8rem;
-        border-right: 1px solid var(--gray-color-300);
-        border-bottom: 1px solid var(--gray-color-300);
-        margin-bottom: -1px;
-        position: relative;
-    }
+		min-height: 8rem;
+		border-right: 1px solid var(--gray-color-300);
+		border-bottom: 1px solid var(--gray-color-300);
+		margin-bottom: -1px;
+		position: relative;
+	}
 
-    .num {
-        border-bottom: 1px solid var(--gray-color-200);
-        padding: 0.25rem;
-    }
+	.num {
+		border-bottom: 1px solid var(--gray-color-200);
+		padding: 0.25rem;
+	}
 
 	.sign {
 		display: flex;
-        justify-content: center;
-        align-items: center;
+		justify-content: center;
+		align-items: center;
 		height: 100%;
 		border-bottom: 1px solid var(--gray-color-200);
 	}
 
-    .approver {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.25rem;
-    }
+	.approver {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 0.25rem;
+	}
 }
 
 .reference-wrap {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    text-align: center;
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	text-align: center;
 
-    .reference-list {
-        display: flex;
-        justify-content: center;
-        background-color: var(--gray-color-50);
-        border: 1px solid var(--gray-color-300);
-        border-radius: 8px;
-    }
+	.reference-list {
+		display: flex;
+		justify-content: center;
+		background-color: var(--gray-color-50);
+		border: 1px solid var(--gray-color-300);
+		border-radius: 8px;
+	}
 
-    .referencer {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        padding: 0.25rem;
-        gap: 2px;
+	.referencer {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 100%;
+		padding: 0.25rem;
+		gap: 2px;
 
-        .icon {
-            padding: 0;
+		.icon {
+			padding: 0;
 
-            &:hover {
-                cursor: pointer;
-            }
-        }
-    }
+			&:hover {
+				cursor: pointer;
+			}
+		}
+	}
 }
 
 // 추가의견 영역
@@ -1013,14 +1117,14 @@ onUnmounted(() => {
 }
 
 .empty {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    font-size: 0.875rem;
-    line-height: 1.2;
-    color: var(--gray-color-400);
-    // cursor: pointer;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+	font-size: 0.875rem;
+	line-height: 1.2;
+	color: var(--gray-color-400);
+	// cursor: pointer;
 }
 
 .button-wrap {
@@ -1040,26 +1144,58 @@ onUnmounted(() => {
 	}
 }
 
+.modal-approve {
+	.tab-menu {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		ul {
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: var(--gray-color-50);
+			max-width: 300px;
+			border-radius: 30px;
+
+			li {
+				cursor: pointer;
+				font-size: 0.9rem;
+				color: var(--gray-color-400);
+				transition: all 0.3s;
+				padding: 0.5rem 1rem;
+				border-radius: 30px;
+
+				&.active {
+					color: #fff;
+					background-color: var(--primary-color-400);
+				}
+			}
+		}
+	}
+}
+
 .stamp-wrap {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    // grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    // grid-template-columns: repeat(4, minmax(220px, 1fr));
-    gap: 1rem;
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	// grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	// grid-template-columns: repeat(4, minmax(220px, 1fr));
+	gap: 1rem;
 
-    .stamp-grid {
-        position: relative;
-        width: 100%;
+	.stamp-grid {
+		position: relative;
+		width: 100%;
 
-        &::after {
-            content: '';
-            display: block;
-            padding-bottom: 100%;
-        }
+		&::after {
+			content: '';
+			display: block;
+			padding-bottom: 100%;
+		}
 
-        &.loading {
-            border: 0;
-        }
+		&.loading {
+			border: 0;
+		}
 
 		// .checkbox {
 		// 	position: absolute;
@@ -1068,14 +1204,14 @@ onUnmounted(() => {
 		// 	z-index: 10;
 		// }
 
-        .stamp {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+		.stamp {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
 			border: 1px solid var(--gray-color-100);
 			border-radius: 0.5rem;
 			cursor: pointer;
@@ -1086,145 +1222,145 @@ onUnmounted(() => {
 				background-color: var(--primary-color-25);
 			}
 
-            // .checkbox {
-            //     position: absolute;
-            //     top: 0.5rem;
-            //     left: 0.5rem;
-            // }
+			// .checkbox {
+			//     position: absolute;
+			//     top: 0.5rem;
+			//     left: 0.5rem;
+			// }
 
-            .add-icon {
-                position: absolute;
-                width: 30px;
-                height: 30px;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                fill: var(--primary-color-400);
-                // transition: all 0.3s;
-                // fill: var(--gray-color-300);
-            }
+			.add-icon {
+				position: absolute;
+				width: 30px;
+				height: 30px;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				fill: var(--primary-color-400);
+				// transition: all 0.3s;
+				// fill: var(--gray-color-300);
+			}
 
-            .delete-icon {
-                position: absolute;
-                top: 0.5rem;
-                right: 0.5rem;
-                width: 25px;
-                height: 25px;
-                fill: var(--gray-color-300);
-                transition: all 0.3s;
-                cursor: pointer;
+			.delete-icon {
+				position: absolute;
+				top: 0.5rem;
+				right: 0.5rem;
+				width: 25px;
+				height: 25px;
+				fill: var(--gray-color-300);
+				transition: all 0.3s;
+				cursor: pointer;
 
-                &:hover {
-                    fill: var(--warning-color-400);
-                }
-            }
+				&:hover {
+					fill: var(--warning-color-400);
+				}
+			}
 
-            &.upload-btn {
-                cursor: pointer;
+			&.upload-btn {
+				cursor: pointer;
 
-                #stamp-img {
-                    background-color: unset;
-                    // transition: all 0.3s;
-                    border-color: var(--primary-color-300);
+				#stamp-img {
+					background-color: unset;
+					// transition: all 0.3s;
+					border-color: var(--primary-color-300);
 
-                    &::before {
-                        content: '';
-                        background-color: unset;
-                    }
-                }
-                .name {
-                    // transition: all 0.3s;
-                    // color: var(--gray-color-300);
-                    color:var(--primary-color-400);
-                }
+					&::before {
+						content: '';
+						background-color: unset;
+					}
+				}
+				.name {
+					// transition: all 0.3s;
+					// color: var(--gray-color-300);
+					color:var(--primary-color-400);
+				}
 
-                &.disabled {
-                    cursor: default;
-                    pointer-events: none;
+				&.disabled {
+					cursor: default;
+					pointer-events: none;
 
-                    #stamp-img {
-                        border-color: var(--gray-color-300);
-                    }
-                    .add-icon {
-                        fill: var(--gray-color-300);
-                    }
-                    .name {
-                        color:var(--gray-color-300);
-                    }
-                }
+					#stamp-img {
+						border-color: var(--gray-color-300);
+					}
+					.add-icon {
+						fill: var(--gray-color-300);
+					}
+					.name {
+						color:var(--gray-color-300);
+					}
+				}
 
-                // &:hover {
-                //     #stamp-img {
-                //         border-color: var(--primary-color-300);
-                //     }
-                //     .add-icon {
-                //         fill: var(--primary-color-400);
-                //     }
-                //     .name {
-                //         color:var(--primary-color-400);
-                //     }
-                // }
-            }
+				// &:hover {
+				//     #stamp-img {
+				//         border-color: var(--primary-color-300);
+				//     }
+				//     .add-icon {
+				//         fill: var(--primary-color-400);
+				//     }
+				//     .name {
+				//         color:var(--primary-color-400);
+				//     }
+				// }
+			}
 
-            &.upload-preview {
-                background-color: var(--primary-color-25);
+			&.upload-preview {
+				background-color: var(--primary-color-25);
 
-                #stamp-img {
-                    background-color: var(--primary-color-25);
-                    border-color: var(--gray-color-200);
-                    opacity: 0.3;
+				#stamp-img {
+					background-color: var(--primary-color-25);
+					border-color: var(--gray-color-200);
+					opacity: 0.3;
 
-                    &::before {
-                        content: '미리보기';
-                        background-color: var(--primary-color-25);
-                    }
-                }
-                .name {
-                    opacity: 0.3;
-                }
-            }
-        }
+					&::before {
+						content: '미리보기';
+						background-color: var(--primary-color-25);
+					}
+				}
+				.name {
+					opacity: 0.3;
+				}
+			}
+		}
 
-        .upload-options {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translateX(-50% + 50px) translateY(-50% + 25px);
-            // right: -113px;
-            // bottom: -40px;
-            z-index: 9;
-            background-color: var(--gray-color-100);
-            border: 1px solid var(--gray-color-300);
-            padding: 5px;
-            border-radius: 4px;
-            
-            li {
-                font-size: 0.8rem;
-                text-align: left;
-                cursor: pointer;
-                padding: 4px 8px;
-                border-radius: 4px;
+		.upload-options {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translateX(-50% + 50px) translateY(-50% + 25px);
+			// right: -113px;
+			// bottom: -40px;
+			z-index: 9;
+			background-color: var(--gray-color-100);
+			border: 1px solid var(--gray-color-300);
+			padding: 5px;
+			border-radius: 4px;
+			
+			li {
+				font-size: 0.8rem;
+				text-align: left;
+				cursor: pointer;
+				padding: 4px 8px;
+				border-radius: 4px;
 
-                &:first-child {
-                    margin-bottom: 4px;
-                }
-                &:hover {
-                    background-color: var(--primary-color-400);
-                    color: #fff;
+				&:first-child {
+					margin-bottom: 4px;
+				}
+				&:hover {
+					background-color: var(--primary-color-400);
+					color: #fff;
 
-                    &.disabled {
-                        background-color: unset;
-                        color: unset;
-                    }
-                }
-                &.disabled {
-                    opacity: 0.25;
-                    cursor: default;
-                    pointer-events: none;
-                }
-            }
-        }
-    }
+					&.disabled {
+						background-color: unset;
+						color: unset;
+					}
+				}
+				&.disabled {
+					opacity: 0.25;
+					cursor: default;
+					pointer-events: none;
+				}
+			}
+		}
+	}
 }
 
 .previewStamp {
@@ -1244,31 +1380,31 @@ onUnmounted(() => {
 }
 
 #stamp-img, .previewStamp img {
-    width: 100px;
-    height: 100px;
-    border-radius: 30%;
-    display: block;
-    object-fit: contain;
-    position: relative;
-    // background-color: #fff;
-    border: 2px dashed var(--gray-color-100);
-    // margin-bottom: 0.5rem;
+	width: 100px;
+	height: 100px;
+	border-radius: 30%;
+	display: block;
+	object-fit: contain;
+	position: relative;
+	// background-color: #fff;
+	border: 2px dashed var(--gray-color-100);
+	// margin-bottom: 0.5rem;
 
-    &::before {
-        content: "도장 등록";
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        color: #888;
-        background-color: #fff;
-        font-size: 14px;
-        text-align: center;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
+	&::before {
+		content: "도장 등록";
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+		color: #888;
+		background-color: #fff;
+		font-size: 14px;
+		text-align: center;
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
 }
 
 .rejected {
@@ -1304,34 +1440,34 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-    .approver-wrap {
-        grid-template-columns: repeat(5, 1fr);
-    }
+	.approver-wrap {
+		grid-template-columns: repeat(5, 1fr);
+	}
 }
 
 @media (max-width: 682px) {
-    .input-wrap {
-        &.upload-file {
-            .btn-upload-file {
-                input,
-                label,
-                button {
-                    flex-grow: 1;
-                }
-            }
-            .btn-upload-file + .file-list {
-                .file-item {
-                    width: 100%;
-                }
-            }
+	.input-wrap {
+		&.upload-file {
+			.btn-upload-file {
+				input,
+				label,
+				button {
+					flex-grow: 1;
+				}
+			}
+			.btn-upload-file + .file-list {
+				.file-item {
+					width: 100%;
+				}
+			}
 
-            .file-item {
-                width: 100%;
-            }
-        }
-        &.upload-stamp {
-        }
-    }
+			.file-item {
+				width: 100%;
+			}
+		}
+		&.upload-stamp {
+		}
+	}
 }
 </style>
 
