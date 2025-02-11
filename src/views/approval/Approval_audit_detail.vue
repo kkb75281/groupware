@@ -1279,6 +1279,30 @@ onUnmounted(() => {
 	color: var(--gray-color-500);
 }
 
+@media print {
+	#main,
+	.wrap {
+		padding: 0 !important;
+	}
+
+	.wrap {
+		+ .title {
+			display: none !important;
+		}
+	}
+
+	hr {
+		display: none !important;
+	}
+
+	.form-wrap {
+		position: absolute;
+		top: 5%;
+		left: 0;
+		width: 100%;
+	}
+}
+
 @media (max-width: 768px) {
     .approver-wrap {
         grid-template-columns: repeat(5, 1fr);
