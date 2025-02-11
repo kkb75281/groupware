@@ -10,7 +10,7 @@ hr
                 select(v-model="searchFor")
                     option(value="name") 이름
                     option(value="division") 부서/직책
-                    //- option(value="email") 이메일
+                    
             .input-wrap.search(v-if="searchFor !== 'division'")
                 input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요.")
                 button.btn-search
@@ -50,7 +50,7 @@ hr
             tbody
                 template(v-if="loading")
                     tr(v-for="i in 5")
-                template(v-else-if="Object.keys(divisions).length === 0")
+                template(v-else-if="!employee || Object.keys(employee).length === 0")
                     tr
                         td(colspan="5") 데이터가 없습니다.
                 template(v-else)
@@ -117,12 +117,6 @@ const callParams = computed(() => {
                 value: new Date().getTime(),
                 condition: '<='
             };
-        // case 'email':
-        //     return {
-        //         searchFor: 'email',
-        //         value: searchValue.value,
-        //         condition: '='
-        //     };
     }
 });
 
@@ -142,9 +136,9 @@ watch(searchFor, (nv) => {
 watch(searchValue, (nv) => {
     if (nv) {
         if (nv === '전체' && searchFor.value === 'division') {
-            callParams.value.searchFor = 'timestamp';
-            callParams.value.value = new Date().getTime();
-            callParams.value.condition = '<=';
+            callParams.value.searchFor = 'approved';
+            callParams.value.value = 'by_skapi:approved';
+            callParams.value.condition = '>=';
 
             searchEmp();
         }
@@ -269,7 +263,7 @@ const getEmpList = async () => {
                 const empInfo = res.list[0].index.name;
                 const empSplit = empInfo.split('.');
 
-                console.log('=== empSplit : ', empSplit);
+                // console.log('=== empSplit : ', empSplit);
 
                 return {
                     ...emp,
@@ -520,8 +514,10 @@ async function searchEmp(refresh) {
 }
 
 // 새로고침
-const refresh = () => {
-    getDivisionData(true);
+const refresh = async() => {
+    await getDivisionData();
+    const res = await getEmpList();
+    employee.value = res;
 };
 
 // const getDivisionName = computed(() => {
@@ -538,7 +534,6 @@ const goToEmpCommute = (userId) => {
 onMounted(async () => {
     await getDivisionData();  // 부서 데이터를 먼저 완전히 로드
     const res = await getEmpList(); // 그 다음 직원 목록 로드
-
     employee.value = res;
 });
 </script>

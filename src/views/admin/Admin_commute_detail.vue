@@ -90,13 +90,23 @@ const getEmpCommute = async (userId) => {
         };
 
         const res = await skapi.getRecords(query, fetchOptions);
-        const commuteList = res?.list?.sort((a, b) => a.uploaded - b.uploaded);
+        const commuteList = res?.list?.sort((a, b) => b.uploaded - a.uploaded);
 
         return commuteList;
     } catch (error) {
         console.log('=== getEmpCommute === error : ', {error});
     }
 }
+
+// 새로고침
+const refresh = async() => {
+    loading.value = true;
+
+    const commuteList = await getEmpCommute(userId);
+    commuteRecords.value = commuteList;
+
+    loading.value = false;
+};
 
 onMounted(async () => {
     const commuteList = await getEmpCommute(userId);
