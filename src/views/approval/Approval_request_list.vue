@@ -42,7 +42,7 @@ hr
 
 			tbody
 				template(v-if="sendAuditListRunning")
-					tr.loading
+					tr.nohover.loading
 						td(colspan="5")
 							Loading#loading
 				template(v-else-if="!sendAuditList || !sendAuditList.length")

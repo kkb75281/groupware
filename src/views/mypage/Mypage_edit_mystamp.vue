@@ -37,14 +37,23 @@ hr
                         img#stamp-img(:src="uploadingStamp.url" alt="도장 미리보기")
                         .name {{ uploadingStamp.name }}
         
-MakeStamp(v-if="openStampModal" @upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
+.modal(v-if="openStampModal" ref="dialog" @keydown.esc.prevent="closeStampDialog")
+    .modal-cont(style="padding:1rem")
+        MakeStamp(@upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
 AlertModal(:open="!!selectedStamp")
     .content-wrap
-        h4.title 도장 삭제
-        p.desc 도장을 삭제하시겠습니까?
+        template(v-if="deleteStampStep === 1")
+            h4.title.warning 도장 삭제
+            p.desc 도장을 삭제하시겠습니까?
+        template(v-if="deleteStampStep === 2")
+            h4.title.success 삭제 완료
+            p.desc 도장이 삭제되었습니다.
     .button-wrap
-        button(@click="selectedStamp=null") 취소
-        button.warning(@click="deleteStamp(selectedStamp)") 삭제
+        template(v-if="deleteStampStep === 1")
+            button.btn.bg-gray(:disabled="deleteStampRunning" @click="selectedStamp=null") 취소
+            button.btn.warning(:disabled="deleteStampRunning" @click="deleteStamp(selectedStamp)") 삭제
+        template(v-if="deleteStampStep === 2")
+            button.btn(@click="selectedStamp=null;") 확인
 
 </template>
 
@@ -97,6 +106,7 @@ let getStampList = async () => {
         if(res.list.length) {
             uploadedStamp.value = res.list[0].bin.stamp_data;
             uploadedRecordId.value = res.list[0].record_id;
+            console.log(uploadedStamp.value);
             loading.value = false;
         }
     } catch(e) {
@@ -189,6 +199,10 @@ let uploadStamp = async () => {
         }
     }
 }
+
+let deleteStampRunning = ref(false);
+let deleteStampStep = ref(1);
+
 let deleteStamp = async(stamp: object) => {
     if(!uploadedRecordId.value) return;
     if(!selectedStamp.value) return;
@@ -202,6 +216,8 @@ let deleteStamp = async(stamp: object) => {
         remove_bin: []
     };
 
+    let deleteStampUrl = stamp.url;
+
     post_params.remove_bin.push(stamp);
 
     // // uploadedStamp.value.map((stamp, idx) => {
@@ -209,16 +225,21 @@ let deleteStamp = async(stamp: object) => {
     // //         post_params.remove_bin.push(stamp);
     // //     }
     // // });
+    deleteStampRunning.value = true;
 
     try {
         await skapi.postRecord(null, post_params);
-        getStampList();
-        alert('도장이 삭제되었습니다.');
+        // getStampList();
+        // alert('도장이 삭제되었습니다.');
+        deleteStampStep.value++;
+        uploadedStamp.value = uploadedStamp.value.filter(stamp => stamp.url !== deleteStampUrl);
     } catch(e) {
         console.log({e});
+        deleteStampStep.value = 1;
         alert('도장 삭제 중 오류가 발생했습니다.');
     } finally {
-        selectedStamp.value = null;
+        // selectedStamp.value = null;
+        deleteStampRunning.value = false;
     }
 }
 

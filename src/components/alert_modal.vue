@@ -1,13 +1,22 @@
 <template lang="pug">
 dialog.alert-modal(ref='dialog' @keydown.esc.prevent="emit('close')")
-    slot
+    template(v-if='props.alertError')
+        .content-wrap
+            h4.title 에러 발생
+            p {{ props.alertMessage }}
+        .button-wrap
+            button.btn.bg-gray(@click="emit('close')") 확인
+    template(v-else)
+        slot
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 
 let props = defineProps({
-    open: Boolean
+    open: Boolean,
+    alertError: Boolean,
+    alertMessage: String,
 });
 let emit = defineEmits(['close']);
 
