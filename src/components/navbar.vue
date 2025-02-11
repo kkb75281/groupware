@@ -76,7 +76,12 @@ const menuList = computed(() => [
                     name: 'request-list',
                     to: '/approval/request-list',
                     text: '발신함',
-                }
+                },
+                {
+                    name: 'audit-reference',
+                    to: '/approval/audit-reference',
+                    text: '수신참조',
+                },
             ]
         }
     },

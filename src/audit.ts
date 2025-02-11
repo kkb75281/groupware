@@ -157,5 +157,10 @@ export async function getSendAuditList() {
 export const goToAuditDetail = (e, auditId, router) => {
     // if(e.target.classList.contains('label-checkbox')) return;
     router.push({ name: 'audit-detail', params: { auditId } });
+
+	// 수신참조 경우
+	if (router.currentRoute.value.name === 'audit-reference') {
+		router.push({ name: 'audit-detail-reference', params: { auditId } });
+	}
 };
 
