@@ -14,6 +14,7 @@ const app = createApp(App);
 
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
+export let mainPageLoading = ref(false);
 // export let googleEmailUpdate = ref(false);
 let isConnected = false;
 

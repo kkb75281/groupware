@@ -59,7 +59,7 @@ AlertModal(:open="!!selectedStamp")
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { skapi } from '@/main';
+import { skapi, mainPageLoading } from '@/main';
 import { user, makeSafe } from '@/user';
 import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp';
 import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc } from '@/components/make_stamp';
@@ -96,6 +96,7 @@ let uploadStampImage = async(imageUrl) => {
 }
 
 let uploadStamp = async () => {
+	mainPageLoading.value = true;
     uploading.value = true;
 
     let filebox = document.querySelector('input[name=stamp_data]');
@@ -127,17 +128,12 @@ let uploadStamp = async () => {
         try {
             await skapi.postRecord(stampFileData, stamp_postParams);
         } catch(e) {
+			mainPageLoading.value = false;
             alert('도장 등록 중 오류가 발생했습니다.');
             throw e;
         }
         
         filebox.value = '';
-        uploadingStamp.value = {};
-        alert('도장 등록이 완료되었습니다.');
-
-        // 이미지 업로드 후 도장 정보 다시 불러오기
-        getStampList();
-        uploading.value = false;
     } else {
         // 서명으로 업로드 했을때
         if (Object.keys(stampImages.value).length) {
@@ -147,19 +143,21 @@ let uploadStamp = async () => {
             try {
                 await skapi.postRecord(stampImageData, stamp_postParams);
             } catch(e) {
+				mainPageLoading.value = false;
                 alert('도장 등록 중 오류가 발생했습니다.');
                 throw e;
             }
 
             stampImages.value = {};
-            uploadingStamp.value = {};
-            alert('도장 등록이 완료되었습니다.');
-
-            // 이미지 업로드 후 도장 정보 다시 불러오기
-            getStampList();
-            uploading.value = false;
         }
     }
+
+	// 이미지 업로드 후 도장 정보 다시 불러오기
+	uploadingStamp.value = {};
+	alert('도장 등록이 완료되었습니다.');
+	getStampList(true);
+	uploading.value = false;
+	mainPageLoading.value = false;
 }
 
 let deleteStampRunning = ref(false);
@@ -268,6 +266,14 @@ onUnmounted(() => {
                 top: 0.5rem;
                 left: 0.5rem;
             }
+
+			.name {
+				width: 80%;
+				text-align: center;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
 
             .add-icon {
                 position: absolute;

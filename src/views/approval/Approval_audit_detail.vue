@@ -631,7 +631,7 @@ const postApproval = async () => {
 
 		console.log('=== postApproval === approved : ', approved);
 
-		if(approved && (!selectedStamp.value || !selectedStampComplete.value)) {
+		if(approved === 'approve' && (!selectedStamp.value || !selectedStampComplete.value)) {
 			alert('도장을 선택해주세요.');
 			isPosting = false;
 			return;
