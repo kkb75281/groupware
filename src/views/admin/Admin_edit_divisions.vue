@@ -151,8 +151,8 @@ onMounted(() => {
             uploadSrc.value.division_logo = record?.bin.division_logo ? record?.bin.division_logo[0].url : '';
             uploadSrc.value.division_used_seal = record?.bin.division_used_seal ? record?.bin.division_used_seal[0].url : '';
             uploadSrc.value.division_official_seal = record?.bin.division_official_seal ? record?.bin.division_official_seal[0].url : '';
+            console.log({bin});
         }
-        console.log({record})
         loading.value = false;
     }
 })
@@ -166,10 +166,9 @@ if (!record_id) {
     router.push('/admin/list-divisions');
 }
 
-let sessionDivisions = divisions.value; // JSON.parse(window.sessionStorage.getItem('divisions')); // 세션 스토리지 쓸 이유가 없음.
-let record = sessionDivisions[record_id];
-let isMyRecord = record.user_id === user.user_id;
-let originalDivisionName = record.data.division_name;
+let record = divisions.value[record_id] || null;
+let isMyRecord = record?.user_id === user.user_id || false;
+let originalDivisionName = record?.data?.division_name;
 let loading = ref(true);
 let bin = {};
 
@@ -189,8 +188,10 @@ let editDivision = async(e) => {
 
     // 이미지 변경시 예전 이미지 모두 삭제
     if(deleteList.value.length > 0) {
+        console.log(deleteList.value);
         deleteList.value.forEach(id => {
             let deleteBinObj = record.bin[id] ? record.bin[id][0] : null;   // 파일 객체 전체
+            console.log({deleteBinObj});
 
             if(deleteBinObj) {
                 post_params.remove_bin.push(deleteBinObj);
@@ -216,12 +217,6 @@ let editDivision = async(e) => {
     
     if(originalDivisionName !== ext.data.division_name) {
         let changeDivisionName = {};
-
-        // 이미 받아왔음
-        // skapi.getRecords({
-        //     unique_id: '[division_name_list]'
-        // }).then(r => {
-        // let data = r.list[0].data;
 
         let data = divisionNameList.value;
         let keys = Object.keys(data); // 'DVS_0', 'DVS_1', ...
@@ -250,14 +245,13 @@ let editDivision = async(e) => {
                 }
             })
         })
-
-        // })
     }
 
     try {
         let result = await skapi.postRecord(formData, post_params);
 
-        sessionDivisions[result.record_id] = result;
+        divisions.value[result.record_id] = result;
+        deleteList.value = [];
 
         window.alert('부서 수정이 완료되었습니다.');
         router.push('/admin/list-divisions');
