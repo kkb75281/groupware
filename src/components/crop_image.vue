@@ -13,7 +13,7 @@ dialog(ref="dialog" @keydown.esc.prevent="closeDialog")
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
+import { onUnmounted, ref, watch, nextTick } from 'vue';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
 
