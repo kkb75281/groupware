@@ -1137,7 +1137,7 @@ onUnmounted(() => {
 	}
 
 	.organigram-wrap {
-		padding-right: 1.5rem;
+		// padding-right: 1.5rem;
 	}
 
 	.btn-remove {
