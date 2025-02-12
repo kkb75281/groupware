@@ -16,11 +16,11 @@ hr
 
 .itembox-wrap
 	.itembox
-		span.time 출근 : #[span.value {{ timeRecords.startTime }}]
+		span.time 출근 : #[span.value {{ extractTimeFromDateTime(timeRecords.startTime) }}]
 		button.btn.btn-work(@click="startWork") 출근
 
 	.itembox
-		span.time 퇴근 : #[span.value {{ timeRecords.endTime }}]
+		span.time 퇴근 : #[span.value {{ extractTimeFromDateTime(timeRecords.endTime) }}]
 		button.btn.btn-work(@click="endWork") 퇴근
 
 .itembox(style="margin-top: 3rem; padding: 0; border-radius: 0; box-shadow: none;")
@@ -33,9 +33,9 @@ hr
 						Loading#loading
 				table.table#tb-record-commute
 						colgroup
-								col(style="width: 10%;")
-								col(style="width: 10%;")
-								col(style="width: 10%;")
+								col(style="width: 8%;")
+								col(style="width: 5%;")
+								col(style="width: 5%;")
 								col(style="width: 10%;")
 								col(style="width: 10%;")
 								
@@ -705,6 +705,8 @@ onMounted(async () => {
 	}
 
 	.table {
+    min-width: 35rem;
+
 		tbody {
 			tr {
 				&:hover {
