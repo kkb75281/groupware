@@ -27,13 +27,13 @@ hr
 	.tb-overflow
 		table.table#newsletter_list
 			colgroup
-				col(style="width: 5%")
+				col(style="width:5%")
 				col(style="width: 50%")
 				col(style="width: 10%")
 			thead
 				tr
 					th NO
-					th 제목
+					th.left 제목
 					th 작성일
 			tbody
 				template(v-if="loading")
@@ -42,11 +42,11 @@ hr
 							Loading#loading
 				template(v-else-if="!newsletterList || newsletterList.length === 0")
 					tr.nohover
-						td(colspan="4") 등록된 공지사항이 없습니다.
+						td.left(colspan="4") 등록된 공지사항이 없습니다.
 				template(v-else)
 					tr.hover(v-for="(news, index) in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
 						td {{ index + 1 }}
-						td {{ news.subject }}
+						td.left {{ news.subject }}
 						td {{ convertTimestampToDateMillis(news.timestamp) }}
 </template>
 
