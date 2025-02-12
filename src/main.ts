@@ -14,7 +14,7 @@ const app = createApp(App);
 
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
-export let googleEmailUpdate = ref(false);
+// export let googleEmailUpdate = ref(false);
 let isConnected = false;
 
 // function getChanges(before:any, after:any) {
@@ -200,9 +200,9 @@ export let loginCheck = async (profile: any) => {
 
 		let misc = JSON.parse(user.misc || '{}');
 
+		// 결재 창구 만들기
 		if (!misc.logged) {
 			skapi.postRecord(null, {
-				// 결재 창구 만들기
 				unique_id: `audit:${user.user_id}`,
 				table: {
 					name: 'audit',
@@ -218,32 +218,21 @@ export let loginCheck = async (profile: any) => {
 			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
 		}
 
-		// if (!misc.notification) {
-		// 	skapi.postRecord(null, {
-		// 		// 결재 창구 만들기
-		// 		unique_id: `realtime:${user.user_id}`,
-		// 		table: {
-		// 			name: 'realtime',
-		// 			access_group: 'authorized',
-		// 		},
-		// 	})
-		// 	.catch((err) => console.error({ err }));
-	
-		// 	misc.notification = true; // 로그인 후 한번만 실행
-		// 	skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
-		// }
+		// 공지사항 구독
+		if (!misc.subscribed) {
+			skapi.subscribeNewsletter({
+				group: 'public',
+			})
+			.catch((err) => console.error({ err }));
+
+			misc.subscribed = true; // 로그인 후 한번만 실행
+			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
+		}
 
 		if (!isConnected) {
 			skapi.connectRealtime(RealtimeCallback);
 		}
-
-		// skapi.connectRealtime(RealtimeCallback);
-		// getRealtime();
-
-		// iwaslogged.value = true;
 	}
-	// // console.log('profile', profile)
-	// // console.log('iwaslogged', iwaslogged.value)
 
 	if(!loaded.value) {
 		app.use(router);
@@ -254,25 +243,25 @@ export let loginCheck = async (profile: any) => {
 	loaded.value = true;
 };
 
-// 이메일 업데이트
-export async function updateEmails() {
-	const accessToken = sessionStorage.getItem('accessToken');
+// // 이메일 업데이트
+// export async function updateEmails() {
+// 	const accessToken = sessionStorage.getItem('accessToken');
 	
-	if (accessToken) {
-		try {
-			googleEmailUpdate.value = true;
-			const res = await fetchGmailEmails(accessToken);
-			// console.log('=== updateEmails === res : ', res);
-			mailList.value = res;
-			googleEmailUpdate.value = false;
+// 	if (accessToken) {
+// 		try {
+// 			googleEmailUpdate.value = true;
+// 			const res = await fetchGmailEmails(accessToken);
+// 			// console.log('=== updateEmails === res : ', res);
+// 			mailList.value = res;
+// 			googleEmailUpdate.value = false;
 
-			// // console.log('=== updateEmails === res : ', res);
-		} catch (error) {
-			googleEmailUpdate.value = false;
-			console.error('=== updateEmails === error : ', {error});
-		}
-	}
-}
+// 			// // console.log('=== updateEmails === res : ', res);
+// 		} catch (error) {
+// 			googleEmailUpdate.value = false;
+// 			console.error('=== updateEmails === error : ', {error});
+// 		}
+// 	}
+// }
 
 // setInterval(() => {
 // 	updateEmails();

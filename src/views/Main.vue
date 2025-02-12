@@ -7,12 +7,25 @@ main#main
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Header from '@/components/header.vue';
 import Navbar from '@/components/navbar.vue';
+import { mailList, updateEmails, readAudit, readList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
 
 const router = useRouter();
 const route = useRoute();
+
+let emailCheckInterval;
+
+onMounted(async () => {
+    await updateEmails();
+    
+    // 30초마다 이메일 업데이트
+    emailCheckInterval = setInterval(() => {
+        updateEmails();
+    }, 10000);
+});
 </script>
 
 <style scoped lang="less">
