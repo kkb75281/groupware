@@ -4,7 +4,7 @@
     canvas#stampCanvas(ref="canvas")
 
 .input-wrap(v-if="!onlySign")
-    p.label.essential 도장명
+    p.label 도장명
     input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등")
 
 .button-wrap
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { openStampModal, uploadingStamp, handleStampBlob, stampName, onlyStamp } from '@/components/make_stamp';
 
 const emit = defineEmits(['close', 'save', 'upload']);
@@ -93,9 +93,9 @@ let upload = () => {
 }
 
 let closeDialog = () => {
+	document.querySelector('body').style.overflow = 'auto';
     reset();        // stamp maker 초기화
     emit('close');  // 부모 컴포넌트에 닫기 이벤트 전달
-    document.querySelector('body').style.overflow = '';
 };
 
 let sendStampBlob = () => {
@@ -155,9 +155,8 @@ onMounted(() =>{
 })
 
 onUnmounted(() => {
+	window.document.querySelector('body').style.overflow = 'auto';
     if (!canvas.value) return;
-
-    document.querySelector('body').style.overflow = 'auto';
 
     // Pointer 이벤트로 마우스/터치 통합 처리
     canvas.value.removeEventListener("pointerdown", startPosition);
