@@ -8,21 +8,24 @@ hr
 	.tb-head-wrap(v-if="user.access_group > 98")
 		form#searchForm(@submit.prevent="searchNewsletter")
 			.input-wrap.what
-				select(v-model="searchFor" :disabled="loading || !newsletterList || newsletterList.length === 0")
+				select(v-model="searchFor" :disabled="loading || !newsletterList")
 					option(value="subject") 제목
-					option(value="timestamp") 작성일
+					//- option(value="timestamp") 작성일
 					//- option(value="message_id") 
 					//- option(value="read") 
 					//- option(value="complaint") 
 			.input-wrap.search(v-if="searchFor == 'subject'")
-				input(v-model="searchValue.subject" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList || newsletterList.length === 0")
+				input(v-model="searchValue.subject" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList")
 				button.btn-search
 			.input-wrap.date(v-else-if="searchFor == 'timestamp'")
-				input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList || newsletterList.length === 0")
+				input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList")
 				span ~
-				input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList || newsletterList.length === 0")
+				input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
 		.tb-toolbar(v-if="user.access_group > 98")
 			.btn-wrap
+				button.btn.outline.refresh-icon(:disabled="loading" @click="getNewsletterList(true)")
+					svg(:class="{'rotate' : loading}")
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
 				button.btn.outline.md(type="button" @click="sendAdminNewsletter") 등록
 	.tb-overflow
 		table.table#newsletter_list
@@ -37,7 +40,7 @@ hr
 					th 작성일
 			tbody
 				template(v-if="loading")
-					tr.loading
+					tr.nohover.loading
 						td(colspan="10")
 							Loading#loading
 				template(v-else-if="!newsletterList || newsletterList.length === 0")
@@ -80,25 +83,45 @@ let searchValue: Ref<{
 });
 
 let searchNewsletter = async() => {
-	// loading.value = true;
+	loading.value = true;
 
-	console.log(searchValue.value);
+	if(searchValue.value.subject === '') {
+		await getNewsletterList(true);
+		loading.value = false;
+		return;
+	}
 
-	// await skapi.getNewsletters({
-	// 	searchFor: 'message_id' | 'timestamp' | 'read' | 'complaint' | 'subject';
-    //     value: string | number;
-    //     group: 'public' | 'authorized' | number;
-    //     range?: string | number;
-	// })
+	let params = {
+		searchFor: searchFor.value,
+		value: '',
+		group: 'public',
+		condition: '>='
+	};
 
-	// if(searchValue.value === '') {
-	// 	await getNewsletterList();
-	// 	searching.value = false;
+	if(searchFor.value === 'subject') {
+		params.value = searchValue.value.subject;
+	} else {
+		params.value = searchValue.value.timestamp.start;
+	}
+
+	let res = await skapi.getNewsletters(params);
+
+	if(res && res.list.length > 0) {
+		newsletterList.value = res.list;
+	} else {
+		newsletterList.value = [];
+	}
+
+	loading.value = false;
+
+	// if(searchValue.value.subject === '') {
+	// 	await getNewsletterList(true);
+	// 	loading.value = false;
 	// } else {
 	// 	newsletterList.value = newsletterList.value.filter((news: any) => {
 	// 		return news.subject.includes(searchValue.value);
 	// 	});
-	// 	searching.value = false;
+	// 	loading.value = false;
 	// }
 }
 

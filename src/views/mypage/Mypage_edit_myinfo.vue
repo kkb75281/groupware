@@ -149,7 +149,7 @@ CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCropped
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
-import { skapi } from "@/main";
+import { skapi, mainPageLoading } from "@/main";
 import { user, profileImage, verifiedEmail } from "@/user";
 import { divisionNameList } from "@/division";
 import {
@@ -366,6 +366,7 @@ let cancelEdit = () => {
 let registerMypage = async (e) => {
     e.preventDefault();
 
+	mainPageLoading.value = true;
     disabled.value = true;
 
     // 올린 사람과 수정하는 사람이 같지 않거나 올린 기록이 없으면 table 정보로
@@ -472,6 +473,7 @@ let registerMypage = async (e) => {
     window.alert("회원정보가 수정되었습니다.");
     onlyEmail.value = false;
     disabled.value = false;
+	mainPageLoading.value = false;
 };
 
 // 업로드 파일 삭제

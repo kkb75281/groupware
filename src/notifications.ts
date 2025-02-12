@@ -2,6 +2,7 @@ import { Reactive, reactive, type Ref, ref, watch } from "vue";
 import { skapi } from "@/main";
 import { user } from "@/user";
 import { getUserInfo } from "@/employee";
+import { fetchGmailEmails } from "@/utils/mail";
 
 export const notifications:Reactive<{messages: {fromUserId:string; msg: any }[], audits: {fromUserId:string; msg: any }[]}> = reactive({
     audits: [],
@@ -206,6 +207,27 @@ async function updateReadList (type: string) {
 }
 
 export const mailList = ref([]);
+export let googleEmailUpdate = ref(false);
+
+// 이메일 업데이트
+export async function updateEmails() {
+	const accessToken = sessionStorage.getItem('accessToken');
+	
+	if (accessToken) {
+		try {
+			googleEmailUpdate.value = true;
+			const res = await fetchGmailEmails(accessToken);
+			// console.log('=== updateEmails === res : ', res);
+			mailList.value = res;
+			googleEmailUpdate.value = false;
+
+			// // console.log('=== updateEmails === res : ', res);
+		} catch (error) {
+			googleEmailUpdate.value = false;
+			console.error('=== updateEmails === error : ', {error});
+		}
+	}
+}
 // 이메일 알림
 export const addEmailNotification = (emailData) => {
 	// // console.log('=== addEmailNotification === emailData : ', emailData);
@@ -244,13 +266,13 @@ export const addEmailNotification = (emailData) => {
 export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
-export const getNewsletterList = async() => {
+export const getNewsletterList = async(refresh = false) => {
 	if(getNewsletterListRunning instanceof Promise) {	// 이미 실행중인 경우
 		await getNewsletterListRunning;
 		return newsletterList.value;
 	}
 	
-	if (newsletterList.value.length) {	// 기존 데이터가 있는 경우
+	if (newsletterList.value && newsletterList.value.length && !refresh) {	// 기존 데이터가 있는 경우
 		return newsletterList.value;
 	}
 

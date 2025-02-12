@@ -113,7 +113,7 @@ br
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import { skapi } from '@/main';
+import { skapi, mainPageLoading } from '@/main';
 import { user, makeSafe } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
 import { getEmpDivisionPosition, getUsers, employeeDict } from '@/employee';
@@ -281,6 +281,7 @@ let cancelEdit = () => {
 // 수정사항 저장
 let registerEmp = async(e) => {
 	e.preventDefault();
+	mainPageLoading.value = true;
 	disabled.value = true;
 
 	let user_id_safe = makeSafe(currentEmp.value.user_id);
@@ -371,6 +372,7 @@ let registerEmp = async(e) => {
 	window.alert('직원 정보 수정이 완료되었습니다.');
 
 	disabled.value = true;
+	mainPageLoading.value = false;
 }
 
 onMounted(async () => {

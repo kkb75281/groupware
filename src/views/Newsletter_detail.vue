@@ -7,7 +7,12 @@ template(v-else)
 
 	hr
 
-	
+	.content(v-html="htmlContent")
+
+	br
+
+	.btn-wrap
+		button.btn.bg-gray(@click="router.push('/newsletter')") 목록으로
 </template>
 
 <script lang="ts" setup>
@@ -25,6 +30,7 @@ const route = useRoute();
 let loading = ref(false);
 let message_id = route.params.messageId;
 let currentNewsletter = ref({});
+let htmlContent = ref('');
 
 let getCurrentNewsletter = async() => {
 	if(!message_id) {
@@ -56,11 +62,33 @@ let getCurrentNewsletter = async() => {
 	}
 }
 
-onMounted(() => {
-	getCurrentNewsletter();
+async function fetchHtml(url: string) {
+  try {
+    const response = await fetch(url); // 여기에 원하는 URL 입력
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const html = await response.text(); // 응답을 텍스트로 변환
+    htmlContent.value = html; // 가져온 HTML을 반응형 변수에 할당
+  } catch (error) {
+    console.error('HTML을 가져오는 중 오류 발생:', error);
+    htmlContent.value = '<p>콘텐츠를 불러오는 데 실패했습니다.</p>';
+  }
+}
+
+onMounted(async() => {
+	await getCurrentNewsletter();
+	fetchHtml(currentNewsletter.value?.url);
 })
 </script>
 
 <style lang="less" scoped>
+.content {
+	min-height: 300px;
+}
 
+.btn-wrap {
+	display: flex;
+	justify-content: end;
+}
 </style>
