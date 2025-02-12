@@ -7,8 +7,6 @@
     p.label.essential 도장명
     input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등")
 
-input(v-else type="hidden" name="fileName" value="generated-sign.png")
-
 .button-wrap
     button.btn.bg-gray(v-if="!onlySign" @click="closeDialog") 취소
     button.btn.outline(@click="reset") 초기화
@@ -118,11 +116,11 @@ let sendStampBlob = () => {
         alert('서명란에 서명을 입력해주세요.');
         return;
     }
-    if (!fileName.value) {
-        alert('도장명을 입력해주세요.');
-        fileName.focus();
-        return;
-    }
+    // if (!fileName.value) {
+    //     alert('도장명을 입력해주세요.');
+    //     fileName.focus();
+    //     return;
+    // }
 
     canvas.value.toBlob((blob) => {
         if (blob) {
