@@ -69,9 +69,6 @@ hr
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
-
-            
-
 //- Modal
 #modal.modal(v-if="isModalOpen" @click="closeModal")
     .modal-cont(@click.stop)
@@ -142,7 +139,8 @@ const saveWorkTime = async () => {
             return;
         }
 
-        const divisionId = makeSafe(findDivision.record_id);
+        // const divisionId = makeSafe(findDivision.record_id);
+        const divisionId = makeSafe(selectedDivision.value.record_id);
         const uniqueId = `dvs_workTime_${divisionId}`;
 
         // 기존 데이터가 있다면 삭제 (unique_id 때문)

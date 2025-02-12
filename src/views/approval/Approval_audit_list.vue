@@ -28,7 +28,7 @@ hr
 				template(v-if="currentPage === 'audit-list'")
 					col(style="width: 12%")
 				col(style="width: 12%")
-				col(style="width: 12%")
+				//- col(style="width: 12%")
 				col(style="width: 10%")
 			thead
 				tr
@@ -41,7 +41,7 @@ hr
 					template(v-if="currentPage === 'audit-list'")
 						th(scope="col") 나의 현황
 					th(scope="col") 결재 현황
-					th(scope="col") 합의 현황
+					//- th(scope="col") 합의 현황
 					th(scope="col") 기안자
 
 			tbody
@@ -64,8 +64,8 @@ hr
 							td
 								span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함' }") {{ audit.my_state }}
 						td
-							span.audit-state(:class="{ approve: audit.referenced_count === JSON.parse(audit.data.auditors).approvers.length }") {{ audit.referenced_count === JSON.parse(audit.data.auditors).approvers.length ? '완료됨' : audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).approvers.length }}
-						td
+							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중' }}
+						//- td
 							span.audit-state(:class="{ approve: JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length }") {{ JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length ? '완료됨' : audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
 						td {{ audit.user_info?.name }}
 
@@ -92,11 +92,11 @@ const currentPage = computed(() => {
 const filterAuditList = computed(() => {
 	if (!auditList.value) return [];
 
-	console.log('=== filterAuditList === auditList.value : ', auditList.value);
+	// console.log('=== filterAuditList === auditList.value : ', auditList.value);
 	
 	return auditList.value.filter(audit => {
 		const auditors = JSON.parse(audit.data.auditors);
-		console.log('=== filterAuditList === auditors : ', auditors);
+		// console.log('=== filterAuditList === auditors : ', auditors);
 
 		if (currentPage.value === 'audit-list') {
 		// 결재 수신함: approvers나 agreers에 포함된 문서
@@ -122,8 +122,6 @@ const showAuditDoc = (e:Event, audit: any) => {
 
 onMounted(async () => {
     await getAuditList();
-
-	// console.log({filterAuditList: filterAuditList.value});
 });
 </script>
 

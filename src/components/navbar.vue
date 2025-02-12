@@ -18,7 +18,8 @@ nav#navbar(ref="navbar")
                     router-link.router(:to="item.to")
                         .icon
                             svg
-                                use(:xlink:href="item.icon")
+                                //- use(:xlink:href="item.icon")
+                                use(:xlink:href="'src/assets/icon/material-icon.svg' + item.icon")
                         .text 
                             span {{ item.text }}
                             svg.arrow(v-if="item.child" :class="{'down': item.child.name === activeMenu}")
@@ -50,14 +51,14 @@ const menuList = computed(() => [
         show: true,
         name: 'home',
         to: '/',
-        icon: 'src/assets/icon/material-icon.svg#icon-dashboard',
+        icon: '#icon-dashboard',
         text: '대시보드',
     },
     {
         show: true,
         name: 'approval',
         to: '/approval',
-        icon: 'src/assets/icon/material-icon.svg#icon-approval',
+        icon: '#icon-approval',
         text: '전자결재',
         child: {
             name: 'approval',
@@ -89,7 +90,7 @@ const menuList = computed(() => [
         show: true,
         name: 'mypage',
         to: '/mypage',
-        icon: 'src/assets/icon/material-icon.svg#icon-account-circle-fill',
+        icon: '#icon-account-circle-fill',
         text: '마이페이지',
         child: {
             name: 'mypage',
@@ -121,7 +122,7 @@ const menuList = computed(() => [
         show: isadmin.value,
         name: 'admin',
         to: '/admin',
-        icon: 'src/assets/icon/material-icon.svg#icon-settings',
+        icon: '#icon-settings',
         text: '마스터 페이지',
         child: {
             name: 'admin',
@@ -148,21 +149,21 @@ const menuList = computed(() => [
         show: !isadmin.value,
         name: 'list-employee',
         to: '/list-employee',
-        icon: 'src/assets/icon/material-icon.svg#icon-groups',
+        icon: '#icon-groups',
         text: '직원 목록',
     },
 	{
         show: true,
         name: 'newsletter',
         to: '/newsletter',
-        icon: 'src/assets/icon/material-icon.svg#icon-campaign',
+        icon: '#icon-campaign',
         text: '공지사항',
     },
 	{
         show: true,
         name: 'organigram',
         to: '/organigram',
-        icon: 'src/assets/icon/material-icon.svg#icon-account-tree',
+        icon: '#icon-account-tree',
         text: '조직도',
     }
 ]);
