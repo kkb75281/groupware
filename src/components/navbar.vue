@@ -19,7 +19,8 @@ nav#navbar(ref="navbar")
                         .icon
                             svg
                                 //- use(:xlink:href="item.icon")
-                                use(:xlink:href="'src/assets/icon/material-icon.svg' + item.icon")
+                                //- use(:xlink:href="'@/assets/icon/material-icon.svg' + item.icon")
+                                use(:href="getIconPath(item.icon)")
                         .text 
                             span {{ item.text }}
                             svg.arrow(v-if="item.child" :class="{'down': item.child.name === activeMenu}")
@@ -35,6 +36,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { watch, onMounted, onUnmounted, ref, computed } from 'vue'
 import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar'
 import { user } from '@/user'
+import MaterialIcon from '@/assets/icon/material-icon.svg'
 
 const router = useRouter();
 const route = useRoute();
@@ -190,6 +192,10 @@ let checkNavbarClose = (e) => {
         }
     }
 }
+
+const getIconPath = computed(() => (iconName) => {
+    return `${MaterialIcon}${iconName}`
+});
 
 onMounted(() => {
     checkScreenWidth();

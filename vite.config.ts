@@ -7,6 +7,10 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [
     vue(),
+    // // SVG 플러그인 추가
+    // svgLoader({
+    //   defaultImport: 'url'
+    // })
   ],
   resolve: {
     alias: {
