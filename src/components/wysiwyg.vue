@@ -1,6 +1,6 @@
 <template lang="pug">
 .wysiwyg
-	.btn-wrap
+	.btns-wrap
 		button.btn-custom(type="button" @click="handleCommand('bold')")
 			.icon
 				svg
@@ -224,7 +224,7 @@ defineExpose({
 	}
 }
 
-.btn-wrap {
+.btns-wrap {
 	justify-content: flex-start !important;
 	gap: 0 !important;
 	margin-bottom: 0.5rem;

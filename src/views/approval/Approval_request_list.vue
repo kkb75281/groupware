@@ -26,7 +26,7 @@ hr
 				col(style="width: 3rem")
 				col
 				col(style="width: 12%")
-				col(style="width: 12%")
+				//- col(style="width: 12%")
 				col(style="width: 10%")
 			thead
 				tr
@@ -37,7 +37,7 @@ hr
 					th(scope="col") NO
 					th.left(scope="col") 결재 사안
 					th(scope="col") 결재 현황
-					th(scope="col") 합의 현황
+					//- th(scope="col") 합의 현황
 					th(scope="col") 기안자
 
 			tbody
@@ -58,8 +58,8 @@ hr
 						td {{ index + 1 }}
 						td.left {{ audit.data.to_audit }}
 						td
-							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).approvers.length }}
-						td
+							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중' }}
+						//- td
 							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
 						td {{ user.name }}
 

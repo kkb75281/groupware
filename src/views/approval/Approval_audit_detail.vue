@@ -206,7 +206,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 		.modal-footer(style="margin: 0")
 			template(v-if="approvalStep === 1")
 				button.btn.warning.btn-edit(type="button" @click="rejectAudit") 반려하기
-				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getStampList()") 승인하기
+				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getStampList(true)") 승인하기
 			template(v-if="approvalStep === 2")
 				button.btn.bg-gray.btn-edit(v-if="stempType === 'sign' ? handleStampBlobComplete : true" type="button" @click="approvalStep--") 이전
 				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재 승인
@@ -362,8 +362,10 @@ let uploadStampImage = async(imageUrl) => {
 
 	try {
 		uploadGeneratedStamp.value = await uploadCreatedStamp(onlyStampFile.value);
+		console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
 
 		let uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
+		console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
 
 		stempType.value = 'stamp';
 		await getStampList(true);

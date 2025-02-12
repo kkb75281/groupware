@@ -21,7 +21,7 @@ export let handleStampBlob = async (makeStampImage) => {
 	if(!stampName.value) {
 		await getStampList();
 
-		if(uploadedStamp.value.length) {
+		if(uploadedStamp.value && uploadedStamp.value.length) {
 			// 도장 이미지가 있을때 각각의 도장 이름 중 generated-stamp-가 있는지 확인
 			const stampNames = uploadedStamp.value.map(stamp => stamp.filename);
 			console.log(stampNames);
@@ -35,7 +35,9 @@ export let handleStampBlob = async (makeStampImage) => {
 			} else {
 				stampName.value = 'generated-stamp-1';
 			}
-		}
+		} else {
+            stampName.value = 'generated-stamp-1';
+        }
 	}
     try {
         // 미리보기 이미지 경로
