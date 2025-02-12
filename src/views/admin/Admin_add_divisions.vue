@@ -127,7 +127,7 @@ CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCropped
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { nextTick, onMounted, ref } from 'vue';
-import { skapi } from '@/main';
+import { skapi, mainPageLoading } from '@/main';
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 import { getDivisionNames, divisionNameList } from '@/division';
 import { divisions } from '@/division';
@@ -137,6 +137,8 @@ const router = useRouter();
 const route = useRoute();
 
 let resigterComp = (e) => {
+	mainPageLoading.value = true;
+
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
@@ -253,7 +255,12 @@ let resigterComp = (e) => {
 
         window.alert('등록되었습니다.');
         router.push('/admin/list-divisions');
-    });
+	}).catch((e) => {
+		console.log({e});
+		window.alert('등록 중 오류가 발생했습니다.');
+    }).finally(() => {
+		mainPageLoading.value = false;
+	});
 }
 
 onMounted(() => {

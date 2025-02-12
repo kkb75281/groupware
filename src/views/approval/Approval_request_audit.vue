@@ -229,7 +229,7 @@ template(v-if="step > 1")
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from "vue";
-import { skapi } from "@/main";
+import { skapi, mainPageLoading } from "@/main";
 import { user, makeSafe, verifiedEmail } from "@/user";
 import { getDivisionNames, divisionNameList } from "@/division";
 
@@ -667,8 +667,6 @@ const postAuditDocRecordId = async (auditId, userId) => {
 const requestAudit = async (e) => {
     e.preventDefault();
 
-	// console.log('=== requestAudit === editorContent : ', editorContent.value);
-
     try {
         const formData = new FormData(e.target);
 		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
@@ -691,6 +689,8 @@ const requestAudit = async (e) => {
             alert("결재자를 한 명 이상 선택해주세요.");
             return;
         }
+
+		mainPageLoading.value = true;
 
         // 결재 문서 생성
         const auditDoc = await postAuditDoc({ 
@@ -737,7 +737,9 @@ const requestAudit = async (e) => {
     } catch (error) {
         console.error('결재 요청 중 오류 발생:', error);
         alert('결재 요청 중 오류가 발생했습니다.');
-    }
+    } finally {
+		mainPageLoading.value = false;
+	}
 };
 
 const dateValue = ref(new Date().toISOString().substring(0, 10));
