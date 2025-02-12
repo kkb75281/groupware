@@ -143,7 +143,6 @@ hr
             button.btn(type="submit" :disabled="disabled") 저장
 
 CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
-MakeStamp(v-if="openStampModal" @save="handleStampBlob" @close="closeStampDialog")
 
 </template>
 
@@ -163,18 +162,8 @@ import {
     closeCropImageDialog,
     setCroppedImage,
 } from "@/components/crop_image";
-import {
-    openStampModal,
-    openStampDialog,
-    closeStampDialog,
-    handleStampBlob,
-    uploadingStamp,
-    stampImages,
-    uploadingSrc,
-} from "@/components/make_stamp";
 
 import CropImage from "@/components/crop_image.vue";
-import MakeStamp from "@/components/make_stamp.vue";
 
 const router = useRouter();
 const route = useRoute();

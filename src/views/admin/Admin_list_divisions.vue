@@ -14,8 +14,8 @@ hr
                 button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
                     svg(:class="{'rotate' : loading}")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-                button.btn.outline.warning(:disabled="!Object.keys(selectedList).length" @click="deleteDivision") 삭제
-                button.btn.outline(@click="router.push('/admin/add-divisions')") 등록
+                button.btn.outline.warning(:disabled="!Object.keys(selectedList).length || loading" @click="deleteDivision") 삭제
+                button.btn.outline(:disabled="loading" @click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
         template(v-if="loading")
             Loading#loading
@@ -117,11 +117,15 @@ const refresh = () => {
 };
 
 let deleteDivision = async () => {
-    let userId = Object.keys(selectedList.value);
-    // console.log('=== deleteDivision === userId : ', userId);
+    if (!Object.keys(selectedList.value).length) {
+        alert("삭제할 부서를 선택해주세요.");
+        return;
+    }
 
+    loading.value = true;
+
+    let userId = Object.keys(selectedList.value);
     let name = Object.values(selectedList.value);
-    // console.log('=== deleteDivision === name : ', name);
 
     let filteredData = {};
     let isSuccess = [];
@@ -194,6 +198,7 @@ let deleteDivision = async () => {
 
     // 삭제 버튼 비활성화
     selectedList.value = {};
+    loading.value = false;
 };
 
 // 부서명 검색

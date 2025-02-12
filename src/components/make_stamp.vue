@@ -1,34 +1,28 @@
 <template lang="pug">
-.modal(ref="dialog" @keydown.esc.prevent="closeDialog")
-    .modal-cont
-        //- template(v-if="uploadingStamp && Object.keys(uploadingStamp).length")
-            .upload-preview
-                img#stamp-img(:src="uploadingStamp.url" alt="도장 이미지")
-                .name {{ uploadingStamp.name }}
+.input-wrap.canvas-wrap
+    p.label.essential(v-if="!onlySign" style="margin-bottom: 8px;") 서명란
+    canvas#stampCanvas(ref="canvas")
 
-            .button-wrap
-                button.btn.outline(@click="closeDialog") 취소
-                button.btn(@click="upload") 등록
-        //- template(v-else)
-        .input-wrap.canvas-wrap
-            p.label.essential(style="margin-bottom: 8px;") 서명란
-            canvas#stampCanvas(ref="canvas")
+.input-wrap(v-if="!onlySign")
+    p.label.essential 도장명
+    input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등")
 
-        .input-wrap
-            p.label.essential 도장명
-            input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등")
+input(v-else type="hidden" name="fileName" value="generated-sign.png")
 
-        .button-wrap
-            button.btn.bg-gray(@click="closeDialog") 취소
-            button.btn.outline(@click="reset") 초기화
-            button.btn(@click="sendStampBlob") 등록
+.button-wrap
+    button.btn.bg-gray(v-if="!onlySign" @click="closeDialog") 취소
+    button.btn.outline(@click="reset") 초기화
+    button.btn(@click="sendStampBlob") {{ onlySign ? '완료' : '등록' }}
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { openStampModal, uploadingStamp, handleStampBlob, stampName } from '@/components/make_stamp';
+import { openStampModal, uploadingStamp, handleStampBlob, stampName, onlyStamp } from '@/components/make_stamp';
 
 const emit = defineEmits(['close', 'save', 'upload']);
+const props = defineProps({
+    onlySign: Boolean,
+});
 
 let step = ref('options');
 
@@ -141,6 +135,9 @@ let sendStampBlob = () => {
 
 onMounted(() =>{
     if (!canvas.value) return;
+    if (props.onlySign) {
+        onlyStamp.value = true;
+    }
 
     document.querySelector('body').style.overflow = 'hidden';
 

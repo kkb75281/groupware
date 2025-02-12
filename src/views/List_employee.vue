@@ -85,7 +85,7 @@ hr
                     th(v-show="isDesktop" scope="col") 주소
             tbody
                 template(v-if="loading")
-                    tr.loading
+                    tr.nohover.loading
                         td(colspan="10")
                             Loading#loading
                 template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
