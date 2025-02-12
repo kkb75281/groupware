@@ -182,11 +182,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 							template(v-if="gettingStampList")
 								Loading#loading
 							template(v-else)
-								.stamp-wrap(v-if="myStamps.length")
-									.stamp-grid(v-for="stamp in myStamps" :key="stamp.url" @click="selectStamp(stamp.url)")
-										//- label.checkbox
-											input(type="checkbox" name="checkbox")
-											span.label-checkbox
+								.stamp-wrap(v-if="uploadedStamp && uploadedStamp.length")
+									.stamp-grid(v-for="stamp in uploadedStamp" :key="stamp.url" @click="selectStamp(stamp.url)")
 										.stamp(:class="{'selected' : selectedStamp === stamp.url}")
 											img#stamp-img(:src="stamp.url" alt="도장 이미지")
 								.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
@@ -200,67 +197,19 @@ Loading#loading(v-if="getAuditDetailRunning")
 										br
 										button.btn.outline(type="button" @click="createStamp" :disabled="previewStamp" style="margin:0 auto") 도장 생성
 						canvas#stampCanvas(width="100" height="100" style="display: none;")
-						//- input(type="radio" name="approved" value="approve" :checked="approveAudit" style="display: none;")
-						//- input(type="radio" name="approved" value="reject" :checked="!approveAudit" style="display: none;")
 					template(v-if="stempType === 'sign'")
 						MakeStamp(v-if="openStampModal" :onlySign="true" @upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
-						.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
-							img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
+						div(v-if="makeStampRunning")
+							Loading#loading
+						//- .previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
+						//- 	img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
 		.modal-footer(style="margin: 0")
 			template(v-if="approvalStep === 1")
 				button.btn.warning.btn-edit(type="button" @click="rejectAudit") 반려하기
-				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++") 승인하기
+				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getStampList()") 승인하기
 			template(v-if="approvalStep === 2")
-				button.btn.bg-gray.btn-edit(type="button" @click="approvalStep--") 이전
+				button.btn.bg-gray.btn-edit(v-if="stempType === 'sign' ? handleStampBlobComplete : true" type="button" @click="approvalStep--") 이전
 				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재 승인
-
-//- 도장 입력 모달
-//- #modal.modal.modal-stamp(v-if="isStampModalOpen")
-	form.modal-cont(@click.stop @submit.prevent="postApproval")
-		.modal-header
-			h2.modal-title 도장/서명 선택하기
-			button.btn-close(@click="isStampModalOpen=false")
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-		
-		.modal-body
-			template(v-if="stempStep === 1")
-				button.btn(type="button") 도장 찍기
-				button.btn(type="button") 서명 하기
-			//- p(v-if="myStamps.length || previewStamp") 도장을 선택해주세요.
-			//- p(v-else) 현재 등록된 도장이 없습니다. 새로운 도장을 생성해주세요.
-
-			//- .my-stamp-wrap
-			//- 	template(v-if="gettingStampList")
-			//- 		Loading#loading
-			//- 	template(v-else)
-			//- 		.stamp-wrap(v-if="myStamps.length")
-			//- 			.stamp-grid(v-for="stamp in myStamps" :key="stamp.url" @click="selectStamp(stamp.url)")
-			//- 				//- label.checkbox
-			//- 					input(type="checkbox" name="checkbox")
-			//- 					span.label-checkbox
-			//- 				.stamp(:class="{'selected' : selectedStamp === stamp.url}")
-			//- 					img#stamp-img(:src="stamp.url" alt="도장 이미지")
-			//- 		.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
-			//- 			img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
-			//- 		.no-stamp(v-else style="text-align: center;border: 1px solid var(--gray-color-100);padding: 3rem 1rem;border-radius: 8px;color: var(--gray-color-400); font-size:0.9rem") 
-			//- 			//- span 현재 등록된 도장이 없습니다.
-			//- 			button.btn.outline(type="button" v-if="!myStamps.length && !previewStamp" @click="createStamp" :disabled="previewStamp" style="margin:0 auto") 도장 생성
-			//- 			//- button.btn 기본 도장 생성하기
-
-			//- canvas#stampCanvas(width="100" height="100" style="display: none;")
-			//- input(type="radio" name="approved" value="approve" :checked="approveAudit" style="display: none;")
-			//- input(type="radio" name="approved" value="reject" :checked="!approveAudit" style="display: none;")
-			
-			//- br
-
-			//- //- .upload-stamp-btn(style="display: flex;align-items: center;justify-content: center;gap: 1rem;")
-
-		.modal-footer(style="border:0;padding-top:10px;margin:0")
-			button.btn.bg-gray.btn-edit(type="button" @click="isStampModalOpen=false") 취소
-			button.btn.btn-edit(type="submit" :disabled="(!myStamps.length && !previewStamp) || !selectedStamp") 서명하기
-			//- button.btn.bg-gray.btn-edit(type="button" @click="isModalOpen=false") 이전
-			//- button.btn.btn-edit(type="button" @click="isModalOpen=false") 결재 승인
 
 </template>
 
@@ -270,7 +219,8 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
-import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc, onlyStampFile } from '@/components/make_stamp';
+import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp';
+import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc, onlyStampFile, handleStampBlobComplete } from '@/components/make_stamp';
 
 import Loading from '@/components/Loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
@@ -372,61 +322,12 @@ let rejectAudit = () => {
 	postApproval();
 }
 
-// let approvalState = async () => {
-// 	const selectedValue = document.querySelector('input[name="approved"]:checked')?.value;
-
-// 	console.log('=== approvalState === selectedValue : ', selectedValue);
-
-// 	if(selectedValue === 'approve') {
-// 		// isModalOpen.value = false;
-// 		// isStampModalOpen.value = true;
-// 		// // getStampList();
-// 		approvalStep.value++;
-// 	} else if(selectedValue === 'reject') {
-// 		console.log('=== approvalState === 반려');
-// 		postApproval();
-// 	}
-// }
-
 let gettingStampList = ref(false);
 let makeStampRunning = ref(false);
 let myStamps = ref([]);
 let myStampsRecordId = ref(null);
 let selectedStamp = ref(null);
 let selectedStampComplete = ref(false);
-
-let getStampList = async () => {
-	gettingStampList.value = true;
-
-	try {
-		let res = await skapi.getRecords({
-			unique_id: '[stamp_images]' + makeSafe(user.user_id),
-			table: {
-				name: 'stamp_images',
-				access_group: 1,
-			}
-		});
-		console.log('=== getStampList === res : ', res);
-
-		if(res.list.length) {
-			myStamps.value = res.list[0]?.bin?.stamp_data || [];
-			myStampsRecordId.value = res.list[0].record_id;
-			gettingStampList.value = false;
-		}
-	} catch(e) {
-		console.log('=== getStampList === err : ', {e});
-
-		if(e.code === "NOT_EXISTS") {
-			myStamps.value = [];
-			myStampsRecordId.value = null;
-		} else {
-			alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
-		}
-
-		gettingStampList.value = false;
-	}
-}
-// getStampList();
 
 let uploadCreatedStamp = async(file) => {
 	let stamp_postParams = {
@@ -436,8 +337,8 @@ let uploadCreatedStamp = async(file) => {
 		}
 	}
 
-	if(myStampsRecordId.value) {
-		stamp_postParams.record_id = myStampsRecordId.value;
+	if(uploadedRecordId.value) {
+		stamp_postParams.record_id = uploadedRecordId.value;
 	} else {
 		stamp_postParams.unique_id = '[stamp_images]' + makeSafe(user.user_id);
 	}
@@ -449,6 +350,7 @@ let uploadCreatedStamp = async(file) => {
 	return await skapi.postRecord(stampImageData, stamp_postParams);
 }
 
+// 직접 서명
 let uploadStampImage = async(imageUrl) => {
 	makeStampRunning.value = true;
 
@@ -459,16 +361,15 @@ let uploadStampImage = async(imageUrl) => {
 	if(!onlyStampFile.value) return;
 
 	try {
-		let uploadGeneratedStamp = await uploadCreatedStamp(onlyStampFile.value);
-		console.log({uploadGeneratedStamp});
-		if(uploadGeneratedStamp?.bin?.stamp_data?.length) {
-			previewStamp.value = uploadGeneratedStamp.bin.stamp_data[0].url;
-		} else {
-			getStampList();
-		}
-		selectedStampComplete.value = true;
+		uploadGeneratedStamp.value = await uploadCreatedStamp(onlyStampFile.value);
+
+		let uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
+
+		stempType.value = 'stamp';
+		await getStampList(true);
+
+		selectStamp(uploadGeneratedStampUrl);
 	} catch(e) {
-		selectedStampComplete.value = false;
 		alert('도장 등록 중 오류가 발생했습니다.');
 		throw e;
 	} finally {
@@ -518,16 +419,13 @@ let createStamp = () => {
 		let file = new File([blob], "generated-stamp.png", { type: "image/png" });
 
 		try {
-			let uploadGeneratedStamp = await uploadCreatedStamp(file);
-			console.log({uploadGeneratedStamp});
-			if(uploadGeneratedStamp?.bin?.stamp_data?.length) {
-				previewStamp.value = uploadGeneratedStamp.bin.stamp_data[0].url;
+			uploadGeneratedStamp.value = await uploadCreatedStamp(file);
+			if(uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
+				previewStamp.value = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
 			} else {
 				getStampList();
 			}
-			selectedStampComplete.value = true;
 		} catch(e) {
-			selectedStampComplete.value = false;
 			alert('도장 등록 중 오류가 발생했습니다.');
 			throw e;
 		} finally {
@@ -539,9 +437,6 @@ let createStamp = () => {
 let selectStamp = (url) => {
 	selectedStamp.value = url;
 	selectedStampComplete.value = true;
-	// console.log('stampId:', stampId);
-	// previewStamp.value = null;
-	// isStampModalOpen.value = false;
 }
 
 // 다른 사람 결재 여부 확인
@@ -695,10 +590,10 @@ const getAuditDetail = async () => {
 		auditorList.value = newAuditUserList;
 
 		// 현재 로그인한 사용자가 결재자 목록에 있고, 아직 결재하지 않은 경우에만 getStampList 실행
-		const currentUserAudit = newAuditUserList.find(auditor => auditor.user_id === user.user_id);
-		if (currentUserAudit && !currentUserAudit.approved) {
-			getStampList();
-		}
+		// const currentUserAudit = newAuditUserList.find(auditor => auditor.user_id === user.user_id);
+		// if (currentUserAudit && !currentUserAudit.approved) {
+		// 	getStampList();
+		// }
 
 		// auditorList 결재, 합의 순서대로
 		auditorList.value.sort((a, b) => {
@@ -733,6 +628,12 @@ const postApproval = async () => {
 		const approved = approveAudit.value ? 'approve' : 'reject';
 
 		console.log('=== postApproval === approved : ', approved);
+
+		if(approved && (!selectedStamp.value || !selectedStampComplete.value)) {
+			alert('도장을 선택해주세요.');
+			isPosting = false;
+			return;
+		}
 
 		const data = {
 			approved: approved,

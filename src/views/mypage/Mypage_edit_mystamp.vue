@@ -19,7 +19,7 @@ hr
                     li.option(@click="selectFile") 파일 등록
                     li.option(@click="showOptions = false; openStampModal = !openStampModal") 서명 등록
 
-            template(v-if="loading")
+            template(v-if="getStampListRunning")
                 .stamp-grid.loading
                     .stamp
                         Loading#loading
@@ -53,14 +53,15 @@ AlertModal(:open="!!selectedStamp")
             button.btn.bg-gray(:disabled="deleteStampRunning" @click="selectedStamp=null") 취소
             button.btn.warning(:disabled="deleteStampRunning" @click="deleteStamp(selectedStamp)") 삭제
         template(v-if="deleteStampStep === 2")
-            button.btn(@click="selectedStamp=null;") 확인
+            button.btn(@click="selectedStamp=null;deleteStampStep=1") 확인
 
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
-import { user } from '@/user';
+import { user, makeSafe } from '@/user';
+import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp';
 import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc } from '@/components/make_stamp';
 
 import MakeStamp from '@/components/make_stamp.vue';
@@ -72,57 +73,18 @@ let stamp_file_input = ref(null);
 let optionsBtn = ref(null);
 let isSignImage = ref(false);
 let selectedStamp = ref(null);
-let uploadedStamp = ref([]);
-let uploadedRecordId = ref(null);
 let uploading = ref(false);
-let loading = ref(false);
-
-function makeSafe(str) {
-    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
-}
 
 let closeOptions = (e) => {
     if (showOptions.value && !optionsBtn.value.contains(e.target)) {
         showOptions.value = false;
     }
-};
+}
+
 let selectFile = () => {
     showOptions.value = false;
     stamp_file_input.value.click();
 }
-
-let getStampList = async () => {
-    loading.value = true;
-
-    try {
-        let res = await skapi.getRecords({
-            unique_id: '[stamp_images]' + makeSafe(user.user_id),
-            table: {
-                name: 'stamp_images',
-                access_group: 1,
-            }
-        });
-
-        if(res.list.length) {
-            uploadedStamp.value = res.list[0].bin.stamp_data;
-            uploadedRecordId.value = res.list[0].record_id;
-            console.log(uploadedStamp.value);
-            loading.value = false;
-        }
-    } catch(e) {
-        console.log('=== getStampList === err : ', {e})
-
-        if(e.code === "NOT_EXISTS") {
-            uploadedStamp.value = [];
-            uploadedRecordId.value = null;
-        } else {
-            alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
-        }
-
-        loading.value = false;
-    }
-}
-getStampList();
 
 let uploadStampImage = async(imageUrl) => {
     await handleStampBlob(imageUrl);
@@ -245,6 +207,7 @@ let deleteStamp = async(stamp: object) => {
 
 onMounted(() => {
     document.addEventListener('click', closeOptions);
+	getStampList();
 });
 onUnmounted(() => {
     document.removeEventListener('click', closeOptions);
