@@ -4,7 +4,7 @@
     canvas#stampCanvas(ref="canvas")
 
 .input-wrap(v-if="!onlySign")
-    p.label.essential 도장명
+    p.label 도장명
     input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등")
 
 .button-wrap

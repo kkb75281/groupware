@@ -105,12 +105,13 @@ ul.card-wrap
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { skapi, updateEmails, googleEmailUpdate } from "@/main";
+// import { skapi, updateEmails, googleEmailUpdate } from "@/main";
+import { skapi } from "@/main";
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { user } from "@/user";
 import { fetchGmailEmails } from "@/utils/mail";
 import { convertTimestampToDateMillis } from "@/utils/time";
-import { mailList, readAudit, readList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
+import { mailList, updateEmails, readAudit, readList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
 
 import Loading from '@/components/loading.vue';
 
@@ -192,13 +193,13 @@ let showMailDoc = (e: Event, rt: any) => {
 }
 
 onMounted(async () => {
-    await updateEmails();
+    // await updateEmails();
 	getNewsletterList();
     
-    // 30초마다 이메일 업데이트
-    emailCheckInterval = setInterval(() => {
-        updateEmails();
-    }, 10000);
+    // // 30초마다 이메일 업데이트
+    // emailCheckInterval = setInterval(() => {
+    //     updateEmails();
+    // }, 10000);
 });
 
 // 컴포넌트 언마운트 시 인터벌 정리
