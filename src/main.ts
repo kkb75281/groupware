@@ -249,15 +249,13 @@ const skapi = new Skapi(
   // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
 
   // s :: mina
-  'ap21T837jUF8IFyfR98Z',
-  'f498d188-1fa5-43e5-a32d-904d3e125983',
+//   'ap21T837jUF8IFyfR98Z',
+//   'f498d188-1fa5-43e5-a32d-904d3e125983',
   // e :: mina
 
   // s :: qb
-  // 'ap21WQQ42ZUVa3GYCmGr',
-  // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
-  // 'ap21b3xJGgBzEONNCmGr',
-  // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
+  'ap21cfWvkAd36OniCmGr',
+  '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
   // e :: qb
 
 //   "ap21cZGkmP0COCVxCmGr", "5750ee2c-f7f7-43ff-b6a5-cce599d30101",
