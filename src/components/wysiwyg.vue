@@ -84,7 +84,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { skapi } from '@/main';
 
 import Loading from '@/components/loading.vue';

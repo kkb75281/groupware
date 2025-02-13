@@ -215,12 +215,12 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
 import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp';
-import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc, onlyStampFile, handleStampBlobComplete } from '@/components/make_stamp';
+import { openStampModal, closeStampDialog, handleStampBlob, uploadingStamp, onlyStampFile, handleStampBlobComplete } from '@/components/make_stamp';
 
 import Loading from '@/components/Loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
@@ -324,8 +324,6 @@ let rejectAudit = () => {
 
 let gettingStampList = ref(false);
 let makeStampRunning = ref(false);
-let myStamps = ref([]);
-let myStampsRecordId = ref(null);
 let selectedStamp = ref(null);
 let selectedStampComplete = ref(false);
 

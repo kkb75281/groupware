@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { openStampModal, uploadingStamp, handleStampBlob, stampName, onlyStamp } from '@/components/make_stamp';
 
 const emit = defineEmits(['close', 'save', 'upload']);

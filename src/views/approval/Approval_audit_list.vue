@@ -77,7 +77,7 @@ import { onMounted, computed } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { auditList, auditListRunning, getAuditList, goToAuditDetail } from '@/audit';
-import { readAudit, readList, realtimes, readNoti } from '@/notifications';
+import { readList, realtimes, readNoti } from '@/notifications';
 
 import Loading from '@/components/loading.vue';
 

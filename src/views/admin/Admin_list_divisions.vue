@@ -65,16 +65,14 @@ hr
 
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { ref, computed, watch } from "vue";
+import { ref, computed } from "vue";
 import { skapi } from "@/main";
 import {
     loading,
     divisions,
     divisionNameList,
     getDivisionData,
-    getDivisionNames,
-    getDivisionDataRunning,
-    getDivisionNamesRunning,
+    getDivisionNames
 } from "@/division";
 
 import Loading from "@/components/loading.vue";

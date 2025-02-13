@@ -56,7 +56,7 @@ hr
 <script lang="ts" setup>
 import { type Ref, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { newsletterList, getNewsletterListRunning, getNewsletterList } from '@/notifications'
+import { newsletterList, getNewsletterList } from '@/notifications'
 import { convertTimestampToDateMillis } from "@/utils/time";
 import { skapi } from '@/main';
 import { user } from '@/user';
@@ -130,8 +130,6 @@ let sendAdminNewsletter = async() => {
 	const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${endpoint}`;
     
     window.open(gmailUrl, "_blank"); // 새 탭에서 Gmail 열기
-
-	// console.log(endpoint)
 }
 
 watch(searchFor, (nv, ov) => {
