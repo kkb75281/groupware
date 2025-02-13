@@ -292,6 +292,71 @@ export const getNewsletterList = async(refresh = false) => {
 	return newsletterList.value;
 }
 
+export async function subscribeNotification() {
+	const vapidResponse = await skapi.vapidPublicKey();
+	const vapid = vapidResponse.VAPIDPublicKey;
+
+	function urlBase64ToUint8Array(base64String) {
+		const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+		const base64 = (base64String + padding)
+			.replace(/\-/g, "+")
+			.replace(/_/g, "/");
+		const rawData = window.atob(base64);
+		const outputArray = new Uint8Array(rawData.length);
+		for (let i = 0; i < rawData.length; ++i) {
+			outputArray[i] = rawData.charCodeAt(i);
+		}
+		return outputArray;
+	}
+
+	if (!("serviceWorker" in navigator)) {
+		console.error("Service workers are not supported in this browser.");
+		return;
+	}
+
+	const permission = await Notification.requestPermission();
+	if (permission !== "granted") {
+		console.error("Permission not granted for notifications");
+		return;
+	}
+
+	const registration = await navigator.serviceWorker.register("/sw.js");
+	await navigator.serviceWorker.ready;
+
+	const subscription = await registration.pushManager
+		.subscribe({
+			userVisibleOnly: true,
+			applicationServerKey: urlBase64ToUint8Array(vapid),
+		})
+		.then((sub) => sub.toJSON()); // Convert to plain object
+
+	console.log("Subscription object:", subscription); // Debugging
+
+	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
+	return response;
+}
+
+export async function unsubscribeNotification() {
+	const registration = await navigator.serviceWorker.ready;
+	const subscription = await registration.pushManager.getSubscription();
+	
+	if (!subscription) {
+		console.error("No subscription found");
+		return;
+	}
+
+	// Convert to JSON
+	const subscriptionJSON = subscription.toJSON();
+
+	await subscription.unsubscribe();
+
+	const response = await skapi.unsubscribeNotification(subscription.endpoint, subscriptionJSON.keys);
+}
+ 
+export function pushNotification(content: { title: string; body: string }, userId: string | string[]) {
+	skapi.pushNotification(content, userId);											
+}
+
 watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 	if (u && Object.keys(u).length) {
 		await Promise.all([
