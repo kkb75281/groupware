@@ -224,7 +224,7 @@ onUnmounted(() => {
 
 			&:hover {
 				transform: none;
-				box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.05);
+				// box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
 			}
 		}
 

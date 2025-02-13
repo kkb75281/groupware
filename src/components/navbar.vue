@@ -110,7 +110,7 @@ const menuList = computed(() => [
                 {
                     name: 'record-commute',
                     to: '/mypage/record-commute',
-                    text: '근퇴 관리',
+                    text: '근태 관리',
                 },
                 {
                     name: 'change-password',
