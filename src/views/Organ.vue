@@ -5,6 +5,9 @@
 hr
 
 .button-wrap(style="display: flex; justify-content: end; align-items: center;")
+	button.btn.outline.refresh-icon(:disabled="getOrganigramRunning" @click="getOrganigram(true)")
+		svg(:class="{'rotate' : getOrganigramRunning}")
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
 	button.btn.outline(type="button" @click="toggleAllDetails") {{ allDetailsOpen ? '모두 닫기' : '모두 열기' }}
 
 br
@@ -14,6 +17,7 @@ Organigram(:useCheckbox="false")
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import { organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram'
 
 import Organigram from '@/components/organigram.vue';
 

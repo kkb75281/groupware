@@ -71,7 +71,7 @@ hr
                                 input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
                                 span.label-checkbox
                     th(v-show="isDesktop" scope="col") NO
-                    template(v-if="user.access_group > 98 && empListType !== '초청여부'")
+                    template(v-if="empListType !== '초청여부'")
                         th(scope="col") 직책<br>(직급)
                         th(scope="col") 부서
                     th(scope="col") 이름
