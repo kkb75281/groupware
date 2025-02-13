@@ -333,6 +333,8 @@ onMounted(async () => {
 }
 
 .table {
+    min-width: 38rem;
+
     tbody {
         tr {
             &:hover {
