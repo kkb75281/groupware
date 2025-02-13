@@ -243,7 +243,7 @@ import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { divisionNameList } from '@/division'
-import { getEmpDivisionPosition, empInfo, employeeDict, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
+import { getEmpDivisionPosition, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
 import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';

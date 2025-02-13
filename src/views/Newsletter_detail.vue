@@ -2,16 +2,18 @@
 template(v-if="loading")
 	Loading#loading
 template(v-else)
-	.title
+	.title-wrap
 		h1 {{ currentNewsletter?.subject }}
+		span.date {{ convertTimestampToDateMillis(currentNewsletter?.timestamp) }}
 
 	hr
 
-	.content(v-html="htmlContent")
+	.content-wrap
+		.content(v-html="htmlContent")
 
 	br
 
-	.btn-wrap
+	.button-wrap
 		button.btn.bg-gray(@click="router.push('/newsletter')") 목록으로
 </template>
 
@@ -63,17 +65,22 @@ let getCurrentNewsletter = async() => {
 }
 
 async function fetchHtml(url: string) {
-  try {
-    const response = await fetch(url); // 여기에 원하는 URL 입력
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const html = await response.text(); // 응답을 텍스트로 변환
-    htmlContent.value = html; // 가져온 HTML을 반응형 변수에 할당
-  } catch (error) {
-    console.error('HTML을 가져오는 중 오류 발생:', error);
-    htmlContent.value = '<p>콘텐츠를 불러오는 데 실패했습니다.</p>';
-  }
+	loading.value = true;
+
+	try {
+		const response = await fetch(url); // 여기에 원하는 URL 입력
+		if (!response.ok) {
+			loading.value = false;
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		const html = await response.text(); // 응답을 텍스트로 변환
+		htmlContent.value = html; // 가져온 HTML을 반응형 변수에 할당
+	} catch (error) {
+		loading.value = false;
+		console.error('HTML을 가져오는 중 오류 발생:', error);
+		htmlContent.value = '<p>콘텐츠를 불러오는 데 실패했습니다.</p>';
+	}
+	loading.value = false;
 }
 
 onMounted(async() => {
@@ -83,11 +90,23 @@ onMounted(async() => {
 </script>
 
 <style lang="less" scoped>
+.title-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: flex-end;
+
+	.date {
+		font-size: 0.9rem;
+		color: var(--gray-color-400);
+	}
+}
+
 .content {
 	min-height: 300px;
 }
 
-.btn-wrap {
+.button-wrap {
 	display: flex;
 	justify-content: end;
 }

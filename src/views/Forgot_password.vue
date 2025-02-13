@@ -86,7 +86,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { skapi } from "@/main";
-import { ref, watch, onMounted, nextTick } from 'vue';
+import { ref, nextTick } from 'vue';
 
 const router = useRouter();
 const route = useRoute();

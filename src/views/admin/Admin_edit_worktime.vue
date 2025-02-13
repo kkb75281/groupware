@@ -99,7 +99,7 @@ hr
 
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { skapi } from "@/main";
 import { loading, divisions, getDivisionData, divisionNameList } from "@/division";
 import { makeSafe } from '@/user';
