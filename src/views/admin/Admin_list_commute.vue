@@ -61,9 +61,9 @@ hr
                         td.dvs {{ emp?.position }}
                         td.dvs {{ emp?.divisionName }}
                         td.startWork
-                            span.time {{ emp.startWork }}
+                            span.time {{ extractTimeFromDateTime(emp.startWork) }}
                         td.endWork
-                            span.time {{ emp.endWork }}
+                            span.time {{ extractTimeFromDateTime(emp.endWork) }}
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -94,6 +94,12 @@ const selectedEmp = ref(null);
 const searchFor: Ref<"name" | "division" | "timestamp"> = ref('name');
 const searchValue = ref('');
 const searchPositionValue = ref('');
+
+const extractTimeFromDateTime = (dateTimeStr: string): string => {
+  if (!dateTimeStr) return '';
+
+  return dateTimeStr.split(" ")[1] // 시간만 추출 (ex. 2021-08-01 15:00:00 -> 15:00:00)
+};
 
 const callParams = computed(() => {
     switch (searchFor.value) {
