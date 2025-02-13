@@ -71,7 +71,7 @@ hr
                                 input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
                                 span.label-checkbox
                     th(v-show="isDesktop" scope="col") NO
-                    template(v-if="user.access_group > 98 && empListType !== '초청여부'")
+                    template(v-if="empListType !== '초청여부'")
                         th(scope="col") 직책<br>(직급)
                         th(scope="col") 부서
                     th(scope="col") 이름
@@ -700,10 +700,12 @@ let cancelInvite = (employee_info) => {
 
         getInvitationsCache.splice(getInvitationsCache.findIndex(inv => res.user_id === inv), 1); // 캐시에서 삭제
 
-        let inv = getInvitations();
+        let inv = await getInvitations();
         alert('초대메일이 취소되었습니다.');
 
-        employee.value = await inv;
+		employee.value = employee.value.filter(emp => emp.user_id !== employee_info.user_id); // 리스트에서 삭제
+
+        // employee.value = await inv;
 
     }).catch(err => {
         alert('초대메일 취소에 실패하였습니다.');
