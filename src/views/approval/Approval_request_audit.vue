@@ -7,7 +7,10 @@ hr
 template(v-if="step > 0 && showBackStep")
 	p.label.essential 결재 양식명
 	.input-wrap
-		input(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" placeholder="ex) 시말서, 휴가신청서" required)
+		//- input(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" placeholder="ex) 시말서, 휴가신청서" required)
+		select(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" v-model="auditTitle" required)
+			option(value="" disabled selected) 결재 양식을 선택해주세요.
+			option(v-for="form in auditForms" :key="form.record_id" :value="form.index.value") {{ form.index.value }}
 
 	hr
 
@@ -56,7 +59,7 @@ template(v-if="step > 1")
 								//- 작성일자 기안사 :: e
 
 								tr(v-if="selectedAuditors.approvers.length === 0 && selectedAuditors.agreers.length === 0 && selectedAuditors.receivers.length === 0" style="height: 119px;")
-									th 결재 라인
+									th.essential 결재 라인
 									td.left(colspan="3")
 										span.empty(@click="openModal") 이곳을 눌러 [ 결재/합의/수신참조 ] 라인을 추가해주세요.
 
@@ -119,7 +122,7 @@ template(v-if="step > 1")
 											input(type="text" :name="'addRow'+index" v-model="row.value")
 
 								tr
-									th 제목
+									th.essential 제목
 										.add-btn(@click="isRowModalOpen = true")
 											.icon
 												svg
@@ -128,7 +131,7 @@ template(v-if="step > 1")
 										.input-wrap
 											input#to_audit(type="text" placeholder="제목" required name="to_audit")
 								tr
-									th 결재 내용
+									th.essential 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap
 											//- Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
@@ -254,6 +257,32 @@ const selectedAuditors = ref({
     agreers: [],    // 합의
     receivers: []   // 수신참조
 });
+const auditForms = ref([
+	{
+		record_id: "1",
+		index: {
+			value: "휴가신청서"
+		},
+	},
+	{
+		record_id: "2",
+		index: {
+			value: "시말서"
+		},
+	},
+	{
+		record_id: "3",
+		index: {
+			value: "업무보고서"
+		},
+	},
+	{
+		record_id: "4",
+		index: {
+			value: "기타"
+		},
+	}
+]); // 결재 양식 목록
 const backupSelected = ref(null);	// 선택된 결재자 백업
 const same_division_auditors = ref({});	// 동일 부서 직원 목록
 let send_auditors_arr:string[] = [];
@@ -685,8 +714,8 @@ const requestAudit = async (e) => {
             return;
         }
 
-        if (selectedAuditors.value.approvers.length === 0) {
-            alert("결재자를 한 명 이상 선택해주세요.");
+        if (selectedAuditors.value.approvers.length === 0 || selectedAuditors.value.agreers.length === 0) {
+            alert("결재라인을 눌러 결재자를 선택해주세요.");
             return;
         }
 
@@ -771,7 +800,8 @@ onUnmounted(() => {
 	hr,
 	.approver-list:last-of-type,
 	.reference-list:last-of-type,
-	.empty {
+	.empty,
+	.essential::after {
 		display: none !important;
 	}
 
