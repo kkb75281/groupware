@@ -190,7 +190,7 @@ template(v-if="step > 1")
 						table.table#selected_auditors
 							colgroup
 								col(style="width: 8%")
-								col(style="width: 30%")
+								col(style="width: 38%")
 								col(style="width: 15%")
 								col(style="width: 15%")
 								col(style="width: 30%")
@@ -902,6 +902,8 @@ onUnmounted(() => {
 }
 
 .table {
+	min-width: 20rem;
+
     tr {
         td {
             padding: 0.75rem;

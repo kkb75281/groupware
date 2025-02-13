@@ -840,6 +840,7 @@ onUnmounted(() => {
 
 		h2 {
 			font-size: 2rem;
+			line-height: 1.2;
 		}
 
 		.icon {
