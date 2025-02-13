@@ -62,7 +62,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { skapi, mainPageLoading } from '@/main';
 import { user, makeSafe } from '@/user';
 import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp';
-import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc } from '@/components/make_stamp';
+import { openStampModal, closeStampDialog, handleStampBlob, uploadingStamp, stampImages } from '@/components/make_stamp';
 
 import MakeStamp from '@/components/make_stamp.vue';
 import AlertModal from '@/components/alert_modal.vue';

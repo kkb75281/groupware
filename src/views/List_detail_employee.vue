@@ -112,7 +112,7 @@ br
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { skapi, mainPageLoading } from '@/main';
 import { user, makeSafe } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'

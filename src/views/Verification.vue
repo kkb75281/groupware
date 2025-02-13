@@ -38,14 +38,13 @@
 import { useRoute, useRouter } from 'vue-router';
 import { skapi } from "@/main";
 import { user } from "@/user";
-import { ref, watch, onMounted, nextTick } from 'vue';
+import { ref } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
 
 let step = ref(1);
 let error = ref('');
-let promiseRunning = ref(false);
 let resending = ref(false);
 
 let resend = () => {

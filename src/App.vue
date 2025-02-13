@@ -11,9 +11,6 @@ import { watch } from 'vue';
 const router = useRouter();
 const route = useRoute();
 
-let isadmin = user.access_group > 98;
-let onlyAdminRoute = ['admin', 'add-employee', 'add-divisions', 'edit-divisions', 'list-divisions']
-
 watch(loaded, async(nv) => {
     if (!nv) return;
 

@@ -228,10 +228,10 @@ template(v-if="step > 1")
 
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { ref, onMounted, onUnmounted, watch, computed, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { skapi, mainPageLoading } from "@/main";
 import { user, makeSafe, verifiedEmail } from "@/user";
-import { getDivisionNames, divisionNameList } from "@/division";
+import { divisionNameList } from "@/division";
 
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';

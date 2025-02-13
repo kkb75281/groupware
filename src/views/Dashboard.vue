@@ -14,9 +14,7 @@ ul.card-wrap.gmail
 		ul.newsletter-mail
 			li.mail(v-for="news in newsletterList" :key="news.message_id" @click="(e) => router.push('/newsletter-detail/' + news.message_id)")
 				.link
-					//- span.from {{ news.from }}
 					span.mail-title {{ news.subject }}
-					//- p.mail-cont {{ news.snippet }}
 					span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
 ul.card-wrap.gmail(v-if="googleAccountCheck")
 	li.card
@@ -105,13 +103,11 @@ ul.card-wrap
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-// import { skapi, updateEmails, googleEmailUpdate } from "@/main";
+import { ref, onMounted, onUnmounted } from 'vue';
 import { skapi } from "@/main";
-import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { user } from "@/user";
-import { fetchGmailEmails } from "@/utils/mail";
 import { convertTimestampToDateMillis } from "@/utils/time";
-import { mailList, updateEmails, readAudit, readList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
+import { mailList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
 
 import Loading from '@/components/loading.vue';
 
@@ -194,143 +190,137 @@ let showMailDoc = (e: Event, rt: any) => {
 }
 
 onMounted(async () => {
-    // await updateEmails();
 	getNewsletterList();
-    
-    // // 30초마다 이메일 업데이트
-    // emailCheckInterval = setInterval(() => {
-    //     updateEmails();
-    // }, 10000);
 });
 
 // 컴포넌트 언마운트 시 인터벌 정리
 onUnmounted(() => {
-    // if (emailCheckInterval) {
-    //     clearInterval(emailCheckInterval);
-    // }
+	// if (emailCheckInterval) {
+	//     clearInterval(emailCheckInterval);
+	// }
 });
 
 </script>
 
 <style scoped lang="less">
 .wrap {
-    padding: 3rem 2.4rem 0;
+	padding: 3rem 2.4rem 0;
 }
 
 .fold {
-    .wrap {
-        padding: 3rem 2.4rem 0;
-    }
+	.wrap {
+		padding: 3rem 2.4rem 0;
+	}
 }
 
 .card-wrap {
-    &.gmail {
-        display: flex;
+	&.gmail {
+		display: flex;
 
-        .card {
-            padding: 1.5rem;
-            transition: none;
-            width: 100%;
+		.card {
+			padding: 1.5rem;
+			transition: none;
+			width: 100%;
 
-            &:hover {
-                transform: none;
-                box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.05);
-            }
-        }
+			&:hover {
+				transform: none;
+				box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.05);
+			}
+		}
 
-        .title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+		.title {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
 
-        .go-detail {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.875rem;
-            color: var(--gray-color-500);
-        }
+		.go-detail {
+			display: flex;
+			align-items: center;
+			gap: 0.25rem;
+			font-size: 0.875rem;
+			color: var(--gray-color-500);
+		}
 
-        .icon.img {
-            svg {
-                width: 1.5rem;
-                height: 1.5rem;
-                margin: 0;
-            }
-        }
+		.icon.img {
+			svg {
+				width: 1.5rem;
+				height: 1.5rem;
+				margin: 0;
+			}
+		}
 
-        .mail {
-            border-top: 1px solid var(--gray-color-200);
-            padding: 0.75rem 0.5rem;
+		.mail {
+			border-top: 1px solid var(--gray-color-200);
+			padding: 0.75rem 0.5rem;
 			cursor: pointer;
 
-            &:hover {
-                background-color: var(--primary-color-25);
-            }
-        }
+			&:hover {
+				background-color: var(--primary-color-25);
+			}
+		}
 
-        .link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 0.875rem;
-            line-height: 1.2;
-            color: var(--gray-color-500);
+		.link {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			font-size: 0.875rem;
+			line-height: 1.2;
+			color: var(--gray-color-500);
 
-            > * {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                display: -webkit-box;
-                -webkit-line-clamp: 1;
-                -webkit-box-orient: vertical;
-            }
-        }
+			> * {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				display: -webkit-box;
+				-webkit-line-clamp: 1;
+				-webkit-box-orient: vertical;
+			}
+		}
 
-        .from {
-            font-weight: 600;
-            color: var(--gray-color-900);
-            flex: none;
-            width: 100px;
-        }
+		.from {
+			font-weight: 600;
+			color: var(--gray-color-900);
+			flex: none;
+			width: 100px;
+		}
 
-        .mail-title {
-            font-weight: 600;
-            color: var(--gray-color-900);
-        }
+		.mail-title {
+			font-weight: 600;
+			color: var(--gray-color-900);
+		}
 
-        .mail-cont {
-            font-size: 0.75rem;
-            color: var(--gray-color-400);
-            margin-right: 1rem;
-            flex: 1;
-        }
+		.mail-cont {
+			font-size: 0.75rem;
+			color: var(--gray-color-400);
+			margin-right: 1rem;
+			flex: 1;
+		}
 
-        .attachment {
-            .icon {
-                svg {
-                    width: 1rem;
-                    height: 1rem;
-                    fill: var(--gray-color-400);
-                }
-            }
-        }
+		.attachment {
+			.icon {
+				svg {
+					width: 1rem;
+					height: 1rem;
+					fill: var(--gray-color-400);
+				}
+			}
+		}
 
-        .mail-date {
-            font-size: 0.75rem;
-            margin-left: auto;
-            flex: none;
-        }
-    }
+		.mail-date {
+			font-size: 0.75rem;
+			margin-left: auto;
+			flex: none;
+		}
+	}
 
-    .title-wrap {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-    }
+	.title-wrap {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-bottom: 1rem;
+	}
 
 	.empty {
 		display: flex;
@@ -348,19 +338,19 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1200px) {
-    .wrap {
-        padding-top: 3rem;
-    }
+	.wrap {
+		padding-top: 3rem;
+	}
 }
 
 @media (max-width: 768px) {
-    .card-wrap {
-        &.gmail {
-            .from,
-            .mail-cont {
-                display: none;
-            }
-        }
-    }
+	.card-wrap {
+		&.gmail {
+			.from,
+			.mail-cont {
+				display: none;
+			}
+		}
+	}
 }
 </style>
