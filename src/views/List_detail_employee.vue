@@ -11,7 +11,7 @@ hr
 				img#profile-img(:src="currentEmp?.picture" alt="profile image")
 
 			.util-wrap
-				.util-btn
+				.util-btn(:class="{'disabled' : !currentEmp?.phone_number}")
 					a.click-btn(:href="'tel:' + currentEmp?.phone_number" style="display: block;")
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
@@ -146,6 +146,7 @@ getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l
 
 	let emp = res[0];
 	currentEmp.value = emp;
+	console.log({emp});
 	
 	currentEmpTags.value.emp_dvs = emp.division;
 	currentEmpTags.value.emp_pst = emp.position;
@@ -446,6 +447,18 @@ onMounted(async () => {
 			justify-content: center;
 			gap: 0.5rem;
 
+			&.disabled {
+				.click-btn {
+					background-color: var(--gray-color-200);
+					pointer-events: none;
+					cursor: not-allowed;
+					user-select: none;
+				}
+
+				span {
+					color: var(--gray-color-300);
+				}
+			}
 
 			.click-btn {
 				padding: 0.5rem;
@@ -461,6 +474,7 @@ onMounted(async () => {
 			span {
 				font-size: 0.8rem;
 				color: var(--gray-color-400);
+				user-select: none;
 			}
 		}
 	}
