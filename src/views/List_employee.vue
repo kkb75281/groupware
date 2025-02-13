@@ -700,10 +700,12 @@ let cancelInvite = (employee_info) => {
 
         getInvitationsCache.splice(getInvitationsCache.findIndex(inv => res.user_id === inv), 1); // 캐시에서 삭제
 
-        let inv = getInvitations();
+        let inv = await getInvitations();
         alert('초대메일이 취소되었습니다.');
 
-        employee.value = await inv;
+		employee.value = employee.value.filter(emp => emp.user_id !== employee_info.user_id); // 리스트에서 삭제
+
+        // employee.value = await inv;
 
     }).catch(err => {
         alert('초대메일 취소에 실패하였습니다.');
