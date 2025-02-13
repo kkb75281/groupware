@@ -126,11 +126,12 @@ CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCropped
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { nextTick, onMounted, ref } from 'vue';
+import { onMounted } from 'vue';
 import { skapi, mainPageLoading } from '@/main';
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 import { getDivisionNames, divisionNameList } from '@/division';
 import { divisions } from '@/division';
+
 import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();

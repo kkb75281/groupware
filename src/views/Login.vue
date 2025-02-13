@@ -49,7 +49,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { user } from '@/user';
 import { skapi, iwaslogged } from "@/main";
-import { ref, watch, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();

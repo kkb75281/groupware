@@ -80,9 +80,8 @@ import { useRoute, useRouter } from "vue-router";
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import type { Ref } from 'vue';
 import { skapi } from "@/main";
-import { loading, divisions, divisionNameList, getDivisionData } from "@/division";
+import { loading, divisionNameList, getDivisionData } from "@/division";
 import { user, makeSafe } from '@/user';
-import { extractTimeFromDateTime } from "@/utils/time";
 
 import Loading from "@/components/loading.vue";
 

@@ -14,9 +14,7 @@ ul.card-wrap.gmail
 		ul.newsletter-mail
 			li.mail(v-for="news in newsletterList" :key="news.message_id" @click="(e) => router.push('/newsletter-detail/' + news.message_id)")
 				.link
-					//- span.from {{ news.from }}
 					span.mail-title {{ news.subject }}
-					//- p.mail-cont {{ news.snippet }}
 					span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
 ul.card-wrap.gmail(v-if="googleAccountCheck")
 	li.card
@@ -105,12 +103,11 @@ ul.card-wrap
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { skapi } from "@/main";
 import { user } from "@/user";
-import { fetchGmailEmails } from "@/utils/mail";
 import { convertTimestampToDateMillis } from "@/utils/time";
-import { mailList, updateEmails, readAudit, readList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
+import { mailList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
 
 import Loading from '@/components/loading.vue';
 
@@ -193,13 +190,7 @@ let showMailDoc = (e: Event, rt: any) => {
 }
 
 onMounted(async () => {
-	// await updateEmails();
 	getNewsletterList();
-	
-	// // 30초마다 이메일 업데이트
-	// emailCheckInterval = setInterval(() => {
-	//     updateEmails();
-	// }, 10000);
 });
 
 // 컴포넌트 언마운트 시 인터벌 정리

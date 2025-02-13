@@ -9,14 +9,7 @@
 <script lang="ts" setup>
 import { type Ref, ref, watch, nextTick, onMounted } from 'vue'
 import { skapi } from '@/main'
-import { user, makeSafe } from '@/user'
-import {
-    divisions,
-    divisionNameList,
-    getDivisionData,
-    getDivisionDataRunning,
-    getDivisionNamesRunning,
-} from "@/division";
+import { user } from '@/user'
 import { type Organigram, organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram'
 
 import Loading from '@/components/loading.vue'

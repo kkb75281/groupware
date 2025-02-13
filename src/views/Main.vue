@@ -21,7 +21,6 @@ const router = useRouter();
 const route = useRoute();
 
 let mainWrap = ref(null);
-let loadingIcon = ref(null);
 let emailCheckInterval;
 
 onMounted(async () => {
