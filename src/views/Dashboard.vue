@@ -20,7 +20,7 @@ ul.card-wrap.gmail
 				.icon
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-				| 공지사항이 없습니다.
+				| 등록된 공지사항이 없습니다.
 ul.card-wrap.gmail(v-if="googleAccountCheck")
 	li.card
 		.title-wrap(:style="{ marginBottom: googleAccountCheck ? '1rem' : '0' }")

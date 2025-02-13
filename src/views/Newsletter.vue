@@ -45,7 +45,7 @@ hr
 							Loading#loading
 				template(v-else-if="!newsletterList || newsletterList.length === 0")
 					tr.nohover
-						td.left(colspan="4") 등록된 공지사항이 없습니다.
+						td(colspan="4") 등록된 공지사항이 없습니다.
 				template(v-else)
 					tr.hover(v-for="(news, index) in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
 						td {{ index + 1 }}
