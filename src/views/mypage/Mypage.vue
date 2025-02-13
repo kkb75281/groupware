@@ -29,7 +29,7 @@ ul.card-wrap
             .icon.img
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
-            h4.name 근퇴 관리
+            h4.name 근태 관리
             .btn-wrap
                 p.btn-go 바로가기
                 .icon

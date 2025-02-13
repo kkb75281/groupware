@@ -253,6 +253,11 @@ const skapi = new Skapi(
   'f498d188-1fa5-43e5-a32d-904d3e125983',
   // e :: mina
 
+	// s :: mina 0213
+	// 'ap21cemcuW6KhJIDR98Z',
+	// 'f498d188-1fa5-43e5-a32d-904d3e125983',
+	// e :: mina 0213
+
   // s :: qb
   // 'ap21WQQ42ZUVa3GYCmGr',
   // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
