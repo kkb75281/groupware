@@ -16,11 +16,11 @@ hr
 
 .itembox-wrap
 	.itembox
-		span.time 출근 : #[span.value {{ timeRecords.startTime }}]
+		span.time 출근 : #[span.value {{ extractTimeFromDateTime(timeRecords.startTime) }}]
 		button.btn.btn-work(@click="startWork") 출근
 
 	.itembox
-		span.time 퇴근 : #[span.value {{ timeRecords.endTime }}]
+		span.time 퇴근 : #[span.value {{ extractTimeFromDateTime(timeRecords.endTime) }}]
 		button.btn.btn-work(@click="endWork") 퇴근
 
 .itembox(style="margin-top: 3rem; padding: 0; border-radius: 0; box-shadow: none;")
@@ -33,9 +33,9 @@ hr
 						Loading#loading
 				table.table#tb-record-commute
 						colgroup
-								col(style="width: 10%;")
-								col(style="width: 10%;")
-								col(style="width: 10%;")
+								col(style="width: 8%;")
+								col(style="width: 5%;")
+								col(style="width: 5%;")
 								col(style="width: 10%;")
 								col(style="width: 10%;")
 								
@@ -364,6 +364,47 @@ const endWork = async () => {
     }
     
     return;
+
+    // try {
+    //   // 마지막 기록이 있고, 같은 날짜이며, 출근 기록이 없는 경우
+    //   if (lastCommute && lastCommute.data.date === currentDate && !lastCommute.data.startTime) {
+    //     // 기존 기록 업데이트
+    //     const config = {
+    //       record_id: lastCommute.record_id,
+    //     }
+    //     await skapi.postRecord(newCommuteData, config);
+
+    //     // 상태 업데이트
+    //     const updatedRecord = {
+    //       record_id: lastCommute.record_id,
+    //       data: newCommuteData
+    //     };
+
+    //     // 마지막 기록을 새로운 기록으로 교체
+    //     commuteStorage = commuteStorage.map(record => 
+    //       record.record_id === lastCommute.record_id ? updatedRecord : record
+    //     );
+    //     commuteRecords.value = commuteStorage;
+    //     timeRecords.value = newCommuteData;
+
+    //   } else {
+    //     // 마지막 기록이 다른 날짜이거나 없는 경우 새로 생성
+    //     const savedRecord = await saveCommuteRecord({
+    //       ...newCommuteData,
+    //     });
+
+    //     commuteStorage.push({ ...savedRecord });
+    //     commuteRecords.value = commuteStorage;
+    //     timeRecords.value = savedRecord.data;
+    //   }
+
+    //   alert('퇴근 기록이 저장되었습니다.');
+    // } catch (error) {
+    //   alert('퇴근 기록 저장에 실패했습니다.');
+    //   console.log('=== endWork === error : ', {error});
+    // }
+    
+    // return;
   }
 
   // console.log('=== CC 확인 === ');
@@ -703,6 +744,8 @@ onMounted(async () => {
 	}
 
 	.table {
+    min-width: 35rem;
+
 		tbody {
 			tr {
 				&:hover {
