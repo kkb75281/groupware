@@ -244,30 +244,6 @@ export let loginCheck = async (profile: any) => {
 	loaded.value = true;
 };
 
-// // 이메일 업데이트
-// export async function updateEmails() {
-// 	const accessToken = sessionStorage.getItem('accessToken');
-	
-// 	if (accessToken) {
-// 		try {
-// 			googleEmailUpdate.value = true;
-// 			const res = await fetchGmailEmails(accessToken);
-// 			// console.log('=== updateEmails === res : ', res);
-// 			mailList.value = res;
-// 			googleEmailUpdate.value = false;
-
-// 			// // console.log('=== updateEmails === res : ', res);
-// 		} catch (error) {
-// 			googleEmailUpdate.value = false;
-// 			console.error('=== updateEmails === error : ', {error});
-// 		}
-// 	}
-// }
-
-// setInterval(() => {
-// 	updateEmails();
-// }, 10000);
-
 const skapi = new Skapi(
   // 'ap21UAo9MdRQtaQ8CmGr',
   // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
@@ -278,11 +254,13 @@ const skapi = new Skapi(
   // e :: mina
 
   // s :: qb
-//   'ap21WQQ42ZUVa3GYCmGr',
-//   '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
-//   'ap21b3xJGgBzEONNCmGr',
-//   '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
+  // 'ap21WQQ42ZUVa3GYCmGr',
+  // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
+  // 'ap21b3xJGgBzEONNCmGr',
+  // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
   // e :: qb
+
+//   "ap21cZGkmP0COCVxCmGr", "5750ee2c-f7f7-43ff-b6a5-cce599d30101",
 
   // 'ap22SqnnCxZxkisPeFEc',
   // 'f8e16604-69e4-451c-9d90-4410f801c006',
@@ -296,9 +274,5 @@ const skapi = new Skapi(
 //   { autoLogin: false },
 //   { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
 // );
-
-// app.use(router);
-
-// app.mount('#app');
 
 export { skapi };

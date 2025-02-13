@@ -50,15 +50,6 @@ header#header
 								template(v-else) {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 반려하였습니다.' }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
-				//- 이메일 알림
-				//- li(v-for="email in notifications.emails")
-					a.router(:href="email.link" target="_blank" @click="closePopup")
-						h4.noti-type [새 이메일]
-						h5.noti-title {{ email.title }}
-						.noti-info
-							p.noti-sender {{ email.from }}
-							span.upload-time {{ formatTimeAgo(email.dateTimeStamp) }}
-
 	template(v-else)
 		.popup-main.no-noti
 			h4.title
@@ -142,11 +133,11 @@ header#header
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onUnmounted, onMounted, ref, nextTick, watch, reactive, computed } from 'vue';
+import { onUnmounted, onMounted, ref, watch } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { notifications, realtimes, readList, unreadCount, readNoti, readAudit, createReadListRecord, addEmailNotification } from '@/notifications'
+import { realtimes, readList, unreadCount, readNoti } from '@/notifications'
 import { goToAuditDetail } from '@/audit'
 
 const router = useRouter();
@@ -181,7 +172,6 @@ let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
 	console.log({realtimes})
 	console.log({readList})
-	console.log({readAudit})
 };
 
 let closeNotification = (event) => {
@@ -213,26 +203,6 @@ let closePopup = () => {
 	isProfileOpen.value = false;
 };
 
-// const allNotifications = computed(() => {
-//     // 결재 알림 변환
-//     const auditNotifications = realtimes.value.map(rt => ({
-//         type: 'audit',
-//         data: rt,
-//         timestamp: rt.send_date
-//     }));
-
-//     // 이메일 알림 변환
-//     const emailNotifications = notifications.emails.map(email => ({
-//         type: 'email',
-//         data: email,
-//         timestamp: email.dateTimeStamp
-//     }));
-
-//     // 모든 알림 합치고 시간순 정렬
-//     return [...auditNotifications, ...emailNotifications]
-//         .sort((a, b) => b.timestamp - a.timestamp);
-// });
-
 onMounted(() => {
 	document.addEventListener('click', closeNotification);
 	document.addEventListener('click', closeProfile);
@@ -242,10 +212,6 @@ onMounted(() => {
 		closePopup();
 		next();
 	});
-
-	// addEmailNotification(newEmail => {
-	// 	console.log('=== addEmailNotification === newEmail : ', newEmail);
-	// });
 });
 
 onUnmounted(() => {
@@ -267,7 +233,6 @@ let showRealtimeNoti = (e, rt) => {
 
 let logout = () => {
 	skapi.logout().then(() => {
-		// Object.assign(user, {});
 		for (let key in user) {
 			delete user[key];
 		}
