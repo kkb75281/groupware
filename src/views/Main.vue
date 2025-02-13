@@ -36,8 +36,12 @@ watch(mainPageLoading, (nv) => {
 	if (nv) {
 		nextTick(() => {
 			const targetElement = document.querySelector('#loading');
+			let scrollLocation = document.documentElement.scrollTop;
 
-			targetElement.style.setProperty('--loading-top', `${(window.innerHeight - mainWrap.value.getBoundingClientRect().top - 80) / 2}px`);
+			console.log('innerHeight',window.innerHeight);
+			console.log('scrollLocation',scrollLocation);
+
+			targetElement.style.setProperty('--loading-top', `${(window.innerHeight - mainWrap.value.getBoundingClientRect().top + scrollLocation - 200) / 2}px`);
 		})
 	}
 }, { immediate: true });
