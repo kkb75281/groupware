@@ -126,7 +126,7 @@ skapi.getRecords({
 }).then(r => {
 	if(!r.list.length) {
 		alert('부서가 등록되어 있지 않습니다. 부서를 먼저 등록해주세요.');
-		router.push('/list-employee');
+		router.push('/admin/list-divisions');
 	} else {
 		let divisionNames = r.list[0].data;
 		console.log({divisionNames})
@@ -145,7 +145,7 @@ skapi.getRecords({
 }).catch(err => {
 	if(err.code === 'NOT_EXISTS') {
 		alert('부서가 등록되어 있지 않습니다. 부서를 먼저 등록해주세요.');
-		router.push('/list-employee');
+		router.push('/admin/list-divisions');
 		return;
 	}
 });
