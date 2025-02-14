@@ -1229,6 +1229,12 @@ onUnmounted(() => {
 	overflow: hidden;
 }
 
+.modal {
+	.modal-cont {
+		max-width: 100%;
+	}
+}
+
 @media (max-width: 768px) {
     .approver-wrap {
         grid-template-columns: repeat(5, 1fr);
