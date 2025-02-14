@@ -819,10 +819,6 @@ onUnmounted(() => {
 	padding: 3rem 2.4rem;
 }
 
-// #printArea {
-// 	margin-bottom: 3rem;
-// }
-
 .form-wrap {
 	position: relative;
 	max-width: 900px;
@@ -1315,6 +1311,10 @@ onUnmounted(() => {
 
 .waitting {
 	color: var(--gray-color-500);
+}
+
+._wysiwyg4all {
+	padding: 0;
 }
 
 @media print {
