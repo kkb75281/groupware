@@ -134,6 +134,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 								template(v-else) 반려자
 						.date 2025.01.01 12:00
 					.comment {{ auditor.comment || '-' }}
+			.empty(v-else) 결재 의견이 없습니다.
 
 
 		.button-wrap
