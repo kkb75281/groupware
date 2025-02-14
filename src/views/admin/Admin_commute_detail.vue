@@ -35,7 +35,7 @@ hr
 
             tbody
                 template(v-if="loading")
-                    tr(v-for="i in 4")
+                    tr(v-for="i in 5")
                 template(v-else-if="!commuteRecords || commuteRecords.length === 0")
                     tr
                         td(colspan="5") 데이터가 없습니다.
@@ -127,6 +127,8 @@ onMounted(async () => {
     }
 }
 .table {
+    min-width: 31rem;
+
     tbody {
         tr {
             &:hover {
