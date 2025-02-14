@@ -358,23 +358,29 @@ let uploadStampImage = async(imageUrl) => {
 
 	if(!onlyStampFile.value) return;
 
+	let uploadGeneratedStampUrl = null;
+
 	try {
 		uploadGeneratedStamp.value = await uploadCreatedStamp(onlyStampFile.value);
 		console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
-
-		let uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
-		console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
-
-		stempType.value = 'stamp';
-		await getStampList(true);
-
-		selectStamp(uploadGeneratedStampUrl);
 	} catch(e) {
 		alert('도장 등록 중 오류가 발생했습니다.');
 		throw e;
-	} finally {
-		makeStampRunning.value = false;
 	}
+	
+	if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
+		uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
+		console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
+	}
+
+	stempType.value = 'stamp';
+	await getStampList(true);
+	
+	if(uploadGeneratedStampUrl) {
+		selectStamp(uploadGeneratedStampUrl);
+	}
+
+	makeStampRunning.value = false;
 }
 
 let createStamp = () => {
@@ -420,10 +426,11 @@ let createStamp = () => {
 
 		try {
 			uploadGeneratedStamp.value = await uploadCreatedStamp(file);
-			if(uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
+			console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
+			if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
 				previewStamp.value = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
 			} else {
-				getStampList();
+				getStampList(true);
 			}
 		} catch(e) {
 			alert('도장 등록 중 오류가 발생했습니다.');
