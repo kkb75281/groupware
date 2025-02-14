@@ -420,7 +420,8 @@ watch(() => route.path, (newPath, oldPath) => {
 	.popup-main {
 		ul {
 			li {
-				border-top: 1px solid var(--gray-color-200);
+				// border-top: 1px solid var(--gray-color-200);
+				border-top: 1px solid var(--gray-color-100);
 			}
 		}
 
