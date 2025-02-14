@@ -43,6 +43,11 @@ header#header
 							p.noti-sender {{ rt.from }}
 							span.upload-time {{ formatTimeAgo(rt.dateTimeStamp) }}
 
+						template(v-else-if="rt.audit_info.audit_type === 'canceled'")
+							h4.noti-type [결재 회수]
+							h5.noti-title {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 회수하였습니다.' }}
+							p.upload-time {{ formatTimeAgo(rt.send_date) }}
+
 						template(v-else)
 							h4.noti-type [알람]
 							h5.noti-title 

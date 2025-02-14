@@ -53,18 +53,23 @@ hr
 					tr.nohover
 						td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : '수신참조 목록이 없습니다.' }}
 				template(v-else)
-					tr(v-for="(audit, index) of filterAuditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;")
+					tr(v-for="(audit, index) of filterAuditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }" :style="audit.isCanceled ? 'cursor: not-allowed; opacity: 0.6;' : 'cursor: pointer;'")
 						//- td 
 						//-     label.checkbox
 						//-         input(type="checkbox" name="checkbox")
 						//-         span.label-checkbox
 						td {{ index + 1 }}
-						td.left {{ audit.data.to_audit }}
+						template(v-if="audit.isCanceled")
+							td.left 
+								span.canceled-text [회수됨] 
+						template(v-else)
+							td.left {{ audit.data.to_audit }}
+
 						template(v-if="currentPage === 'audit-list'")
 							td
-								span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함' }") {{ audit.my_state }}
+								span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함', canceled: audit.my_state === '회수됨' }") {{ audit.my_state }}
 						td
-							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중' }}
+							span.audit-state(:class="{ approve: !audit.isCanceled && audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)), canceled: audit.isCanceled }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
 						//- td
 							span.audit-state(:class="{ approve: JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length }") {{ JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length ? '완료됨' : audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
 						td {{ audit.user_info?.name }}

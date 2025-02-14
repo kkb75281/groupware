@@ -124,6 +124,11 @@ const menuList = computed(() => [
                     to: '/mypage/edit-mystamp',
                     text: '도장 관리',
                 },
+                // {
+                //     name: 'edit-myfile',
+                //     to: '/mypage/edit-myfile',
+                //     text: '자료 관리',
+                // },
                 {
                     name: 'record-commute',
                     to: '/mypage/record-commute',
