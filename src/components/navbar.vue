@@ -2,7 +2,10 @@
 nav#navbar(ref="navbar")
     .navbar-wrap
         .logo
-            router-link.img-logo(to="/") 로고 부분
+            //- router-link.img-logo(to="/") 로고 부분
+            router-link.img-logo(to="/")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-groups-fill")
             //- button.btn-menu(@click="toggleNavbarFold")
                 .icon
                     svg
@@ -168,14 +171,14 @@ const menuList = computed(() => [
         icon: '#icon-groups',
         text: '직원 목록',
     },
-	{
+    {
         show: true,
         name: 'newsletter',
         to: '/newsletter',
         icon: '#icon-campaign',
         text: '공지사항',
     },
-	{
+    {
         show: true,
         name: 'organigram',
         to: '/organigram',
@@ -297,6 +300,18 @@ watch(() => route.fullPath, (nv) => {
         justify-content: space-between;
         padding: 0 20px;
         margin-bottom: 30px;
+        cursor: pointer;
+
+        .img-logo {
+            // width: 2.5rem;
+            // height: 2.5rem;
+            padding: 0 16px;
+
+            svg {
+                width: 2rem;
+                height: 2rem;
+            }
+        }
     }
 
     .btn-close {
