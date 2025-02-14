@@ -143,6 +143,11 @@ export let RealtimeCallback = async (rt: any) => {
 				handleAuditRequest(rt.message.audit_approval);
 			}	
 
+			// 결재 취소 알림 audit_canceled
+			if (rt.message?.audit_canceled) {
+				handleAuditRequest(rt.message.audit_canceled);
+			}
+
 			unreadCount.value = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
 		}
 

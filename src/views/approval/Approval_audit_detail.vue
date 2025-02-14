@@ -123,6 +123,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.icon(style="padding: 0")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
+			button.btn.outline.warning.btn-cancel(v-if="senderUser.user_id === user.user_id && isWithdrawable" type="button" @click="canceledAudit") 회수
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -215,7 +216,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
@@ -232,7 +233,7 @@ const auditId = ref('');
 const isDesktop = ref(window.innerWidth > 768);
 
 const disabled = ref(true);
-const auditDoContent = ref([]);
+const auditDoContent = ref([]); // 결재 서류 내용
 const approverList = ref([]);
 const agreerList = ref([]);
 const auditorList = ref([]); // 전체 결재자 리스트
@@ -245,6 +246,16 @@ const approveAudit = ref(false);
 const approvedComment = ref('');
 const approvalStep = ref(1);
 const stempType = ref('stamp');
+
+// 결재 회수 가능 여부 확인
+const isWithdrawable = computed(() => {
+  // 모든 결재자가 결재를 완료한 경우에는 회수 불가능
+  if (auditorList.value.every(auditor => auditor.approved)) {
+	return false;
+  } else {
+	return true;
+  }
+});
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
@@ -572,7 +583,7 @@ const getAuditDetail = async () => {
 					approved_type: auditor.split(':')[0],
 					approved: null,
 					stamp: null,
-					approved_str: '결제대기중'
+					approved_str: '결재대기중'
 				}
 				
 				approvalUserList.push(result);
@@ -806,6 +817,77 @@ const previewAudit = () => {
   };
 
   window.print();
+};
+
+// 결재 회수 함수
+const canceledAudit = async () => {
+	console.log('=== canceledAudit === auditId.value : ', auditId.value);
+	console.log('=== canceledAudit === auditDoContent.value : ', auditDoContent.value.tags);
+
+	// 결재 회수
+	try {
+		const option = {
+			readonly: true,
+			table: {
+				name: 'audit_canceled:' + auditId.value,
+				access_group: 'authorized'
+			}
+		}
+
+		const res = await skapi.postRecord(null, option);
+		console.log('결재회수 === postRecord === res : ', res);
+
+		// 결재 회수 실시간 알림 보내기
+		skapi.postRealtime(
+			{
+				audit_canceled: {
+					noti_id: auditId.value,
+					noti_type: 'audit',
+					send_date: new Date().getTime(),
+					send_user: user.user_id,
+					audit_info: {
+						audit_type: 'canceled',
+						to_audit: auditDoContent.value?.data?.to_audit,
+						audit_doc_id: auditId.value,
+					}
+				}
+			},
+			auditDoContent.value.user_id
+		).then(res => {
+			console.log('결재회수 알림 === postRealtime === res : ', res);
+		});
+
+		// 실시간 못 받을 경우 알림 기록 저장
+		skapi.postRecord(
+			{
+				noti_id: auditId.value,
+				noti_type: 'audit',
+				send_date: new Date().getTime(),
+				send_user: user.user_id,
+				audit_info: {
+					audit_type: 'canceled',
+					to_audit: auditDoContent.value?.data?.to_audit,
+					audit_doc_id: auditId.value,
+				}
+			},
+			{
+				readonly: true,
+				table: {
+					name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+					access_group: "authorized",
+				},
+			}
+		)
+		.then((res) => {
+			console.log("결재회수 알림기록 === postRecord === res : ", res);
+		});
+
+		window.alert('결재가 회수되었습니다.');
+		closeModal();
+
+	} catch (error) {
+		console.error(error);
+	}
 };
 
 onMounted(() => {
