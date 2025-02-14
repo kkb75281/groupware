@@ -22,6 +22,8 @@ export let getStampList = async (refresh = false) => {
             }
         });
 
+		console.log({res: JSON.parse(JSON.stringify(res))})
+
         if(res.list.length) {
             uploadedStamp.value = res.list[0].bin.stamp_data;
             uploadedRecordId.value = res.list[0].record_id;

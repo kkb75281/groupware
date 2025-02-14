@@ -12,6 +12,12 @@ export let handleStampBlobComplete = ref(false);
 
 export let openStampDialog = () => {
     openStampModal.value = true;
+	// uploadingStamp.value = {};
+	// stampImages.value = {};
+	// if(onlyStamp.value) {
+	// 	stampName.value = '';
+	// 	onlyStampFile.value = null;
+	// }
 }
 export let closeStampDialog = () => {
     openStampModal.value = false;
