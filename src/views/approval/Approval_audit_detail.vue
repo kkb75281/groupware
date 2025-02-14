@@ -174,7 +174,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.tab-menu
 					ul(:class="{ 'stamp': stempType === 'stamp', 'sign': stempType === 'sign' }")
 						li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 도장/서명 선택
-						li(:class="{ 'active': stempType === 'sign' }" @click="stempType = 'sign'; openStampModal = true; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 직접 서명
+						li(:class="{ 'active': stempType === 'sign', 'disabled' : makeStampComplete || makeSignComplete }" @click="stempType = 'sign'; openStampModal = true; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 직접 서명
 				br
 				.tab-cont
 					template(v-if="stempType === 'stamp'")
@@ -245,6 +245,8 @@ const approveAudit = ref(false);
 const approvedComment = ref('');
 const approvalStep = ref(1);
 const stempType = ref('stamp');
+const makeStampComplete = ref(false);
+const makeSignComplete = ref(false);
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
@@ -368,12 +370,24 @@ let uploadStampImage = async(imageUrl) => {
 		throw e;
 	}
 	
+	// if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
+	// 	uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
+	// 	console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
+	// }
+
 	if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
-		uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
+		// console.log({onlyStampFile: onlyStampFile.value})
+		// console.log({name: uploadingStamp.value.name})
+		let searchStamp = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name);
+		// console.log({searchStamp})
+		if(searchStamp && searchStamp.length) {
+			uploadGeneratedStampUrl = searchStamp[0].url;
+		}
 		console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
 	}
 
 	stempType.value = 'stamp';
+
 	await getStampList(true);
 	
 	if(uploadGeneratedStampUrl) {
@@ -381,6 +395,7 @@ let uploadStampImage = async(imageUrl) => {
 	}
 
 	makeStampRunning.value = false;
+	makeSignComplete.value = true;
 }
 
 let createStamp = () => {
@@ -420,24 +435,53 @@ let createStamp = () => {
 	// 초기 도장 생성
 	drawStamp(user.name);
 
+	let settingStampName = async() => {
+		await getStampList();
+
+		if(uploadedStamp.value && uploadedStamp.value.length) {
+			// 도장 이미지가 있을때 각각의 도장 이름 중 generated-stamp-가 있는지 확인
+			const stampNames = uploadedStamp.value.map(stamp => stamp.filename);
+			console.log(stampNames);
+			const generatedStamp = stampNames.filter(name => name.includes('generated-stamp-'));
+			console.log(generatedStamp);
+			
+			// generatedStamp가 있으면 그 다음 숫자를 찾아서 도장 이름을 만들어줌
+			if(generatedStamp.length) {
+				const lastStampNumber = generatedStamp.map(stamp => parseInt(stamp.split('-')[2])).sort((a, b) => b - a)[0];
+				return `generated-stamp-${lastStampNumber + 1}`;
+			} else {
+				return 'generated-stamp-1';
+			}
+		} else {
+            return 'generated-stamp-1';
+        }
+	}
+
 	// 캔버스에서 Blob 생성 후 서버로 업로드
 	canvas.toBlob(async(blob) => {
-		let file = new File([blob], "generated-stamp.png", { type: "image/png" });
+		let stampName = await settingStampName();
+		let file = new File([blob], stampName, { type: "image/png" });
 
 		try {
 			uploadGeneratedStamp.value = await uploadCreatedStamp(file);
 			console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
-			if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
-				previewStamp.value = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
-			} else {
-				getStampList(true);
-			}
 		} catch(e) {
 			alert('도장 등록 중 오류가 발생했습니다.');
 			throw e;
-		} finally {
-			makeStampRunning.value = false;
 		}
+
+		if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
+			previewStamp.value = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === stampName)[0].url;
+		} else {
+			getStampList(true);
+		}
+
+		if(previewStamp.value) {
+			selectStamp(previewStamp.value);
+		}
+
+		makeStampRunning.value = false;
+		makeStampComplete.value = true;
 	}, "image/png");
 }
 
@@ -1079,6 +1123,11 @@ onUnmounted(() => {
 				&.active {
 					color: #fff;
 					background-color: var(--primary-color-400);
+				}
+				&.disabled {
+					opacity: 0.5;
+					cursor: default;
+					pointer-events: none;
 				}
 			}
 		}

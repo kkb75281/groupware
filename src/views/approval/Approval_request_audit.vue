@@ -711,13 +711,14 @@ const requestAudit = async (e) => {
 
         if (totalSelectedCount === 0) {
             alert("결재자, 합의자, 수신참조 중 하나 이상을 선택해주세요.");
+			console.log(selectedAuditors.value);
             return;
         }
 
-        if (selectedAuditors.value.approvers.length === 0 || selectedAuditors.value.agreers.length === 0) {
-            alert("결재라인을 눌러 결재자를 선택해주세요.");
-            return;
-        }
+		if(selectedAuditors.value.approvers.length === 0 && selectedAuditors.value.agreers.length === 0) {
+			alert("결재자 또는 합의자를 선택해주세요.");
+			return;
+		}
 
 		mainPageLoading.value = true;
 
