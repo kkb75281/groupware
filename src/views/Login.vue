@@ -6,43 +6,50 @@
 
 	router-link.logo(to="/")
 		//- img(src="@/assets/img/img_logo_symbol.png")
-		p 로고영역
+		//- p 로고영역
+		svg
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-groups-fill")
 
-	h2.title 로그인
+	h2.title Groupware
 
 	hr
 
-	form(@submit.prevent="login")
-		.input-wrap
-			p.label 이메일
-			input(type="email" name="email" placeholder="이메일" :disabled="promiseRunning" required)
+	template(v-if="masterlogin")
+		form(@submit.prevent="login")
+			.input-wrap
+				p.label 이메일
+				input(type="email" name="email" placeholder="이메일" :disabled="promiseRunning" required)
 
-		.input-wrap
-			p.label 비밀번호
-			.input
-				input(:type='showPassword ? "text" : "password"' name="password" placeholder="비밀번호" :disabled="promiseRunning" required)
-				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
-					template(v-if="showPassword")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-fill")
-					template(v-else)
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
+			.input-wrap
+				p.label 비밀번호
+				.input
+					input(:type='showPassword ? "text" : "password"' name="password" placeholder="비밀번호" :disabled="promiseRunning" required)
+					button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
+						template(v-if="showPassword")
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-fill")
+						template(v-else)
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
 
-		.check-wrap
-			label.checkbox
-				input#input_autoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" checked)
-				span.label-checkbox 로그인 상태 유지
+			.check-wrap
+				label.checkbox
+					input#input_autoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" checked)
+					span.label-checkbox 로그인 상태 유지
 
-			router-link.btn-forgot(to="/forgot-password") 비밀번호 찾기
+				router-link.btn-forgot(to="/forgot-password") 비밀번호 찾기
 
-		button.btn.outline.btn-login(type="submit" style="margin-top: 2.5rem;") 로그인
+			button.btn.btn-login(type="submit" style="margin-top: 2.5rem;") 로그인
+			button.btn.outline(type="button" @click="masterlogin = false") 이전으로
 
-	button#el_bt_login.btn.btn-login-google(type="button" @click="googleLogin" :disabled="loading")
-		template(v-if="loading")
-			span Google 로그인 중...
-		template(v-else)
-			| Google 로그인
+	template(v-else)
+		button#el_bt_login.btn.btn-login-google(type="button" @click="googleLogin" :disabled="loading" style="margin-top: 0;")
+			template(v-if="loading")
+				span Google 로그인 중...
+			template(v-else)
+				| Google 로그인
+		
+		button.btn.outline(type="button" @click="masterlogin = true") 마스터 계정 로그인
 </template>
 
 <script setup>
@@ -54,6 +61,8 @@ import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+let masterlogin = ref(false);
 
 if(window.location.hash) {
     console.log('OAuth 콜백 처리중...');
@@ -197,7 +206,12 @@ onMounted(() => {
 
 	.logo {
 		display: block;
-		margin-bottom: 1.5rem;
+		margin-bottom: 0.5rem;
+
+		svg {
+			width: 3rem;
+			height: 3rem;
+		}
 	}
 
 	.title {
