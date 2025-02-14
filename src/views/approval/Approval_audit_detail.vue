@@ -696,6 +696,7 @@ const postApproval = async () => {
 		const userId = user.user_id;
 		// const approved = (document.querySelector('input[name="approved"]:checked') as HTMLInputElement)?.value;
 		const approved = approveAudit.value ? 'approve' : 'reject';
+		const approvedDate = new Date().getTime();
 
 		console.log('=== postApproval === approved : ', approved);
 
@@ -709,6 +710,7 @@ const postApproval = async () => {
 			approved: approved,
 			comment: approvedComment.value,
 			stamp: selectedStamp.value,
+			date: approvedDate,
 		}
 
 		// 결재 하는 요청
@@ -728,7 +730,7 @@ const postApproval = async () => {
 				audit_approval: {
 					noti_id: res.record_id,
 					noti_type: 'audit',
-					send_date: new Date().getTime(),
+					send_date: approvedDate,
 					send_user: user.user_id,
 					audit_info: {
 						audit_type: 'approved',
@@ -748,7 +750,7 @@ const postApproval = async () => {
 			{
 				noti_id: res.record_id,
 				noti_type: 'audit',
-				send_date: new Date().getTime(),
+				send_date: approvedDate,
 				send_user: user.user_id,
 				audit_info: {
 					audit_type: 'approved',
