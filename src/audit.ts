@@ -42,6 +42,18 @@ export async function getAuditList() {
 			const audit_doc = (await skapi.getRecords({ 
 				record_id: list.data.audit_id 
 			})).list[0];
+
+			// 회수된 결재 서류 가져오기
+			const canceledAudit = await skapi.getRecords({
+				table: {
+					name: 'audit_canceled:' + list.data.audit_id,
+					access_group: 'authorized'
+				},
+			});
+			console.log('canceledAudit : ', canceledAudit);
+
+			// 회수 여부 체크
+			const isCanceled = canceledAudit.list && canceledAudit.list.length > 0;
 	
 			// 다른 사람 결재 여부 확인
 			const approvals = (await skapi.getRecords({
@@ -88,9 +100,8 @@ export async function getAuditList() {
 				})
 	
 				if (!oa_has_audited_str) {
-					// audit_doc.approved = '대기중';
-					audit_doc.my_state = '대기중';
-					// audit_doc.user_id = auditor;
+					// audit_doc.my_state = '대기중';
+					audit_doc.my_state = isCanceled ? '회수됨' : '대기중';
 				}
 			})
 			
@@ -98,7 +109,8 @@ export async function getAuditList() {
 				...audit_doc,
 				approved: has_approved_data,
 				draftUserId: list.user_id
-			};
+				// isCanceled // 회수 여부 추가
+			}
 		}));
 	} catch (err) {
 		auditListRunning.value = false;

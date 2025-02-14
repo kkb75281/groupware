@@ -123,7 +123,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.icon(style="padding: 0")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-			button.btn.outline.warning.btn-cancel(v-if="senderUser.user_id === user.user_id && isWithdrawable" type="button" @click="canceledAudit") 회수
+			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isWithdrawable" @click="canceledAudit" :disabled="canceledAudit") 회수
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -864,9 +864,17 @@ const previewAudit = () => {
 };
 
 // 결재 회수 함수
-const canceledAudit = async () => {
-	console.log('=== canceledAudit === auditId.value : ', auditId.value);
-	console.log('=== canceledAudit === auditDoContent.value : ', auditDoContent.value.tags);
+const canceledAudit = async () => {	
+	const auditors = auditDoContent.value.data.auditors;
+	const parsedAuditors = JSON.parse(auditors);
+
+	// 각 배열에서 ID만 추출
+	const approverIds = parsedAuditors.approvers;
+	const agreerIds = parsedAuditors.agreers;
+	const receiverIds = parsedAuditors.receivers;
+
+	// // 결재자 ID 배열 생성
+	const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
 
 	// 결재 회수
 	try {
@@ -882,24 +890,56 @@ const canceledAudit = async () => {
 		console.log('결재회수 === postRecord === res : ', res);
 
 		// 결재 회수 실시간 알림 보내기
-		skapi.postRealtime(
-			{
-				audit_canceled: {
-					noti_id: auditId.value,
-					noti_type: 'audit',
-					send_date: new Date().getTime(),
-					send_user: user.user_id,
-					audit_info: {
-						audit_type: 'canceled',
-						to_audit: auditDoContent.value?.data?.to_audit,
-						audit_doc_id: auditId.value,
-					}
+		// skapi.postRealtime(
+		// 	{
+		// 		audit_canceled: {
+		// 			noti_id: auditId.value,
+		// 			noti_type: 'audit',
+		// 			send_date: new Date().getTime(),
+		// 			send_user: user.user_id,
+		// 			audit_info: {
+		// 				audit_type: 'canceled',
+		// 				to_audit: auditDoContent.value?.data?.to_audit,
+		// 				audit_doc_id: auditId.value,
+		// 			}
+		// 		}
+		// 	},
+		// 	approverIds
+		// ).then(res => {
+		// 	console.log('결재회수 알림 === postRealtime === res : ', res);
+		// });
+
+		const notificationData = {
+			audit_canceled: {
+				noti_id: auditId.value,
+				noti_type: 'audit',
+				send_date: new Date().getTime(),
+				send_user: user.user_id,
+				audit_info: {
+				audit_type: 'canceled',
+				to_audit: auditDoContent.value?.data?.to_audit,
+				audit_doc_id: auditId.value,
 				}
-			},
-			auditDoContent.value.user_id
-		).then(res => {
-			console.log('결재회수 알림 === postRealtime === res : ', res);
-		});
+			}
+		};
+
+		// // 각 그룹별 알림 전송 Promise 생성
+		// const notifications = [
+		// 	skapi.postRealtime(notificationData, allAuditors),
+		// ];
+
+		// Promise.all로 동시에 처리
+		try {
+			// const results = await Promise.all(notifications);
+			const results = await Promise.all(
+				allAuditors.map((auditor) => {
+					return skapi.postRealtime(notificationData, auditor.replaceAll('_', '-'));
+				})
+			);
+			console.log('결재회수 알림 전송 완료:', results);
+		} catch (error) {
+			console.error('결재회수 알림 전송 중 오류:', error);
+		}
 
 		// 실시간 못 받을 경우 알림 기록 저장
 		skapi.postRecord(
@@ -927,7 +967,7 @@ const canceledAudit = async () => {
 		});
 
 		window.alert('결재가 회수되었습니다.');
-		closeModal();
+		disabled.value = true; // 회수 버튼 비활성화
 
 	} catch (error) {
 		console.error(error);
