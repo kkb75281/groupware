@@ -638,6 +638,7 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
         )
         .then((res) => {
             // console.log("요청2 === postRealtime === res : ", res);
+			console.log("=== postRealtime === auditor_id : ", auditor_id);
         });
 
 	// 실시간 못 받을 경우 알림 기록 저장
