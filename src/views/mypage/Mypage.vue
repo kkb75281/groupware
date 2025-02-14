@@ -24,6 +24,19 @@ ul.card-wrap
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
     
+
+    //- li.card
+    //-     router-link.router(to="/mypage/edit-myfile")
+    //-         .icon.img
+    //-             svg
+    //-                 use(xlink:href="@/assets/icon/material-icon.svg#icon-file")
+    //-         h4.name 자료 관리
+    //-         .btn-wrap
+    //-             p.btn-go 바로가기
+    //-             .icon
+    //-                 svg
+    //-                     use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
     li.card
         router-link.router(to="/mypage/record-commute")
             .icon.img
@@ -35,7 +48,6 @@ ul.card-wrap
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
     li.card
         router-link.router(to="/change-password")
             .icon.img
