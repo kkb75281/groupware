@@ -132,7 +132,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 							.approved(:class="{ 'reject': auditor.approved === 'reject' }")
 								template(v-if="auditor.approved === 'approve'") 승인자
 								template(v-else) 반려자
-						.date 2025.01.01 12:00
+						.date {{ auditor?.date ? formatTimestampToDate(auditor?.date) : '2025.01.01 12:00' }}
 					.comment {{ auditor.comment || '-' }}
 			.empty(v-else) 결재 의견이 없습니다.
 
