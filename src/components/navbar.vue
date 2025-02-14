@@ -15,11 +15,16 @@ nav#navbar(ref="navbar")
         ul.menu-item
             template(v-for="item in menuList" :key="item.name")
                 li.item(v-if="item.show" :class="{'active': activeMenu == item.name}")
-                    router-link.router(:to="item.to")
+                    //- 외부 링크인 경우와 내부 라우팅인 경우를 구분
+                    a.router(v-if="item.isExternal" :href="item.to" target="_blank")
                         .icon
                             svg
-                                //- use(:xlink:href="item.icon")
-                                //- use(:xlink:href="'@/assets/icon/material-icon.svg' + item.icon")
+                                use(:href="getIconPath(item.icon)")
+                        .text 
+                            span {{ item.text }}
+                    router-link.router(v-if="!item.isExternal" :to="item.to")
+                        .icon
+                            svg
                                 use(:href="getIconPath(item.icon)")
                         .text 
                             span {{ item.text }}
@@ -55,6 +60,14 @@ const menuList = computed(() => [
         to: '/',
         icon: '#icon-dashboard',
         text: '대시보드',
+    },
+    {
+        show: true,
+        name: 'email',
+        to: 'https://mail.google.com/mail/u/0/#inbox',
+        icon: '#icon-mail',
+        text: '이메일',
+        isExternal: true  // 외부 링크 표시
     },
     {
         show: true,
@@ -110,7 +123,7 @@ const menuList = computed(() => [
                 {
                     name: 'record-commute',
                     to: '/mypage/record-commute',
-                    text: '근퇴 관리',
+                    text: '근태 관리',
                 },
                 {
                     name: 'change-password',
@@ -232,7 +245,7 @@ watch(() => route.fullPath, (nv) => {
     }
 
     for(let menu of menuList.value) {
-        if (!menu.show) continue;
+        if (!menu.show || menu.isExternal) continue;  // 외부 링크는 active 상태 체크에서 제외
 
         let menuPath = menu.to.replace(/^\//, '');
         

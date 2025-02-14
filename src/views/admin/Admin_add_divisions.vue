@@ -21,6 +21,7 @@ hr
         .input-wrap
             p.label.essential 부서명
             input(type="text" name="division_name" placeholder="부서명을 입력해주세요." required)
+            p.desc 부서명 등록시 / 를 사용하여 하위 부서를 등록할 수 있습니다. (예. 스카피/개발팀)
         
         br
 

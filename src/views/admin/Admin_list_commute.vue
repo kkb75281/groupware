@@ -49,21 +49,23 @@ hr
 
             tbody
                 template(v-if="loading")
-                    tr(v-for="i in 6")
-                template(v-else-if="!employee || Object.keys(employee).length === 0")
-                    tr
-                        td(colspan="6") 데이터가 없습니다.
-                template(v-else)
-                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(emp.user_id)")
-                        td.list-num {{ index + 1 }}
-                        td.user-name
-                                span {{ emp.name }}
-                        td.dvs {{ emp?.position }}
-                        td.dvs {{ emp?.divisionName }}
-                        td.startWork
-                            span.time {{ extractTimeFromDateTime(emp.startWork) }}
-                        td.endWork
-                            span.time {{ extractTimeFromDateTime(emp.endWork) }}
+                    tr.nohover.loading
+                        td(colspan="6")
+                            Loading#loading
+                //- template(v-else-if="!employee || Object.keys(employee).length === 0")
+                //-     tr
+                //-         td(colspan="6") 데이터가 없습니다.
+                //- template(v-else)
+                //-     tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(emp.user_id)")
+                //-         td.list-num {{ index + 1 }}
+                //-         td.user-name
+                //-                 span {{ emp.name }}
+                //-         td.dvs {{ emp?.position }}
+                //-         td.dvs {{ emp?.divisionName }}
+                //-         td.startWork
+                //-             span.time {{ extractTimeFromDateTime(emp.startWork) }}
+                //-         td.endWork
+                //-             span.time {{ extractTimeFromDateTime(emp.endWork) }}
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -88,7 +90,7 @@ import Loading from "@/components/loading.vue";
 const router = useRouter();
 const route = useRoute();
 
-const loading = ref(false);
+const loading = ref(true);
 const employee = ref([]);
 const selectedEmp = ref(null);
 const searchFor: Ref<"name" | "division" | "timestamp"> = ref('name');
@@ -286,7 +288,7 @@ const getEmpList = async () => {
         console.error('=== getEmpList === error : ', error);
         return newEmpList
     } finally {
-        loading.value = false;
+        // loading.value = false;
     };
 };
 
@@ -383,7 +385,7 @@ const searchEmp = async(refresh) => {
         console.error('=== searchEmp === error:', error);
         employee.value = [];
     } finally {
-        loading.value = false;
+        // loading.value = false;
     }
 };
 

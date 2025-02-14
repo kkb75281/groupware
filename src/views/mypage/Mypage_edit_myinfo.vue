@@ -1,10 +1,10 @@
-	<template lang="pug">
-	.title
-	h1 회원 정보 수정
+<template lang="pug">
+.title
+h1 회원 정보 수정
 
-	hr
+hr
 
-	.form-wrap
+.form-wrap
 	form#_el_pictureForm
 		.image
 			img#profile-img(:src="uploadSrc.profile_pic" alt="profile image")
