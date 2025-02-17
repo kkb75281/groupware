@@ -31,7 +31,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 									span.drafter {{ senderUser.name }}
 
 							//- 모바일 경우 레이아웃
-							tr.mo(v-show="!isDesktop")
+							tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
 								th 작성 일자
 								td(colspan="3") {{ formatTimestampToDate(auditDoContent?.uploaded) }}
 							tr.mo(v-show="!isDesktop")
@@ -109,14 +109,33 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 			//- 결재 승인/반려에 대한 의견 영역
 			//- template(v-if="senderUser.user_id === user.user_id")
+			br
+			br
+			br
+			br
+
+			h4 의견
+
+			hr
+
 			ul.reply-list(v-if="auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '').length > 0")
 				li.reply-item(v-for="(auditor, index) in auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '')")
-					.icon
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
-					.reply-cont-wrap
-						span.approver {{ auditor.user_info?.name }}
-						span.reply-cont(:class="{ 'reject': auditor.approved === 'reject' }") {{ auditor.comment || '-' }}
+					//- .icon
+					//- 	svg
+					//- 		use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
+					//- .reply-cont-wrap
+					//- 	span.approver {{ auditor.user_info?.name }}
+					//- 	span.reply-cont(:class="{ 'reject': auditor.approved === 'reject' }") {{ auditor.comment || '-' }}
+					.auditor
+						.info
+							.name {{ auditor.user_info?.name }}
+							.approved(:class="{ 'reject': auditor.approved === 'reject' }")
+								template(v-if="auditor.approved === 'approve'") 승인자
+								template(v-else) 반려자
+						.date {{ auditor?.date ? formatTimestampToDate(auditor?.date) : '2025.01.01 12:00' }}
+					.comment {{ auditor.comment || '-' }}
+			.empty(v-else) 결재 의견이 없습니다.
+
 
 		.button-wrap
 			button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
@@ -688,6 +707,7 @@ const postApproval = async () => {
 		const userId = user.user_id;
 		// const approved = (document.querySelector('input[name="approved"]:checked') as HTMLInputElement)?.value;
 		const approved = approveAudit.value ? 'approve' : 'reject';
+		const approvedDate = new Date().getTime();
 
 		console.log('=== postApproval === approved : ', approved);
 
@@ -701,6 +721,7 @@ const postApproval = async () => {
 			approved: approved,
 			comment: approvedComment.value,
 			stamp: selectedStamp.value,
+			date: approvedDate,
 		}
 
 		// 결재 하는 요청
@@ -720,7 +741,7 @@ const postApproval = async () => {
 				audit_approval: {
 					noti_id: res.record_id,
 					noti_type: 'audit',
-					send_date: new Date().getTime(),
+					send_date: approvedDate,
 					send_user: user.user_id,
 					audit_info: {
 						audit_type: 'approved',
@@ -740,7 +761,7 @@ const postApproval = async () => {
 			{
 				noti_id: res.record_id,
 				noti_type: 'audit',
-				send_date: new Date().getTime(),
+				send_date: approvedDate,
 				send_user: user.user_id,
 				audit_info: {
 					audit_type: 'approved',
@@ -1140,16 +1161,17 @@ onUnmounted(() => {
 // 추가의견 영역
 .reply-list {
 	// margin-bottom: 3rem;
-	margin-top: 3rem;
+	// margin-top: 3rem;
 
 	.reply-item {
-		border: 1px dashed var(--gray-color-300);
-		border-radius: 8px;
-		padding: 0.5rem;
-		display: flex;
-		align-items: center;
+		// border: 1px dashed var(--gray-color-300);
+		// border-radius: 8px;
+		// padding: 0.5rem;
+		// display: flex;
+		// align-items: center;
 		gap: 0.5rem;
-		margin-bottom: 0.5rem;
+		// margin-bottom: 0.5rem;
+		margin-bottom: 1rem;
 
 		&:last-of-type {
 			margin-bottom: 0;
@@ -1166,14 +1188,62 @@ onUnmounted(() => {
 		gap: 1rem;
 	}
 
+	.auditor {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.7rem;
+		align-items: center;
+		margin-bottom: 0.5rem;
+		padding-left: 0.2rem;
+
+		.info {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.name {
+			// display: inline-block;
+			font-size: 0.9rem;
+		}
+		.approved {
+			// display: inline-block;
+			// margin-right: 4px;
+			font-size: 14px;
+			border: 1px solid var(--primary-color-300);
+			padding: 3px 4px;
+			border-radius: 8px;
+			color: var(--primary-color-400);
+
+			&.reject {
+				color: var(--warning-color-400);
+				border-color: var(--warning-color-400);
+			}
+		}
+		.date {
+			font-size: 0.8rem;
+			color: var(--gray-color-400);
+		}
+	}
+
+	.comment {
+		background-color: var(--gray-color-50);
+		padding: 0.8rem 1rem;
+		border-radius: 20px;
+		font-size: 0.9rem;
+
+		&.reject {
+			color: var(--warning-color-400);
+		}
+	}
+
 	.approver {
 		font-size: 0.9rem;
 
-		&::after {
-			content: ' : ';
-			display: inline-block;
-			margin-left: 0.5rem;
-		}
+		// &::after {
+		// 	content: ' : ';
+		// 	display: inline-block;
+		// 	margin-left: 0.5rem;
+		// }
 	}
 
 	.reply-cont {
