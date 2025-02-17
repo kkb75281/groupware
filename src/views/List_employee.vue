@@ -648,6 +648,7 @@ let resendInvite = (email) => {
 }
 
 let cancelInvite = (employee_info) => {
+	console.log(employee_info)
     let safeEmail = makeSafe(employee_info.email);
     let safeUserId = makeSafe(employee_info.user_id);
 
