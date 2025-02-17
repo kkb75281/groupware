@@ -39,19 +39,19 @@ export async function getOrganigram(refresh = false) {
     }
 
     // 빈 부서 제거 (멤버가 0명이고 하위 부서도 없는 경우)
-    const filterEmptyDepartments = (departments: Organigram[]) => {
-      return departments.filter((dept) => {
-        // 하위 부서가 있으면 재귀적으로 필터링
-        if (dept.subDepartments.length > 0) {
-          dept.subDepartments = filterEmptyDepartments(dept.subDepartments);
-        }
+    // const filterEmptyDepartments = (departments: Organigram[]) => {
+    //   return departments.filter((dept) => {
+    //     // 하위 부서가 있으면 재귀적으로 필터링
+    //     if (dept.subDepartments.length > 0) {
+    //       dept.subDepartments = filterEmptyDepartments(dept.subDepartments);
+    //     }
 
-        // 멤버가 있거나 하위 부서가 있는 경우만 유지
-        return dept.members.length > 0 || dept.subDepartments.length > 0;
-      });
-    };
+    //     // 멤버가 있거나 하위 부서가 있는 경우만 유지
+    //     return dept.members.length > 0 || dept.subDepartments.length > 0;
+    //   });
+    // };
 
-    organigram.value = filterEmptyDepartments(organigram.value);
+    // organigram.value = filterEmptyDepartments(organigram.value);
   } catch (error) {
     console.error('=== getOrganigram === error : ', error);
   } finally {
