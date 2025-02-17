@@ -589,6 +589,8 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 
 // 결재 요청을 생성하고 알림을 보내는 함수
 const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: string[]) => {
+	console.log('=== createAuditRequest === auditor_id : ', auditor_id);
+
     if (!audit_id || !auditor_id) return;
 
 	// 결재 요청
@@ -608,6 +610,7 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
             tags: [audit_id],
         }
     );
+	console.log('=== createAuditRequest === res : ', res);
 
     skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
@@ -666,7 +669,7 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 			}
 		)
 		.then((res) => {
-            // console.log("요청3 === postRecord === res : ", res);
+            console.log("요청3 === postRecord === res : ", res);
         });
 
     return res;
@@ -674,6 +677,9 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (auditId, userId) => {
+	console.log('=== postAuditDocRecordId === auditId : ', auditId);
+	console.log('=== postAuditDocRecordId === userId : ', userId);
+	
     try {
         // 권한 부여
         await grantAuditorAccess({
@@ -755,10 +761,12 @@ const requestAudit = async (e) => {
 				order: null
 			}))
 		];
+		console.log('요청완료 === requestAudit === processRoles : ', processRoles);
 
-		await Promise.all(processRoles.map(roleInfo => 
+		const res = await Promise.all(processRoles.map(roleInfo => 
 			postAuditDocRecordId(auditId, roleInfo.userId)
 		));
+		console.log('요청완료 === requestAudit === res : ', res);
 
         alert("결재 요청이 완료되었습니다.");
         router.push({
