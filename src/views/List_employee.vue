@@ -387,7 +387,7 @@ async function getEmpList(type, refresh=false){
         suspendedLength.value = result.length;
     }
     else if (type === '초청여부') {
-        employee.value = await getInvitations().then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);        
+        employee.value = await getInvitations(refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);  
         // console.log('=== getEmpList === employee.value : ', employee.value);
     }
 }
