@@ -135,24 +135,29 @@ const router = createRouter({
 					path: '/mypage',
 					children: [
 						{
-						path: '/mypage',
-						name: 'mypage',
-						component: Mypage,
+							path: '/mypage',
+							name: 'mypage',
+							component: Mypage,
 						},
 						{
-						path: 'edit-myinfo',
-						name: 'edit-myinfo',
-						component: () => import('@/views/mypage/Mypage_edit_myinfo.vue'), // Mypage_edit_myinfo,
+							path: 'edit-myinfo',
+							name: 'edit-myinfo',
+							component: () => import('@/views/mypage/Mypage_edit_myinfo.vue'), // Mypage_edit_myinfo,
 						},
 						{
-						path: 'edit-mystamp',
-						name: 'edit-mystamp',
-						component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
+							path: 'edit-mystamp',
+							name: 'edit-mystamp',
+							component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
 						},
+						// {
+						// 	path: 'edit-myfile',
+						// 	name: 'edit-myfile',
+						// 	component: () => import('@/views/mypage/Mypage_edit_myfile.vue'),
+						// },
 						{
-						path: 'record-commute',
-						name: 'record-commute',
-						component: () => import('@/views/mypage/Mypage_record_commute.vue'), // Mypage_record_commute,
+							path: 'record-commute',
+							name: 'record-commute',
+							component: () => import('@/views/mypage/Mypage_record_commute.vue'), // Mypage_record_commute,
 						},
 					],
 				},
