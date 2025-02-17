@@ -112,6 +112,8 @@ export async function getAuditList() {
 				// isCanceled // 회수 여부 추가
 			}
 		}));
+		console.log('=== getAuditList === auditDocs : ', auditDocs);
+
 	} catch (err) {
 		auditListRunning.value = false;
 		console.error({err});
