@@ -109,12 +109,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 			//- 결재 승인/반려에 대한 의견 영역
 			//- template(v-if="senderUser.user_id === user.user_id")
-			br
-			br
-			br
-			br
-
-			h4 의견
+			h4.sub-title 의견
 
 			hr
 
@@ -142,7 +137,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.icon(style="padding: 0")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isWithdrawable" @click="canceledAudit" :disabled="canceledAudit") 회수
+			//- button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCanceled" @click="canceledAudit" :disabled="disabled") 회수
+			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCanceled" @click="canceledAudit") 회수
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -269,11 +265,15 @@ const makeStampComplete = ref(false);
 const makeSignComplete = ref(false);
 
 // 결재 회수 가능 여부 확인
-const isWithdrawable = computed(() => {
+const isCanceled = computed(() => {
+	console.log('결재자 리스트 === isCanceled === auditorList : ', auditorList.value);
+
   // 모든 결재자가 결재를 완료한 경우에는 회수 불가능
   if (auditorList.value.every(auditor => auditor.approved)) {
+	console.log('모두 결재 완료!!');
 	return false;
   } else {
+	console.log('결재 진행중!!');
 	return true;
   }
 });
@@ -886,8 +886,13 @@ const previewAudit = () => {
 
 // 결재 회수 함수
 const canceledAudit = async () => {	
+	console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
+	console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
+	
 	const auditors = auditDoContent.value.data.auditors;
 	const parsedAuditors = JSON.parse(auditors);
+	console.log('결재회수 === canceledAudit === auditors : ', auditors);
+	console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
 
 	// 각 배열에서 ID만 추출
 	const approverIds = parsedAuditors.approvers;
@@ -896,6 +901,7 @@ const canceledAudit = async () => {
 
 	// // 결재자 ID 배열 생성
 	const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
+	console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
 
 	// 결재 회수
 	try {
@@ -911,25 +917,6 @@ const canceledAudit = async () => {
 		console.log('결재회수 === postRecord === res : ', res);
 
 		// 결재 회수 실시간 알림 보내기
-		// skapi.postRealtime(
-		// 	{
-		// 		audit_canceled: {
-		// 			noti_id: auditId.value,
-		// 			noti_type: 'audit',
-		// 			send_date: new Date().getTime(),
-		// 			send_user: user.user_id,
-		// 			audit_info: {
-		// 				audit_type: 'canceled',
-		// 				to_audit: auditDoContent.value?.data?.to_audit,
-		// 				audit_doc_id: auditId.value,
-		// 			}
-		// 		}
-		// 	},
-		// 	approverIds
-		// ).then(res => {
-		// 	console.log('결재회수 알림 === postRealtime === res : ', res);
-		// });
-
 		const notificationData = {
 			audit_canceled: {
 				noti_id: auditId.value,
@@ -937,9 +924,9 @@ const canceledAudit = async () => {
 				send_date: new Date().getTime(),
 				send_user: user.user_id,
 				audit_info: {
-				audit_type: 'canceled',
-				to_audit: auditDoContent.value?.data?.to_audit,
-				audit_doc_id: auditId.value,
+					audit_type: 'canceled',
+					to_audit: auditDoContent.value?.data?.to_audit,
+					audit_doc_id: auditId.value,
 				}
 			}
 		};
@@ -949,9 +936,8 @@ const canceledAudit = async () => {
 		// 	skapi.postRealtime(notificationData, allAuditors),
 		// ];
 
-		// Promise.all로 동시에 처리
+		// 각 그룹별 알림 전송 Promise.all로 동시에 처리
 		try {
-			// const results = await Promise.all(notifications);
 			const results = await Promise.all(
 				allAuditors.map((auditor) => {
 					return skapi.postRealtime(notificationData, auditor.replaceAll('_', '-'));
@@ -1159,6 +1145,10 @@ onUnmounted(() => {
 }
 
 // 추가의견 영역
+.sub-title {
+	margin-top: 4rem;
+}
+
 .reply-list {
 	// margin-bottom: 3rem;
 	// margin-top: 3rem;
@@ -1171,7 +1161,7 @@ onUnmounted(() => {
 		// align-items: center;
 		gap: 0.5rem;
 		// margin-bottom: 0.5rem;
-		margin-bottom: 1rem;
+		margin-bottom: 1.5rem;
 
 		&:last-of-type {
 			margin-bottom: 0;
@@ -1208,7 +1198,7 @@ onUnmounted(() => {
 		.approved {
 			// display: inline-block;
 			// margin-right: 4px;
-			font-size: 14px;
+			font-size: 12px;
 			border: 1px solid var(--primary-color-300);
 			padding: 3px 4px;
 			border-radius: 8px;
