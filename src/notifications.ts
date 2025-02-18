@@ -55,12 +55,13 @@ export const getRealtime = (refresh = false) => {
 
 			const realtime_list = await Promise.all(
 				realtime.list.map(async (request) => {
-					try {
-						const senderInfo = await getUserInfo(request.data.send_user);
+                    try {
+                        const senderInfo = await getUserInfo(request.data.send_user);
+                        console.log({senderInfo});
 
 						return {
 							...request.data,
-							send_name: senderInfo.list[0].name,
+							send_name: senderInfo.list[0]?.name,
 						};
 					} catch (err) {
 						console.error({ err });
