@@ -1,7 +1,7 @@
-import { ref } from "vue";
-import { skapi } from "@/main";
-import { user } from "@/user";
-import { getUserInfo } from "@/employee";
+import { ref } from 'vue';
+import { skapi } from '@/main';
+import { user } from '@/user';
+import { getUserInfo } from '@/employee';
 
 export const auditList = ref([]);
 export const auditListRunning = ref(false);
@@ -143,38 +143,60 @@ export const sendAuditList = ref([]);
 export const sendAuditListRunning = ref(false);
 
 export async function getSendAuditList() {
-	sendAuditListRunning.value = true;
+  sendAuditListRunning.value = true;
 
-	try {
-		// 내가 올린 결재 서류 가져오기
-		const audits = await skapi.getRecords({
-			table: {
-				name: 'audit_doc',
-				access_group: 'private',
-			},
-			reference: user.user_id // 본인 아이디 참조해야 가지고 와짐
-		}, {
-			ascending: false,   // 최신순
-		});
+  try {
+    // 내가 올린 결재 서류 가져오기
+    const audits = await skapi.getRecords(
+      {
+        table: {
+          name: 'audit_doc',
+          access_group: 'private',
+        },
+        reference: user.user_id, // 본인 아이디 참조해야 가지고 와짐
+      },
+      {
+        ascending: false, // 최신순
+      }
+    );
 
-		sendAuditList.value = audits.list;
+    // sendAuditList.value = audits.list;
 
-		// console.log('내가 올린 결재 서류 가져오기', sendAuditList.value);
-	} catch (err) {
-		sendAuditListRunning.value = false;
-		console.error({err});
-	}
+    const auditDocs = await Promise.all(
+      audits.list.map(async (audit) => {
+        // 회수 여부 확인
+        const canceledAudit = await skapi.getRecords({
+          table: {
+            name: `audit_canceled:${audit.record_id}`, // 결재 ID 기준 회수 내역 조회
+            access_group: 'authorized',
+          },
+        });
 
-	sendAuditListRunning.value = false;
+        const isCanceled = canceledAudit.list.length > 0; // 회수된 문서가 있는지 체크
+
+        return {
+          ...audit,
+          isCanceled, // 회수 여부 저장
+        };
+      })
+    );
+
+    sendAuditList.value = auditDocs;
+    console.log('내가 올린 결재 서류 가져오기', sendAuditList.value);
+  } catch (err) {
+    sendAuditListRunning.value = false;
+    console.error({ err });
+  }
+
+  sendAuditListRunning.value = false;
 }
 
 export const goToAuditDetail = (e, auditId, router) => {
-    // if(e.target.classList.contains('label-checkbox')) return;
-    router.push({ name: 'audit-detail', params: { auditId } });
+  // if(e.target.classList.contains('label-checkbox')) return;
+  router.push({ name: 'audit-detail', params: { auditId } });
 
-	// 수신참조 경우
-	if (router.currentRoute.value.name === 'audit-reference') {
-		router.push({ name: 'audit-detail-reference', params: { auditId } });
-	}
+  // 수신참조 경우
+  if (router.currentRoute.value.name === 'audit-reference') {
+    router.push({ name: 'audit-detail-reference', params: { auditId } });
+  }
 };
-
