@@ -137,8 +137,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.icon(style="padding: 0")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-			//- button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCanceled" @click="canceledAudit" :disabled="disabled") 회수
-			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCanceled" @click="canceledAudit") 회수
+			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCanceled" @click="canceledAudit" :disabled="disabled") 회수
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달

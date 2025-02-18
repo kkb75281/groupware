@@ -65,8 +65,10 @@ hr
 								span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함', canceled: audit.my_state === '회수됨' }") {{ audit.my_state }}
 						td
 							span.audit-state(:class="{ approve: !audit.isCanceled && audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)), canceled: audit.isCanceled }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
+
 						//- td
-							span.audit-state(:class="{ approve: JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length }") {{ JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length ? '완료됨' : audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
+							span.audit-state(:class="{ approve: !audit.isCanceled, canceled: audit.isCanceled }") {{ audit.isCanceled ? '회수됨' : '진행중' }}
+
 						td {{ audit.user_info?.name }}
 
 </template>

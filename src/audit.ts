@@ -104,6 +104,10 @@ export async function getAuditList() {
             }
           });
 
+          if (isCanceled) {
+            audit_doc.my_state = '회수됨';
+          }
+
           if (!oa_has_audited_str) {
             audit_doc.my_state = isCanceled ? '회수됨' : '대기중';
           }
@@ -163,9 +167,29 @@ export async function getSendAuditList() {
       }
     );
 
-    sendAuditList.value = audits.list;
+    // sendAuditList.value = audits.list;
 
-    // console.log('내가 올린 결재 서류 가져오기', sendAuditList.value);
+    const auditDocs = await Promise.all(
+      audits.list.map(async (audit) => {
+        // 회수 여부 확인
+        const canceledAudit = await skapi.getRecords({
+          table: {
+            name: `audit_canceled:${audit.record_id}`, // 결재 ID 기준 회수 내역 조회
+            access_group: 'authorized',
+          },
+        });
+
+        const isCanceled = canceledAudit.list.length > 0; // 회수된 문서가 있는지 체크
+
+        return {
+          ...audit,
+          isCanceled, // 회수 여부 저장
+        };
+      })
+    );
+
+    sendAuditList.value = auditDocs;
+    console.log('내가 올린 결재 서류 가져오기', sendAuditList.value);
   } catch (err) {
     sendAuditListRunning.value = false;
     console.error({ err });
