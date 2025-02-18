@@ -116,7 +116,7 @@ const filterAuditList = computed(() => {
 });
 
 const showAuditDoc = (e:Event, audit: any) => {
-    if(audit.isCanceled) return;
+    // if(audit.isCanceled) return;
 
     const searchCurrentAuditNoti = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id)[0];
     const checkCurrentAuditNotiRead = Object.keys(readList.value).includes(searchCurrentAuditNoti.noti_id);
