@@ -31,20 +31,20 @@ header#header
 				li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, rt)")
 					.router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
 						template(v-if="rt.audit_info.audit_type === 'request'")
-							h4.noti-type [결재 요청]
+							h4.noti-type [{{ rt.audit_info.send_auditors.includes(`receiver:${user.user_id.replaceAll('-', '_')}`) ? '수신참조' : '결재요청' }}]
 							h5.noti-title {{ rt.audit_info.to_audit }}
 							p.noti-sender {{ rt.send_name }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 						template(v-else-if="rt.audit_info.audit_type === 'email'")
-							h4.noti-type [새 이메일]
+							h4.noti-type [새이메일]
 							h5.noti-title {{ rt.subject }}
 							//- .noti-info
 							p.noti-sender {{ rt.from }}
 							span.upload-time {{ formatTimeAgo(rt.dateTimeStamp) }}
 
 						template(v-else-if="rt.audit_info.audit_type === 'canceled'")
-							h4.noti-type [결재 회수]
+							h4.noti-type [결재회수]
 							h5.noti-title {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 회수하였습니다.' }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
