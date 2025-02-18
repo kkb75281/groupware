@@ -100,16 +100,16 @@ export async function getAuditList() {
 				})
 	
 				if (!oa_has_audited_str) {
-					// audit_doc.my_state = '대기중';
-					audit_doc.my_state = isCanceled ? '회수됨' : '대기중';
+					audit_doc.my_state = '대기중';
+					// audit_doc.my_state = isCanceled ? '회수됨' : '대기중';
 				}
 			})
 			
 			return {
 				...audit_doc,
 				approved: has_approved_data,
-				draftUserId: list.user_id
-				// isCanceled // 회수 여부 추가
+				draftUserId: list.user_id,
+				isCanceled : isCanceled // 회수 여부 추가
 			}
 		}));
 		console.log('=== getAuditList === auditDocs : ', auditDocs);
