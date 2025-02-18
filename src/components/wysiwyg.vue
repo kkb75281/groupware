@@ -104,7 +104,7 @@ const loadScript = () => {
 
     const script = document.createElement('script');
     script.id = 'wysiwyg4all-script';
-    script.src = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/wysiwyg4all.js';
+    script.src = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/dist/wysiwyg4all.min.js';  // dist 폴더의 minified 버전 사용
     script.async = true;
     
     script.onload = () => resolve();
