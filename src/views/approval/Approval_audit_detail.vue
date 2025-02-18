@@ -44,7 +44,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 								th 결재
 								td.left(colspan="3" style="padding: 0; height: 119px;")
 									ul.approver-wrap
-										li.approver-list(v-for="(approver, index) in approverList" :key="approver.user_id")
+										li.approver-list(v-for="(approver, index) in approverList" :key="approver.user_id" :class="{ 'noexist' : !approver.user_info }")
 											template(v-if="approver.approved_type === 'approver'")
 												span.num {{ index + 1 }}
 												span.sign
@@ -55,10 +55,10 @@ Loading#loading(v-if="getAuditDetailRunning")
 														span.rejected 반려
 													template(v-else="!approver.approved || approver.approved === null")
 														template(v-if="approver.user_id === user.user_id")
-															button.btn.sm.outline.btn-approve(type="button" @click="openModal(approver)") 결재
+															button.btn.sm.outline.btn-approve(type="button" :disabled="isCanceled" @click="openModal(approver)") 결재
 														template(v-else)
 															span.waitting 대기
-												span.approver {{ approver.user_info?.name }}
+												span.approver {{ approver.user_info?.name || '알 수 없음' }}
 
 							tr.approval(v-if="agreerList.length > 0")
 								th 합의
@@ -137,7 +137,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.icon(style="padding: 0")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCanceled" @click="canceledAudit" :disabled="disabled") 회수
+			//- button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="disabled") 회수
+			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit") 회수
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -234,6 +235,7 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
+import { auditList } from '@/audit';
 import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp';
 import { openStampModal, closeStampDialog, handleStampBlob, uploadingStamp, onlyStampFile, handleStampBlobComplete } from '@/components/make_stamp';
 
@@ -263,9 +265,12 @@ const stempType = ref('stamp');
 const makeStampComplete = ref(false);
 const makeSignComplete = ref(false);
 
+// 결재 회수 여부
+const isCanceled = ref(false);
+
 // 결재 회수 가능 여부 확인
-const isCanceled = computed(() => {
-	console.log('결재자 리스트 === isCanceled === auditorList : ', auditorList.value);
+const isCancelPossible = computed(() => {
+	console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
 
   // 모든 결재자가 결재를 완료한 경우에는 회수 불가능
   if (auditorList.value.every(auditor => auditor.approved)) {
@@ -292,6 +297,8 @@ watch(() => (route.params.auditId as string), async(nv, ov) => {
 });
 
 watch(auditDoContent, () => {
+    console.log({auditList})
+    console.log({auditDoContent})
 	let userId = auditDoContent.value?.user_id;
 
 	if (userId) {
@@ -560,6 +567,19 @@ const getAuditDetail = async () => {
 			auditDoContent.value = auditDoc;
 		}
 
+        skapi.getRecords({
+            table: {
+				name: 'audit_canceled:' + auditId.value,
+				access_group: 'authorized'
+			}
+        }).then(res => {
+            if (res.list && res.list.length) {
+                isCanceled.value = true;
+            }
+        }).catch(err => {
+            isCanceled.value = false;
+        })
+
 		const auditors = JSON.parse(auditDoc.data.auditors);
 
 		console.log({auditors});
@@ -655,14 +675,16 @@ const getAuditDetail = async () => {
 		console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
 
 		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
-		const userInfoList = userList.map(user => user.list[0]);                     
+        console.log({userList})
+		const userInfoList = userList.map(user => user.list.length ? user.list[0] : null);       
+        console.log({userInfoList})              
 
 		// 결재자 정보와 결재 결과 합치기
 		const newAuditUserList = approvalUserList.map((auditor) => ({
 			...auditor,
-			user_info: userInfoList.find((user) => user.user_id === auditor.user_id),
-			comment: approvals.find((user) => user.user_id === auditor.user_id)?.data.comment,
-			date: approvals.find((user) => user.user_id === auditor.user_id)?.data.date,
+			user_info: userInfoList.find((user) => user?.user_id === auditor.user_id),
+			comment: approvals.find((user) => user?.user_id === auditor.user_id)?.data.comment,
+			date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date,
 		}));
 
 		console.log('결재자 정보 === getAuditDetail === newAuditUserList : ', newAuditUserList);
@@ -1113,6 +1135,14 @@ onUnmounted(() => {
 		border-bottom: 1px solid var(--gray-color-300);
 		margin-bottom: -1px;
 		position: relative;
+
+        &.noexist {
+            background-color: var(--gray-color-50);
+
+            span {
+                color: var(--gray-color-300);
+            }
+        }
 	}
 
 	.num {

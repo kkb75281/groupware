@@ -79,7 +79,7 @@ const router = useRouter();
 const route = useRoute();
 
 let showSendAuditDoc = (e:Event, audit: any) => {
-	let searchCurrentAuditNotis = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id);
+	let searchCurrentAuditNotis = realtimes.value.filter(rt => rt?.audit_info?.audit_doc_id === audit.record_id);
 
 	// 읽지 않은 알람만 필터링
 	let unreadNotis = searchCurrentAuditNotis.filter(noti => 
