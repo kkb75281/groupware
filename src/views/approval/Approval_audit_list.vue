@@ -59,12 +59,7 @@ hr
 						//-         input(type="checkbox" name="checkbox")
 						//-         span.label-checkbox
 						td {{ index + 1 }}
-						template(v-if="audit.isCanceled")
-							td.left 
-								span.canceled-text [회수됨] 
-						template(v-else)
-							td.left {{ audit.data.to_audit }}
-
+						td.left(:class="audit.isCanceled") {{ audit.data.to_audit }}
 						template(v-if="currentPage === 'audit-list'")
 							td
 								span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함', canceled: audit.my_state === '회수됨' }") {{ audit.my_state }}
