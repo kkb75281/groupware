@@ -24,15 +24,17 @@ hr
 
 		.input-wrap
 			p.label 직책
-			input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled")
+			input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled" :disabled="disabled && currentEmpTags.emp_pst === ''")
+			p.desc(v-if="user.access_group > 98 && currentEmpTags.emp_pst === ''") 직책을 등록해주세요.
 
 		.input-wrap
 			p.label 부서
 			template(v-if="disabled")
-				input(type="text" name="division" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division] === '' ? '' : '부서를 선택해주세요.'" readonly)
+				input(type="text" name="division" :disabled="!divisionNameList[currentEmp?.division]" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division]" readonly)
 			template(v-else)
 				select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
 					option(value="" disabled) 부서 선택
+			p.desc(v-if="user.access_group > 98 && currentEmpTags.emp_dvs === ''") 부서를 등록해주세요.
 		
 		.input-wrap
 			p.label 권한
@@ -148,8 +150,8 @@ getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l
 	currentEmp.value = emp;
 	console.log({emp});
 	
-	currentEmpTags.value.emp_dvs = emp.division;
-	currentEmpTags.value.emp_pst = emp.position;
+	currentEmpTags.value.emp_dvs = emp.division || '';
+	currentEmpTags.value.emp_pst = emp.position || '';
 });
 
 // 부서 목록 가져오기
