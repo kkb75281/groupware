@@ -225,12 +225,10 @@ onUnmounted(() => {
 });
 
 let showRealtimeNoti = (e, rt) => {
-	if(rt.audit_info.audit_type === 'request' || rt.audit_info.audit_type === 'canceled') {
-		goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
-	} else if(rt.audit_info.audit_type === 'email') {
+	if(rt.audit_info.audit_type === 'email') {
 		window.open(rt.link, "_blank");
 	} else {
-		router.push({ name: 'request-list' });
+		goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
 	}
 
 	readNoti(rt);
