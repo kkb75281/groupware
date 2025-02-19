@@ -7,136 +7,141 @@ export const auditList = ref([]);
 export const auditListRunning = ref(false);
 
 export async function getAuditList() {
-	let audits, auditDocs;
-	auditListRunning.value = true;
+  let audits, auditDocs;
+  auditListRunning.value = true;
 
-	try {
-		// 내가 받은 결재 요청건 가져오기
-		audits = await skapi.getRecords({
-			table: {
-				name: 'audit_request',
-				access_group: 'authorized'
-			},
-			reference: `audit:${user.user_id}`
-		}, {
-			ascending: false,   // 최신순
-		});
-	} catch (err) {
-		auditListRunning.value = false;
-		console.error({err});
-	}
+  try {
+    // 내가 받은 결재 요청건 가져오기
+    audits = await skapi.getRecords(
+      {
+        table: {
+          name: 'audit_request',
+          access_group: 'authorized',
+        },
+        reference: `audit:${user.user_id}`,
+      },
+      {
+        ascending: false, // 최신순
+      }
+    );
+  } catch (err) {
+    auditListRunning.value = false;
+    console.error({ err });
+  }
 
-	// console.log({audits});
+  // console.log({audits});
 
-	try {
-		if (!audits.list.length) {
-			auditListRunning.value = false;
-			return;
-		}
-		
-		// 내가 받은 결재 요청건의 결재 서류 가져오기
-		auditDocs = await Promise.all(audits.list.map(async (list) => {
-			if(!list.data.audit_id) return;
-			
-			// 결재 서류 가져오기
-			const audit_doc = (await skapi.getRecords({ 
-				record_id: list.data.audit_id 
-			})).list[0];
+  try {
+    if (!audits.list.length) {
+      auditListRunning.value = false;
+      return;
+    }
 
-			// 회수된 결재 서류 가져오기
-			const canceledAudit = await skapi.getRecords({
-				table: {
-					name: 'audit_canceled:' + list.data.audit_id,
-					access_group: 'authorized'
-				},
-			});
-			console.log('canceledAudit : ', canceledAudit);
+    // 내가 받은 결재 요청건의 결재 서류 가져오기
+    auditDocs = await Promise.all(
+      audits.list.map(async (list) => {
+        if (!list.data.audit_id) return;
 
-			// 회수 여부 체크
-			const isCanceled = canceledAudit.list && canceledAudit.list.length > 0;
-	
-			// 다른 사람 결재 여부 확인
-			const approvals = (await skapi.getRecords({
-				table: {
-					name: 'audit_approval',
-					access_group: 'authorized'
-				},
-				reference: list.data.audit_id
-			})).list;
-			// console.log({approvals});
-	
-			// 결재자 목록에서 각 결재자 ID 가져오기
-			const auditors = audit_doc.tags.map(a => a.replaceAll('_', '-'));
-			// console.log({auditors});
+        // 결재 서류 가져오기
+        const audit_doc = (
+          await skapi.getRecords({
+            record_id: list.data.audit_id,
+          })
+        ).list[0];
 
-			const auditors_type = auditors.reduce((acc, item) => {
-				const [key, value] = item.split(":");
+        // 회수된 결재 서류 가져오기
+        const canceledAudit = await skapi.getRecords({
+          table: {
+            name: 'audit_canceled:' + list.data.audit_id,
+            access_group: 'authorized',
+          },
+        });
+        console.log('canceledAudit : ', canceledAudit);
 
-				if (!acc[key]) acc[key] = [];
-				acc[key].push(value);
+        // 회수 여부 체크
+        const isCanceled = canceledAudit.list && canceledAudit.list.length > 0;
 
-				return acc;
-			}, {});
-			// console.log({auditors_type});
+        // 다른 사람 결재 여부 확인
+        const approvals = (
+          await skapi.getRecords({
+            table: {
+              name: 'audit_approval',
+              access_group: 'authorized',
+            },
+            reference: list.data.audit_id,
+          })
+        ).list;
+        // console.log({approvals});
 
-			let has_approved_data = true;
-	
-			auditors.forEach((auditor) => {
-				let oa_has_audited_str = null;
-				// console.log({auditor});
-	
-				approvals.forEach((approval) => {
-					if (approval.user_id !== auditor.split(':')[1]) {
-						has_approved_data = false;
-					}
+        // 결재자 목록에서 각 결재자 ID 가져오기
+        const auditors = audit_doc.tags.map((a) => a.replaceAll('_', '-'));
+        // console.log({auditors});
 
-					if (approval.user_id === user.user_id) {
-						oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
-	
-						// audit_doc.approved = oa_has_audited_str;
-						audit_doc.my_state = oa_has_audited_str;
-						// audit_doc.user_id = auditor;
-					}
-				})
-	
-				if (!oa_has_audited_str) {
-					audit_doc.my_state = '대기중';
-					// audit_doc.my_state = isCanceled ? '회수됨' : '대기중';
-				}
-			})
-			
-			return {
-				...audit_doc,
-				approved: has_approved_data,
-				draftUserId: list.user_id,
-				isCanceled : isCanceled // 회수 여부 추가
-			}
-		}));
-		console.log('=== getAuditList === auditDocs : ', auditDocs);
+        const auditors_type = auditors.reduce((acc, item) => {
+          const [key, value] = item.split(':');
 
-	} catch (err) {
-		auditListRunning.value = false;
-		console.error({err});
-	}
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(value);
 
-	try {
-		const userList = await Promise.all(auditDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId)))
-		const userInfoList = userList.map(user => user.list[0]).filter((user) => user)
-	
-		const newAuditUserList = auditDocs.map((auditor) => ({
-			...auditor,
-			user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId)
-		}))
-	
-		auditList.value = newAuditUserList;        
+          return acc;
+        }, {});
+        // console.log({auditors_type});
 
-		// console.log({auditList: auditList.value});
-	} catch (err) {
-		auditListRunning.value = false;
-		console.error({err});
-	}
+        let has_approved_data = true;
 
-	auditListRunning.value = false;
+        auditors.forEach((auditor) => {
+          let oa_has_audited_str = null;
+          // console.log({auditor});
+
+          approvals.forEach((approval) => {
+            if (approval.user_id !== auditor.split(':')[1]) {
+              has_approved_data = false;
+            }
+
+            if (approval.user_id === user.user_id) {
+              oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
+              audit_doc.my_state = oa_has_audited_str;
+            }
+          });
+
+          if (!oa_has_audited_str) {
+            // audit_doc.my_state = '대기중';
+            audit_doc.my_state = isCanceled ? '회수됨' : '대기중';
+          }
+        });
+
+        return {
+          ...audit_doc,
+          approved: has_approved_data,
+          draftUserId: list.user_id,
+          isCanceled: isCanceled, // 회수 여부 추가
+        };
+      })
+    );
+    console.log('=== getAuditList === auditDocs : ', auditDocs);
+  } catch (err) {
+    auditListRunning.value = false;
+    console.error({ err });
+  }
+
+  try {
+    const userList = await Promise.all(auditDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId)));
+    const userInfoList = userList.map((user) => user.list[0]).filter((user) => user);
+
+    const newAuditUserList = auditDocs.map((auditor) => ({
+      ...auditor,
+      user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId),
+    }));
+
+    auditList.value = newAuditUserList;
+
+    // console.log({auditList: auditList.value});
+  } catch (err) {
+    auditListRunning.value = false;
+    console.error({ err });
+  }
+
+  auditListRunning.value = false;
 }
 
 export const sendAuditList = ref([]);

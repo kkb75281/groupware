@@ -22,22 +22,15 @@ hr
 	.tb-overflow
 		table.table#tb-auditList
 			colgroup
-				//- col(style="width: 2.4rem")
 				col(style="width: 3rem")
 				col
 				col(style="width: 12%")
-				//- col(style="width: 12%")
 				col(style="width: 10%")
 			thead
 				tr
-					//- th(scope="col") 
-					//-     label.checkbox
-					//-         input(type="checkbox" name="checkbox")
-					//-         span.label-checkbox
 					th(scope="col") NO
 					th.left(scope="col") 결재 사안
 					th(scope="col") 결재 현황
-					//- th(scope="col") 합의 현황
 					th(scope="col") 기안자
 
 			tbody
@@ -49,19 +42,12 @@ hr
 					tr.nohover
 						td(colspan="5") 결재 목록이 없습니다.
 				template(v-else)
-					//- tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
-					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;")
-						//- td 
-						//-     label.checkbox
-						//-         input(type="checkbox" name="checkbox")
-						//-         span.label-checkbox
+					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
 						td {{ index + 1 }}
-						td.left {{ audit.data.to_audit }}
+						td.left.audit-title {{ audit.data.to_audit }}
 						td
-							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중' }}
-						//- td
-							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
-						td {{ user.name }}
+							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
+						td.drafter {{ user.name }}
 
 </template>
 
@@ -102,7 +88,7 @@ onMounted(async () => {
 	try {
 		const results = await Promise.all(
 			sendAuditList.value.map(async (audit) => {
-				console.log('!!!!!audit', audit);
+				// console.log('audit : ', audit);
 				const response = await skapi.getRecords({
 					table: {
 						name: 'audit_approval',
@@ -156,6 +142,18 @@ onMounted(async () => {
 			left: 50%;
 			transform: translate(-50%, -50%);
 		}
+	}
+}
+
+.canceled {
+	.audit-title,
+	.drafter {
+		color: var(--gray-color-300);
+	}
+
+	.audit-state {
+		color: var(--gray-color-300);
+		border-color: var(--gray-color-300);
 	}
 }
 </style>
