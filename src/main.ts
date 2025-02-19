@@ -15,6 +15,7 @@ const app = createApp(App);
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
 export let mainPageLoading = ref(false);
+export let realtimeTestingMsg = ref('');
 // export let googleEmailUpdate = ref(false);
 let isConnected = false;
 
@@ -132,6 +133,8 @@ export let RealtimeCallback = async (rt: any) => {
 					console.error('Failed to process audit request:', error);
 				}
 			};
+
+            realtimeTestingMsg.value = rt.message;
 			
 			// 결재 요청이 들어옴
 			if (rt.message?.audit_request) {

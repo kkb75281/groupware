@@ -1,4 +1,5 @@
 <template lang="pug">
+h4 {{ realtimeTestingMsg }}
 ul.card-wrap.gmail
 	li.card
 		.title-wrap
@@ -109,7 +110,7 @@ ul.card-wrap
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted } from 'vue';
-import { skapi } from "@/main";
+import { skapi, realtimeTestingMsg } from "@/main";
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
 import { mailList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
