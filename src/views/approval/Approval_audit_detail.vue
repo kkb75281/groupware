@@ -75,7 +75,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 														span.rejected 반려
 													template(v-else="!agreer.approved || agreer.approved === null")
 														template(v-if="agreer.user_id === user.user_id")
-															button.btn.sm.outline.btn-approve(type="button" @click="openModal(agreer)") 합의
+															button.btn.sm.outline.btn-approve(type="button" :disabled="isCanceled" @click="openModal(agreer)") 합의
 														template(v-else)
 															span.waitting 대기
 												span.approver {{ agreer.user_info?.name }}
