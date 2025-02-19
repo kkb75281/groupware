@@ -1,6 +1,7 @@
 <template lang="pug">
 .title
 	h1 결재 문서
+	span(v-if="isCanceled" style="color:var(--warning-color-400)") 현재 문서는 회수된 문서입니다.
 
 hr
 
@@ -127,7 +128,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 							.approved(:class="{ 'reject': auditor.approved === 'reject' }")
 								template(v-if="auditor.approved === 'approve'") 승인자
 								template(v-else) 반려자
-						.date {{ formatTimestampToDate(auditor?.date) || '2025.01.01 12:00' }}
+						.date(v-if="auditor?.date") {{ formatTimestampToDate(auditor?.date) }}
 					.comment {{ auditor.comment || '-' }}
 			.empty(v-else) 결재 의견이 없습니다.
 
@@ -297,8 +298,8 @@ watch(() => (route.params.auditId as string), async(nv, ov) => {
 });
 
 watch(auditDoContent, () => {
-    console.log({auditList})
-    console.log({auditDoContent})
+	console.log({auditList})
+	console.log({auditDoContent})
 	let userId = auditDoContent.value?.user_id;
 
 	if (userId) {
@@ -489,8 +490,8 @@ let createStamp = () => {
 				return 'generated-stamp-1';
 			}
 		} else {
-            return 'generated-stamp-1';
-        }
+			return 'generated-stamp-1';
+		}
 	}
 
 	// 캔버스에서 Blob 생성 후 서버로 업로드
@@ -567,18 +568,18 @@ const getAuditDetail = async () => {
 			auditDoContent.value = auditDoc;
 		}
 
-        skapi.getRecords({
-            table: {
+		skapi.getRecords({
+			table: {
 				name: 'audit_canceled:' + auditId.value,
 				access_group: 'authorized'
 			}
-        }).then(res => {
-            if (res.list && res.list.length) {
-                isCanceled.value = true;
-            }
-        }).catch(err => {
-            isCanceled.value = false;
-        })
+		}).then(res => {
+			if (res.list && res.list.length) {
+				isCanceled.value = true;
+			}
+		}).catch(err => {
+			isCanceled.value = false;
+		})
 
 		const auditors = JSON.parse(auditDoc.data.auditors);
 
@@ -675,9 +676,9 @@ const getAuditDetail = async () => {
 		console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
 
 		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
-        console.log({userList})
+		console.log({userList})
 		const userInfoList = userList.map(user => user.list.length ? user.list[0] : null);       
-        console.log({userInfoList})              
+		console.log({userInfoList})              
 
 		// 결재자 정보와 결재 결과 합치기
 		const newAuditUserList = approvalUserList.map((auditor) => ({
@@ -1041,6 +1042,18 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="less">
+.title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: end;
+	gap: 1rem;
+
+	span {
+		color: var(--gray-color-400);
+		line-height: 1.4;
+	}
+}
+
 .wrap {
 	padding: 3rem 2.4rem;
 }
@@ -1136,13 +1149,13 @@ onUnmounted(() => {
 		margin-bottom: -1px;
 		position: relative;
 
-        &.noexist {
-            background-color: var(--gray-color-50);
+		&.noexist {
+			background-color: var(--gray-color-50);
 
-            span {
-                color: var(--gray-color-300);
-            }
-        }
+			span {
+				color: var(--gray-color-300);
+			}
+		}
 	}
 
 	.num {
