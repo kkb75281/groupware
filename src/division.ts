@@ -20,16 +20,13 @@ export let getDivisionDataRunning: Promise<any> | null = null;
 export let getDivisionNamesRunning: Promise<any> | null = null;
 
 export async function getDivisionNames(refresh = false) {
-    if(getDivisionNamesRunning instanceof Promise) { // 이미 실행중인 경우
-		console.log('!!!!!실행중 getDivisionNames')
+    if(getDivisionNamesRunning instanceof Promise) {
         await getDivisionNamesRunning;
         return divisionNameList.value;
     }
 
-    if (Object.keys(divisionNameList.value).length && !refresh) { // 받아온적 없거나, 데이터가 없는경우 + 새로고침을 요청하지 않은 경우
-		console.log('!!!!!이미 있음')
-        loading.value = false;
-        return divisionNameList.value; // 이미 데이터가 존재하면 불러오지 않음
+    if (Object.keys(divisionNameList.value).length && !refresh) {
+        return divisionNameList.value;
     }
 
     loading.value = true;
@@ -60,7 +57,9 @@ export async function getDivisionNames(refresh = false) {
 						access_group: 1
 					}
 				})
-			}
+			} else {
+                return;
+            }
 		}
 	}).finally(() => {
         getDivisionNamesRunning = null;
@@ -77,7 +76,8 @@ export async function getDivisionNames(refresh = false) {
     let res = await getDivisionNamesRunning;
     if (res.list.length) {
         if (res.list[0].data) {
-            divisionNameList.value = res.list[0].data._value;
+            // console.log('res.list[0].data', res.list[0].data)
+            divisionNameList.value = res.list[0].data;
         }
     }
 

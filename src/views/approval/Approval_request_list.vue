@@ -26,7 +26,7 @@ hr
 				col(style="width: 3rem")
 				col
 				col(style="width: 12%")
-				col(style="width: 12%")
+				//- col(style="width: 12%")
 				col(style="width: 10%")
 			thead
 				tr
@@ -37,19 +37,20 @@ hr
 					th(scope="col") NO
 					th.left(scope="col") 결재 사안
 					th(scope="col") 결재 현황
-					th(scope="col") 합의 현황
+					//- th(scope="col") 합의 현황
 					th(scope="col") 기안자
 
 			tbody
 				template(v-if="sendAuditListRunning")
-					tr.loading
+					tr.nohover.loading
 						td(colspan="5")
 							Loading#loading
 				template(v-else-if="!sendAuditList || !sendAuditList.length")
 					tr.nohover
 						td(colspan="5") 결재 목록이 없습니다.
 				template(v-else)
-					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
+					//- tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => goToAuditDetail(e, audit.record_id, router)" style="cursor: pointer;")
+					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;")
 						//- td 
 						//-     label.checkbox
 						//-         input(type="checkbox" name="checkbox")
@@ -57,8 +58,8 @@ hr
 						td {{ index + 1 }}
 						td.left {{ audit.data.to_audit }}
 						td
-							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).approvers.length }}
-						td
+							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중' }}
+						//- td
 							span.audit-state(:class="{ approve: audit.approved === '결재함', reject: audit.approved === '반려함' }") {{ audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
 						td {{ user.name }}
 
@@ -70,20 +71,33 @@ import { onMounted } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { sendAuditList, sendAuditListRunning, getSendAuditList, goToAuditDetail } from '@/audit';
+import { readList, realtimes, readNoti } from '@/notifications';
 
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
 
+let showSendAuditDoc = (e:Event, audit: any) => {
+	let searchCurrentAuditNotis = realtimes.value.filter(rt => rt?.audit_info?.audit_doc_id === audit.record_id);
+
+	// 읽지 않은 알람만 필터링
+	let unreadNotis = searchCurrentAuditNotis.filter(noti => 
+		!Object.keys(readList.value).includes(noti.noti_id)
+	);
+
+	console.log({unreadNotis})
+
+	// 모든 읽지 않은 알람을 병렬로 처리
+	Promise.all(unreadNotis.map(noti => readNoti(noti)));
+
+	goToAuditDetail(e, audit.record_id, router)
+}
+
 onMounted(async () => {
 	await getSendAuditList();
 
-	console.log('!!!!!sendAuditList', sendAuditList.value);
-	
 	const auditors = sendAuditList.value[0]?.data?.auditors ? JSON.parse(sendAuditList.value[0]?.data?.auditors) : null;
-
-	console.log('!!!!!auditors', auditors);	
 
 	try {
 		const results = await Promise.all(
@@ -97,12 +111,10 @@ onMounted(async () => {
 					reference: audit.record_id,
 				});
 
-				console.log('!!!!!rerere', response);
 				return response;
 			})
 		);
 
-		console.log('All audit records fetched:', results);
 		return results; // 필요에 따라 반환
 	} catch (error) {
 		console.error('Error fetching audit records:', error);

@@ -7,7 +7,10 @@ hr
 template(v-if="step > 0 && showBackStep")
 	p.label.essential 결재 양식명
 	.input-wrap
-		input(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" placeholder="ex) 시말서, 휴가신청서" required)
+		//- input(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" placeholder="ex) 시말서, 휴가신청서" required)
+		select(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" v-model="auditTitle" required)
+			option(value="" disabled selected) 결재 양식을 선택해주세요.
+			option(v-for="form in auditForms" :key="form.record_id" :value="form.index.value") {{ form.index.value }}
 
 	hr
 
@@ -56,7 +59,7 @@ template(v-if="step > 1")
 								//- 작성일자 기안사 :: e
 
 								tr(v-if="selectedAuditors.approvers.length === 0 && selectedAuditors.agreers.length === 0 && selectedAuditors.receivers.length === 0" style="height: 119px;")
-									th 
+									th.essential 결재 라인
 									td.left(colspan="3")
 										span.empty(@click="openModal") 이곳을 눌러 [ 결재/합의/수신참조 ] 라인을 추가해주세요.
 
@@ -67,7 +70,7 @@ template(v-if="step > 1")
 											li.approver-list(v-for="(approver, index) in selectedAuditors.approvers" :key="approver.data.user_id")
 												span.num {{ index + 1 }}
 												span.approver {{ approver.index.value }}
-													button.btn-remove(@click="removeAuditor(approver.data.user_id, 'approvers')")
+													//- button.btn-remove(@click="removeAuditor(approver.data.user_id, 'approvers')")
 														.icon
 															svg
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
@@ -85,7 +88,7 @@ template(v-if="step > 1")
 											li.approver-list(v-for="(agreer, index) in selectedAuditors.agreers" :key="agreer.data.user_id")
 												span.num {{ index + 1 }}
 												span.approver {{ agreer.index.value }}
-													button.btn-remove(@click="removeAuditor(agreer.data.user_id, 'agreers')")
+													//- button.btn-remove(@click="removeAuditor(agreer.data.user_id, 'agreers')")
 														.icon
 															svg
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
@@ -102,7 +105,7 @@ template(v-if="step > 1")
 										ul.reference-wrap
 											li.reference-list(v-for="(receiver, index) in selectedAuditors.receivers" :key="receiver.data.user_id")
 												span.referencer {{ receiver.index.value }}
-													button.btn-remove(@click="removeAuditor(receiver.data.user_id, 'receivers')")
+													//- button.btn-remove(@click="removeAuditor(receiver.data.user_id, 'receivers')")
 														.icon
 															svg
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
@@ -119,7 +122,7 @@ template(v-if="step > 1")
 											input(type="text" :name="'addRow'+index" v-model="row.value")
 
 								tr
-									th 제목
+									th.essential 제목
 										.add-btn(@click="isRowModalOpen = true")
 											.icon
 												svg
@@ -128,10 +131,11 @@ template(v-if="step > 1")
 										.input-wrap
 											input#to_audit(type="text" placeholder="제목" required name="to_audit")
 								tr
-									th 결재 내용
+									th.essential 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap
-											Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
+											//- Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
+											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -147,7 +151,10 @@ template(v-if="step > 1")
 													li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
 			.button-wrap
-				button.btn.outline.btn-preview(type="button" @click="previewAudit") 미리보기
+				button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
+					.icon(style="padding: 0;")
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 				button.btn(type="submit") 결재 요청
 
 //- Modal - 작성란 추가
@@ -186,7 +193,7 @@ template(v-if="step > 1")
 						table.table#selected_auditors
 							colgroup
 								col(style="width: 8%")
-								col(style="width: 30%")
+								col(style="width: 38%")
 								col(style="width: 15%")
 								col(style="width: 15%")
 								col(style="width: 30%")
@@ -224,10 +231,10 @@ template(v-if="step > 1")
 
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { ref, onMounted, onUnmounted, watch, computed, nextTick } from "vue";
-import { skapi } from "@/main";
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import { skapi, mainPageLoading } from "@/main";
 import { user, makeSafe, verifiedEmail } from "@/user";
-import { getDivisionNames, divisionNameList } from "@/division";
+import { divisionNameList } from "@/division";
 
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
@@ -250,6 +257,32 @@ const selectedAuditors = ref({
     agreers: [],    // 합의
     receivers: []   // 수신참조
 });
+const auditForms = ref([
+	{
+		record_id: "1",
+		index: {
+			value: "휴가신청서"
+		},
+	},
+	{
+		record_id: "2",
+		index: {
+			value: "시말서"
+		},
+	},
+	{
+		record_id: "3",
+		index: {
+			value: "업무보고서"
+		},
+	},
+	{
+		record_id: "4",
+		index: {
+			value: "기타"
+		},
+	}
+]); // 결재 양식 목록
 const backupSelected = ref(null);	// 선택된 결재자 백업
 const same_division_auditors = ref({});	// 동일 부서 직원 목록
 let send_auditors_arr:string[] = [];
@@ -330,6 +363,11 @@ const previewAudit = () => {
 
       // input 바로 뒤에 span 삽입
       input.parentNode.insertBefore(span, input.nextSibling);
+
+			if (span.previousElementSibling?.classList.contains('print-value') || 
+          span.previousElementSibling?.id === 'inp_content') {
+        span.style.display = "none";
+      }
 
       // input을 숨김
       input.style.display = "none";
@@ -425,8 +463,6 @@ const handleOrganigramSelection = (users) => {
 			user.role = 'approvers';
 		}
 	});
-
-	console.log('seseselect', selectedUsers.value);
 };
 
 // 선택된 모든 결재자 ID 목록 가져오기
@@ -451,9 +487,6 @@ const saveAuditor = () => {
 		selectedAuditors.value[user.role].push(user);
 	});
 
-	console.log(selectedUsers.value);
-	console.log(selectedAuditors.value);
-
 	backupSelected.value = null;
     closeModal();
 };
@@ -462,14 +495,17 @@ const saveAuditor = () => {
 const removeAuditor = (user:object, type:string) => {
 	const newAuditors = selectedUsers.value.filter(u => u.data.user_id !== user.data.user_id);
 
-	console.log('=== removeAuditor === newAuditors : ', newAuditors);
-
     selectedUsers.value = newAuditors;
 };
 
 // 에디터 준비
 const handleEditorReady = (status: boolean) => {
   editorIsReady.value = status;
+};
+
+// 에디터 내보내기
+const exportWysiwygData = (content) => {
+	editorContent.value = content;
 };
 
 // 업로드 파일 삭제
@@ -504,9 +540,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 		...send_auditors_data.receivers.map(id => `receiver:${id}`)
 	]
 
-	console.log('=== postAuditDoc === send_auditors : ', send_auditors_data);
-	console.log('=== postAuditDoc === send_auditors : ', JSON.stringify(send_auditors_data));
-
     try {
 		// 첨부파일 업로드
         const filebox = document.querySelector('input[name="additional_data"]');
@@ -535,15 +568,11 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
             source: {
                 prevent_multiple_referencing: true, // 중복 결재 방지
             },
-            tags: send_auditors_arr // 결재, 합의, 수신참조 태그를 각각 구분
+            tags: send_auditors_arr, // 결재, 합의, 수신참조 태그를 각각 구분,
         };
-
-		console.log('=== postAuditDoc === additionalFormData : ', additionalFormData);
-		console.log('=== postAuditDoc === options : ', options);
 
         const res = await skapi.postRecord(additionalFormData, options);
 
-        console.log("결재 서류 레코드 생성 === postAuditDoc === res : ", res);
         return res;
     } catch (error) {
         console.error(error);
@@ -552,9 +581,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 
 // 결재자에게 권한을 부여하는 함수
 const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
-	console.log('=== grantAuditorAccess === audit_id : ', audit_id);
-	console.log('=== grantAuditorAccess === auditor_id : ', auditor_id);
-	
     return skapi.grantPrivateRecordAccess({
         record_id: audit_id,
         user_id: auditor_id,
@@ -563,6 +589,8 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 
 // 결재 요청을 생성하고 알림을 보내는 함수
 const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: string[]) => {
+	console.log('=== createAuditRequest === auditor_id : ', auditor_id);
+
     if (!audit_id || !auditor_id) return;
 
 	// 결재 요청
@@ -582,8 +610,7 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
             tags: [audit_id],
         }
     );
-
-    console.log("요청1 === postRecord === res : ", res);
+	console.log('=== createAuditRequest === res : ', res);
 
     skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
@@ -613,7 +640,8 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
             auditor_id
         )
         .then((res) => {
-            console.log("요청2 === postRealtime === res : ", res);
+            // console.log("요청2 === postRealtime === res : ", res);
+			console.log("=== postRealtime === auditor_id : ", auditor_id);
         });
 
 	// 실시간 못 받을 경우 알림 기록 저장
@@ -649,6 +677,9 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (auditId, userId) => {
+	console.log('=== postAuditDocRecordId === auditId : ', auditId);
+	console.log('=== postAuditDocRecordId === userId : ', userId);
+	
     try {
         // 권한 부여
         await grantAuditorAccess({
@@ -674,7 +705,7 @@ const requestAudit = async (e) => {
 
     try {
         const formData = new FormData(e.target);
-    		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
+		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
         const formValues = Object.fromEntries(formData.entries());
 
         if (!formValues) return;
@@ -687,13 +718,16 @@ const requestAudit = async (e) => {
 
         if (totalSelectedCount === 0) {
             alert("결재자, 합의자, 수신참조 중 하나 이상을 선택해주세요.");
+			console.log(selectedAuditors.value);
             return;
         }
 
-        if (selectedAuditors.value.approvers.length === 0) {
-            alert("결재자를 한 명 이상 선택해주세요.");
-            return;
-        }
+		if(selectedAuditors.value.approvers.length === 0 && selectedAuditors.value.agreers.length === 0) {
+			alert("결재자 또는 합의자를 선택해주세요.");
+			return;
+		}
+
+		mainPageLoading.value = true;
 
         // 결재 문서 생성
         const auditDoc = await postAuditDoc({ 
@@ -703,9 +737,6 @@ const requestAudit = async (e) => {
         });
 
         const auditId = auditDoc.record_id;
-
-		console.log('=== requestAudit === auditId : ', auditId);
-		console.log('=== requestAudit === auditDoc : ', auditDoc);
 
         // 각 역할별 권한 부여 및 알림 전송
         const processRoles = [
@@ -730,12 +761,12 @@ const requestAudit = async (e) => {
 				order: null
 			}))
 		];
+		console.log('요청완료 === requestAudit === processRoles : ', processRoles);
 
-		console.log('=== requestAudit === processRoles : ', processRoles);
-
-		await Promise.all(processRoles.map(roleInfo => 
+		const res = await Promise.all(processRoles.map(roleInfo => 
 			postAuditDocRecordId(auditId, roleInfo.userId)
 		));
+		console.log('요청완료 === requestAudit === res : ', res);
 
         alert("결재 요청이 완료되었습니다.");
         router.push({
@@ -745,7 +776,9 @@ const requestAudit = async (e) => {
     } catch (error) {
         console.error('결재 요청 중 오류 발생:', error);
         alert('결재 요청 중 오류가 발생했습니다.');
-    }
+    } finally {
+		mainPageLoading.value = false;
+	}
 };
 
 const dateValue = ref(new Date().toISOString().substring(0, 10));
@@ -771,67 +804,30 @@ onUnmounted(() => {
 	.icon,
 	input,
 	textarea,
-	.file-wrap,
+	.file-wrap .btn-upload-file,
 	header,
 	.title,
 	hr,
 	.approver-list:last-of-type,
 	.reference-list:last-of-type,
-	.empty {
+	.empty,
+	.essential::after {
 		display: none !important;
 	}
 
-	// body {
-	// 	#header {
-	// 		display: none !important;
-	// 	}
-	// }
-		
-
-	// header {
-	// 	visibility: hidden !important;
-	// 	opacity: 0 !important;
-	// 	position: relative !important;
-	// }
-
-	// /* 제목 스타일 (audit_title) */
-	// #printArea .title-value {
-	// 	text-align: center;
-	// 	font-size: 24px;
-	// 	font-weight: bold;
-	// 	margin-bottom: 16px;
-	// }
-
-	// /* 일반 입력값 정렬 */
-	// #printArea .print-value {
-	// 	text-align: left; /* 기본 왼쪽 정렬 */
-	// 	font-size: 14px;
-	// 	color: #000;
-	// 	display: block;
-	// 	padding: 4px 0;
-	// 	min-height: 20px; /* 빈공간 유지 */
-	// }
-
 	body * {
-		visibility: hidden;  /* 모든 요소 숨김 */
+		visibility: hidden;
 	}
+
 	#printArea, #printArea * {
 		visibility: visible; /* printArea와 그 내부 요소만 보이게 설정 */
 	}
-	#printArea {
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 100%;
-	}
 
-	/* input 대체 텍스트 스타일 */
-	.print-value {
-		font-size: 14px;
-		color: #000;
-		display: inline-block;
-		padding: 4px 0;
-		text-align: left;
+	#printArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
 	}
 
 	body {
@@ -882,27 +878,48 @@ onUnmounted(() => {
 	}
 
 	.wysiwyg-wrap {
-    border: none !important;
-    
-    // wysiwyg 컴포넌트 내용만 표시
-    :deep(.wysiwyg) {
-      // 에디터 내용 컨테이너
-      ._wysiwyg4all {
-        visibility: visible !important;
-        padding: 0 !important;
-      }
+		border: none !important;
 
-      .btn-wrap {
-        display: none !important;
-      }
+		// wysiwyg 컴포넌트 내용만 표시
+		:deep(.wysiwyg) {
+			// 에디터 내용 컨테이너
+			._wysiwyg4all {
+				visibility: visible !important;
+				padding: 0 !important;
+			}
+
+			.btn-wrap {
+				display: none !important;
+			}
     }
   }
+
+	#main,
+	.wrap {
+		padding: 0 !important;
+	}
+
+	.wrap {
+		+ .title {
+			display: none !important;
+		}
+	}
+
+	hr {
+		display: none !important;
+	}
+
+	.form-wrap {
+		position: absolute !important;
+		top: 5% !important;
+		left: 0 !important;
+		width: 100% !important;
+	}
 }
 
 .form-wrap {
 	position: relative;
-    // max-width: 900px;
-    max-width: 950px;
+    max-width: 900px;
 
 	.title {
 		position: relative;
@@ -925,6 +942,8 @@ onUnmounted(() => {
 }
 
 .table {
+	min-width: 20rem;
+
     tr {
         td {
             padding: 0.75rem;
@@ -1031,12 +1050,6 @@ onUnmounted(() => {
 .btn {
     margin-top: 1rem;
 }
-
-// .form-item {
-//     margin-top: 2rem;
-//     padding-top: 2rem;
-//     border-top: 1px solid var(--gray-color-200);
-// }
 
 .approver-wrap {
     display: grid;
@@ -1166,10 +1179,7 @@ onUnmounted(() => {
 	}
 
 	.organigram-wrap {
-		// flex: none;
-		// min-width: 17.5rem;
-		// max-height: 400px;
-		padding-right: 1.5rem;
+		// padding-right: 1.5rem;
 	}
 
 	.btn-remove {
@@ -1223,10 +1233,16 @@ onUnmounted(() => {
 }
 
 .wysiwyg-wrap {
-  text-align: left;
+  	text-align: left;
 	border: 1px solid var(--gray-color-200);
 	border-radius: 0.5rem;
 	overflow: hidden;
+}
+
+.modal {
+	.modal-cont {
+		max-width: 100%;
+	}
 }
 
 @media (max-width: 768px) {
@@ -1254,8 +1270,6 @@ onUnmounted(() => {
             .file-item {
                 width: 100%;
             }
-        }
-        &.upload-stamp {
         }
     }
 }

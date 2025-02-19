@@ -35,6 +35,18 @@ ul.card-wrap
 				.icon
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+	li.card
+		router-link.router(to="/approval/audit-reference")
+			.icon.img
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-tag")
+			h4.name 수신참조
+			.btn-wrap
+				p.btn-go 바로가기
+				.icon
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
 <script setup lang="ts">

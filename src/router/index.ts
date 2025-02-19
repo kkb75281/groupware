@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-// import { loaded } from '@/main';
 import { user } from '@/user';
 
 import Login from '@/views/Login.vue';
@@ -64,8 +63,17 @@ const router = createRouter({
 				{
 					path: '/organigram',
 					name: 'organigram',
-					// component: () => import('@/components/organigram.vue'),
 					component: () => import('@/views/Organ.vue'),
+				},
+				{
+					path: '/newsletter',
+					name: 'newsletter',
+					component: () => import('@/views/Newsletter.vue'),
+				},
+				{
+					path: '/newsletter-detail/:messageId',
+					name: 'newsletter-detail',
+					component: () => import('@/views/Newsletter_detail.vue'),
 				},
 				// {
 				//   path: '/list-data',
@@ -107,8 +115,18 @@ const router = createRouter({
 							component: () => import('@/views/approval/Approval_audit_list.vue'),
 						},
 						{
+							path: 'audit-reference',
+							name: 'audit-reference',
+							component: () => import('@/views/approval/Approval_audit_list.vue'),
+						},
+						{
 							path: 'audit-detail/:auditId',
 							name: 'audit-detail',
+							component: () => import('@/views/approval/Approval_audit_detail.vue'),
+						},
+						{
+							path: 'audit-detail-reference/:auditId',
+							name: 'audit-detail-reference',
 							component: () => import('@/views/approval/Approval_audit_detail.vue'),
 						},
 					],
@@ -117,30 +135,35 @@ const router = createRouter({
 					path: '/mypage',
 					children: [
 						{
-						path: '/mypage',
-						name: 'mypage',
-						component: Mypage,
+							path: '/mypage',
+							name: 'mypage',
+							component: Mypage,
 						},
 						{
-						path: 'edit-myinfo',
-						name: 'edit-myinfo',
-						component: () => import('@/views/mypage/Mypage_edit_myinfo.vue'), // Mypage_edit_myinfo,
+							path: 'edit-myinfo',
+							name: 'edit-myinfo',
+							component: () => import('@/views/mypage/Mypage_edit_myinfo.vue'), // Mypage_edit_myinfo,
 						},
 						{
-						path: 'edit-mystamp',
-						name: 'edit-mystamp',
-						component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
+							path: 'edit-mystamp',
+							name: 'edit-mystamp',
+							component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
 						},
+						// {
+						// 	path: 'edit-myfile',
+						// 	name: 'edit-myfile',
+						// 	component: () => import('@/views/mypage/Mypage_edit_myfile.vue'),
+						// },
 						{
-						path: 'record-commute',
-						name: 'record-commute',
-						component: () => import('@/views/mypage/Mypage_record_commute.vue'), // Mypage_record_commute,
+							path: 'record-commute',
+							name: 'record-commute',
+							component: () => import('@/views/mypage/Mypage_record_commute.vue'), // Mypage_record_commute,
 						},
 					],
 				},
 				{
 					path: '/admin',
-					beforeEnter: async (to, from, next) => {
+					beforeEnter: (to, from, next) => {
 						if (user.access_group > 98) {
 							next();
 						} else {
@@ -210,6 +233,11 @@ const router = createRouter({
 					path: '/component',
 					name: 'component',
 					component: () => import('../components/component.vue'),
+				},
+				{
+					path: '/test',
+					name: 'test',
+					component: () => import('../components/test.vue'),
 				},
 			],
 		},

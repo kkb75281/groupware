@@ -19,7 +19,7 @@ hr
                     li.option(@click="selectFile") 파일 등록
                     li.option(@click="showOptions = false; openStampModal = !openStampModal") 서명 등록
 
-            template(v-if="loading")
+            template(v-if="getStampListRunning")
                 .stamp-grid.loading
                     .stamp
                         Loading#loading
@@ -37,22 +37,32 @@ hr
                         img#stamp-img(:src="uploadingStamp.url" alt="도장 미리보기")
                         .name {{ uploadingStamp.name }}
         
-MakeStamp(v-if="openStampModal" @upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
+.modal(v-if="openStampModal" ref="dialog" @keydown.esc.prevent="closeStampDialog")
+    .modal-cont(style="padding:1rem")
+        MakeStamp(@upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
 AlertModal(:open="!!selectedStamp")
     .content-wrap
-        h4.title 도장 삭제
-        p.desc 도장을 삭제하시겠습니까?
+        template(v-if="deleteStampStep === 1")
+            h4.title.warning 도장 삭제
+            p.desc 도장을 삭제하시겠습니까?
+        template(v-if="deleteStampStep === 2")
+            h4.title.success 삭제 완료
+            p.desc 도장이 삭제되었습니다.
     .button-wrap
-        button(@click="selectedStamp=null") 취소
-        button.warning(@click="deleteStamp(selectedStamp)") 삭제
+        template(v-if="deleteStampStep === 1")
+            button.btn.bg-gray(:disabled="deleteStampRunning" @click="selectedStamp=null") 취소
+            button.btn.warning(:disabled="deleteStampRunning" @click="deleteStamp(selectedStamp)") 삭제
+        template(v-if="deleteStampStep === 2")
+            button.btn(@click="selectedStamp=null;deleteStampStep=1") 확인
 
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { skapi } from '@/main';
-import { user } from '@/user';
-import { openStampModal, openStampDialog, closeStampDialog, handleStampBlob, uploadingStamp, stampImages, uploadingSrc } from '@/components/make_stamp';
+import { skapi, mainPageLoading } from '@/main';
+import { user, makeSafe } from '@/user';
+import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp';
+import { openStampModal, closeStampDialog, handleStampBlob, uploadingStamp, stampImages } from '@/components/make_stamp';
 
 import MakeStamp from '@/components/make_stamp.vue';
 import AlertModal from '@/components/alert_modal.vue';
@@ -63,58 +73,18 @@ let stamp_file_input = ref(null);
 let optionsBtn = ref(null);
 let isSignImage = ref(false);
 let selectedStamp = ref(null);
-let uploadedStamp = ref([]);
-let uploadedRecordId = ref(null);
 let uploading = ref(false);
-let loading = ref(false);
-
-function makeSafe(str) {
-    return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
-}
 
 let closeOptions = (e) => {
     if (showOptions.value && !optionsBtn.value.contains(e.target)) {
         showOptions.value = false;
     }
-};
+}
+
 let selectFile = () => {
     showOptions.value = false;
     stamp_file_input.value.click();
 }
-
-let getStampList = async () => {
-    loading.value = true;
-
-    try {
-        let res = await skapi.getRecords({
-            unique_id: '[stamp_images]' + makeSafe(user.user_id),
-            table: {
-                name: 'stamp_images',
-                access_group: 1,
-            }
-        });
-
-        console.log('=== getStampList === res : ', res);
-
-        if(res.list.length) {
-            uploadedStamp.value = res.list[0].bin.stamp_data;
-            uploadedRecordId.value = res.list[0].record_id;
-            loading.value = false;
-        }
-    } catch(e) {
-        console.log('=== getStampList === err : ', {e})
-
-        if(e.code === "NOT_EXISTS") {
-            uploadedStamp.value = [];
-            uploadedRecordId.value = null;
-        } else {
-            alert('도장 정보를 불러오는 중 오류가 발생했습니다.');
-        }
-
-        loading.value = false;
-    }
-}
-getStampList();
 
 let uploadStampImage = async(imageUrl) => {
     await handleStampBlob(imageUrl);
@@ -126,6 +96,7 @@ let uploadStampImage = async(imageUrl) => {
 }
 
 let uploadStamp = async () => {
+	mainPageLoading.value = true;
     uploading.value = true;
 
     let filebox = document.querySelector('input[name=stamp_data]');
@@ -157,17 +128,12 @@ let uploadStamp = async () => {
         try {
             await skapi.postRecord(stampFileData, stamp_postParams);
         } catch(e) {
+			mainPageLoading.value = false;
             alert('도장 등록 중 오류가 발생했습니다.');
             throw e;
         }
         
         filebox.value = '';
-        uploadingStamp.value = {};
-        alert('도장 등록이 완료되었습니다.');
-
-        // 이미지 업로드 후 도장 정보 다시 불러오기
-        getStampList();
-        uploading.value = false;
     } else {
         // 서명으로 업로드 했을때
         if (Object.keys(stampImages.value).length) {
@@ -177,25 +143,29 @@ let uploadStamp = async () => {
             try {
                 await skapi.postRecord(stampImageData, stamp_postParams);
             } catch(e) {
+				mainPageLoading.value = false;
                 alert('도장 등록 중 오류가 발생했습니다.');
                 throw e;
             }
 
             stampImages.value = {};
-            uploadingStamp.value = {};
-            alert('도장 등록이 완료되었습니다.');
-
-            // 이미지 업로드 후 도장 정보 다시 불러오기
-            getStampList();
-            uploading.value = false;
         }
     }
+
+	// 이미지 업로드 후 도장 정보 다시 불러오기
+	uploadingStamp.value = {};
+	alert('도장 등록이 완료되었습니다.');
+	getStampList(true);
+	uploading.value = false;
+	mainPageLoading.value = false;
 }
+
+let deleteStampRunning = ref(false);
+let deleteStampStep = ref(1);
+
 let deleteStamp = async(stamp: object) => {
     if(!uploadedRecordId.value) return;
     if(!selectedStamp.value) return;
-
-    console.log(selectedStamp.value)
 
     let post_params = {
         table: {
@@ -206,6 +176,8 @@ let deleteStamp = async(stamp: object) => {
         remove_bin: []
     };
 
+    let deleteStampUrl = stamp.url;
+
     post_params.remove_bin.push(stamp);
 
     // // uploadedStamp.value.map((stamp, idx) => {
@@ -213,23 +185,27 @@ let deleteStamp = async(stamp: object) => {
     // //         post_params.remove_bin.push(stamp);
     // //     }
     // // });
-
-    console.log(post_params);
+    deleteStampRunning.value = true;
 
     try {
         await skapi.postRecord(null, post_params);
-        getStampList();
-        alert('도장이 삭제되었습니다.');
+        // getStampList();
+        // alert('도장이 삭제되었습니다.');
+        deleteStampStep.value++;
+        uploadedStamp.value = uploadedStamp.value.filter(stamp => stamp.url !== deleteStampUrl);
     } catch(e) {
         console.log({e});
+        deleteStampStep.value = 1;
         alert('도장 삭제 중 오류가 발생했습니다.');
     } finally {
-        selectedStamp.value = null;
+        // selectedStamp.value = null;
+        deleteStampRunning.value = false;
     }
 }
 
 onMounted(() => {
     document.addEventListener('click', closeOptions);
+	getStampList();
 });
 onUnmounted(() => {
     document.removeEventListener('click', closeOptions);
@@ -290,6 +266,14 @@ onUnmounted(() => {
                 top: 0.5rem;
                 left: 0.5rem;
             }
+
+			.name {
+				width: 80%;
+				text-align: center;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
 
             .add-icon {
                 position: absolute;

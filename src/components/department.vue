@@ -53,15 +53,7 @@ details(:class="{ 'disabled-department': isDepartmentDisabled }")
 </template>
 
 <script lang="ts" setup>
-import { computed, watch, onMounted } from 'vue';
-import {
-  loading,
-  divisions,
-  divisionNameList,
-  getDivisionData,
-  getDivisionDataRunning,
-  getDivisionNamesRunning,
-} from "@/division";
+import { computed, onMounted } from 'vue';
 
 const props = defineProps({
   department: {
@@ -85,7 +77,6 @@ const props = defineProps({
 // 초기 체크 상태 설정
 const initializeCheckState = () => {
     // 현재 모달 타입의 선택된 사용자들 가져오기
-    // const selectedUsers = props.selectedAuditors && props.modalType ? props.selectedAuditors[props.modalType] : [];
 	const selectedUsers = [];
 	for (const key in props.selectedAuditors) {
 		selectedUsers.push(...props.selectedAuditors[key]);
@@ -108,18 +99,6 @@ const initializeCheckState = () => {
 const isUserDisabled = (item) => {
   const userId = item.data?.user_id;
   if (!userId) return false;
-
-//   // 현재 모달 타입에 따라 다른 역할들 체크
-//   switch (props.modalType) {
-//     case 'approvers':
-//       return isSelectedInOtherRoles(userId, ['agreers', 'receivers']);
-//     case 'agreers':
-//       return isSelectedInOtherRoles(userId, ['approvers', 'receivers']);
-//     case 'receivers':
-//       return isSelectedInOtherRoles(userId, ['approvers', 'agreers']);
-//     default:
-//       return false;
-//   }
 
   // 다른 역할들 체크
   let keys = [];

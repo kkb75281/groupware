@@ -11,22 +11,14 @@ import { watch } from 'vue';
 const router = useRouter();
 const route = useRoute();
 
-let isadmin = user.access_group > 98;
-let onlyAdminRoute = ['admin', 'add-employee', 'add-divisions', 'edit-divisions', 'list-divisions']
-
 watch(loaded, async(nv) => {
     if (!nv) return;
 
     await router.isReady();
 
-    // if(route.name === 'mailing' && (iwaslogged.value || !iwaslogged.value)) { <- 참이거나 || 아니거나 조건이 의미없음
     if(route.name === 'mailing') {
         return;
     }
-
-    // if(nv && iwaslogged.value && onlyAdminRoute.includes(route.name) && !isadmin) {
-    //     await router.push('/');
-    // }
 
     if (window.location.hash && window.location.hash.includes('access_token')) {
         console.log('OAuth 콜백 처리 중...');

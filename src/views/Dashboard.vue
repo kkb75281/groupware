@@ -1,6 +1,28 @@
 <template lang="pug">
 ul.card-wrap.gmail
 	li.card
+		.title-wrap
+			h3.title
+				.icon.img
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
+				| 공지사항
+			router-link.go-detail(to="/newsletter") 더보기
+				.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+		ul.newsletter-mail
+			li.mail(v-for="news in newsletterList" :key="news.message_id" @click="(e) => router.push('/newsletter-detail/' + news.message_id)")
+				.link
+					span.mail-title {{ news.subject }}
+					span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
+			.empty(v-if="newsletterList && !newsletterList.length")
+				.icon
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+				| 등록된 공지사항이 없습니다.
+ul.card-wrap.gmail(v-if="googleAccountCheck")
+	li.card
 		.title-wrap(:style="{ marginBottom: googleAccountCheck ? '1rem' : '0' }")
 			h3.title 
 				.icon.img
@@ -19,7 +41,7 @@ ul.card-wrap.gmail
 			//- 	Loading#loading
 			//- template(v-else)
 			ul.unread-mail(v-if="mailList && mailList.length")
-				li.mail(v-for="mail in mailList" :key="mail.id" @click="readNoti(e, mail)")
+				li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
 					.link
 						span.from {{ mail.from }}
 						span.mail-title {{ mail.subject }}
@@ -88,11 +110,11 @@ button.btn(@click="updateBadge") 새 알림 표시
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { skapi, updateEmails, googleEmailUpdate } from "@/main";
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { skapi } from "@/main";
 import { user } from "@/user";
-import { fetchGmailEmails } from "@/utils/mail";
-import { mailList, readAudit, readList, addEmailNotification, createReadListRecord } from "@/notifications";
+import { convertTimestampToDateMillis } from "@/utils/time";
+import { mailList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
 
 import Loading from '@/components/loading.vue';
 
@@ -131,8 +153,8 @@ let googleConnect = async() => {
 function googleLogin() {
 	loading.value = true;
 
-	const GOOGLE_CLIENT_ID = '685505600375-tiheatfjtp0if764ri7ilop3o4nuhql3.apps.googleusercontent.com';	// mina(broadwayinc.com) 계정으로 생성
-	// const GOOGLE_CLIENT_ID = '744531008220-v60665vfj19fgu1ajjlj0dj5sku7o4h8.apps.googleusercontent.com' // qb
+	// const GOOGLE_CLIENT_ID = '685505600375-tiheatfjtp0if764ri7ilop3o4nuhql3.apps.googleusercontent.com';	// mina(broadwayinc.com) 계정으로 생성
+	const GOOGLE_CLIENT_ID = '744531008220-v60665vfj19fgu1ajjlj0dj5sku7o4h8.apps.googleusercontent.com' // qb
 	const REDIRECT_URL = 'http://localhost:5173/login';
 
 	let rnd = Math.random().toString(36).substring(2); // Generate a random string
@@ -180,198 +202,143 @@ function googleLogin() {
 //     });
 // }
 
-let readNoti = async(e: Event, rt: any) => {
-	// 기존 readAudit 초기화
-    for (let key in readAudit.value) {
-        delete readAudit.value[key];
-    }
-
-	// 현재 읽은 알람 저장
-	for (let key in rt) {
-		readAudit.value[key] = rt[key];
-	}
-
-	console.log('=== readNoti === readAudit : ', readAudit.value);
-	console.log('=== readNoti === rt : ', rt);
-
+let showMailDoc = (e: Event, rt: any) => {
 	window.open(rt.link, "_blank");
-
-	// 읽은 알람 리스트를 업데이트
-	if (!readList.value.includes(readAudit.value.id)) {
-		await skapi.deleteRecords({
-			unique_id: '[notification_read_list]' + user.user_id
-		});
-		createReadListRecord(true); // 새로 읽은 알람 추가
-	}
+	readNoti(rt);
 }
 
 onMounted(async () => {
-    await updateEmails();
-    
-    // 30초마다 이메일 업데이트
-    emailCheckInterval = setInterval(() => {
-        updateEmails();
-    }, 10000);
+	getNewsletterList();
 });
 
 // 컴포넌트 언마운트 시 인터벌 정리
 onUnmounted(() => {
-    // if (emailCheckInterval) {
-    //     clearInterval(emailCheckInterval);
-    // }
+	// if (emailCheckInterval) {
+	//     clearInterval(emailCheckInterval);
+	// }
 });
 
-// // 컴포넌트 마운트 시 이메일 업데이트 되는 거에 따른 mails.value 변경 감지
-// watch(mailList, (newVal, oldVal) => {
-//     console.log('=== watch === newVal : ', newVal);
-//     console.log('=== watch === oldVal : ', oldVal);
-//     console.log('========== 확인 !! ==========')
-// 	console.log(!oldVal);
-
-//     if(!newVal) {
-//         return;
-//     }
-
-// 	if((newVal.length && !oldVal) || (newVal.length > oldVal.length)) {
-// 		// console.log('=== watch === new email');
-// 		console.log('dddd')
-// 		for(let i in newVal) {
-// 			addEmailNotification(newVal[i]);
-// 		}
-// 	} else {
-// 		console.log('wwww');
-// 	}
-
-//     // if(newVal[0].dateTimeStamp > oldVal[0].dateTimeStamp) {
-//     //     console.log('=== watch === new email');
-//     //     // addEmailNotification(newVal[0]);
-// 	// 	for(let i in newVal) {
-// 	// 		addEmailNotification(newVal[i]);
-// 	// 	}
-//     // } else {
-//     //     console.log('=== watch === no new email');
-//     // }
-// });
 </script>
 
 <style scoped lang="less">
 .wrap {
-    padding: 3rem 2.4rem 0;
+	padding: 3rem 2.4rem 0;
 }
 
 .fold {
-    .wrap {
-        padding: 3rem 2.4rem 0;
-    }
+	.wrap {
+		padding: 3rem 2.4rem 0;
+	}
 }
 
 .card-wrap {
-    &.gmail {
-        display: flex;
+	&.gmail {
+		display: flex;
 
-        .card {
-            padding: 1.5rem;
-            transition: none;
-            width: 100%;
+		.card {
+			padding: 1.5rem;
+			transition: none;
+			width: 100%;
 
-            &:hover {
-                transform: none;
-                box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.05);
-            }
-        }
+			&:hover {
+				transform: none;
+				// box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
+			}
+		}
 
-        .title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+		.title {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
 
-        .go-detail {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.875rem;
-            color: var(--gray-color-500);
-        }
+		.go-detail {
+			display: flex;
+			align-items: center;
+			gap: 0.25rem;
+			font-size: 0.875rem;
+			color: var(--gray-color-500);
+		}
 
-        .icon.img {
-            svg {
-                width: 1.5rem;
-                height: 1.5rem;
-                margin: 0;
-            }
-        }
+		.icon.img {
+			svg {
+				width: 1.5rem;
+				height: 1.5rem;
+				margin: 0;
+			}
+		}
 
-        .mail {
-            border-top: 1px solid var(--gray-color-200);
-            padding: 0.75rem 0.5rem;
+		.mail {
+			border-top: 1px solid var(--gray-color-200);
+			padding: 0.75rem 0.5rem;
+			cursor: pointer;
 
-            &:hover {
-                background-color: var(--primary-color-25);
-            }
-        }
+			&:hover {
+				background-color: var(--primary-color-25);
+			}
+		}
 
-        .link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 0.875rem;
-            line-height: 1.2;
-            color: var(--gray-color-500);
+		.link {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			font-size: 0.875rem;
+			line-height: 1.2;
+			color: var(--gray-color-500);
 
-            > * {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                display: -webkit-box;
-                -webkit-line-clamp: 1;
-                -webkit-box-orient: vertical;
-            }
-        }
+			> * {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				display: -webkit-box;
+				-webkit-line-clamp: 1;
+				-webkit-box-orient: vertical;
+			}
+		}
 
-        .from {
-            font-weight: 600;
-            color: var(--gray-color-900);
-            flex: none;
-            width: 100px;
-        }
+		.from {
+			font-weight: 600;
+			color: var(--gray-color-900);
+			flex: none;
+			width: 100px;
+		}
 
-        .mail-title {
-            font-weight: 600;
-            color: var(--gray-color-900);
-        }
+		.mail-title {
+			font-weight: 600;
+			color: var(--gray-color-900);
+		}
 
-        .mail-cont {
-            font-size: 0.75rem;
-            color: var(--gray-color-400);
-            margin-right: 1rem;
-            flex: 1;
-        }
+		.mail-cont {
+			font-size: 0.75rem;
+			color: var(--gray-color-400);
+			margin-right: 1rem;
+			flex: 1;
+		}
 
-        .attachment {
-            .icon {
-                svg {
-                    width: 1rem;
-                    height: 1rem;
-                    fill: var(--gray-color-400);
-                }
-            }
-        }
+		.attachment {
+			.icon {
+				svg {
+					width: 1rem;
+					height: 1rem;
+					fill: var(--gray-color-400);
+				}
+			}
+		}
 
-        .mail-date {
-            font-size: 0.75rem;
-            margin-left: auto;
-            flex: none;
-        }
-    }
+		.mail-date {
+			font-size: 0.75rem;
+			margin-left: auto;
+			flex: none;
+		}
+	}
 
-    .title-wrap {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-    }
+	.title-wrap {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-bottom: 1rem;
+	}
 
 	.empty {
 		display: flex;
@@ -389,19 +356,19 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1200px) {
-    .wrap {
-        padding-top: 3rem;
-    }
+	.wrap {
+		padding-top: 3rem;
+	}
 }
 
 @media (max-width: 768px) {
-    .card-wrap {
-        &.gmail {
-            .from,
-            .mail-cont {
-                display: none;
-            }
-        }
-    }
+	.card-wrap {
+		&.gmail {
+			.from,
+			.mail-cont {
+				display: none;
+			}
+		}
+	}
 }
 </style>

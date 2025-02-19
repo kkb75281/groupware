@@ -14,7 +14,8 @@ const app = createApp(App);
 
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
-export let googleEmailUpdate = ref(false);
+export let mainPageLoading = ref(false);
+// export let googleEmailUpdate = ref(false);
 let isConnected = false;
 
 // function getChanges(before:any, after:any) {
@@ -46,11 +47,11 @@ function updateAuditsAndApprovals(audits, approvals) {
 
 export let RealtimeCallback = async (rt: any) => {
 	// if (!isConnected) {
-	//   console.log('Realtime 연결이 이미 활성화되어 있습니다.');
+	//   // console.log('Realtime 연결이 이미 활성화되어 있습니다.');
 	//   return;
 	// }
 
-	console.log('=== RealtimeCallback === rt : ', rt);
+	// console.log('=== RealtimeCallback === rt : ', rt);
 
 	// 실시간 통신 (노티피케이션 / 체팅 등등)
 	// Callback executed when there is data transfer between the users.
@@ -86,7 +87,7 @@ export let RealtimeCallback = async (rt: any) => {
 		// },{
 		// 	ascending: false, // 최신순
 		// }).then((audits) => {
-		// 	console.log('=== RealtimeCallback === audits : ', audits); // 들어온 결재 요청
+		// 	// console.log('=== RealtimeCallback === audits : ', audits); // 들어온 결재 요청
 		// }).catch(err => err);
 
 		// await skapi.getRecords({
@@ -97,14 +98,14 @@ export let RealtimeCallback = async (rt: any) => {
 		// 	},
 		// 	tag: user.user_id.replaceAll('-', '_'),
 		// }).then((approvals) => {
-		// 	console.log('=== RealtimeCallback === approvals : ', approvals);
+		// 	// console.log('=== RealtimeCallback === approvals : ', approvals);
 		// }).catch(err => err);
 		}
 	}
 
 	if (rt.type === 'private') {
-		console.log('sender', rt.sender, user.user_id);
-		console.log('msgg', rt.message);
+		// console.log('sender', rt.sender, user.user_id);
+		// console.log('msgg', rt.message);
 
 		if (rt.sender !== user.user_id) { // 다른 사람이 나에게 보낸 메시지
 			// 개인 메시지
@@ -114,7 +115,7 @@ export let RealtimeCallback = async (rt: any) => {
 					// senderInfo 가져오기
 					const senderInfo = await getUserInfo(audit_msg.send_user);
 			
-					console.log({ senderInfo });
+					// console.log({ senderInfo });
 			
 					// audit_request에 이름 추가
 					const enrichedAuditRequest = {
@@ -126,7 +127,7 @@ export let RealtimeCallback = async (rt: any) => {
 					realtimes.value.push(enrichedAuditRequest);
 					realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 					// realtimes.value = [...realtimes.value, enrichedAuditRequest];
-					console.log('Updated realtimes:', realtimes.value);
+					// console.log('Updated realtimes:', realtimes.value);
 				} catch (error) {
 					console.error('Failed to process audit request:', error);
 				}
@@ -142,16 +143,21 @@ export let RealtimeCallback = async (rt: any) => {
 				handleAuditRequest(rt.message.audit_approval);
 			}	
 
-			unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.noti_id)).length;
+			// 결재 취소 알림 audit_canceled
+			if (rt.message?.audit_canceled) {
+				handleAuditRequest(rt.message.audit_canceled);
+			}
+
+			unreadCount.value = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
 		}
 
-		// console.log(notification_count.dataset.count)
+		// // console.log(notification_count.dataset.count)
 		// window.localStorage.setItem(`notification_count:${user.user_id}`, notification_count.dataset.count); // notification count 가져오기
 	}
 };
 
 export let loginCheck = async (profile: any) => {
-	// console.log('=== loginCheck === profile : ', profile);
+	// // console.log('=== loginCheck === profile : ', profile);
 
 	if (!profile) {
 		if(!isConnected) {
@@ -169,7 +175,7 @@ export let loginCheck = async (profile: any) => {
 	}
 
 	else if (profile) {
-		console.log('=== loginCheck === profile : ', profile);
+		// console.log('=== loginCheck === profile : ', profile);
 		
 		let originalUser = { ...user };
 		
@@ -177,8 +183,6 @@ export let loginCheck = async (profile: any) => {
 		employeeDict[profile.user_id] = profile;
 		
 		Object.assign(user, profile);
-
-		// sessionStorage.setItem('userId', profile['user_id']); // 사용되고 있지 않음
 
 		for (const key in originalUser) {
 			if (!profile.hasOwnProperty(key)) {
@@ -202,9 +206,9 @@ export let loginCheck = async (profile: any) => {
 
 		let misc = JSON.parse(user.misc || '{}');
 
+		// 결재 창구 만들기
 		if (!misc.logged) {
 			skapi.postRecord(null, {
-				// 결재 창구 만들기
 				unique_id: `audit:${user.user_id}`,
 				table: {
 					name: 'audit',
@@ -220,87 +224,51 @@ export let loginCheck = async (profile: any) => {
 			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
 		}
 
-		// if (!misc.notification) {
-		// 	skapi.postRecord(null, {
-		// 		// 결재 창구 만들기
-		// 		unique_id: `realtime:${user.user_id}`,
-		// 		table: {
-		// 			name: 'realtime',
-		// 			access_group: 'authorized',
-		// 		},
-		// 	})
-		// 	.catch((err) => console.error({ err }));
-	
-		// 	misc.notification = true; // 로그인 후 한번만 실행
-		// 	skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
-		// }
+		// 공지사항 구독
+		if (!misc.subscribed) {
+			skapi.subscribeNewsletter({
+				group: 'public',
+			})
+			.catch((err) => console.error({ err }));
+
+			misc.subscribed = true; // 로그인 후 한번만 실행
+			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
+		}
 
 		if (!isConnected) {
 			skapi.connectRealtime(RealtimeCallback);
 		}
-
-		// skapi.connectRealtime(RealtimeCallback);
-		// getRealtime();
-
-		iwaslogged.value = true;
 	}
-	// console.log('profile', profile)
-	// console.log('iwaslogged', iwaslogged.value)
+
+	if(!loaded.value) {
+		app.use(router);
+
+		app.mount('#app');
+	}
+
 	loaded.value = true;
 };
-
-// 이메일 업데이트
-export async function updateEmails() {
-	const accessToken = sessionStorage.getItem('accessToken');
-	
-	if (accessToken) {
-		try {
-			googleEmailUpdate.value = true;
-			const res = await fetchGmailEmails(accessToken);
-			console.log('=== updateEmails === res : ', res);
-			mailList.value = res;
-			googleEmailUpdate.value = false;
-
-			// console.log('=== updateEmails === res : ', res);
-		} catch (error) {
-			googleEmailUpdate.value = false;
-			console.error('=== updateEmails === error : ', {error});
-		}
-	}
-}
-
-// if ('serviceWorker' in navigator) {
-// 	navigator.serviceWorker.getRegistrations().then(registrations => {
-// 	  for (let registration of registrations) {
-// 		registration.unregister(); // 기존 서비스 워커 삭제
-// 	  }
-// 	});
-// 	caches.keys().then(names => {
-// 	  for (let name of names) {
-// 		caches.delete(name); // 모든 캐시 삭제
-// 	  }
-// 	});
-//   }
-
-// setInterval(() => {
-// 	updateEmails();
-// }, 10000);
 
 const skapi = new Skapi(
   // 'ap21UAo9MdRQtaQ8CmGr',
   // '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
 
   // s :: mina
-  'ap21T837jUF8IFyfR98Z',
-  'f498d188-1fa5-43e5-a32d-904d3e125983',
+//   'ap21T837jUF8IFyfR98Z',
+//   'f498d188-1fa5-43e5-a32d-904d3e125983',
   // e :: mina
 
+	// s :: mina 0213
+	// 'ap21cemcuW6KhJIDR98Z',
+	// 'f498d188-1fa5-43e5-a32d-904d3e125983',
+	// e :: mina 0213
+
   // s :: qb
-//   'ap21WQQ42ZUVa3GYCmGr',
-//   '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
-//   'ap21b3xJGgBzEONNCmGr',
-//   '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
+  'ap21cfWvkAd36OniCmGr',
+  '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
   // e :: qb
+
+//   "ap21cZGkmP0COCVxCmGr", "5750ee2c-f7f7-43ff-b6a5-cce599d30101",
 
   // 'ap22SqnnCxZxkisPeFEc',
   // 'f8e16604-69e4-451c-9d90-4410f801c006',
@@ -314,17 +282,5 @@ const skapi = new Skapi(
 //   { autoLogin: false },
 //   { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir' }
 // );
-
-onMounted(() => {
-	if ("setAppBadge" in navigator) {
-		navigator.setAppBadge(unreadCount.value); // 5개의 알림이 있다고 표시
-	} else {
-		console.log("setAppBadge()를 지원하지 않는 브라우저입니다.");
-	}
-})
-
-app.use(router);
-
-app.mount('#app');
 
 export { skapi };

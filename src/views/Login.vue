@@ -6,57 +6,63 @@
 
 	router-link.logo(to="/")
 		//- img(src="@/assets/img/img_logo_symbol.png")
-		p 로고영역
+		//- p 로고영역
+		svg
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-groups-fill")
 
-	h2.title 로그인
+	h2.title Groupware
 
 	hr
 
-	form(@submit.prevent="login")
-		.input-wrap
-			p.label 이메일
-			input(type="email" name="email" placeholder="이메일" :disabled="promiseRunning" required)
+	template(v-if="masterlogin")
+		form(@submit.prevent="login")
+			.input-wrap
+				p.label 이메일
+				input(type="email" name="email" placeholder="이메일" :disabled="promiseRunning" required)
 
-		.input-wrap
-			p.label 비밀번호
-			.input
-				input(:type='showPassword ? "text" : "password"' name="password" placeholder="비밀번호" :disabled="promiseRunning" required)
-				button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
-					template(v-if="showPassword")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-fill")
-					template(v-else)
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
+			.input-wrap
+				p.label 비밀번호
+				.input
+					input(:type='showPassword ? "text" : "password"' name="password" placeholder="비밀번호" :disabled="promiseRunning" required)
+					button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
+						template(v-if="showPassword")
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-fill")
+						template(v-else)
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
 
-		.check-wrap
-			label.checkbox
-				input#input_autoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" checked)
-				span.label-checkbox 로그인 상태 유지
+			.check-wrap
+				label.checkbox
+					input#input_autoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" checked)
+					span.label-checkbox 로그인 상태 유지
 
-			router-link.btn-forgot(to="/forgot-password") 비밀번호 찾기
+				router-link.btn-forgot(to="/forgot-password") 비밀번호 찾기
 
-		button.btn.outline.btn-login(type="submit" style="margin-top: 2.5rem;") 로그인
+			button.btn.btn-login(type="submit" style="margin-top: 2.5rem;") 로그인
+			button.btn.outline(type="button" @click="masterlogin = false") 이전으로
 
-	button#el_bt_login.btn.btn-login-google(type="button" @click="googleLogin" :disabled="loading")
-		template(v-if="loading")
-			span Google 로그인 중...
-		template(v-else)
-			| Google 로그인
-
-	button.btn(@click="permissionAlert") 푸시 알림 허용
-	button.btn(@click="testSend") 테스트 알람 보내기
+	template(v-else)
+		button#el_bt_login.btn.btn-login-google(type="button" @click="googleLogin" :disabled="loading" style="margin-top: 0;")
+			template(v-if="loading")
+				span Google 로그인 중...
+			template(v-else)
+				| Google 로그인
+		
+		button.btn.outline(type="button" @click="masterlogin = true") 마스터 계정 로그인
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { user } from '@/user';
 import { skapi, iwaslogged } from "@/main";
-import { ref, watch, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+let masterlogin = ref(false);
 
 if(window.location.hash) {
     console.log('OAuth 콜백 처리중...');
@@ -169,19 +175,14 @@ let error = ref(null);
 let enableAccount = ref(false);
 let loading = ref(false);
 
-// skapi.logout();
-
-// onMounted(() => { // Dom을 기다릴 필요 없음
 if (window.localStorage.getItem('remember') === 'true') {
 	remVal.value = true;
 } else {
 	remVal.value = false;
 }
-// });
 
 let setLocalStorage = (e) => {
     localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
-	console.log(window.localStorage.getItem('remember'))
 };
 
 let login = (e) => {
@@ -212,20 +213,12 @@ let login = (e) => {
     })
 };
 
-// watch 필요없음, 로그인 성공시 위 코드에서 router.push('/')로 이동하므로, 페이지 방문시만 한번 확인하면 됨.
-
-// watch(iwaslogged, (nv) => {
-// 	if(nv && Object.keys(user).length > 0) {
-// 		router.push('/');
-// 	}
-// }, { immediate: true });
-
 // google login
 function googleLogin() {
 	loading.value = true;
 
-	const GOOGLE_CLIENT_ID = '685505600375-tiheatfjtp0if764ri7ilop3o4nuhql3.apps.googleusercontent.com';	// mina(broadwayinc.com) 계정으로 생성
-	// const GOOGLE_CLIENT_ID = '744531008220-v60665vfj19fgu1ajjlj0dj5sku7o4h8.apps.googleusercontent.com' // qb
+	// const GOOGLE_CLIENT_ID = '685505600375-tiheatfjtp0if764ri7ilop3o4nuhql3.apps.googleusercontent.com';	// mina(broadwayinc.com) 계정으로 생성
+	const GOOGLE_CLIENT_ID = '744531008220-v60665vfj19fgu1ajjlj0dj5sku7o4h8.apps.googleusercontent.com' // qb
 	const REDIRECT_URL = 'http://localhost:5173/login';
 
 	let rnd = Math.random().toString(36).substring(2); // Generate a random string
@@ -255,9 +248,9 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
     const state = params.get('state');
     const storedState = sessionStorage.getItem('oauth_state');
 
-    console.log('=== handleOAuthCallback === parms : ', params);
-    console.log('=== handleOAuthCallback === state : ', state);
-    console.log('=== handleOAuthCallback === storedState : ', storedState);
+    // console.log('=== handleOAuthCallback === parms : ', params);
+    // console.log('=== handleOAuthCallback === state : ', state);
+    // console.log('=== handleOAuthCallback === storedState : ', storedState);
 
     loading.value = true;
 
@@ -270,10 +263,10 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
     const accessToken = params.get('access_token');
     sessionStorage.setItem('accessToken', accessToken);
 
-	console.log('=== handleOAuthCallback === accessToken : ', accessToken);
+	// console.log('=== handleOAuthCallback === accessToken : ', accessToken);
 
     skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
-		console.log('=== handleOAuthCallback === u : ', u);
+		// console.log('=== handleOAuthCallback === u : ', u);
         window.location.href = '/';
     }).finally(() => {
         loading.value = false;
@@ -304,7 +297,12 @@ onMounted(() => {
 
 	.logo {
 		display: block;
-		margin-bottom: 1.5rem;
+		margin-bottom: 0.5rem;
+
+		svg {
+			width: 3rem;
+			height: 3rem;
+		}
 	}
 
 	.title {

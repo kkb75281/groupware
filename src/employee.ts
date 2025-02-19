@@ -27,13 +27,13 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
         let record = (await skapi.getRecords({
             unique_id: "[emp_position_current]" + makeSafe(userId)
         }).catch(err => {
-            console.log({err});
+            // console.log({err});
             return {
                 list: [] as any[]
             }
         })).list?.[0];
 
-		console.log({record})
+		// console.log({record})
 
         if (!record) return user;
 
@@ -67,7 +67,7 @@ export const getUsers = async (
         ascending?: boolean,
     }): Promise<any[]> => {
 
-    console.log({ params })
+    // console.log({ params })
     options = Object.assign({ limit: 100 }, options || {});
 
     let paramsHash = params?.searchFor === 'approved' ? JSON.stringify(params.value) : null; // 기본 approved / suspended 리스트만 캐싱
@@ -109,7 +109,7 @@ export const getUsers = async (
 
     let res = await skapi.getUsers(params, options);
 
-	console.log({ res })
+	// console.log({ res })
 
     res.list.filter((emp: any) => {
         if (emp.approved.includes('by_master')) {

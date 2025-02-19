@@ -21,6 +21,7 @@ hr
         .input-wrap
             p.label.essential 부서명
             input(type="text" name="division_name" placeholder="부서명을 입력해주세요." required)
+            p.desc 부서명 등록시 / 를 사용하여 하위 부서를 등록할 수 있습니다. (예. 스카피/개발팀)
         
         br
 
@@ -126,17 +127,20 @@ CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCropped
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { nextTick, onMounted, ref } from 'vue';
-import { skapi } from '@/main';
+import { onMounted } from 'vue';
+import { skapi, mainPageLoading } from '@/main';
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 import { getDivisionNames, divisionNameList } from '@/division';
 import { divisions } from '@/division';
+
 import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
 const route = useRoute();
 
 let resigterComp = (e) => {
+	mainPageLoading.value = true;
+
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
     document.querySelectorAll('form button').forEach(el => el.disabled = true);
 
@@ -173,7 +177,7 @@ let resigterComp = (e) => {
 
     let createDivisionName = () => {
         if(Object.keys(currentData).length) {
-            let keys = Object.keys(currentData._value);
+            let keys = Object.keys(currentData);
             let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
             // let newNumber = 1;
             
@@ -184,14 +188,14 @@ let resigterComp = (e) => {
             let newNumber = maxNumber + 1; // 가장 큰 번호 다음 숫자 지정
             let newKey = `DVS_${newNumber}`;
 
-            currentData._value[newKey] = ext.data.division_name;
+            currentData[newKey] = ext.data.division_name;
         } else {
-            currentData._value = {
+            currentData = {
                 'DVS_0': ext.data.division_name
             }
         }
 
-        return skapi.postRecord(currentData._value, {
+        return skapi.postRecord(currentData, {
             unique_id: '[division_name_list]',
             table: {
                 name: 'divisionNames',
@@ -230,8 +234,14 @@ let resigterComp = (e) => {
         table: {
             name: 'divisions',
             access_group: 99
+        },
+        index: {
+            name: 'divisionName',
+            // value: ext.data.division_name,
+            value: ext.data.division_name.replace(/\//g, '_')
         }
     }).then((r) => {
+        console.log('=== resigterComp === r : ', r);
         // let sessionDivisions = window.sessionStorage.getItem('divisions'); // 세션 스토리지 쓸 이유가 없음.
 
         // if(sessionDivisions == 'no data' || !JSON.parse(sessionDivisions)) {
@@ -247,7 +257,12 @@ let resigterComp = (e) => {
 
         window.alert('등록되었습니다.');
         router.push('/admin/list-divisions');
-    });
+	}).catch((e) => {
+		console.log({e});
+		window.alert('등록 중 오류가 발생했습니다.');
+    }).finally(() => {
+		mainPageLoading.value = false;
+	});
 }
 
 onMounted(() => {

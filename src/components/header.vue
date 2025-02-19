@@ -28,20 +28,25 @@ header#header
 	template(v-if="realtimes.length > 0")
 		.popup-main
 			ul
-				li(v-for="rt in realtimes" @click.stop="readNoti(e, rt)")
-					.router(@click="closePopup" :class="{'read' : readList.includes(rt?.noti_id)}")
+				li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, rt)")
+					.router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
 						template(v-if="rt.audit_info.audit_type === 'request'")
-							h4.noti-type [결재 요청]
+							h4.noti-type [{{ rt.audit_info.send_auditors.includes(`receiver:${user.user_id.replaceAll('-', '_')}`) ? '수신참조' : '결재요청' }}]
 							h5.noti-title {{ rt.audit_info.to_audit }}
 							p.noti-sender {{ rt.send_name }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 						template(v-else-if="rt.audit_info.audit_type === 'email'")
-							h4.noti-type [새 이메일]
+							h4.noti-type [새이메일]
 							h5.noti-title {{ rt.subject }}
 							//- .noti-info
 							p.noti-sender {{ rt.from }}
 							span.upload-time {{ formatTimeAgo(rt.dateTimeStamp) }}
+
+						template(v-else-if="rt.audit_info.audit_type === 'canceled'")
+							h4.noti-type [결재회수]
+							h5.noti-title {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 회수하였습니다.' }}
+							p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
 						template(v-else)
 							h4.noti-type [알람]
@@ -49,15 +54,6 @@ header#header
 								template(v-if="rt.audit_info.approval === 'approve'") {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 승인하였습니다.' }}
 								template(v-else) {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 반려하였습니다.' }}
 							p.upload-time {{ formatTimeAgo(rt.send_date) }}
-
-				//- 이메일 알림
-				//- li(v-for="email in notifications.emails")
-					a.router(:href="email.link" target="_blank" @click="closePopup")
-						h4.noti-type [새 이메일]
-						h5.noti-title {{ email.title }}
-						.noti-info
-							p.noti-sender {{ email.from }}
-							span.upload-time {{ formatTimeAgo(email.dateTimeStamp) }}
 
 	template(v-else)
 		.popup-main.no-noti
@@ -67,7 +63,7 @@ header#header
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 				| 새로운 알림이 없습니다.
 
-	.popup-bottom
+	//- .popup-bottom
 		router-link.router.view-all(to="/approval/audit-list" @click="closePopup")
 			p 전체보기
 			.icon
@@ -124,6 +120,13 @@ header#header
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
 					p 직원 목록
+			
+			li
+				router-link.router(to="/organigram" @click="closePopup")
+					.icon
+						svg
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+					p 조직도
 
 			li(@click="logout")
 				.router
@@ -135,21 +138,16 @@ header#header
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onUnmounted, onMounted, ref, nextTick, watch, reactive, computed } from 'vue';
+import { onUnmounted, onMounted, ref, watch } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { notifications, realtimes, readList, unreadCount, getReadList, readAudit, createReadListRecord, addEmailNotification } from '@/notifications'
+import { realtimes, readList, unreadCount, readNoti } from '@/notifications'
 import { goToAuditDetail } from '@/audit'
 
 const router = useRouter();
 const route = useRoute();
 
-// onMounted(async() => {
-// 	unreadCount.value = realtimes.value.filter((audit) => !readList.value.includes(audit.audit_doc_id)).length;
-// })
-
-// let newNoti = ref(false);
 let isNotiOpen = ref(false);
 let btnNoti = ref(null);
 let isProfileOpen = ref(false);
@@ -177,8 +175,8 @@ function formatTimeAgo(timestamp) {
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
-	console.log('=== openNotification === realtimes.value : ', realtimes.value)
-	console.log('=== openNotification === readList.value : ', readList.value)
+	console.log({realtimes})
+	console.log({readList})
 };
 
 let closeNotification = (event) => {
@@ -210,26 +208,6 @@ let closePopup = () => {
 	isProfileOpen.value = false;
 };
 
-// const allNotifications = computed(() => {
-//     // 결재 알림 변환
-//     const auditNotifications = realtimes.value.map(rt => ({
-//         type: 'audit',
-//         data: rt,
-//         timestamp: rt.send_date
-//     }));
-
-//     // 이메일 알림 변환
-//     const emailNotifications = notifications.emails.map(email => ({
-//         type: 'email',
-//         data: email,
-//         timestamp: email.dateTimeStamp
-//     }));
-
-//     // 모든 알림 합치고 시간순 정렬
-//     return [...auditNotifications, ...emailNotifications]
-//         .sort((a, b) => b.timestamp - a.timestamp);
-// });
-
 onMounted(() => {
 	document.addEventListener('click', closeNotification);
 	document.addEventListener('click', closeProfile);
@@ -239,10 +217,6 @@ onMounted(() => {
 		closePopup();
 		next();
 	});
-
-	// addEmailNotification(newEmail => {
-	// 	console.log('=== addEmailNotification === newEmail : ', newEmail);
-	// });
 });
 
 onUnmounted(() => {
@@ -250,35 +224,8 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
-let updateReadList = async(type) => {
-	let id;
-
-	if(type === 'email') {
-		id = readAudit.value.id;
-	} else {
-		id = readAudit.value.audit_info.audit_doc_id;
-	}
-
-	if (!readList.value.includes(id)) {
-		await skapi.deleteRecords({
-			unique_id: '[notification_read_list]' + user.user_id
-		});
-		createReadListRecord(true); // 새로 읽은 알람 추가
-	}
-}
-
-let readNoti = async(e, rt) => {
-	// 기존 readAudit 초기화
-    for (let key in readAudit.value) {
-        delete readAudit.value[key];
-    }
-
-	// 현재 읽은 알람 저장
-	for (let key in rt) {
-		readAudit.value[key] = rt[key];
-	}
-
-	if(rt.audit_info.audit_type === 'request') {
+let showRealtimeNoti = (e, rt) => {
+	if(rt.audit_info.audit_type === 'request' || rt.audit_info.audit_type === 'canceled') {
 		goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
 	} else if(rt.audit_info.audit_type === 'email') {
 		window.open(rt.link, "_blank");
@@ -286,22 +233,14 @@ let readNoti = async(e, rt) => {
 		router.push({ name: 'request-list' });
 	}
 
-	// 읽은 알람 리스트를 업데이트
-	// await getReadList(); // 기존 리스트 로드
-	updateReadList(rt.audit_info.audit_type);
-	// if (!readList.value.includes(rt.audit_info.audit_doc_id)) {
-	// 	await skapi.deleteRecords({
-	// 		unique_id: '[notification_read_list]' + user.user_id
-    //     });
-	// 	createReadListRecord(true); // 새로 읽은 알람 추가
-	// }
+	readNoti(rt);
 }
 
 let logout = () => {
 	skapi.logout().then(() => {
-		Object.assign(user, {});
-		// sessionStorage.removeItem('user');
-    	// sessionStorage.removeItem('iwaslogged'); 안쓰임임
+		for (let key in user) {
+			delete user[key];
+		}
 		realtimes.value = [];
 		sessionStorage.removeItem('accessToken');
         router.push({ path: "/login" });
@@ -486,7 +425,8 @@ watch(() => route.path, (newPath, oldPath) => {
 	.popup-main {
 		ul {
 			li {
-				border-top: 1px solid var(--gray-color-200);
+				// border-top: 1px solid var(--gray-color-200);
+				border-top: 1px solid var(--gray-color-100);
 			}
 		}
 
@@ -528,6 +468,8 @@ watch(() => route.path, (newPath, oldPath) => {
 		}
 
 		.popup-main {
+			padding-bottom: 1.5rem;
+
 			ul {
 					max-height: 240px;
 					overflow-y: scroll;

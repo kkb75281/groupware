@@ -1,6 +1,6 @@
 <template lang="pug">
 .wysiwyg
-	.btn-wrap
+	.btns-wrap
 		button.btn-custom(type="button" @click="handleCommand('bold')")
 			.icon
 				svg
@@ -44,7 +44,7 @@
 		//- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
 	
 		// 색상 변경
-		input#colorInput.btn-custom(type="color" @change="handleCommand($event.target.value)" @blur="wysiwyg?.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7;")
+		input#colorInput.btn-custom(type="color" @change="handleCommand($event.target.value)" @blur="wysiwyg?.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7; position: relative; top: -4px;")
 		//- button.btn-custom(type="button" @click="handleCommand('color')" style="border-right: 1px solid #e4e4e7;") Color
 		button.btn-custom(type="button" @click="handleCommand('divider')")
 			.icon
@@ -70,11 +70,11 @@
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-align-center")
-		button.btn-custom(type="button" @click="handleCommand('alignRight')" style="border-right: 1px solid #e4e4e7;")
+		button.btn-custom(type="button" @click="handleCommand('alignRight')")
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-align-right")
-		button.btn-custom(type="button" @click="handleCommand('image')")
+		//- button.btn-custom(type="button" @click="handleCommand('image')")
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
@@ -84,7 +84,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUnmount, defineEmits, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { skapi } from '@/main';
 
 import Loading from '@/components/loading.vue';
@@ -104,7 +104,7 @@ const loadScript = () => {
 
     const script = document.createElement('script');
     script.id = 'wysiwyg4all-script';
-    script.src = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/wysiwyg4all.js';
+    script.src = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/dist/wysiwyg4all.min.js';  // dist 폴더의 minified 버전 사용
     script.async = true;
     
     script.onload = () => resolve();
@@ -148,7 +148,9 @@ const initEditor = async () => {
           callback: (c) => {
             if (c.commandTracker) {
               // 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
-              emit('update:content', wysiwyg.value.export());
+			  wysiwyg.value.export().then(r => {
+				emit('update:content', r.html);
+			  });
             }
             return c;
           }
@@ -175,12 +177,12 @@ const handleBlur = () => {
   }
 };
 
-const exportData = () => {
-  if (wysiwyg.value && editorReady.value) {
-    const content = wysiwyg.value.export();
-    emit('update:content', content);
-  }
-};
+// const exportData = () => {
+//   if (wysiwyg.value && editorReady.value) {
+//     const content = wysiwyg.value.export();
+//     emit('update:content', content);
+//   }
+// };
 
 onMounted(() => {
   initEditor();
@@ -222,7 +224,7 @@ defineExpose({
 	}
 }
 
-.btn-wrap {
+.btns-wrap {
 	justify-content: flex-start !important;
 	gap: 0 !important;
 	margin-bottom: 0.5rem;

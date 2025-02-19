@@ -71,8 +71,9 @@ hr
                                 input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
                                 span.label-checkbox
                     th(v-show="isDesktop" scope="col") NO
-                    th(scope="col") 직책<br>(직급)
-                    th(scope="col") 부서
+                    template(v-if="empListType !== '초청여부'")
+                        th(scope="col") 직책<br>(직급)
+                        th(scope="col") 부서
                     th(scope="col") 이름
                     th(v-show="isDesktop" scope="col") 이메일
                     template(v-if='empListType === "초청여부"')
@@ -84,7 +85,7 @@ hr
                     th(v-show="isDesktop" scope="col") 주소
             tbody
                 template(v-if="loading")
-                    tr.loading
+                    tr.nohover.loading
                         td(colspan="10")
                             Loading#loading
                 template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
@@ -102,21 +103,20 @@ hr
                             td.list-num(v-show="isDesktop") {{ index + 1 }}
                             td {{ emp?.position }}
                             td {{ divisionNameList?.[emp?.division] }}
-                            template(v-if='user.access_group > 98')
-                                td {{ emp.name }}
-                            template(v-else)
-                                td
-                                    .name-wrap
-                                        .img-wrap(style="width: 36px; height: 36px;")
-                                            template(v-if="emp.picture")
-                                                img(:src="emp.picture" alt="img-profile")
-                                            template(v-else)
-                                                .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
-                                                    svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
-                                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+                            //- template(v-if='user.access_group > 98')
+                            //-     td {{ emp.name }}
+                            //- template(v-else)
+                            td
+                                .name-wrap
+                                    .img-wrap(style="width: 36px; height: 36px;")
+                                        template(v-if="emp.picture")
+                                            img(:src="emp.picture" alt="img-profile")
+                                        template(v-else)
+                                            .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
+                                                svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
+                                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+                                    span {{ emp.name }}
 
-                                        span {{ emp.name }}
-                            
                             td(v-show="isDesktop") {{ emp.email }}
                             td(v-show="isDesktop") {{ emp.birthdate }}
                             td(v-show="isDesktop") {{ emp.phone_number }}
@@ -125,8 +125,8 @@ hr
                         //- 초청여부
                         template(v-else-if="empListType === '초청여부'")
                             td.list-num(v-show="isDesktop") {{ index + 1 }}
-                            td {{ emp?.position }}
-                            td {{ divisionNameList?.[emp?.division] }}
+                            //- td {{ emp?.position }}
+                            //- td {{ divisionNameList?.[emp?.division] }}
                             td {{ emp.name }}
                             td(v-show="isDesktop") {{ emp.email }}
                             td
@@ -243,7 +243,7 @@ import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { divisionNameList } from '@/division'
-import { getEmpDivisionPosition, empInfo, employeeDict, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
+import { getEmpDivisionPosition, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
 import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
@@ -330,9 +330,9 @@ watch(searchFor, (nv) => {
 watch(searchValue, (nv) => {
     if (nv) {
         if (nv === '전체' && searchFor.value === 'division') {
-            callParams.value.searchFor = 'timestamp';
-            callParams.value.value = new Date().getTime();
-            callParams.value.condition = '<=';
+            callParams.value.searchFor = 'approved';
+            callParams.value.value = 'by_skapi:approved';
+            callParams.value.condition = '>=';
 
             searchEmp();
         }
@@ -356,7 +356,6 @@ async function arrangeEmpDivisionPosition(li) {
 }
 
 async function getEmpList(type, refresh=false){
-    // console.log('=== getEmpList === run !!');
     loading.value = true;
 
     if (type === '직원목록') {
@@ -384,13 +383,12 @@ async function getEmpList(type, refresh=false){
             condition: '>='
         }, refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
 
-		console.log('result', result);
-
         employee.value = result;
         suspendedLength.value = result.length;
     }
     else if (type === '초청여부') {
-        employee.value = await getInvitations().then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);
+        employee.value = await getInvitations(refresh).then(li => arrangeEmpDivisionPosition(li)).finally(()=>loading.value=false);  
+        // console.log('=== getEmpList === employee.value : ', employee.value);
     }
 }
 
@@ -456,9 +454,9 @@ async function searchEmp(refresh) {
     if (!searchValue.value) {
         searchFor.value = 'name';
         searchValue.value = '';
-        callParams.value.searchFor = 'timestamp';
-        callParams.value.value = new Date().getTime();
-        callParams.value.condition = '<=';
+        callParams.value.searchFor = 'approved';
+        callParams.value.value = 'by_skapi:approved';
+        callParams.value.condition = '>=';
     }
 
     if (searchFor.value === 'division' && searchValue.value !== '전체') {
@@ -481,13 +479,12 @@ async function searchEmp(refresh) {
                 }
             });
 
+            // user_id만 추출
             let gu = [];
 
             res.list.forEach(rec => gu.push(rec.data.user_id));
 
             const result = [...new Set(gu)]; // 중복 제거
-
-            refresh = refresh === true;
 
             employee.value = await getUsers({
                 searchFor: 'user_id',
@@ -585,8 +582,7 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log('숨김처리 진짜 실패함');
-				console.log(err);
+				console.log({err});
                 isFail.push(el);
             });
         }));
@@ -607,8 +603,7 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log('숨김해제 진짜 실패함');
-				console.log(err);
+				console.log({err});
                 isFail.push(el);
             });
         }));
@@ -628,20 +623,15 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log('유저삭제 진짜 실패함');
-				console.log(err);
+				console.log({err});
                 isFail.push(el);
             });
         }));
     }
 
     if(isSuccess.length > 0) {
-		console.log('성공', isSuccess);
-		console.log('실패', isFail);
         alert(`${isSuccess.length}명의 직원이 ${alertMsg}되었습니다.`);
     } else {
-		console.log('성공', isSuccess);
-		console.log('실패', isFail);
         alert(`${alertMsg}에 실패하였습니다.`);
     }
 
@@ -658,6 +648,7 @@ let resendInvite = (email) => {
 }
 
 let cancelInvite = (employee_info) => {
+	console.log(employee_info)
     let safeEmail = makeSafe(employee_info.email);
     let safeUserId = makeSafe(employee_info.user_id);
 
@@ -710,10 +701,12 @@ let cancelInvite = (employee_info) => {
 
         getInvitationsCache.splice(getInvitationsCache.findIndex(inv => res.user_id === inv), 1); // 캐시에서 삭제
 
-        let inv = getInvitations();
+        let inv = await getInvitations();
         alert('초대메일이 취소되었습니다.');
 
-        employee.value = await inv;
+		employee.value = employee.value.filter(emp => emp.user_id !== employee_info.user_id); // 리스트에서 삭제
+
+        // employee.value = await inv;
 
     }).catch(err => {
         alert('초대메일 취소에 실패하였습니다.');
@@ -755,11 +748,11 @@ let registerEmp = async(e) => {
             },
             tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]
         }).then(r => {
-            console.log('history 부서직책업데이트', r);
+            // console.log('history 부서직책업데이트', r);
         })
 
         await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(async(r) => {
-            console.log(r)
+            // console.log(r)
             // current
             await skapi.postRecord({
                 user_id: selectedEmp.value.user_id,
@@ -774,7 +767,7 @@ let registerEmp = async(e) => {
                     value: selectedEmp.value.name
                 }
             }).then(r => {
-                console.log('current 부서직책업데이트', r);
+                // console.log('current 부서직책업데이트', r);
             })
         });
         needUpdate = true;
@@ -786,7 +779,7 @@ let registerEmp = async(e) => {
             user_id: selectedEmp.value.user_id,
             access_group: selectedEmp.value.access_group
         }).then(r => {
-            console.log('권한업데이트' ,r)
+            // console.log('권한업데이트' ,r)
         })
     }
 
@@ -1072,6 +1065,7 @@ onUnmounted(() => {
 .name-wrap {
     display: flex;
     align-items: center;
+	justify-content: center;
     gap: 12px;
 
     .img-wrap {

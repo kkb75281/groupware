@@ -35,7 +35,7 @@ hr
 
             tbody
                 template(v-if="loading")
-                    tr(v-for="i in 4")
+                    tr(v-for="i in 5")
                 template(v-else-if="!commuteRecords || commuteRecords.length === 0")
                     tr
                         td(colspan="5") 데이터가 없습니다.
@@ -61,7 +61,7 @@ hr
 
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { skapi } from "@/main";
 import { user, makeSafe } from '@/user';
 import { extractTimeFromDateTime } from "@/utils/time";
@@ -90,13 +90,23 @@ const getEmpCommute = async (userId) => {
         };
 
         const res = await skapi.getRecords(query, fetchOptions);
-        const commuteList = res?.list?.sort((a, b) => a.uploaded - b.uploaded);
+        const commuteList = res?.list?.sort((a, b) => b.uploaded - a.uploaded);
 
         return commuteList;
     } catch (error) {
         console.log('=== getEmpCommute === error : ', {error});
     }
 }
+
+// 새로고침
+const refresh = async() => {
+    loading.value = true;
+
+    const commuteList = await getEmpCommute(userId);
+    commuteRecords.value = commuteList;
+
+    loading.value = false;
+};
 
 onMounted(async () => {
     const commuteList = await getEmpCommute(userId);
@@ -117,6 +127,8 @@ onMounted(async () => {
     }
 }
 .table {
+    min-width: 31rem;
+
     tbody {
         tr {
             &:hover {

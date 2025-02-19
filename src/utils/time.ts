@@ -33,6 +33,14 @@ const convertToTimestamp = (dateStr: string): number => {
   return date.getTime();
 };
 
+const convertTimestampToDateMillis = (timestamp: number): string => {
+    const date = new Date(timestamp); // 밀리초 그대로 사용
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}/${month}/${day}`;
+}
+
 // 시간이 범위 내에 있는지 확인
 // string(15:00:00)를 받아야함.
 const isTimeInRange = (targetTime: string, minTime: string, maxTime: string) => {
@@ -78,6 +86,7 @@ export {
   getTime,
   convertToTimestamp,
   convertTimeToTimestamp,
+  convertTimestampToDateMillis,
   isTimeInRange,
   isTimeInRangeTimestramp,
   addTimeToTimestamp,

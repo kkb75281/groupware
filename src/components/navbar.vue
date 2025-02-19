@@ -2,7 +2,10 @@
 nav#navbar(ref="navbar")
     .navbar-wrap
         .logo
-            router-link.img-logo(to="/") 로고 부분
+            //- router-link.img-logo(to="/") 로고 부분
+            router-link.img-logo(to="/")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-groups-fill")
             //- button.btn-menu(@click="toggleNavbarFold")
                 .icon
                     svg
@@ -15,10 +18,17 @@ nav#navbar(ref="navbar")
         ul.menu-item
             template(v-for="item in menuList" :key="item.name")
                 li.item(v-if="item.show" :class="{'active': activeMenu == item.name}")
-                    router-link.router(:to="item.to")
+                    //- 외부 링크인 경우와 내부 라우팅인 경우를 구분
+                    a.router(v-if="item.isExternal" :href="item.to" target="_blank")
                         .icon
                             svg
-                                use(:xlink:href="item.icon")
+                                use(:href="getIconPath(item.icon)")
+                        .text 
+                            span {{ item.text }}
+                    router-link.router(v-if="!item.isExternal" :to="item.to")
+                        .icon
+                            svg
+                                use(:href="getIconPath(item.icon)")
                         .text 
                             span {{ item.text }}
                             svg.arrow(v-if="item.child" :class="{'down': item.child.name === activeMenu}")
@@ -34,12 +44,14 @@ import { useRoute, useRouter } from 'vue-router';
 import { watch, onMounted, onUnmounted, ref, computed } from 'vue'
 import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar'
 import { user } from '@/user'
+import MaterialIcon from '@/assets/icon/material-icon.svg'
 
 const router = useRouter();
 const route = useRoute();
 
 let navbar = ref(null);
 let activeMenu = ref(null);
+let googleAccountCheck = sessionStorage.getItem('accessToken') ? true : false;
 
 // isadmin을 computed로 변경하여 반응성 부여
 const isadmin = computed(() => user.access_group > 98);
@@ -50,14 +62,22 @@ const menuList = computed(() => [
         show: true,
         name: 'home',
         to: '/',
-        icon: 'src/assets/icon/material-icon.svg#icon-dashboard',
+        icon: '#icon-dashboard',
         text: '대시보드',
+    },
+    {
+        show: googleAccountCheck,
+        name: 'email',
+        to: 'https://mail.google.com/mail/u/0/#inbox',
+        icon: '#icon-mail',
+        text: '이메일',
+        isExternal: true  // 외부 링크 표시
     },
     {
         show: true,
         name: 'approval',
         to: '/approval',
-        icon: 'src/assets/icon/material-icon.svg#icon-approval',
+        icon: '#icon-approval',
         text: '전자결재',
         child: {
             name: 'approval',
@@ -76,7 +96,12 @@ const menuList = computed(() => [
                     name: 'request-list',
                     to: '/approval/request-list',
                     text: '발신함',
-                }
+                },
+                {
+                    name: 'audit-reference',
+                    to: '/approval/audit-reference',
+                    text: '수신참조',
+                },
             ]
         }
     },
@@ -84,7 +109,7 @@ const menuList = computed(() => [
         show: true,
         name: 'mypage',
         to: '/mypage',
-        icon: 'src/assets/icon/material-icon.svg#icon-account-circle-fill',
+        icon: '#icon-account-circle-fill',
         text: '마이페이지',
         child: {
             name: 'mypage',
@@ -99,10 +124,15 @@ const menuList = computed(() => [
                     to: '/mypage/edit-mystamp',
                     text: '도장 관리',
                 },
+                // {
+                //     name: 'edit-myfile',
+                //     to: '/mypage/edit-myfile',
+                //     text: '자료 관리',
+                // },
                 {
                     name: 'record-commute',
                     to: '/mypage/record-commute',
-                    text: '근퇴 관리',
+                    text: '근태 관리',
                 },
                 {
                     name: 'change-password',
@@ -116,7 +146,7 @@ const menuList = computed(() => [
         show: isadmin.value,
         name: 'admin',
         to: '/admin',
-        icon: 'src/assets/icon/material-icon.svg#icon-settings',
+        icon: '#icon-settings',
         text: '마스터 페이지',
         child: {
             name: 'admin',
@@ -143,14 +173,21 @@ const menuList = computed(() => [
         show: !isadmin.value,
         name: 'list-employee',
         to: '/list-employee',
-        icon: 'src/assets/icon/material-icon.svg#icon-groups',
+        icon: '#icon-groups',
         text: '직원 목록',
     },
-	{
+    {
+        show: true,
+        name: 'newsletter',
+        to: '/newsletter',
+        icon: '#icon-campaign',
+        text: '공지사항',
+    },
+    {
         show: true,
         name: 'organigram',
         to: '/organigram',
-        icon: 'src/assets/icon/material-icon.svg#icon-account-tree',
+        icon: '#icon-account-tree',
         text: '조직도',
     }
 ]);
@@ -177,6 +214,10 @@ let checkNavbarClose = (e) => {
         }
     }
 }
+
+const getIconPath = computed(() => (iconName) => {
+    return `${MaterialIcon}${iconName}`
+});
 
 onMounted(() => {
     checkScreenWidth();
@@ -213,7 +254,7 @@ watch(() => route.fullPath, (nv) => {
     }
 
     for(let menu of menuList.value) {
-        if (!menu.show) continue;
+        if (!menu.show || menu.isExternal) continue;  // 외부 링크는 active 상태 체크에서 제외
 
         let menuPath = menu.to.replace(/^\//, '');
         
@@ -264,6 +305,18 @@ watch(() => route.fullPath, (nv) => {
         justify-content: space-between;
         padding: 0 20px;
         margin-bottom: 30px;
+        cursor: pointer;
+
+        .img-logo {
+            // width: 2.5rem;
+            // height: 2.5rem;
+            padding: 0 16px;
+
+            svg {
+                width: 2rem;
+                height: 2rem;
+            }
+        }
     }
 
     .btn-close {
