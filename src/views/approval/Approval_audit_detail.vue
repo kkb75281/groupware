@@ -225,7 +225,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getStampList(true)") 승인하기
 			template(v-if="approvalStep === 2")
 				button.btn.bg-gray.btn-edit(v-if="stempType === 'sign' ? handleStampBlobComplete : true" type="button" @click="approvalStep--") 이전
-				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재 승인
+				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재승인
 
 </template>
 
@@ -686,7 +686,7 @@ const getAuditDetail = async () => {
 			date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date,
 		}));
 
-		console.log('결재자 정보 === getAuditDetail === newAuditUserList : ', newAuditUserList);
+		// console.log('결재자 정보 === getAuditDetail === newAuditUserList : ', newAuditUserList);
 
 		// 전체 결재자 리스트
 		auditorList.value = newAuditUserList;
@@ -707,6 +707,9 @@ const getAuditDetail = async () => {
 		// newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
 		approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
 		agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
+		
+		// console.log('=== getAuditDetail === approverList : ', approverList.value);
+		console.log('=== getAuditDetail === agreerList : ', agreerList.value);
 	} catch (error) {
 		getAuditDetailRunning.value = false;
 		console.error(error);

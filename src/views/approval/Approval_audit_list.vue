@@ -59,20 +59,13 @@ hr
                         //-         input(type="checkbox" name="checkbox")
                         //-         span.label-checkbox
                         td {{ index + 1 }}
-                        //- template(v-if="audit.isCanceled")
-                            td.left 
-                                span.canceled-text [회수됨] 
-                        //- template(v-else)
                         td.left {{ audit.data.to_audit }}
 
                         template(v-if="currentPage === 'audit-list'")
                             td
                                 span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함', canceled: audit.my_state === '회수됨' }") {{ audit.my_state }}
                         td
-                            //- span.audit-state(:class="{ approve: !audit.isCanceled && audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)), canceled: audit.isCanceled }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
                             span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)), canceled: audit.isCanceled }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
-                        //- td
-                            span.audit-state(:class="{ approve: JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length }") {{ JSON.parse(audit.data.auditors).agreers.length > 0 && audit.referenced_count === JSON.parse(audit.data.auditors).agreers.length ? '완료됨' : audit.referenced_count + ' / ' + JSON.parse(audit.data.auditors).agreers.length }}
                         td {{ audit.user_info?.name }}
 
 </template>

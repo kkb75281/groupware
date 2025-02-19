@@ -155,7 +155,7 @@ template(v-if="step > 1")
 					.icon(style="padding: 0;")
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-				button.btn(type="submit") 결재 요청
+				button.btn(type="submit") 결재요청
 
 //- Modal - 작성란 추가
 #modal.modal.row-title(v-if="isRowModalOpen" @click="closeRowModal")
