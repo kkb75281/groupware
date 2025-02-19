@@ -56,7 +56,7 @@ export async function getAuditList() {
             access_group: 'authorized',
           },
         });
-        console.log('canceledAudit : ', canceledAudit);
+        // console.log('canceledAudit : ', canceledAudit);
 
         // 회수 여부 체크
         const isCanceled = canceledAudit.list && canceledAudit.list.length > 0;

@@ -231,7 +231,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
@@ -264,9 +264,8 @@ const approvalStep = ref(1);
 const stempType = ref('stamp');
 const makeStampComplete = ref(false);
 const makeSignComplete = ref(false);
-
-// 결재 회수 여부
-const isCanceled = ref(false);
+const isCanceled = ref(false); // 결재 회수 여부
+const getAuditDetailRunning = ref(false);
 
 // 결재 회수 가능 여부 확인
 const isCancelPossible = computed(() => {
@@ -545,8 +544,6 @@ const approvedAudit = async () => {
 	isModalOpen.value = false;
 }
 
-let getAuditDetailRunning = ref(false);
-
 // 결재 서류 가져오기
 const getAuditDetail = async () => {
 	getAuditDetailRunning.value = true;
@@ -575,6 +572,8 @@ const getAuditDetail = async () => {
 		}).then(res => {
 			if (res.list && res.list.length) {
 				isCanceled.value = true;
+			} else {
+				isCanceled.value = false;
 			}
 		}).catch(err => {
 			isCanceled.value = false;
@@ -908,13 +907,13 @@ const previewAudit = () => {
 
 // 결재 회수 함수
 const canceledAudit = async () => {	
-	console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
-	console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
+	// console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
+	// console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
 	
 	const auditors = auditDoContent.value.data.auditors;
 	const parsedAuditors = JSON.parse(auditors);
-	console.log('결재회수 === canceledAudit === auditors : ', auditors);
-	console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
+	// console.log('결재회수 === canceledAudit === auditors : ', auditors);
+	// console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
 
 	// 각 배열에서 ID만 추출
 	const approverIds = parsedAuditors.approvers;
@@ -923,7 +922,7 @@ const canceledAudit = async () => {
 
 	// // 결재자 ID 배열 생성
 	const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
-	console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
+	// console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
 
 	// 결재 회수 레코드 저장
 	try {
@@ -1025,6 +1024,9 @@ const canceledAudit = async () => {
 
 	window.alert('결재가 회수되었습니다.');
 	disabled.value = true; // 회수 버튼 비활성화
+	isCanceled.value = true; // 회수 여부 변경
+
+	await nextTick();
 };
 
 onMounted(() => {
