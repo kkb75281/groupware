@@ -138,8 +138,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.icon(style="padding: 0")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-			//- button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="disabled") 회수
-			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit") 회수
+			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="isCanceled") 회수
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -249,7 +248,7 @@ const auditId = ref('');
 
 const isDesktop = ref(window.innerWidth > 768);
 
-const disabled = ref(true);
+const disabled = ref(false);
 const auditDoContent = ref([]); // 결재 서류 내용
 const approverList = ref([]);
 const agreerList = ref([]);
@@ -271,15 +270,15 @@ const isCanceled = ref(false);
 
 // 결재 회수 가능 여부 확인
 const isCancelPossible = computed(() => {
-	console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
+	// console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
 
   // 모든 결재자가 결재를 완료한 경우에는 회수 불가능
   if (auditorList.value.every(auditor => auditor.approved)) {
-	console.log('모두 결재 완료!!');
-	return false;
+		console.log('모두 결재 완료!!');
+		return false;
   } else {
-	console.log('결재 진행중!!');
-	return true;
+		console.log('결재 진행중!!');
+		return true;
   }
 });
 
