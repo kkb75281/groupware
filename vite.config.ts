@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import vue from '@vitejs/plugin-vue'
+import fs from 'fs';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -69,8 +70,14 @@ export default defineConfig({
     }
   },
   server: {
-    https: false, // HTTPS를 비활성화
-    host: 'localhost',
-    port: 5173,
+	https: {
+		key: fs.readFileSync('./certs/localhost-key.pem'),
+		cert: fs.readFileSync('./certs/localhost-cert.pem')
+	},
+	host: 'localhost',
+	port: 5173,
+    // https: false, // HTTPS를 비활성화
+    // host: 'localhost',
+    // port: 5173,
   },
 })
