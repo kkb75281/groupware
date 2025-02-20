@@ -637,7 +637,11 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 					}
                 },
             },
-            auditor_id
+            auditor_id,
+			{
+				title: '[그룹웨어]',
+				body: `결재 요청이 도착했습니다.`
+			}
         )
         .then((res) => {
             // console.log("요청2 === postRealtime === res : ", res);

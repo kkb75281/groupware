@@ -17,6 +17,7 @@ export let loaded = ref(false);
 export let mainPageLoading = ref(false);
 export let realtimeTestingMsg = ref('');
 let isConnected = false;
+let isTabVisible = true; // 현재 탭을 보고 있는지 여부
 
 // function getChanges(before:any, after:any) {
 //   const beforeKeys = new Set(Object.keys(before));
@@ -28,6 +29,68 @@ let isConnected = false;
 
 //   return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
 // }
+
+// 가시성 상태 감지
+function setupVisibilityListener() {
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            console.log('탭이 활성화되었습니다.');
+            isTabVisible = true;
+        } else {
+            console.log('탭이 비활성화되었습니다.');
+            isTabVisible = false;
+        }
+    });
+}
+
+// 알림 표시 함수
+function showNotification(message) {
+	// Service Worker 등록
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker.register('/sw.js')
+			.then(registration => {
+				console.log('Service Worker 등록 성공:', registration);
+
+				// Service Worker의 상태 확인
+				if (!registration.active) {
+					console.warn('Service Worker가 아직 활성화되지 않았습니다.');
+					return;
+				}
+
+				// 알림 권한 요청
+				if (Notification.permission === 'granted') {
+					console.log('알림 권한이 허용되었습니다.');
+
+					// showNotification 메서드 확인
+					if (typeof registration.showNotification === 'function') {
+						registration.showNotification('서비스 워커 알림', {
+							body: message,
+							icon: 'favicon-icon.png'
+						});
+					} else {
+						console.error('showNotification 메서드를 사용할 수 없습니다.');
+					}
+				} else {
+					console.warn('알림 권한이 거부되었습니다.');
+				}
+			})
+			.catch(error => {
+				console.error('Service Worker 등록 실패:', error);
+			});
+	} else {
+		console.error('Service Worker를 지원하지 않는 브라우저입니다.');
+	}
+
+    // if (Notification.permission === 'granted') {
+    //     new Notification('새로운 메시지', {
+    //         body: message,
+    //         icon: '/favicon-icon.png' // 아이콘 경로 (옵션)
+    //     });
+	// 	console.log('알림이 표시되었습니다.');
+    // } else {
+    //     console.error('알림 권한이 없습니다.');
+    // }
+}
 
 function updateAuditsAndApprovals(audits, approvals) {
   if (audits.list.length > 0 || approvals.list.length > 0) {
@@ -135,20 +198,34 @@ export let RealtimeCallback = async (rt: any) => {
 
 			realtimeTestingMsg.value = rt.message;
 			console.log('=== RealtimeCallback === realtimeTestingMsg : ', realtimeTestingMsg.value);
-			
+
+			// setupVisibilityListener();
+
 			// 결재 요청이 들어옴
 			if (rt.message?.audit_request) {
 				handleAuditRequest(rt.message.audit_request);
+				// 탭이 비활성화된 경우에만 알림 표시
+				// if (!isTabVisible) {
+				// 	showNotification('새로운 결재 요청이 있습니다.');
+				// }
 			}
 
 			// 결재 완료 알림
 			if (rt.message?.audit_approval) {
 				handleAuditRequest(rt.message.audit_approval);
+				// 탭이 비활성화된 경우에만 알림 표시
+				// if (!isTabVisible) {
+				// 	showNotification('결재가 완료되었습니다.');
+				// }
 			}	
 
 			// 결재 취소 알림 audit_canceled
 			if (rt.message?.audit_canceled) {
 				handleAuditRequest(rt.message.audit_canceled);
+				// 탭이 비활성화된 경우에만 알림 표시
+				// if (!isTabVisible) {
+				// 	showNotification('결재가 취소되었습니다.');
+				// }
 			}
 
 			unreadCount.value = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
