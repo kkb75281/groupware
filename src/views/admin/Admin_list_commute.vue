@@ -28,8 +28,6 @@ hr
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
                 button.btn.outline.btn-edit-workTime(@click="router.push('/admin/edit-worktime')") 시간 설정
     .tb-overflow
-        template(v-if="loading")
-            Loading#loading
         table.table#tb-record-empCommute
             colgroup
                 col(style="width: 3rem")
@@ -49,8 +47,8 @@ hr
 
             tbody
                 template(v-if="loading")
-                    tr.nohover.loading
-                        td(colspan="6")
+                    tr.nohover.loading(style="border-bottom: none;")
+                        td(colspan="6" style="padding: 0; height: initial;")
                             Loading#loading
                 //- template(v-else-if="!employee || Object.keys(employee).length === 0")
                 //-     tr
@@ -418,12 +416,12 @@ onMounted(async () => {
     position: relative;
     margin-top: 3rem;
 
-    #loading {
-        position: absolute;
-        top: 126px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
+    // #loading {
+    //     position: absolute;
+    //     top: 126px;
+    //     left: 50%;
+    //     transform: translateX(-50%);
+    // }
 
     #searchForm {
         display: flex;
