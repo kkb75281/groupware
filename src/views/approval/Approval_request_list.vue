@@ -24,14 +24,14 @@ hr
 			colgroup
 				col(style="width: 3rem")
 				col
-				col(style="width: 12%")
-				col(style="width: 10%")
+				col(:style="{ width: isDesktop ? '12%' : '24%' }")
+				col(v-show="isDesktop" style="width: 10%")
 			thead
 				tr
 					th(scope="col") NO
 					th.left(scope="col") 결재 사안
 					th(scope="col") 결재 현황
-					th(scope="col") 기안자
+					th(v-show="isDesktop" scope="col") 기안자
 
 			tbody
 				template(v-if="sendAuditListRunning")
@@ -48,13 +48,13 @@ hr
 							.audit-title {{ audit.data.to_audit }}
 						td
 							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
-						td.drafter {{ user.name }}
+						td.drafter(v-show="isDesktop") {{ user.name }}
 
 </template>
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { sendAuditList, sendAuditListRunning, getSendAuditList, goToAuditDetail } from '@/audit';
@@ -64,6 +64,12 @@ import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+const isDesktop = ref(window.innerWidth > 768);
+
+const updateScreenSize = () => {
+  isDesktop.value = window.innerWidth > 768;
+};
 
 let showSendAuditDoc = (e:Event, audit: any) => {
 	let searchCurrentAuditNotis = realtimes.value.filter(rt => rt?.audit_info?.audit_doc_id === audit.record_id);
@@ -107,6 +113,14 @@ onMounted(async () => {
 		console.error('Error fetching audit records:', error);
 		throw error; // 필요에 따라 에러를 다시 던짐
 	}
+});
+
+onMounted(async () => {
+	window.addEventListener('resize', updateScreenSize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenSize);
 });
 </script>
 
