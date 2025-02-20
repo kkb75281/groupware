@@ -548,6 +548,19 @@ const approvedAudit = async () => {
 const getAuditDetail = async () => {
 	getAuditDetailRunning.value = true;
 
+	// 초기화
+	auditDoContent.value = [];
+	approverList.value = [];
+	agreerList.value = [];
+	auditorList.value = [];
+	uploadedFile.value = [];
+	selectedAuditors.value = {
+		approvers: [],
+		agreers: [],
+		receivers: []
+	};
+	isCanceled.value = false;
+
 	if(!auditId.value) {
 		getAuditDetailRunning.value = false;
 		return;

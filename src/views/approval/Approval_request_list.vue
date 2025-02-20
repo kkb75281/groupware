@@ -126,6 +126,9 @@ onMounted(async () => {
     border-radius: 6px;
     border: 1px solid var(--gray-color-400);
     color: var(--gray-color-500);
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
 
     &.approve {
         color: var(--primary-color-400);
