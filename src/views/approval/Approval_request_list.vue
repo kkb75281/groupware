@@ -44,7 +44,8 @@ hr
 				template(v-else)
 					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
 						td {{ index + 1 }}
-						td.left.audit-title {{ audit.data.to_audit }}
+						td.left
+							.audit-title {{ audit.data.to_audit }}
 						td
 							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
 						td.drafter {{ user.name }}
@@ -110,6 +111,14 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="less">
+.audit-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
 .audit-state {
     font-size: 0.75rem;
     font-weight: 500;
