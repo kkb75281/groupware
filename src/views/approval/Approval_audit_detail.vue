@@ -138,8 +138,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.icon(style="padding: 0")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-			//- button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="disabled") 회수
-			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit") 회수
+			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="isCanceled") 회수
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -226,13 +225,13 @@ Loading#loading(v-if="getAuditDetailRunning")
 				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getStampList(true)") 승인하기
 			template(v-if="approvalStep === 2")
 				button.btn.bg-gray.btn-edit(v-if="stempType === 'sign' ? handleStampBlobComplete : true" type="button" @click="approvalStep--") 이전
-				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재 승인
+				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재승인
 
 </template>
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
@@ -249,7 +248,7 @@ const auditId = ref('');
 
 const isDesktop = ref(window.innerWidth > 768);
 
-const disabled = ref(true);
+const disabled = ref(false);
 const auditDoContent = ref([]); // 결재 서류 내용
 const approverList = ref([]);
 const agreerList = ref([]);
@@ -265,21 +264,20 @@ const approvalStep = ref(1);
 const stempType = ref('stamp');
 const makeStampComplete = ref(false);
 const makeSignComplete = ref(false);
-
-// 결재 회수 여부
-const isCanceled = ref(false);
+const isCanceled = ref(false); // 결재 회수 여부
+const getAuditDetailRunning = ref(false);
 
 // 결재 회수 가능 여부 확인
 const isCancelPossible = computed(() => {
-	console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
+	// console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
 
   // 모든 결재자가 결재를 완료한 경우에는 회수 불가능
   if (auditorList.value.every(auditor => auditor.approved)) {
-	console.log('모두 결재 완료!!');
-	return false;
+		console.log('모두 결재 완료!!');
+		return false;
   } else {
-	console.log('결재 진행중!!');
-	return true;
+		console.log('결재 진행중!!');
+		return true;
   }
 });
 
@@ -546,8 +544,6 @@ const approvedAudit = async () => {
 	isModalOpen.value = false;
 }
 
-let getAuditDetailRunning = ref(false);
-
 // 결재 서류 가져오기
 const getAuditDetail = async () => {
 	getAuditDetailRunning.value = true;
@@ -576,6 +572,8 @@ const getAuditDetail = async () => {
 		}).then(res => {
 			if (res.list && res.list.length) {
 				isCanceled.value = true;
+			} else {
+				isCanceled.value = false;
 			}
 		}).catch(err => {
 			isCanceled.value = false;
@@ -688,7 +686,7 @@ const getAuditDetail = async () => {
 			date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date,
 		}));
 
-		console.log('결재자 정보 === getAuditDetail === newAuditUserList : ', newAuditUserList);
+		// console.log('결재자 정보 === getAuditDetail === newAuditUserList : ', newAuditUserList);
 
 		// 전체 결재자 리스트
 		auditorList.value = newAuditUserList;
@@ -709,6 +707,9 @@ const getAuditDetail = async () => {
 		// newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
 		approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
 		agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
+		
+		// console.log('=== getAuditDetail === approverList : ', approverList.value);
+		console.log('=== getAuditDetail === agreerList : ', agreerList.value);
 	} catch (error) {
 		getAuditDetailRunning.value = false;
 		console.error(error);
@@ -909,13 +910,13 @@ const previewAudit = () => {
 
 // 결재 회수 함수
 const canceledAudit = async () => {	
-	console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
-	console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
+	// console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
+	// console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
 	
 	const auditors = auditDoContent.value.data.auditors;
 	const parsedAuditors = JSON.parse(auditors);
-	console.log('결재회수 === canceledAudit === auditors : ', auditors);
-	console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
+	// console.log('결재회수 === canceledAudit === auditors : ', auditors);
+	// console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
 
 	// 각 배열에서 ID만 추출
 	const approverIds = parsedAuditors.approvers;
@@ -924,7 +925,7 @@ const canceledAudit = async () => {
 
 	// // 결재자 ID 배열 생성
 	const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
-	console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
+	// console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
 
 	// 결재 회수 레코드 저장
 	try {
@@ -1026,6 +1027,9 @@ const canceledAudit = async () => {
 
 	window.alert('결재가 회수되었습니다.');
 	disabled.value = true; // 회수 버튼 비활성화
+	isCanceled.value = true; // 회수 여부 변경
+
+	await nextTick();
 };
 
 onMounted(() => {
