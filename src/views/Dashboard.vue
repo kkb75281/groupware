@@ -104,6 +104,8 @@ ul.card-wrap
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+button.btn(type="button" @click="router.push('/test')") 테스트 페이지 바로가기
 </template>
 
 <script setup lang="ts">
