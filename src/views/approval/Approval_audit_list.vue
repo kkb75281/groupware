@@ -22,27 +22,20 @@ hr
 .tb-overflow
 	table.table#tb-auditList
 		colgroup
-			//- col(style="width: 2.4rem")
 			col(style="width: 3rem")
 			col
 			template(v-if="currentPage === 'audit-list'")
-				col(style="width: 12%")
-			col(style="width: 12%")
-			//- col(style="width: 12%")
-			col(style="width: 10%")
+				col(:style="{ width: isDesktop ? '12%' : '24%' }")
+			col(v-show="isDesktop" style="width: 12%")
+			col(v-show="isDesktop" style="width: 10%")
 		thead
 			tr
-				//- th(scope="col") 
-				//-     label.checkbox
-				//-         input(type="checkbox" name="checkbox")
-				//-         span.label-checkbox
 				th(scope="col") NO
 				th.left(scope="col") 결재 사안
 				template(v-if="currentPage === 'audit-list'")
 					th(scope="col") 나의 현황
-				th(scope="col") 결재 현황
-				//- th(scope="col") 합의 현황
-				th(scope="col") 기안자
+				th(v-show="isDesktop" scope="col") 결재 현황
+				th(v-show="isDesktop" scope="col") 기안자
 
 		tbody
 			template(v-if="auditListRunning")
@@ -54,26 +47,21 @@ hr
 					td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : '수신참조 목록이 없습니다.' }}
 			template(v-else)
 				tr(v-for="(audit, index) of filterAuditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
-					//- td 
-					//-     label.checkbox
-					//-         input(type="checkbox" name="checkbox")
-					//-         span.label-checkbox
 					td {{ index + 1 }}
 					td.left
 						.audit-title {{ audit.data.to_audit }}
-
 					template(v-if="currentPage === 'audit-list'")
 						td
 							span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함', canceled: audit.my_state === '회수됨' }") {{ audit.my_state }}
-					td
+					td(v-show="isDesktop")
 						span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)), canceled: audit.isCanceled }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
-					td.drafter {{ audit.user_info?.name }}
+					td.drafter(v-show="isDesktop") {{ audit.user_info?.name }}
 
 </template>
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { auditList, auditListRunning, getAuditList, goToAuditDetail } from '@/audit';
@@ -83,6 +71,12 @@ import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+const isDesktop = ref(window.innerWidth > 768);
+
+const updateScreenSize = () => {
+  isDesktop.value = window.innerWidth > 768;
+};
 
 // 현재 페이지가 결재 수신함인지 수신참조인지 구분
 const currentPage = computed(() => {
@@ -124,6 +118,11 @@ const filterAuditList = computed(() => {
 
 onMounted(async () => {
 	await getAuditList();
+	window.addEventListener('resize', updateScreenSize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenSize);
 });
 </script>
 

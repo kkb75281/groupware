@@ -1,9 +1,9 @@
 <template lang="pug">
 #changePassword
     template(v-if="step < 4")
-        router-link.logo(to="/login")
-            //- img(src="@/assets/img/img_logo_symbol.png")
-            p 로고영역
+        router-link.logo(to="/")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-groups-fill")
             
     template(v-if="step === 3")
         h2.title 비밀번호 변경 완료
@@ -153,7 +153,12 @@ let changePassword = async () => {
 
     .logo {
         display: block;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
+
+        svg {
+			width: 2.5rem;
+			height: 2.5rem;
+		}
     }
 
     .title {
