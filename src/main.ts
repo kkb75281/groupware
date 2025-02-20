@@ -15,7 +15,7 @@ const app = createApp(App);
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
 export let mainPageLoading = ref(false);
-// export let googleEmailUpdate = ref(false);
+export let realtimeTestingMsg = ref('');
 let isConnected = false;
 
 // function getChanges(before:any, after:any) {
@@ -132,6 +132,9 @@ export let RealtimeCallback = async (rt: any) => {
 					console.error('Failed to process audit request:', error);
 				}
 			};
+
+			realtimeTestingMsg.value = rt.message;
+			console.log('=== RealtimeCallback === realtimeTestingMsg : ', realtimeTestingMsg.value);
 			
 			// 결재 요청이 들어옴
 			if (rt.message?.audit_request) {
@@ -273,7 +276,7 @@ const skapi = new Skapi(
   // 'ap22SqnnCxZxkisPeFEc',
   // 'f8e16604-69e4-451c-9d90-4410f801c006',
   { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } },
-  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir', network_logs: true }
+  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir', network_logs: false }
 ); // pb
 
 // const skapi = new Skapi(

@@ -313,6 +313,12 @@ export async function subscribeNotification() {
 	if (!("serviceWorker" in navigator)) {
 		console.error("Service workers are not supported in this browser.");
 		return;
+	} else {
+		navigator.serviceWorker.getRegistrations().then(registrations => {
+			registrations.forEach(registration => {
+				console.log('Service Worker Script URL:', registration.active?.scriptURL);
+			});
+		});
 	}
 
 	const permission = await Notification.requestPermission();
