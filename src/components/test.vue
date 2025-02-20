@@ -1,4 +1,5 @@
 <template lang="pug">
+h4 {{ realtimeTestingMsg }}
 .test-area
 	h3.title Notification Subscribe Test
 	button.btn(@click="subscribeNotification") Subscribe
@@ -8,6 +9,7 @@
 
 <script setup lang="ts">
 import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications";
+import { skapi, realtimeTestingMsg } from "@/main";
 import { user } from "@/user";
 
 let notifications = {
