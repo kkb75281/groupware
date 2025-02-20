@@ -12,15 +12,20 @@ export default defineConfig({
 		{
 			registerType: 'autoUpdate',
 			devOptions: {
-				enabled: true,
-				type: 'module',
+				enabled: true, // 개발 환경에서 PWA 활성화
+				type: 'module', // 모듈 타입 사용
 				navigateFallback: null, // index.html 반환 방지
+				// 아래 옵션을 추가하여 dev-sw.js를 사용하지 않도록 설정
+  				// suppressWarnings: true, // 경고 메시지 숨기기
 			},
-			workbox: {
-				cleanupOutdatedCaches: true,  // 오래된 캐시 삭제
-				// clientsClaim: true,           // 새 서비스 워커가 즉시 활성화되도록 설정
-				// skipWaiting: true,            // 기존 서비스 워커 무시하고 바로 새 서비스 워커 활성화
+			injectManifest: {
+				swSrc: 'public/sw.js',
 			},
+			// workbox: {
+			// 	cleanupOutdatedCaches: true,  // 오래된 캐시 삭제
+			// 	// clientsClaim: true,           // 새 서비스 워커가 즉시 활성화되도록 설정
+			// 	// skipWaiting: true,            // 기존 서비스 워커 무시하고 바로 새 서비스 워커 활성화
+			// },
 			manifest: {
 				name: "그룹웨어",
 				short_name: "그룹웨어",
