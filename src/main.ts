@@ -273,7 +273,7 @@ const skapi = new Skapi(
   // 'ap22SqnnCxZxkisPeFEc',
   // 'f8e16604-69e4-451c-9d90-4410f801c006',
   { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } },
-  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir', network_logs: false }
+  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir', network_logs: true }
 ); // pb
 
 // const skapi = new Skapi(
