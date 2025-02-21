@@ -37,7 +37,7 @@ function postRealTimeMsg () {
 		'postRealTimeMsgTest',
 		notifications.user_id,
 		{
-			title: '[그룹웨어]',
+			title: '알림',
 			body: `결재 요청이 도착했습니다.`
 		}
 	).then((res) => {
