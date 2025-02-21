@@ -334,6 +334,7 @@ const registerEmp = async (e) => {
 
 		// 직원을 초대한다.
 		const added = await inviteUserMail(e);
+		console.log({added})
 		// SUCCESS: Invitation has been sent. (User ID: 41d92250-bc3a-45c9-a399-1985a41d762f)
 		// console.log('=== registerEmp === added : ', added);
 
