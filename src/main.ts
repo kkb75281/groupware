@@ -43,6 +43,42 @@ function setupVisibilityListener() {
     });
 }
 
+// main.js
+
+async function checkSubscriptionStatus() {
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            console.log("User is not subscribed to push notifications.");
+            // 사용자에게 재구독 요청 로직 추가 가능
+            requestNotificationPermission();
+        } else {
+            console.log("User is still subscribed:", subscription);
+        }
+    } catch (error) {
+        console.error("Error checking subscription status:", error);
+    }
+}
+
+function requestNotificationPermission() {
+    Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+            console.log("Notification permission granted.");
+            // 여기서 새로운 구독 요청 가능
+        } else {
+            console.warn("Notification permission denied.");
+        }
+    });
+}
+
+// 주기적으로 구독 상태 체크 (예: 하루에 한 번)
+setInterval(checkSubscriptionStatus, 24 * 60 * 60 * 1000);
+
+// 초기 체크
+checkSubscriptionStatus();
+
 // 알림 표시 함수
 function showNotification(message) {
 	// Service Worker 등록
