@@ -525,7 +525,9 @@ let createStamp = () => {
 }
 
 let selectStamp = (url) => {
-	selectedStamp.value = url;
+	if(url.includes('?')) {
+		selectedStamp.value = url.split('?')[0];
+	}
 	selectedStampComplete.value = true;
 }
 
@@ -658,15 +660,21 @@ const getAuditDetail = async () => {
 
 			if(auditor.includes('receiver')) return;
 
-			approvals.forEach((approval) => {
+			approvals.forEach(async(approval) => {
 				if (approval.user_id === auditor.split(':')[1]) {
 					oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
+
+					let getStampFile = await skapi.getFile((approval.data.stamp as string), {
+						dataType: 'endpoint',
+					})
+
+					console.log({getStampFile})
 
 					const result = {
 						user_id: auditor.split(':')[1],
 						approved_type: auditor.split(':')[0],
 						approved: approval.data.approved,
-						stamp: approval.data.stamp,
+						stamp: getStampFile,
 						approved_str: oa_has_audited_str
 					}
 
@@ -690,10 +698,10 @@ const getAuditDetail = async () => {
 
 		console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
 
-		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)))
+		const userList = await Promise.all(approvalUserList.map(async (auditor) => { console.log(auditor); await getUserInfo(auditor.user_id)}))
 		console.log({userList})
 		const userInfoList = userList.map(user => user.list.length ? user.list[0] : null);       
-		console.log({userInfoList})              
+		console.log({userInfoList})        
 
 		// 결재자 정보와 결재 결과 합치기
 		const newAuditUserList = approvalUserList.map((auditor) => ({
