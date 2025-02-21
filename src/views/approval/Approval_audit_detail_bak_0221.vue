@@ -599,7 +599,8 @@ const getAuditDetail = async () => {
 		})
 
 		const auditors = JSON.parse(auditDoc.data.auditors);
-		console.log('결재자 === auditors : ', auditors);
+
+		console.log({auditors});
 
 		let getAuditorInfo = async (uid) => {
 			let user_id = uid.replaceAll('_', '-');
@@ -651,103 +652,95 @@ const getAuditDetail = async () => {
 		getAuditDetailRunning.value = false;
 		
 		const approvals = await approvedAudit();
-		console.log('결재완료자 === getAuditDetail === approvals : ', approvals);
+		console.log('결재자 리스트 === getAuditDetail === approvals : ', approvals);
 
 		const approvalUserList = [];
-		const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-')); // 모든 결재자
-		
-		newTags.forEach(auditor => {
+		const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-'))
+
+		newTags.forEach((auditor) => {
+			let oa_has_audited_str = null;
 
 			if(auditor.includes('receiver')) return;
 
-			let oa_has_audited_str = null;
+			approvals.forEach(async(approval) => {
+				console.log('aprroval : ', approval);
+				console.log('auditor : ', auditor);
 
-			approvals.forEach(el => {
-				console.log('el : ', el);
+				if (approval.user_id === auditor.split(':')[1]) {
+					oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
 
-				if(approvals.user_id === auditor.split(':')[1]) {
-					oa_has_audited_str = el.data.approved ? '결재함' : '반려함';
-					
+					let getStampFile = await skapi.getFile((approval.data.stamp as string), {
+						dataType: 'endpoint',
+					});
+					console.log({getStampFile});
+
+					const result = {
+						user_id: auditor.split(':')[1],
+						approved_type: auditor.split(':')[0],
+						approved: approval.data.approved,
+						stamp: getStampFile,
+						approved_str: oa_has_audited_str
+					}
+					console.log('AA result : ', result);
+
+					approvalUserList.push(result);
+					// return;
 				}
 			});
+
+			if (!oa_has_audited_str) {
+				const result = {
+					user_id: auditor.split(':')[1],
+					approved_type: auditor.split(':')[0],
+					approved: null,
+					stamp: null,
+					approved_str: '결재대기중'
+				}
+				console.log('BB result : ', result);
+				
+				approvalUserList.push(result);
+			}
+		})
+
+		console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
+
+		const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)));
+		console.log({userList});
+		const userInfoList = userList.map(user => user.list.length ? user.list[0] : null);       
+		console.log({userInfoList});
+
+		// 결재자 정보와 결재 결과 합치기
+		const newAuditUserList = approvalUserList.map((auditor) => ({
+			...auditor,
+			user_info: userInfoList.find((user) => user?.user_id === auditor.user_id),
+			comment: approvals.find((user) => user?.user_id === auditor.user_id)?.data.comment,
+			date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date,
+		}));
+
+		// console.log('결재자 정보 === getAuditDetail === newAuditUserList : ', newAuditUserList);
+
+		// 전체 결재자 리스트
+		auditorList.value = newAuditUserList;
+
+		// 현재 로그인한 사용자가 결재자 목록에 있고, 아직 결재하지 않은 경우에만 getStampList 실행
+		// const currentUserAudit = newAuditUserList.find(auditor => auditor.user_id === user.user_id);
+		// if (currentUserAudit && !currentUserAudit.approved) {
+		// 	getStampList();
+		// }
+
+		// auditorList 결재, 합의 순서대로
+		auditorList.value.sort((a, b) => {
+			if (a.approved_type === 'approver' && b.approved_type === 'agreer') return -1;
+			if (a.approved_type === 'agreer' && b.approved_type === 'approver') return 1;
+			return 0;
 		});
 
-		// newTags.forEach((auditor) => {
-		// 	let oa_has_audited_str = null;
-
-		// 	if(auditor.includes('receiver')) return;
-
-		// 	approvals.forEach(async(approval) => {
-		// 		console.log('aprroval : ', approval);
-		// 		console.log('auditor : ', auditor);
-
-		// 		if (approval.user_id === auditor.split(':')[1]) {
-		// 			oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
-
-		// 			let getStampFile = await skapi.getFile((approval.data.stamp as string), {
-		// 				dataType: 'endpoint',
-		// 			});
-		// 			console.log({getStampFile});
-
-		// 			const result = {
-		// 				user_id: auditor.split(':')[1],
-		// 				approved_type: auditor.split(':')[0],
-		// 				approved: approval.data.approved,
-		// 				stamp: getStampFile,
-		// 				approved_str: oa_has_audited_str
-		// 			}
-		// 			console.log('AA result : ', result);
-
-		// 			approvalUserList.push(result);
-		// 		}
-		// 	});
-
-		// 	if (!oa_has_audited_str) {
-		// 		const result = {
-		// 			user_id: auditor.split(':')[1],
-		// 			approved_type: auditor.split(':')[0],
-		// 			approved: null,
-		// 			stamp: null,
-		// 			approved_str: '결재대기중'
-		// 		}
-		// 		console.log('BB result : ', result);
-				
-		// 		approvalUserList.push(result);
-		// 	}
-		// })
-
-		// console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
-
-		// const userList = approvalUserList.map(auditor => {
-		// 	console.log('auditor : ', auditor);
-		// })
-
-		// const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)));
-		// console.log({userList});
-		// const userInfoList = userList.map(user => user.list.length ? user.list[0] : null);       
-		// console.log({userInfoList});
-
-		// // 결재자 정보와 결재 결과 합치기
-		// const newAuditUserList = approvalUserList.map((auditor) => ({
-		// 	...auditor,
-		// 	user_info: userInfoList.find((user) => user?.user_id === auditor.user_id),
-		// 	comment: approvals.find((user) => user?.user_id === auditor.user_id)?.data.comment,
-		// 	date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date,
-		// }));
-
-		// // 전체 결재자 리스트
-		// auditorList.value = newAuditUserList;
-
-		// // auditorList 결재, 합의 순서대로
-		// auditorList.value.sort((a, b) => {
-		// 	if (a.approved_type === 'approver' && b.approved_type === 'agreer') return -1;
-		// 	if (a.approved_type === 'agreer' && b.approved_type === 'approver') return 1;
-		// 	return 0;
-		// });
-
-		// // newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
-		// approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
-		// agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
+		// newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
+		approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
+		agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
+		
+		console.log('=== getAuditDetail === approverList : ', approverList.value);
+		// console.log('=== getAuditDetail === agreerList : ', agreerList.value);
 	} catch (error) {
 		getAuditDetailRunning.value = false;
 		console.error(error);
