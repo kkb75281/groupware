@@ -381,8 +381,12 @@ let uploadCreatedStamp = async(file) => {
 	let stampImageData = new FormData();
 	stampImageData.append("stamp_data", file);
 	console.log({stampImageData});
+	console.log({stamp_postParams});
+	
+	const res = await skapi.postRecord(stampImageData, stamp_postParams);
+	console.log({res});
 
-	return await skapi.postRecord(stampImageData, stamp_postParams);
+	return res;
 }
 
 // 직접 서명
@@ -548,6 +552,19 @@ const approvedAudit = async () => {
 const getAuditDetail = async () => {
 	getAuditDetailRunning.value = true;
 
+	// 초기화
+	auditDoContent.value = [];
+	approverList.value = [];
+	agreerList.value = [];
+	auditorList.value = [];
+	uploadedFile.value = [];
+	selectedAuditors.value = {
+		approvers: [],
+		agreers: [],
+		receivers: []
+	};
+	isCanceled.value = false;
+
 	if(!auditId.value) {
 		getAuditDetailRunning.value = false;
 		return;
@@ -708,8 +725,8 @@ const getAuditDetail = async () => {
 		approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
 		agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
 		
-		// console.log('=== getAuditDetail === approverList : ', approverList.value);
-		console.log('=== getAuditDetail === agreerList : ', agreerList.value);
+		console.log('=== getAuditDetail === approverList : ', approverList.value);
+		// console.log('=== getAuditDetail === agreerList : ', agreerList.value);
 	} catch (error) {
 		getAuditDetailRunning.value = false;
 		console.error(error);

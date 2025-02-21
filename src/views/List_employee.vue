@@ -45,16 +45,14 @@ hr
                         button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="employeeState('delete')") 삭제
 
     .tb-overflow
-        //- template(v-if="loading")
-            Loading#loading
         table.table#employee_list
             colgroup
                 template(v-if="user.access_group > 98 && empListType !== '초청여부'")
                     col(style="width: 5%;")
                 col(v-show="isDesktop" style="width: 5%;")
-                col(style="width: 10%;")
-                col(style="width: 10%;")
-                col(style="width: 10%;")
+                col(:style="{ width: isDesktop ? '10%' : '24%' }")
+                col(:style="{ width: isDesktop ? '10%' : '24%' }")
+                col(v-show="isDesktop" style="width: 10%;")
                 col(v-show="isDesktop" style="width: 25%;")
                 //- template(v-if='empListType === "초청여부"')
                 //-     col(style="width: 11%;")
@@ -648,9 +646,12 @@ let resendInvite = (email) => {
 }
 
 let cancelInvite = (employee_info) => {
-	console.log(employee_info)
-    let safeEmail = makeSafe(employee_info.email);
-    let safeUserId = makeSafe(employee_info.user_id);
+    // let safeEmail = makeSafe(employee_info.email);
+    // let safeUserId = makeSafe(employee_info.user_id);
+    let safeEmail = employee_info?.email?.replaceAll('.', '_') || "";
+    let safeUserId = employee_info?.user_id?.replaceAll('-', '_') || "";
+    console.log('=== cancelInvite === safeEmail : ', safeEmail);
+    console.log('=== cancelInvite === safeUserId : ', safeUserId);
 
     let picTable = {
         table: {
