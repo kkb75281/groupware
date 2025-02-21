@@ -338,7 +338,7 @@ watch(searchValue, (nv) => {
 });
 
 async function arrangeEmpDivisionPosition(li) {
-    console.log({li})
+    // console.log({li})
     let list = await Promise.all(li.map((l: any) => {
         if(l) {
             return getEmpDivisionPosition(l).catch(err => err)
@@ -647,13 +647,8 @@ let resendInvite = (email) => {
 }
 
 let cancelInvite = (employee_info) => {
-    console.log({employee_info})
     let safeEmail = makeSafe(employee_info.email);
     let safeUserId = makeSafe(employee_info.user_id);
-    // let safeEmail = employee_info?.email?.replaceAll('.', '_') || "";
-    // let safeUserId = employee_info?.user_id?.replaceAll('-', '_') || "";
-    console.log('=== cancelInvite === safeEmail : ', safeEmail);
-    console.log('=== cancelInvite === safeUserId : ', safeUserId);
 
     let picTable = {
         table: {

@@ -29,32 +29,6 @@ export let getStampList = async (refresh = false) => {
       uploadedRecordId.value = res.list[0].record_id;
       getStampListRunning.value = false;
     }
-
-    // if (res.list.length) {
-    //   // URL에서 token 부분 제거
-    //   const stampData = res.list[0].bin.stamp_data.map(stamp => {
-    //     console.log('stamp.url : ', stamp.url);
-
-    //     const urlWithoutToken = stamp.url.split('?')[0];
-    //     return {
-    //       ...stamp,
-    //       url: urlWithoutToken
-    //     };
-    //   });
-
-    //   uploadedStamp.value = stampData;
-    //   uploadedRecordId.value = res.list[0].record_id;
-
-    //   // 도장 URL에 대한 실제 접근 가능한 URL 가져오기
-    //   for (let stamp of uploadedStamp.value) {
-    //     try {
-    //       const fileRes = await skapi.getFile(stamp.url);
-    //       stamp.url = fileRes.url;
-    //     } catch (error) {
-    //       console.error('도장 URL 가져오기 실패:', error);
-    //     }
-    //   }
-    // }
   } catch (e) {
     getStampListRunning.value = false;
 
