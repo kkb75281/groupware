@@ -50,20 +50,20 @@ hr
                     tr.nohover.loading(style="border-bottom: none;")
                         td(colspan="6" style="padding: 0; height: initial;")
                             Loading#loading
-                //- template(v-else-if="!employee || Object.keys(employee).length === 0")
-                //-     tr
-                //-         td(colspan="6") 데이터가 없습니다.
-                //- template(v-else)
-                //-     tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(emp.user_id)")
-                //-         td.list-num {{ index + 1 }}
-                //-         td.user-name
-                //-                 span {{ emp.name }}
-                //-         td.dvs {{ emp?.position }}
-                //-         td.dvs {{ emp?.divisionName }}
-                //-         td.startWork
-                //-             span.time {{ extractTimeFromDateTime(emp.startWork) }}
-                //-         td.endWork
-                //-             span.time {{ extractTimeFromDateTime(emp.endWork) }}
+                template(v-else-if="!employee || Object.keys(employee).length === 0")
+                    tr
+                        td(colspan="6") 데이터가 없습니다.
+                template(v-else)
+                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(emp.user_id)")
+                        td.list-num {{ index + 1 }}
+                        td.user-name
+                                span {{ emp.name }}
+                        td.dvs {{ emp?.position }}
+                        td.dvs {{ emp?.divisionName }}
+                        td.startWork
+                            span.time {{ extractTimeFromDateTime(emp.startWork) }}
+                        td.endWork
+                            span.time {{ extractTimeFromDateTime(emp.endWork) }}
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -162,7 +162,10 @@ const getEmpList = async () => {
             },
         });
 
-        // console.log('=== getEmpList === workTime : ', workTime);
+		if(!workTime.list.length) {
+			loading.value = false;
+			return [];
+		};
 
         // 기준 근무시간(인사팀 근무시간) 가져오기
         const getTimestampFromTimeString = (timeString) => {
