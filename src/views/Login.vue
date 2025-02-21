@@ -4,7 +4,9 @@
 	.overlay(v-if="loading")
 		Loading
 
-	router-link.logo(to="/")
+	img.logo(src="/icon-192.png" style="width: 2rem;")
+
+	//- router-link.logo(to="/")
 		img(src="/icon-192.png" style="width: 2rem;")
 		//- p 로고영역
 		//- svg
@@ -43,13 +45,23 @@
 			button.btn.outline(type="button" @click="masterlogin = false") 이전으로
 
 	template(v-else)
-		button#el_bt_login.btn.btn-login-google(type="button" @click="googleLogin" :disabled="loading" style="margin-top: 0;")
-			template(v-if="loading")
-				span Google 로그인 중...
-			template(v-else)
-				| Google 로그인
+		#el_bt_login.btn-login-google(@click="googleLogin" :disabled="loading" style="margin-top: 0;")
+			.inner
+				img.google-logo(src="@/assets/img/icon_google.svg")
+				span Google 계정으로 로그인
+		//- .btn-login-google
+			img(src="@/assets/img/web_light_sq_SI@3x.png" style="width: 11rem;")
+		//- button#el_bt_login.btn.btn-login-google(type="button" @click="googleLogin" :disabled="loading" style="margin-top: 0;")
+		//- 	template(v-if="loading")
+		//- 		span Google 로그인 중...
+		//- 	template(v-else)
+		//- 		| Google 로그인
 		
-		button.btn.outline(type="button" @click="masterlogin = true") 마스터 계정 로그인
+		br
+		br
+
+		//- button.btn.outline(type="button" @click="masterlogin = true") 마스터 계정 로그인
+		.master-login(@click="masterlogin = true") 마스터 계정 로그인
 </template>
 
 <script setup>
@@ -268,6 +280,37 @@ onMounted(() => {
 		margin-top: 1rem;
 		width: 100%;
 	}
+}
+
+.btn-login-google {
+	margin: 0 auto;
+	border: 1px solid var(--gray-color-300);
+	padding: 10px 12px 8px;
+	border-radius: 8px;
+	transition: all .2s;
+	cursor: pointer;
+
+	&:hover {
+		background-color: var(--gray-color-100);
+	}
+
+	.inner {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+	}
+
+	span {
+		font-size: 0.9rem;
+	}
+}
+.master-login {
+	text-align: center;
+	font-size: 14px;
+	color: var(--gray-color-400);
+	text-decoration: underline;
+	cursor: pointer;
 }
 
 .overlay {
