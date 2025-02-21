@@ -54,6 +54,12 @@ watch(loaded, async(nv) => {
         await router.push('/login');
     }
 }, { immediate: true });
+
+// watch(user, (nv, ov) => {
+// 	if(nv && ov && nv.user_id !== ov.user_id) {
+// 		sessionStorage.removeItem('accessToken');
+// 	}
+// })
 </script>
 
 <style scoped lang="less">

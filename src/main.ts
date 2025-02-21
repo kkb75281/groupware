@@ -380,11 +380,11 @@ const skapi = new Skapi(
 	// e :: mina 0213
 
   // s :: qb
-  'ap21cfWvkAd36OniCmGr',
-  '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
+//   'ap21cfWvkAd36OniCmGr',
+//   '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
   // e :: qb
 
-//   "ap21cZGkmP0COCVxCmGr", "5750ee2c-f7f7-43ff-b6a5-cce599d30101",
+  "ap21dOg74mAMPHaDCmGr", "5750ee2c-f7f7-43ff-b6a5-cce599d30101",
 
   // 'ap22SqnnCxZxkisPeFEc',
   // 'f8e16604-69e4-451c-9d90-4410f801c006',
