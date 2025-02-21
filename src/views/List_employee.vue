@@ -646,9 +646,10 @@ let resendInvite = (email) => {
 }
 
 let cancelInvite = (employee_info) => {
-	console.log('=== cancelInvite === employee_info : ', employee_info);
-    let safeEmail = makeSafe(employee_info.email);
-    let safeUserId = makeSafe(employee_info.user_id);
+    // let safeEmail = makeSafe(employee_info.email);
+    // let safeUserId = makeSafe(employee_info.user_id);
+    let safeEmail = employee_info?.email?.replaceAll('.', '_') || "";
+    let safeUserId = employee_info?.user_id?.replaceAll('-', '_') || "";
     console.log('=== cancelInvite === safeEmail : ', safeEmail);
     console.log('=== cancelInvite === safeUserId : ', safeUserId);
 
