@@ -132,13 +132,14 @@ import { skapi, mainPageLoading } from '@/main';
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 import { getDivisionNames, divisionNameList } from '@/division';
 import { divisions } from '@/division';
+import { makeSafe } from '@/user';
 
 import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
 const route = useRoute();
 
-let resigterComp = (e) => {
+let resigterComp = async(e) => {
 	mainPageLoading.value = true;
 
     document.querySelectorAll('form input').forEach(el => el.disabled = true);
@@ -175,7 +176,7 @@ let resigterComp = (e) => {
     //     // createDivisionName();
     // }
 
-    let createDivisionName = () => {
+    let createDivisionName = async() => {
         if(Object.keys(currentData).length) {
             let keys = Object.keys(currentData);
             let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
@@ -195,7 +196,7 @@ let resigterComp = (e) => {
             }
         }
 
-        return skapi.postRecord(currentData, {
+        return await skapi.postRecord(currentData, {
             unique_id: '[division_name_list]',
             table: {
                 name: 'divisionNames',
@@ -204,7 +205,7 @@ let resigterComp = (e) => {
         })
     }
 
-    getDivisionNames().then(async ()=>{
+    await getDivisionNames().then(async ()=>{
         return await skapi.deleteRecords({
                 unique_id: '[division_name_list]'
         });
@@ -242,6 +243,40 @@ let resigterComp = (e) => {
         }
     }).then((r) => {
         console.log('=== resigterComp === r : ', r);
+
+        divisions.value[r.record_id] = r; // divisions.value에 추가
+
+		const divisionId = makeSafe(r.record_id);
+		const uniqueId = `dvs_workTime_${divisionId}`;
+		const findDivisionKey = Object.entries(divisionNameList.value).find(([key, value]) => value === r.data.division_name);
+
+		// 출퇴근 레코드 생성
+        const workTimeData = {
+            division_name: r.data.division_name || '',
+            division_key: findDivisionKey?.[0] || '',
+            division_startTime: {
+                min: `09:00:00`,
+                max: `09:59:59`
+            },
+            division_endTime: {
+                min: `18:00:00`,
+                max: `18:59:59`
+            }
+        };
+
+        const config = {
+            table: {
+                name: 'dvs_workTime_setting',
+                access_group: 1
+            },
+            unique_id: uniqueId
+        };
+
+        // console.log('== workTimeData:', workTimeData);  
+
+        skapi.postRecord(workTimeData, config);
+
+
         // let sessionDivisions = window.sessionStorage.getItem('divisions'); // 세션 스토리지 쓸 이유가 없음.
 
         // if(sessionDivisions == 'no data' || !JSON.parse(sessionDivisions)) {
@@ -252,8 +287,6 @@ let resigterComp = (e) => {
         
         // sessionDivisions[r.record_id] = r;
         // window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
-
-        divisions.value[r.record_id] = r; // divisions.value에 추가
 
         window.alert('등록되었습니다.');
         router.push('/admin/list-divisions');

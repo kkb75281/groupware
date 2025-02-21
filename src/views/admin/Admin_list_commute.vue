@@ -50,20 +50,20 @@ hr
                     tr.nohover.loading(style="border-bottom: none;")
                         td(colspan="6" style="padding: 0; height: initial;")
                             Loading#loading
-                //- template(v-else-if="!employee || Object.keys(employee).length === 0")
-                //-     tr
-                //-         td(colspan="6") 데이터가 없습니다.
-                //- template(v-else)
-                //-     tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(emp.user_id)")
-                //-         td.list-num {{ index + 1 }}
-                //-         td.user-name
-                //-                 span {{ emp.name }}
-                //-         td.dvs {{ emp?.position }}
-                //-         td.dvs {{ emp?.divisionName }}
-                //-         td.startWork
-                //-             span.time {{ extractTimeFromDateTime(emp.startWork) }}
-                //-         td.endWork
-                //-             span.time {{ extractTimeFromDateTime(emp.endWork) }}
+                template(v-else-if="!employee || Object.keys(employee).length === 0")
+                    tr
+                        td(colspan="6") 데이터가 없습니다.
+                template(v-else)
+                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => goToEmpCommute(emp.user_id)")
+                        td.list-num {{ index + 1 }}
+                        td.user-name
+                                span {{ emp.name }}
+                        td.dvs {{ emp?.position }}
+                        td.dvs {{ emp?.divisionName }}
+                        td.startWork
+                            span.time {{ extractTimeFromDateTime(emp.startWork) }}
+                        td.endWork
+                            span.time {{ extractTimeFromDateTime(emp.endWork) }}
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -162,7 +162,12 @@ const getEmpList = async () => {
             },
         });
 
-        // console.log('=== getEmpList === workTime : ', workTime);
+		console.log('=== getEmpList === workTime : ', workTime);
+
+		if(!workTime.list.length) {
+			loading.value = false;
+			return [];
+		};
 
         // 기준 근무시간(인사팀 근무시간) 가져오기
         const getTimestampFromTimeString = (timeString) => {
@@ -181,7 +186,7 @@ const getEmpList = async () => {
             return today.getTime();
         }
 
-        const getBasicStartTime = workTime.list.find(wt => (wt.data?.division_name === '인사팀'))?.data.division_startTime.min; // 인사팀 출근시간
+        // const getBasicStartTime = workTime.list.find(wt => (wt.data?.division_name === '인사팀'))?.data.division_startTime.min; // 인사팀 출근시간
         // console.log('=== getEmpList === getBasicStartTime : ', getBasicStartTime);
 
         const empPromises = empList.list.map(async (emp) => {
@@ -196,6 +201,17 @@ const getEmpList = async () => {
                 unique_id: "[emp_position_current]" + user_id_safe,
             });
 
+			// 현재 날짜와 시간 가져오기
+			let now = new Date();
+
+			// 오늘 날짜의 0시로 설정
+			let todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+			// timestamp (밀리초 단위)로 변환
+			let todaytimestamp = todayStart.getTime();
+
+			console.log('=== getEmpList === todaytimestamp : ', todaytimestamp);
+
             // 직원별 출퇴근 기록 가져오기 (기존 출근시간 이후의 데이터만 == 오늘 출근 기록만 가져오기)
             const query = {
                 table: {
@@ -204,7 +220,7 @@ const getEmpList = async () => {
                 },
                 index: {
                     name: '$uploaded',
-                    value: getTimestampFromTimeString(getBasicStartTime),
+                    value: todaytimestamp,
                     condition: '>='
                 },
                 reference: "emp_id:" + makeSafe(emp.user_id),
@@ -279,6 +295,7 @@ const getEmpList = async () => {
         });
 
         const results = await Promise.all(empPromises);
+		console.log('=== getEmpList === results : ', results);
         newEmpList.push(...results);
 
         return newEmpList;
@@ -286,7 +303,7 @@ const getEmpList = async () => {
         console.error('=== getEmpList === error : ', error);
         return newEmpList
     } finally {
-        // loading.value = false;
+        loading.value = false;
     };
 };
 

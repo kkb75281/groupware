@@ -21,9 +21,9 @@ hr
         table.table#tb-edit-workTime
             colgroup
                 col(style="width: 3rem")
-                col(style="width: 10%")
                 col
-                col
+                col(style="width: 20%")
+                col(style="width: 20%")
                 col(style="width: 10%")
             thead
                 tr
@@ -48,12 +48,18 @@ hr
                                     img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
                                 span(style="white-space: nowrap;") {{ division.data.division_name }}
                         td.startWork
-                            .input-wrap(style="display: flex; align-items: center; gap: 4px;")
+                            span {{ workTimes[makeSafe(division.record_id)]?.division_startTime?.min?.slice(0, 5) || '' }}
+                            span ~
+                            span {{ workTimes[makeSafe(division.record_id)]?.division_startTime?.max?.slice(0, 5) || '' }}
+                            //- .input-wrap(style="display: flex; align-items: center; gap: 4px;")
                                 input(type="text" :value="workTimes[makeSafe(division.record_id)]?.division_startTime?.min?.slice(0, 5) || ''" readonly)
                                 | ~
                                 input(type="text" :value="workTimes[makeSafe(division.record_id)]?.division_startTime?.max?.slice(0, 5) || ''" readonly)
                         td.endWork
-                            .input-wrap(style="display: flex; align-items: center; gap: 4px;")
+                            span {{ workTimes[makeSafe(division.record_id)]?.division_endTime?.min?.slice(0, 5) || '' }}
+                            span ~
+                            span {{ workTimes[makeSafe(division.record_id)]?.division_endTime?.max?.slice(0, 5) || '' }}
+                            //- .input-wrap(style="display: flex; align-items: center; gap: 4px;")
                                 input(type="text" :value="workTimes[makeSafe(division.record_id)]?.division_endTime?.min?.slice(0, 5) || ''" readonly)
                                 | ~
                                 input(type="text" :value="workTimes[makeSafe(division.record_id)]?.division_endTime?.max?.slice(0, 5) || ''" readonly)
