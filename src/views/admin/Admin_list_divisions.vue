@@ -17,8 +17,8 @@ hr
                 button.btn.outline.warning(:disabled="!Object.keys(selectedList).length || loading" @click="deleteDivision") 삭제
                 button.btn.outline(:disabled="loading" @click="router.push('/admin/add-divisions')") 등록
     .tb-overflow
-        template(v-if="loading")
-            Loading#loading
+        //- template(v-if="loading")
+        //-     Loading#loading
         table.table#divisions_list
             colgroup
                 col(style="width: 3rem")
@@ -35,8 +35,9 @@ hr
 
             tbody
                 template(v-if="loading")
-                    tr(v-for="i in 4")
-                //- template(v-else-if="divisions === 'no data' || !divisions || Object.keys(divisions).length === 0")
+                    tr.loading(style="border-bottom: none;")
+                        td(colspan="5" style="padding: 0; height: initial;")
+                            Loading#loading
                 template(v-else-if="Object.keys(divisions).length === 0")
                     tr
                         td(colspan="5") 데이터가 없습니다.
@@ -248,12 +249,12 @@ const searchDivision = async () => {
     position: relative;
     margin-top: 3rem;
 
-    #loading {
-        position: absolute;
-        top: 126px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
+    // #loading {
+    //     position: absolute;
+    //     top: 126px;
+    //     left: 50%;
+    //     transform: translateX(-50%);
+    // }
 }
 
 .go-detail {
