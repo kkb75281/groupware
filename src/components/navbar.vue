@@ -4,7 +4,8 @@ nav#navbar(ref="navbar")
         .logo
             //- router-link.img-logo(to="/") 로고 부분
             router-link.img-logo(to="/")
-                svg
+                img(src="/icon-192.png" style="width: 2rem;")
+                //- svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-groups-fill")
             //- button.btn-menu(@click="toggleNavbarFold")
                 .icon
