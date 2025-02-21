@@ -104,7 +104,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 												template(v-if="uploadedFile.length > 0")
 													li.file-item(v-for="(file, index) in uploadedFile" :key="index")
 														//- a.file-name(:href="file.url" download) {{ file.filename }} {{ "___" + file.record_id }}
-														a.file-name(:href="file.url" target="_blank") {{ file.filename }}
+														a.file-name(:href="file.url" download target="_blank") {{ file.filename }}
 												template(v-if="uploadedFile.length === 0")
 													li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
 
