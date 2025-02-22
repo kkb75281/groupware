@@ -63,18 +63,16 @@ hr
 													input(type="text" v-model="record.data.remark" @blur="updateDesc(record)")
 
 		//- .pagination
-				button.btn-prev.icon(type="button") 
-						svg
-								use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
-						| Prev
-				button.num 1
-				button.num 2
-				button.num 3
-				button.num 4
-				button.num 5
-				button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
-						svg
-								use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+		//- 		button.btn-prev.icon(type="button") 
+		//- 				svg
+		//- 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
+		//- 				| Prev
+		//- 		button.num 1
+		//- 		button.num 2
+		//- 		button.num 3
+		//- 		button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
+		//- 				svg
+		//- 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
 <script setup lang="ts">
@@ -103,15 +101,35 @@ const route = useRoute();
 // console.log('===================== 출퇴근 기록 =====================');
 // console.log('=== 출퇴근 기록 === user : ', user);
 
+// 로딩상태
 const loading = ref(false);
-const currentDate = getDate(); // 오늘 날짜
-const maxHour = 16; // 퇴근 기록 가능한 최대 시간
-const commuteRecords = ref([]); // 출퇴근 기록
-const timeRecords = ref(initWorkFormat); // 출퇴근 시간 기록
-const monthlyWorkTime = ref(''); // 한 달 총 근무시간
 
-let commuteStorage = []; // 직원별 출퇴근 정보 저장소
+// 현재날짜
+const currentDate = getDate();
 
+// 퇴근 기록 가능한 최대 시간
+const maxHour = 16;
+
+// 출퇴근 기록
+const commuteRecords = ref([]);
+
+// 출퇴근 시간 기록
+const timeRecords = ref(initWorkFormat);
+
+// 한 달 총 근무시간
+const monthlyWorkTime = ref('');
+
+// 직원별 출퇴근 정보 저장소
+let commuteStorage = [];
+
+// 마지막 출근 이력
+// 기준은 uploaded가 가장 최신인거
+let lastCommute = null;
+
+// 총 근무시간
+let totalWorkTimeMs = 0;
+
+// 마스터가 정한 출근 시간
 const masterStartTime = {
   min: '08:00:00',
   max: '19:59:59',
@@ -142,18 +160,12 @@ const getWorkTime = async () => {
     };
 
     const res = await skapi.getRecords(query);
-    // console.log('=== getWorkTime === res.list : ', res.list);
-    // console.log('=== getWorkTime === user.division : ', user.division);
 
-    // 현재 로그인한 유저의 부서 근무시간 찾기
     const myDivisionWorkTime = res.list.find(
       (workTime) => workTime.data.division_key === user.division
     );
 
-    // console.log('=== getWorkTime === myDivisionWorkTime : ', myDivisionWorkTime);
-
     if (myDivisionWorkTime) {
-      // 마스터가 설정한 시간으로 업데이트
       masterStartTime.min = myDivisionWorkTime.data.division_startTime.min;
       masterStartTime.max = myDivisionWorkTime.data.division_startTime.max;
       masterStartTime.minTime = `${currentDate} ${myDivisionWorkTime.data.division_startTime.min}`;
@@ -164,7 +176,6 @@ const getWorkTime = async () => {
       masterStartTime.maxTimestamp = convertToTimestamp(
         `${currentDate} ${myDivisionWorkTime.data.division_startTime.max}`
       );
-
       masterEndTime.min = myDivisionWorkTime.data.division_endTime.min;
       masterEndTime.max = myDivisionWorkTime.data.division_endTime.max;
       masterEndTime.minTime = `${currentDate} ${myDivisionWorkTime.data.division_endTime.min}`;
@@ -188,10 +199,6 @@ const generateWorkTime = () => {
   const startTime = `${currentDate} ${currentTime}`;
   const startTimeStamp = convertToTimestamp(startTime);
 
-  // 마지막 출근 이력
-  const lastCommute =
-    commuteStorage && commuteStorage.length > 0 && commuteStorage[commuteStorage.length - 1];
-
   // 새로운 출근 이력
   const newCommuteData = {
     ...initWorkFormat, // 기존 출퇴근 기록 템플릿 복사
@@ -206,33 +213,25 @@ const generateWorkTime = () => {
 
 // 퇴근시간 기록 저장소 초기화
 const generateWorkEndTime = () => {
-  const value = commuteStorage[0];
-
-  if (!value || !value.data) {
-    return;
-  }
+  if (!lastCommute || !lastCommute.data) return;
 
   const endTimeStamp = convertToTimestamp(`${getDate()} ${getTime()}`);
-  // const dailyCommuteTime = convertMsToTime(endTimeStamp - value.data.startTimeStamp);
-  // const dailyCommuteTimeStamp = endTimeStamp - value.data.startTimeStamp;
-  const dailyCommuteTimeStamp = value.data.startTimeStamp
-    ? endTimeStamp - value.data.startTimeStamp
+  const dailyCommuteTimeStamp = lastCommute.data.startTimeStamp
+    ? endTimeStamp - lastCommute.data.startTimeStamp
     : 0;
-  const dailyCommuteTime = value.data.startTimeStamp ? convertMsToTime(dailyCommuteTimeStamp) : '';
-  const totalCommuteTime = (value.data.totalCommuteTime || 0) + dailyCommuteTimeStamp;
-
-  // console.log('=== generateWorkEndTime === dailyCommuteTimeStamp : ', dailyCommuteTimeStamp);
-  // console.log('=== generateWorkEndTime === dailyCommuteTime : ', dailyCommuteTime);
+  const dailyCommuteTime = lastCommute.data.startTimeStamp
+    ? convertMsToTime(dailyCommuteTimeStamp)
+    : '';
+  const totalCommuteTime = (lastCommute.data.totalCommuteTime || 0) + dailyCommuteTimeStamp;
 
   const newCommuteData = {
-    ...value,
+    ...lastCommute,
     data: {
-      ...value.data,
+      ...lastCommute.data,
       endTime: `${getDate()} ${getTime()}`,
       endTimeStamp: convertToTimestamp(`${getDate()} ${getTime()}`),
       dailyCommuteTime,
       totalCommuteTime
-      // calculated: false, // 계산 여부 플래그
     }
   };
 
@@ -241,10 +240,6 @@ const generateWorkEndTime = () => {
 
 // 출퇴근 기록 데이터베이스 저장 함수
 const saveCommuteRecord = async (record, isUpdate = false) => {
-  // console.log('=== saveCommuteRecord === record : ', record);
-  // console.log('=== saveCommuteRecord === isUpdate : ', isUpdate);
-  // console.log('======================')
-
   try {
     const config = {
       table: {
@@ -255,12 +250,10 @@ const saveCommuteRecord = async (record, isUpdate = false) => {
       reference: 'emp_id:' + makeSafe(user.user_id)
     };
 
-    // console.log('=== saveCommuteRecord === config : ', config);
-
     const res = await skapi.postRecord(record, config);
-    // console.log('=== saveCommuteRecord === res : ', res);
 
-    return res.list ? res.list[0] : res; // list가 있으면 첫 번째 항목 반환, 아니면 res 그대로 반환
+    // list가 있으면 첫 번째 항목 반환, 아니면 res 그대로 반환
+    return res.list ? res.list[0] : res;
   } catch (error) {
     console.log('=== saveCommuteRecord === error : ', { error });
     throw error;
@@ -272,21 +265,10 @@ const startWork = async () => {
   const value = generateWorkTime();
 
   // 출근 이력이 있는지 확인
-  const isCommuted =
-    commuteStorage &&
-    commuteStorage.length > 0 &&
-    commuteStorage[commuteStorage.length - 1].data.date === value.date;
-
-  // 마지막 출근 이력
-  const lastCommute =
-    commuteStorage &&
-    commuteStorage.length > 0 &&
-    commuteStorage[commuteStorage.length - 1].data.startTimeStamp;
+  const isCommuted = lastCommute && lastCommute.data.date === value.date;
 
   // 이미 오늘 출근한 이력이 있을 경우
   if (isCommuted) {
-    // console.log('=== startWork === 확인 : ');
-
     const checkMaxHour = addTimeToTimestamp(lastCommute, {
       hours: maxHour
       // seconds: 5,
@@ -350,10 +332,6 @@ const endWork = async () => {
     const currentTime = getTime();
     const endTime = `${currentDate} ${currentTime}`;
     const endTimeStamp = convertToTimestamp(endTime);
-
-    // 마지막 출근 이력
-    const lastCommute =
-      commuteStorage && commuteStorage.length > 0 && commuteStorage[commuteStorage.length - 1];
 
     // 새로운 출근 이력
     const newCommuteData = {
@@ -421,8 +399,6 @@ const endWork = async () => {
     console.log('=== EE 확인 === ');
 
     const maxTimeStr = new Date(maxEndTime).toLocaleTimeString();
-    const lastCommute =
-      commuteStorage && commuteStorage.length > 0 && commuteStorage[commuteStorage.length - 1];
 
     if (newEndWork) {
       // console.log('=== FF 확인 === ');
@@ -476,26 +452,16 @@ const endWork = async () => {
       alert('새로운 출퇴근 기록이 시작됩니다.');
 
       if (isCommute) {
-        // console.log('=== GG 확인 === ');
-
         alert('현재 마스터가 정한 출근시간 입니다. 출근을 먼저 해주세요.');
         return;
       }
 
-      // console.log('=== HH 확인 === ');
-
-      // const lastCommute =
-      //   commuteStorage &&
-      //   commuteStorage.length > 0 &&
-      //   commuteStorage[commuteStorage.length - 1];
-
       const endTimeStamp = convertToTimestamp(`${getDate()} ${getTime()}`);
       const dailyCommuteTime = convertMsToTime(endTimeStamp - value.startTimeStamp);
       const dailyCommuteTimeStamp = endTimeStamp - value.startTimeStamp;
+
       let totalCommuteTime = value.totalCommuteTime || 0;
       totalCommuteTime += dailyCommuteTimeStamp;
-
-      // console.log('=== endWork === dailyCommuteTime : ', dailyCommuteTime);
 
       const data = {
         ...initWorkFormat,
@@ -576,23 +542,13 @@ const endWork = async () => {
   }
 };
 
-let totalWorkTimeMs = 0; // 총 근무시간
-
 // 비고란 작성 내용 업데이트
 const updateDesc = debounce(async (record) => {
-  // console.log('=== updateDesc === record : ', record);
-
   try {
     const values = {
       ...record.data,
       remark: record.data.remark
     };
-
-    // console.log('=== updateDesc === values : ', values);
-
-    // const updatedRecord = await saveCommuteRecord({
-    //   ...values,
-    // });
 
     const config = {
       record_id: record.record_id
@@ -605,14 +561,6 @@ const updateDesc = debounce(async (record) => {
       record_id: record.record_id,
       data: values
     };
-
-    // console.log('=== updateDesc === updatedRecord : ', updatedRecord);
-
-    // const recordIndex = commuteRecords.value.findIndex((r) => r.id === record.id);
-
-    // if (recordIndex !== -1) {
-    //   commuteRecords.value[recordIndex] = updatedRecord;
-    // }
   } catch (error) {
     alert('비고 내용 저장에 실패했습니다.');
     console.error(error);
@@ -632,14 +580,8 @@ const fetchCommuteRecords = async (userId = null, options = {}) => {
         name: 'commute_record',
         access_group: 98
       },
-      // index: {
-      //   name: '$user_id',
-      //   value: user.user_id,
-      // },
       reference: 'emp_id:' + makeSafe(user.user_id)
     };
-
-    // console.log('Reference:', "emp_id:" + makeSafe(user.user_id));
 
     const fetchOptions = {
       // limit,
@@ -659,50 +601,50 @@ const fetchCommuteRecords = async (userId = null, options = {}) => {
 // 출퇴근 시간 기록 저장
 const onRecord = () => {
   // 만약 출퇴근 기록이 있다면
-  if (commuteStorage.length > 0) {
-    commuteRecords.value = commuteStorage;
+  if (lastCommute) {
+    commuteRecords.value.push(lastCommute);
 
-    timeRecords.value.start = commuteStorage[0].data.startTime;
-    timeRecords.value.end = commuteStorage[0].data.endTime;
+    timeRecords.value = lastCommute.data;
   } else {
-    timeRecords.value.start = '';
-    timeRecords.value.end = '';
+    timeRecords.value = null;
   }
 };
 
 // 최신 출퇴근 기록을 보이게 셋팅
-watch(commuteRecords, (newVal) => {
-  if (newVal.length > 0) {
-    const result = {
-      ...newVal[0].data,
-      recordId: newVal[0].record_id,
-      updated: newVal[0].updated,
-      uploaded: newVal[0].uploaded
-    };
+// watch(commuteRecords, (newVal) => {
+//   if (newVal.length > 0) {
+//     const result = {
+//       ...newVal[0].data,
+//       recordId: newVal[0].record_id,
+//       updated: newVal[0].updated,
+//       uploaded: newVal[0].uploaded
+//     };
 
-    timeRecords.value = result;
-  }
-});
+//     timeRecords.value = result;
+//   }
+// });
 
 // 근무시간 계산
 watch(commuteRecords, (newVal) => {
-  // console.log('=== watch === commuteRecords : ', commuteRecords);
-  // console.log('=== watch === newVal : ', newVal);
+  console.log('== newVal == : ', newVal);
+
+  if (!newVal) return;
 
   // 근무시간 계산
   const validRecords = newVal.filter(
     (record) => record.data && record.data.startTimeStamp && record.data.endTimeStamp
   );
 
-  // console.log('=== watch === validRecords : ', validRecords);
-
   const totalMilliseconds = validRecords.reduce((total, record) => {
     const workTime = record.data.endTimeStamp - record.data.startTimeStamp;
     return total + workTime;
   }, 0);
 
-  const totalSeconds = Math.floor(totalMilliseconds / 1000); // 초로 변환
-  const totalMinutes = Math.floor(totalSeconds / 60); // 분으로 변환
+  // 초로 변환
+  const totalSeconds = Math.floor(totalMilliseconds / 1000);
+
+  // 분으로 변환
+  const totalMinutes = Math.floor(totalSeconds / 60);
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -711,7 +653,10 @@ watch(commuteRecords, (newVal) => {
 });
 
 onMounted(async () => {
-  timeRecords.value.date = getDate();
+  timeRecords.value = {
+    ...timeRecords.value,
+    date: getDate()
+  };
 
   try {
     // 마스터가 설정한 부서별 근무시간 가져오기
@@ -721,11 +666,20 @@ onMounted(async () => {
     const res = await fetchCommuteRecords();
     if (res.list && Array.isArray(res.list)) {
       console.log('=== onMounted === res.list : ', res.list);
-      commuteStorage = [...res.list].sort((a, b) => b.uploaded - a.uploaded); // uploaded(레코드 최초 생성순) 기준으로 정렬해야 함.
-      console.log('=== onMounted === commuteStorage : ', commuteStorage);
+
+      const list = res.list.sort((a, b) => b.updated - a.updated);
+
+      commuteRecords.value = list;
+
+      // uploaded(레코드 최초 생성순) 기준으로 정렬해야 함.
+      // commuteStorage = [...res.list].sort((a, b) => b.uploaded - a.uploaded);
+      // console.log('=== onMounted === commuteStorage : ', commuteStorage);
+
+      lastCommute = list[0];
     } else {
       commuteStorage = [];
     }
+
     onRecord();
   } catch (error) {
     // console.log('=== onMounted === error : ', {error});
