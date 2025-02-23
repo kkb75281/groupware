@@ -327,7 +327,10 @@ const startWork = async () => {
     });
 
     // 상태 업데이트
-    commuteStorage.push({ ...savedRecord });
+    // commuteStorage.push({ ...savedRecord });
+    commuteStorage = [...commuteStorage, savedRecord].sort(
+      (a, b) => b.data.startTimeStamp - a.data.startTimeStamp
+    );
     commuteRecords.value = commuteStorage;
     timeRecords.value = savedRecord.data;
 
