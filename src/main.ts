@@ -45,39 +45,39 @@ function setupVisibilityListener() {
 
 // main.js
 
-async function checkSubscriptionStatus() {
-    try {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
+// async function checkSubscriptionStatus() {
+//     try {
+//         const registration = await navigator.serviceWorker.ready;
+//         const subscription = await registration.pushManager.getSubscription();
 
-        if (!subscription) {
-            console.log("User is not subscribed to push notifications.");
-            // 사용자에게 재구독 요청 로직 추가 가능
-            requestNotificationPermission();
-        } else {
-            console.log("User is still subscribed:", subscription);
-        }
-    } catch (error) {
-        console.error("Error checking subscription status:", error);
-    }
-}
+//         if (!subscription) {
+//             console.log("User is not subscribed to push notifications.");
+//             // 사용자에게 재구독 요청 로직 추가 가능
+//             requestNotificationPermission();
+//         } else {
+//             console.log("User is still subscribed:", subscription);
+//         }
+//     } catch (error) {
+//         console.error("Error checking subscription status:", error);
+//     }
+// }
 
-function requestNotificationPermission() {
-    Notification.requestPermission().then((permission) => {
-        if (permission === "granted") {
-            console.log("Notification permission granted.");
-            // 여기서 새로운 구독 요청 가능
-        } else {
-            console.warn("Notification permission denied.");
-        }
-    });
-}
+// function requestNotificationPermission() {
+//     Notification.requestPermission().then((permission) => {
+//         if (permission === "granted") {
+//             console.log("Notification permission granted.");
+//             // 여기서 새로운 구독 요청 가능
+//         } else {
+//             console.warn("Notification permission denied.");
+//         }
+//     });
+// }
 
-// 주기적으로 구독 상태 체크 (예: 하루에 한 번)
-setInterval(checkSubscriptionStatus, 24 * 60 * 60 * 1000);
+// // 주기적으로 구독 상태 체크 (예: 하루에 한 번)
+// setInterval(checkSubscriptionStatus, 24 * 60 * 60 * 1000);
 
-// 초기 체크
-checkSubscriptionStatus();
+// // 초기 체크
+// checkSubscriptionStatus();
 
 // 알림 표시 함수
 function showNotification(message) {
@@ -126,6 +126,45 @@ function showNotification(message) {
     // } else {
     //     console.error('알림 권한이 없습니다.');
     // }
+}
+
+function checkNotificationPermission() {
+    if (Notification.permission === "granted") {
+        console.log("알림이 이미 허용되어 있습니다.");
+    } else if (Notification.permission === "denied") {
+        console.log("알림이 차단되어 있습니다.");
+        // 사용자에게 수동으로 권한 재요청을 유도
+        showPermissionRequestPrompt();
+    } else if (Notification.permission === "default") {
+        console.log("알림 권한이 아직 설정되지 않았습니다.");
+        requestNotificationPermission();
+    }
+}
+
+function requestNotificationPermission() {
+    Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+            console.log("사용자가 알림을 허용했습니다.");
+        } else if (permission === "denied") {
+            console.log("사용자가 알림을 차단했습니다.");
+        }
+    });
+}
+
+function showPermissionRequestPrompt() {
+    const isConfirmed = confirm(
+        "알림이 차단되어 있습니다. 알림을 활성화하려면 브라우저 설정에서 권한을 변경해주세요."
+    );
+    if (isConfirmed) {
+        // 브라우저 설정 페이지로 이동
+        if (navigator.userAgent.includes("Chrome")) {
+            window.open("chrome://settings/content/notifications", "_blank");
+        } else if (navigator.userAgent.includes("Firefox")) {
+            window.open("about:preferences#privacy", "_blank");
+        } else {
+            alert("브라우저 설정에서 알림 권한을 확인해주세요.");
+        }
+    }
 }
 
 function updateAuditsAndApprovals(audits, approvals) {
@@ -319,6 +358,9 @@ export let loginCheck = async (profile: any) => {
 		} else {
 			profileImage.value = null;
 		}
+
+		// pwa 알림 권한 체크
+		checkNotificationPermission();
 
 		let misc = JSON.parse(user.misc || '{}');
 
