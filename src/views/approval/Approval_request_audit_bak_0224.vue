@@ -4,7 +4,7 @@
 
 hr
 
-//- template(v-if="step > 0 && showBackStep")
+template(v-if="step > 0 && showBackStep")
 	p.label.essential 결재 양식명
 	.input-wrap
 		//- input(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" placeholder="ex) 시말서, 휴가신청서" required)
@@ -21,10 +21,8 @@ template(v-if="step > 1")
 				input(:value="auditTitle" type="hidden" required name="to_audit" hidden)
 
 				.title
-					.input-wrap.input-title
-						input#to_audit(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
-					//- h2(style="text-align:center" :style="{color: !auditTitle ? '#ddd' : 'black', fontWeight: !auditTitle ? '400' : 'bold'}") {{ auditTitle || "결재 제목을 입력해주세요." }}
-					//- .icon(v-if="!showBackStep" @click="showBackStep = !showBackStep")
+					h2(style="text-align:center" :style="{color: !auditTitle ? '#ddd' : 'black', fontWeight: !auditTitle ? '400' : 'bold'}") {{ auditTitle || "결재 양식명을 입력해주세요." }}
+					.icon(v-if="!showBackStep" @click="showBackStep = !showBackStep")
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
 
@@ -130,9 +128,8 @@ template(v-if="step > 1")
 												svg
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 									td(colspan="3")
-										p.audit-title(:style="{color: !auditTitle ? '#ddd' : 'black'}") {{ auditTitle || "결재 제목을 입력해주세요." }}
-										//- .input-wrap
-										//- 	input#to_audit(type="text" placeholder="제목" required name="to_audit")
+										.input-wrap
+											input#to_audit(type="text" placeholder="제목" required name="to_audit")
 								tr
 									th.essential 결재 내용
 									td(colspan="3")
@@ -922,13 +919,6 @@ onUnmounted(() => {
 		left: 0 !important;
 		width: 100% !important;
 	}
-
-	.input-title {
-		font-size: 2rem;
-		font-weight: 700;
-		line-height: 1.3;
-		text-align: center;
-	}
 }
 
 .form-wrap {
@@ -956,7 +946,7 @@ onUnmounted(() => {
 }
 
 .table {
-	// min-width: 20rem;
+	min-width: 20rem;
 
     tr {
         td {
@@ -1257,26 +1247,6 @@ onUnmounted(() => {
 	.modal-cont {
 		max-width: 100%;
 	}
-}
-
-.input-title {
-	input {
-		border: none;
-		border-bottom: 1px solid var(--gray-color-200);
-		border-radius: 0;
-		font-size: 1.75rem;
-		font-weight: 700;
-		line-height: 1.3;
-		text-align: center;
-
-		&::placeholder {
-			font-size: 1.75rem;
-		}
-	}
-}
-
-.audit-title {
-	text-align: left;
 }
 
 @media (max-width: 768px) {

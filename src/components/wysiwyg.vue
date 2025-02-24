@@ -44,7 +44,8 @@
 		//- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
 	
 		// 색상 변경
-		input#colorInput.btn-custom(type="color" @change="handleCommand($event.target.value)" @blur="wysiwyg?.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7; position: relative; border-radius: 0;")
+		.input-color
+			input#colorInput.btn-custom(type="color" @change="handleCommand($event.target.value)" @blur="wysiwyg?.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7; position: relative; border-radius: 0;")
 		//- button.btn-custom(type="button" @click="handleCommand('color')" style="border-right: 1px solid #e4e4e7;") Color
 		button.btn-custom(type="button" @click="handleCommand('divider')")
 			.icon
@@ -224,14 +225,24 @@ defineExpose({
 	}
 }
 
-#colorInput {
-	top: -4px;
+.input-color {
+	display: inline-block;
+	position: relative;
 }
 
 .btns-wrap {
 	justify-content: flex-start !important;
 	gap: 0 !important;
 	margin-bottom: 0.5rem;
+	display: flex;
+	flex-wrap: wrap;
+	// align-content: stretch;
+
+	&:after {
+		content: "";
+  		flex: 1 1 auto;
+		border-bottom: 1px solid var(--gray-color-200);
+	}
 }
 
 .btn-custom {
@@ -239,7 +250,6 @@ defineExpose({
 	border-bottom: 1px solid var(--gray-color-200);
 	padding: 0 8px;
 	height: 2rem;
-	// flex: auto;
 
 	&:hover,
 	&:focus,
@@ -250,12 +260,6 @@ defineExpose({
 
 	.icon {
 		padding: 0;
-	}
-}
-
-@media (max-width: 768px) {
-	#colorInput {
-		top: 4px;
 	}
 }
 </style>
