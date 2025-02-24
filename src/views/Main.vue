@@ -38,8 +38,8 @@ watch(mainPageLoading, (nv) => {
 			const targetElement = document.querySelector('#loading');
 			let scrollLocation = document.documentElement.scrollTop;
 
-			console.log('innerHeight',window.innerHeight);
-			console.log('scrollLocation',scrollLocation);
+			// console.log('innerHeight',window.innerHeight);
+			// console.log('scrollLocation',scrollLocation);
 
 			targetElement.style.setProperty('--loading-top', `${(window.innerHeight - mainWrap.value.getBoundingClientRect().top + scrollLocation - 200) / 2}px`);
 		})
