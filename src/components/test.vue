@@ -3,23 +3,33 @@ h4 {{ realtimeTestingMsg }}
 
 .test-area
 	h3.title Notification Subscribe Test
-	button.btn(@click="subscribeNotification") Subscribe
-	button.btn(@click="unsubscribeNotification") Unsubscribe
+	p {{  notiState ? 'Notification is subscribed' : 'Notification is not subscribed' }}
+
+	br
+
+	button.btn(v-if="!notiState" @click="subscribeNotification") Subscribe
+	button.btn(v-if="notiState" @click="unsubscribeNotification") Unsubscribe
 
 	.input-wrap
 		input(type="text" v-model="notifications.content.title" placeholder="Title")
 		input(type="text" v-model="notifications.content.body" placeholder="Body")
 		input(type="text" v-model="notifications.user_id" placeholder="User ID")
+
+		br
+		br
+
 		button.btn(@click="pushNotification(notifications.content, notifications.user_id)") Push notifications
 		button.btn(@click="postRealTimeMsg") Post Realtime Msg
 
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from "vue";
 import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications";
 import { skapi, realtimeTestingMsg } from "@/main";
 import { user } from "@/user";
 
+let notiState = ref(false);
 let notifications = {
 	content: {
 		title: "Test Title",
@@ -44,6 +54,11 @@ function postRealTimeMsg () {
 		console.log('postRealTimeMsg', res);
 	});
 }
+
+onMounted(async() => {
+	let pms = await Notification.requestPermission();
+	pms ? notiState.value = true : notiState.value = false;
+})
 </script>
 
 <style scoped lang="less">

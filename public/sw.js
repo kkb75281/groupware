@@ -24,6 +24,20 @@ self.addEventListener('push', function(event) {
 });
 
 self.addEventListener('notificationclick', function(event) {
+	// // 뱃지 초기화
+	// if ('clearAppBadge' in self.navigator) {
+	// 	self.navigator.clearAppBadge().catch((error) => {
+	// 	  console.error('Failed to clear app badge:', error);
+	// 	});
+	// }
+
+	// // 메인 애플리케이션에 알림 클릭 이벤트 알림
+	// self.clients.matchAll().then((clients) => {
+	// 	clients.forEach((client) => {
+	// 	  client.postMessage({ type: 'clear-badge' });
+	// 	});
+	// });
+
     event.notification.close();
     // current website url
     let url = event.target.location.origin;
