@@ -75,6 +75,7 @@ hr
 				button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
 						svg
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+//- button.btn.sm(@click="testDelete") delete
 </template>
 
 <script setup lang="ts">
@@ -100,8 +101,22 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
-// console.log('===================== 출퇴근 기록 =====================');
-// console.log('=== 출퇴근 기록 === user : ', user);
+// const testDelete = async() => {
+//   const res = await fetchCommuteRecords();
+//   console.log('=== testDelete === res : ', res.list);
+
+//   res.list.forEach(record => {
+//     console.log(record.data.date);
+
+//     if(record.data.date === '2025-02-24') {
+//       const config = {
+//         record_id: record.record_id
+//       };
+
+//       skapi.deleteRecords(config);
+//     }
+//   })
+// };
 
 const loading = ref(false);
 const currentDate = getDate(); // 오늘 날짜
@@ -356,7 +371,8 @@ const endWork = async () => {
 
     // 마지막 출근 이력
     const lastCommute =
-      commuteStorage && commuteStorage.length > 0 && commuteStorage[commuteStorage.length - 1];
+      commuteStorage && commuteStorage.length > 0 && commuteStorage[0];
+    // console.log('=== endWork === lastCommute : ', lastCommute);
 
     // 새로운 출근 이력
     const newCommuteData = {
@@ -411,7 +427,6 @@ const endWork = async () => {
   // 마스터가 정한 출근시간 범위 내에서 퇴근시간을 먼저 기록할 경우
   if (isCommute && !value.data.startTime) {
     // console.log('=== DD 확인 === ');
-
     alert('현재 마스터가 정한 출근시간 입니다. 출근을 먼저 해주세요.');
     return;
   }
@@ -421,17 +436,21 @@ const endWork = async () => {
 
   // 마스터가 정한 퇴근시간 범위를 벗어날 경우
   if (!isEndWork) {
-    console.log('=== EE 확인 === ');
+    console.log('=== 마스터가 정한 퇴근시간 벗어남 === ');
 
     const maxTimeStr = new Date(maxEndTime).toLocaleTimeString();
     const lastCommute =
-      commuteStorage && commuteStorage.length > 0 && commuteStorage[commuteStorage.length - 1];
+      commuteStorage && commuteStorage.length > 0 && commuteStorage[0];
 
     if (newEndWork) {
-      // console.log('=== FF 확인 === ');
+      // console.log('=== 출근 못찍음, 금일 퇴근기록 업뎃할거임 :: s === ');
+      // console.log('AA === lastCommute === : ', lastCommute);
 
       // 추가 :: s
       if (lastCommute && lastCommute.data.date === getDate()) {
+        // console.log('=== 날짜 같음 === ');
+        // console.log('BB === lastCommute === : ', lastCommute);
+
         // 이전 퇴근기록에서 업데이트
         const config = {
           record_id: lastCommute.record_id
@@ -453,19 +472,21 @@ const endWork = async () => {
           (record) => record.data.startTimeStamp !== value.data.startTimeStamp
         );
 
-        console.log('== value.data == : ', value.data);
-        console.log('=== endWork === notActiveDataList : ', notActiveDataList);
-        console.log('=== endWork === commuteRecords.value : ', commuteRecords.value);
+        // console.log('== value.data == : ', value.data);
+        // console.log('=== endWork === notActiveDataList : ', notActiveDataList);
+        // console.log('=== endWork === commuteRecords.value : ', commuteRecords.value);
 
         if (notActiveDataList.length < 1) {
           const notLastCommutes = commuteStorage.slice(0, commuteRecords.value.length - 1);
           notActiveDataList = notLastCommutes;
-          console.log('=== endWork === notLastCommutes : ', notLastCommutes);
+          // console.log('=== endWork === notLastCommutes : ', notLastCommutes);
         }
 
-        const commutes = [updatedRecord, ...notActiveDataList].sort(
-          (a, b) => b.updated - a.updated
-        );
+        const commutes = [updatedRecord, ...notActiveDataList];
+        // .sort(
+        //   (a, b) => b.updated - a.updated
+        // );
+        // console.log('=== endWork === commutes : ', commutes);
 
         commuteStorage = commutes;
         commuteRecords.value = commuteStorage;
@@ -480,7 +501,6 @@ const endWork = async () => {
 
       if (isCommute) {
         // console.log('=== GG 확인 === ');
-
         alert('현재 마스터가 정한 출근시간 입니다. 출근을 먼저 해주세요.');
         return;
       }
@@ -511,7 +531,7 @@ const endWork = async () => {
       };
 
       try {
-        // console.log('=== II 확인 === ');
+        console.log('=== II 확인 === ');
 
         const savedRecord = await saveCommuteRecord({
           ...data
@@ -520,9 +540,10 @@ const endWork = async () => {
         });
 
         // commuteStorage.push({ ...savedRecord });
-        commuteStorage = [...commuteStorage, savedRecord]; // 저장소 맨 뒤에 data 추가
+        commuteStorage = [savedRecord, ...commuteStorage]; // 저장소 맨 앞에 data 추가
         commuteRecords.value = commuteStorage;
         timeRecords.value = savedRecord.data;
+        // console.log('=== endWork === commuteStorage : ', commuteStorage);
       } catch (error) {
         alert('퇴근 기록 저장에 실패했습니다.');
         console.log('=== endWork === error : ', { error });
@@ -723,7 +744,6 @@ onMounted(async () => {
     // DB에서 기록 조회
     const res = await fetchCommuteRecords();
     if (res.list && Array.isArray(res.list)) {
-      console.log('=== onMounted === res.list : ', res.list);
       commuteStorage = [...res.list].sort((a, b) => b.uploaded - a.uploaded); // uploaded(레코드 최초 생성순) 기준으로 정렬해야 함.
       console.log('=== onMounted === commuteStorage : ', commuteStorage);
     } else {
@@ -731,13 +751,10 @@ onMounted(async () => {
     }
     onRecord();
   } catch (error) {
-    // console.log('=== onMounted === error : ', {error});
+    console.log('=== onMounted === error : ', {error});
     commuteStorage = [];
     onRecord();
   }
-
-  // console.log('=== onMounted === commuteStorage : ', commuteStorage);
-  // console.log('=== onMounted === timeRecords.value : ', timeRecords.value);
 });
 </script>
 
