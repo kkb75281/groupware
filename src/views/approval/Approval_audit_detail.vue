@@ -200,7 +200,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 							template(v-else)
 								.stamp-wrap(v-if="uploadedStamp && uploadedStamp.length")
 									.stamp-grid(v-for="stamp in uploadedStamp" :key="stamp.url" @click="selectStamp(stamp.url)")
-										.stamp(:class="{'selected' : selectedStamp === stamp.url}")
+										.stamp(:class="{'selected' : selectedStamp === stamp.url.split('?')[0]}")
 											img#stamp-img(:src="stamp.url" alt="도장 이미지")
 								.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
 									img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
@@ -696,10 +696,20 @@ const getAuditDetail = async () => {
         if (approval) {
           const approvedStr = approval.data.approved ? '결재함' : '반려함';
 
-          // 도장 파일 가져오기
-          const stampFile = await skapi.getFile(approval.data.stamp, {
-            dataType: 'endpoint'
-          });
+		  console.log({approval})
+
+		  let stampFile;
+
+		  // 도장 파일 가져오기
+		  if(approval.data.approved === 'approve') {
+			stampFile = await skapi.getFile(approval.data.stamp, {
+				dataType: 'endpoint'
+			});
+		  } else {
+			stampFile = null;
+		  }
+
+		  console.log({stampFile})
 
           approvalUserList.push({
             user_id: userId,
@@ -815,7 +825,7 @@ const postApproval = async () => {
         auditDoContent.value.user_id,
 		{
 			title: '알림',
-			body: `${user.name}님께서 결재를 ${res.data.approved ? '승인' : '반려'}했습니다.`
+			body: `${user.name}님께서 결재를 ${approveAudit.value ? '승인' : '반려'}했습니다.`
 		}
       )
       .then((res) => {

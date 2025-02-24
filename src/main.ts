@@ -17,7 +17,16 @@ export let loaded = ref(false);
 export let mainPageLoading = ref(false);
 export let realtimeTestingMsg = ref('');
 let isConnected = false;
-let isTabVisible = true; // 현재 탭을 보고 있는지 여부
+let isTabVisible = ref(true); // 현재 탭을 보고 있는지 여부
+let currentBadgeCount = 0; // 현재 뱃지 값을 저장할 변수
+
+watch(isTabVisible, (nv) => {
+	if (nv) {
+		navigator.setAppBadge(0).catch((error) => {
+			console.error('Failed to set app badge:', error);
+		  });
+	}
+})
 
 // function getChanges(before:any, after:any) {
 //   const beforeKeys = new Set(Object.keys(before));
@@ -35,10 +44,10 @@ function setupVisibilityListener() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             console.log('탭이 활성화되었습니다.');
-            isTabVisible = true;
+            isTabVisible.value = true;
         } else {
             console.log('탭이 비활성화되었습니다.');
-            isTabVisible = false;
+            isTabVisible.value = false;
         }
     });
 }
@@ -126,6 +135,34 @@ function showNotification(message) {
     // } else {
     //     console.error('알림 권한이 없습니다.');
     // }
+}
+
+// if ('serviceWorker' in navigator) {
+// 	navigator.serviceWorker.ready.then((registration) => {
+// 	  // Service Worker로부터 메시지 수신
+// 	  navigator.serviceWorker.addEventListener('message', (event) => {
+// 		if (event.data && event.data.type === 'clear-badge') {
+// 		  // 뱃지 카운트를 0으로 초기화
+// 		  currentBadgeCount = 0;
+// 		  console.log('Badge count cleared:', currentBadgeCount);
+// 		}
+// 	  });
+// 	});
+//   }
+
+// 뱃지 값을 증가시키는 함수
+function incrementBadge() {
+	if ('setAppBadge' in navigator) {
+	  // 현재 값에 +1
+	  currentBadgeCount += 1;
+  
+	  // 새로운 뱃지 값 설정
+	  navigator.setAppBadge(currentBadgeCount).catch((error) => {
+		console.error('Failed to set app badge:', error);
+	  });
+	} else {
+	  console.warn('setAppBadge is not supported in this browser.');
+	}
 }
 
 function checkNotificationPermission() {
@@ -274,33 +311,59 @@ export let RealtimeCallback = async (rt: any) => {
 			realtimeTestingMsg.value = rt.message;
 			console.log('=== RealtimeCallback === realtimeTestingMsg : ', realtimeTestingMsg.value);
 
-			// setupVisibilityListener();
+			setupVisibilityListener();
+			incrementBadge();
+
+			let realtimeMsg = rt.message;
+			let realtimeSender = null;
+			let realtimeBody = ''
 
 			// 결재 요청이 들어옴
 			if (rt.message?.audit_request) {
 				handleAuditRequest(rt.message.audit_request);
-				// 탭이 비활성화된 경우에만 알림 표시
-				// if (!isTabVisible) {
-				// 	showNotification('새로운 결재 요청이 있습니다.');
-				// }
+
+				realtimeSender = getUserInfo(rt.message.audit_request.send_user);
+				realtimeBody = `${realtimeSender.name}님께서 결재를 올렸습니다.`
 			}
 
 			// 결재 완료 알림
 			if (rt.message?.audit_approval) {
 				handleAuditRequest(rt.message.audit_approval);
-				// 탭이 비활성화된 경우에만 알림 표시
-				// if (!isTabVisible) {
-				// 	showNotification('결재가 완료되었습니다.');
-				// }
+				
+				realtimeSender = getUserInfo(rt.message.audit_approval.send_user);
+				realtimeBody = `${realtimeSender.name}님께서 결재를 ${rt.message.audit_approval.audit_info.approval === 'approve' ? '승인' : '반려'}했습니다.`
 			}	
 
 			// 결재 취소 알림 audit_canceled
 			if (rt.message?.audit_canceled) {
 				handleAuditRequest(rt.message.audit_canceled);
-				// 탭이 비활성화된 경우에만 알림 표시
-				// if (!isTabVisible) {
-				// 	showNotification('결재가 취소되었습니다.');
-				// }
+				
+				realtimeSender = getUserInfo(rt.message.audit_canceled.send_user);
+				realtimeBody = `${realtimeSender.name}님께서 결재를 취소했습니다.`
+			}
+
+			console.log({isTabVisible: isTabVisible.value})
+
+			// 탭이 비활성화된 경우에만 알림 표시
+			if (!isTabVisible.value) {
+				console.log('비활성화')
+				// 실시간 알림 보내기
+				skapi
+				.postRealtime(
+					{
+						realtimeMsg
+					},
+					user.user_id,
+					{
+						title: '[그룹웨어]',
+						body: realtimeBody
+					}
+				)
+				.then((res) => {
+					console.log("탭 비활성화일때 결재 요청 날리기", res);
+				}).catch((err) => {
+					console.log({err})
+				});
 			}
 
 			unreadCount.value = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;

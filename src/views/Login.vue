@@ -194,7 +194,7 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
     skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
 		// console.log('=== handleOAuthCallback === u : ', u);
         window.location.href = '/';
-    }).finally(() => {
+    }).catch(() => {
         loading.value = false;
     });
 }
