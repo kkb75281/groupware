@@ -289,6 +289,8 @@ onMounted(() => {
 	border-radius: 8px;
 	transition: all .2s;
 	cursor: pointer;
+	width: 100%;
+	text-align: center;
 
 	&:hover {
 		background-color: var(--gray-color-100);

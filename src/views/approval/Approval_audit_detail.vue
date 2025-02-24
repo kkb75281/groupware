@@ -237,7 +237,14 @@ import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
 import { auditList } from '@/audit';
 import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp';
-import { openStampModal, closeStampDialog, handleStampBlob, uploadingStamp, onlyStampFile, handleStampBlobComplete } from '@/components/make_stamp';
+import {
+  openStampModal,
+  closeStampDialog,
+  handleStampBlob,
+  uploadingStamp,
+  onlyStampFile,
+  handleStampBlobComplete
+} from '@/components/make_stamp';
 
 import Loading from '@/components/Loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
@@ -269,81 +276,85 @@ const getAuditDetailRunning = ref(false);
 
 // 결재 회수 가능 여부 확인
 const isCancelPossible = computed(() => {
-	// console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
+  // console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
 
   // 모든 결재자가 결재를 완료한 경우에는 회수 불가능
-  if (auditorList.value.every(auditor => auditor.approved)) {
-		console.log('모두 결재 완료!!');
-		return false;
+  if (auditorList.value.every((auditor) => auditor.approved)) {
+    console.log('모두 결재 완료!!');
+    return false;
   } else {
-		console.log('결재 진행중!!');
-		return true;
+    console.log('결재 진행중!!');
+    return true;
   }
 });
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
-	approvers: [],  // 결재
-	agreers: [],    // 합의
-	receivers: []   // 수신참조
+  approvers: [], // 결재
+  agreers: [], // 합의
+  receivers: [] // 수신참조
 });
 
-watch(() => (route.params.auditId as string), async(nv, ov) => {
-	if(nv !== ov) {
-		auditId.value = nv;
-		await getAuditDetail();
-	}
-});
+watch(
+  () => route.params.auditId as string,
+  async (nv, ov) => {
+    if (nv !== ov) {
+      auditId.value = nv;
+      await getAuditDetail();
+    }
+  }
+);
 
 watch(auditDoContent, () => {
-	console.log({auditList})
-	console.log({auditDoContent})
-	let userId = auditDoContent.value?.user_id;
+  console.log({ auditList });
+  console.log({ auditDoContent });
+  let userId = auditDoContent.value?.user_id;
 
-	if (userId) {
-		getUserInfo(userId).then((res) => {
-			senderUser.value = res.list[0] || {};
-		})
-		.catch((err) => {
-			console.error('Failed to fetch user info:', err);
-			senderUser.value = {};
-		});
-	} else {
-		senderUser.value = {};
-	}
-})
+  if (userId) {
+    getUserInfo(userId)
+      .then((res) => {
+        senderUser.value = res.list[0] || {};
+      })
+      .catch((err) => {
+        console.error('Failed to fetch user info:', err);
+        senderUser.value = {};
+      });
+  } else {
+    senderUser.value = {};
+  }
+});
 
 let isPosting = false;
 
 const openModal = (target) => {
-	if (target && target.user_id !== user.user_id) return;
+  if (target && target.user_id !== user.user_id) return;
 
-	isModalOpen.value = true;
-	// disabled.value = false;
+  isModalOpen.value = true;
+  // disabled.value = false;
 };
 
 const closeModal = () => {
-	isModalOpen.value = false;
-	isStampModalOpen.value = false;
-	// disabled.value = true;
+  isModalOpen.value = false;
+  isStampModalOpen.value = false;
+  // disabled.value = true;
 };
 
 const goToPrev = () => {
-		// 결재 발신함
-	if (senderUser.value.user_id === user.user_id) {
-		router.push('/approval/request-list');
+  // 결재 발신함
+  if (senderUser.value.user_id === user.user_id) {
+    router.push('/approval/request-list');
 
-		// 수신참조
-	} else if (route.path.includes('audit-detail-reference')) {
-		router.push('/approval/audit-reference');
+    // 수신참조
+  } else if (route.path.includes('audit-detail-reference')) {
+    router.push('/approval/audit-reference');
 
-		// 결재 수신함
-	} else {
-		router.push('/approval/audit-list');
-	}
+    // 결재 수신함
+  } else {
+    router.push('/approval/audit-list');
+  }
 };
 
-function formatTimestampToDate(timestamp:number) {
+function formatTimestampToDate(timestamp: number) {
   const date = new Date(timestamp); // timestamp를 Date 객체로 변환
 
   const year = date.getFullYear(); // 연도 가져오기
@@ -354,1389 +365,1382 @@ function formatTimestampToDate(timestamp:number) {
 }
 
 let rejectAudit = () => {
-	isModalOpen.value = false;
-	approveAudit.value = false;
-	postApproval();
-}
+  isModalOpen.value = false;
+  approveAudit.value = false;
+  postApproval();
+};
 
 let gettingStampList = ref(false);
 let makeStampRunning = ref(false);
 let selectedStamp = ref(null);
 let selectedStampComplete = ref(false);
 
-let uploadCreatedStamp = async(file) => {
-	let stamp_postParams = {
-		table: {
-			name: 'stamp_images',
-			access_group: 1,
-		}
-	}
+let uploadCreatedStamp = async (file) => {
+  let stamp_postParams = {
+    table: {
+      name: 'stamp_images',
+      access_group: 1
+    }
+  };
 
-	if(uploadedRecordId.value) {
-		stamp_postParams.record_id = uploadedRecordId.value;
-	} else {
-		stamp_postParams.unique_id = '[stamp_images]' + makeSafe(user.user_id);
-	}
+  if (uploadedRecordId.value) {
+    stamp_postParams.record_id = uploadedRecordId.value;
+  } else {
+    stamp_postParams.unique_id = '[stamp_images]' + makeSafe(user.user_id);
+  }
 
-	let stampImageData = new FormData();
-	stampImageData.append("stamp_data", file);
-	console.log({stampImageData});
-	console.log({stamp_postParams});
-	
-	const res = await skapi.postRecord(stampImageData, stamp_postParams);
-	console.log({res});
+  let stampImageData = new FormData();
+  stampImageData.append('stamp_data', file);
+  console.log({ stampImageData });
+  console.log({ stamp_postParams });
 
-	return res;
-}
+  const res = await skapi.postRecord(stampImageData, stamp_postParams);
+  console.log({ res });
+
+  return res;
+};
 
 // 직접 서명
-let uploadStampImage = async(imageUrl) => {
-	makeStampRunning.value = true;
+let uploadStampImage = async (imageUrl) => {
+  makeStampRunning.value = true;
 
-	console.log({imageUrl})
+  console.log({ imageUrl });
 
-	await handleStampBlob(imageUrl);
+  await handleStampBlob(imageUrl);
 
-	if(!onlyStampFile.value) return;
+  if (!onlyStampFile.value) return;
 
-	let uploadGeneratedStampUrl = null;
+  let uploadGeneratedStampUrl = null;
 
-	try {
-		uploadGeneratedStamp.value = await uploadCreatedStamp(onlyStampFile.value);
-		console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
-	} catch(e) {
-		alert('도장 등록 중 오류가 발생했습니다.');
-		throw e;
-	}
-	
-	// if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
-	// 	uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
-	// 	console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
-	// }
+  try {
+    uploadGeneratedStamp.value = await uploadCreatedStamp(onlyStampFile.value);
+    console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
+  } catch (e) {
+    alert('도장 등록 중 오류가 발생했습니다.');
+    throw e;
+  }
 
-	if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
-		// console.log({onlyStampFile: onlyStampFile.value})
-		// console.log({name: uploadingStamp.value.name})
-		let searchStamp = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name);
-		// console.log({searchStamp})
-		if(searchStamp && searchStamp.length) {
-			uploadGeneratedStampUrl = searchStamp[0].url;
-		}
-		console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
-	}
+  // if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
+  // 	uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
+  // 	console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
+  // }
 
-	stempType.value = 'stamp';
+  if (
+    uploadGeneratedStamp.value?.bin &&
+    Object.keys(uploadGeneratedStamp.value?.bin).length &&
+    uploadGeneratedStamp.value?.bin?.stamp_data?.length
+  ) {
+    // console.log({onlyStampFile: onlyStampFile.value})
+    // console.log({name: uploadingStamp.value.name})
+    let searchStamp = uploadGeneratedStamp.value.bin.stamp_data.filter(
+      (stamp) => stamp.filename === uploadingStamp.value.name
+    );
+    // console.log({searchStamp})
+    if (searchStamp && searchStamp.length) {
+      uploadGeneratedStampUrl = searchStamp[0].url;
+    }
+    console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
+  }
 
-	await getStampList(true);
-	
-	if(uploadGeneratedStampUrl) {
-		selectStamp(uploadGeneratedStampUrl);
-	}
+  stempType.value = 'stamp';
 
-	makeStampRunning.value = false;
-	makeSignComplete.value = true;
-}
+  await getStampList(true);
+
+  if (uploadGeneratedStampUrl) {
+    selectStamp(uploadGeneratedStampUrl);
+  }
+
+  makeStampRunning.value = false;
+  makeSignComplete.value = true;
+};
 
 let createStamp = () => {
-	makeStampRunning.value = true;
+  makeStampRunning.value = true;
 
-	// 캔버스와 컨텍스트 가져오기
-	const canvas = document.getElementById('stampCanvas');
-	const ctx = canvas.getContext('2d');
+  // 캔버스와 컨텍스트 가져오기
+  const canvas = document.getElementById('stampCanvas');
+  const ctx = canvas.getContext('2d');
 
-	// 도장 생성 함수
-	function drawStamp(name:string) {
-	  const radius = 30; // 원의 반지름
-	  const centerX = canvas.width / 2;
-	  const centerY = canvas.height / 2;
+  // 도장 생성 함수
+  function drawStamp(name: string) {
+    const radius = 30; // 원의 반지름
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
 
-	  // 캔버스 초기화
-	  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 캔버스 초기화
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	  // 원 그리기
-	  ctx.beginPath();
-	  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-	  ctx.strokeStyle = 'red';
-	  ctx.lineWidth = 3;
-	  ctx.stroke();
-	  ctx.closePath();
+    // 원 그리기
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.closePath();
 
-	  // 이름 텍스트 그리기
-	  ctx.font = 'bold 18px Arial';
-	  ctx.fillStyle = 'red';
-	  ctx.textAlign = 'center';
-	  ctx.textBaseline = 'middle';
-	//   ctx.fillText(name, centerX, centerY);
-	  const textOffsetY = radius * 0.05; // 텍스트를 약간 위로 올림
-	  ctx.fillText(name, centerX, centerY + textOffsetY);
-	}
+    // 이름 텍스트 그리기
+    ctx.font = 'bold 18px Arial';
+    ctx.fillStyle = 'red';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    //   ctx.fillText(name, centerX, centerY);
+    const textOffsetY = radius * 0.05; // 텍스트를 약간 위로 올림
+    ctx.fillText(name, centerX, centerY + textOffsetY);
+  }
 
-	// 초기 도장 생성
-	drawStamp(user.name);
+  // 초기 도장 생성
+  drawStamp(user.name);
 
-	let settingStampName = async() => {
-		await getStampList();
+  let settingStampName = async () => {
+    await getStampList();
 
-		if(uploadedStamp.value && uploadedStamp.value.length) {
-			// 도장 이미지가 있을때 각각의 도장 이름 중 generated-stamp-가 있는지 확인
-			const stampNames = uploadedStamp.value.map(stamp => stamp.filename);
-			console.log(stampNames);
-			const generatedStamp = stampNames.filter(name => name.includes('generated-stamp-'));
-			console.log(generatedStamp);
-			
-			// generatedStamp가 있으면 그 다음 숫자를 찾아서 도장 이름을 만들어줌
-			if(generatedStamp.length) {
-				const lastStampNumber = generatedStamp.map(stamp => parseInt(stamp.split('-')[2])).sort((a, b) => b - a)[0];
-				return `generated-stamp-${lastStampNumber + 1}`;
-			} else {
-				return 'generated-stamp-1';
-			}
-		} else {
-			return 'generated-stamp-1';
-		}
-	}
+    if (uploadedStamp.value && uploadedStamp.value.length) {
+      // 도장 이미지가 있을때 각각의 도장 이름 중 generated-stamp-가 있는지 확인
+      const stampNames = uploadedStamp.value.map((stamp) => stamp.filename);
+      console.log(stampNames);
+      const generatedStamp = stampNames.filter((name) => name.includes('generated-stamp-'));
+      console.log(generatedStamp);
 
-	// 캔버스에서 Blob 생성 후 서버로 업로드
-	canvas.toBlob(async(blob) => {
-		let stampName = await settingStampName();
-		let file = new File([blob], stampName, { type: "image/png" });
+      // generatedStamp가 있으면 그 다음 숫자를 찾아서 도장 이름을 만들어줌
+      if (generatedStamp.length) {
+        const lastStampNumber = generatedStamp
+          .map((stamp) => parseInt(stamp.split('-')[2]))
+          .sort((a, b) => b - a)[0];
+        return `generated-stamp-${lastStampNumber + 1}`;
+      } else {
+        return 'generated-stamp-1';
+      }
+    } else {
+      return 'generated-stamp-1';
+    }
+  };
 
-		try {
-			uploadGeneratedStamp.value = await uploadCreatedStamp(file);
-			console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
-		} catch(e) {
-			alert('도장 등록 중 오류가 발생했습니다.');
-			throw e;
-		}
+  // 캔버스에서 Blob 생성 후 서버로 업로드
+  canvas.toBlob(async (blob) => {
+    let stampName = await settingStampName();
+    let file = new File([blob], stampName, { type: 'image/png' });
 
-		if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
-			previewStamp.value = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === stampName)[0].url;
-		} else {
-			getStampList(true);
-		}
+    try {
+      uploadGeneratedStamp.value = await uploadCreatedStamp(file);
+      console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
+    } catch (e) {
+      alert('도장 등록 중 오류가 발생했습니다.');
+      throw e;
+    }
 
-		if(previewStamp.value) {
-			selectStamp(previewStamp.value);
-		}
+    if (
+      uploadGeneratedStamp.value?.bin &&
+      Object.keys(uploadGeneratedStamp.value?.bin).length &&
+      uploadGeneratedStamp.value?.bin?.stamp_data?.length
+    ) {
+      previewStamp.value = uploadGeneratedStamp.value.bin.stamp_data.filter(
+        (stamp) => stamp.filename === stampName
+      )[0].url;
+    } else {
+      getStampList(true);
+    }
 
-		makeStampRunning.value = false;
-		makeStampComplete.value = true;
-	}, "image/png");
-}
+    if (previewStamp.value) {
+      selectStamp(previewStamp.value);
+    }
+
+    makeStampRunning.value = false;
+    makeStampComplete.value = true;
+  }, 'image/png');
+};
 
 let selectStamp = (url) => {
-	if(url.includes('?')) {
-		selectedStamp.value = url.split('?')[0];
-	}
-	selectedStampComplete.value = true;
-}
+  if (url.includes('?')) {
+    selectedStamp.value = url.split('?')[0];
+  }
+  selectedStampComplete.value = true;
+};
 
 // 다른 사람 결재 여부 확인
 const approvedAudit = async () => {
-	try {
-		const res = await skapi.getRecords({
-			table: {
-				name: 'audit_approval',
-				access_group: 'authorized'
-			},
-			reference: auditId.value
-		})
+  try {
+    const res = await skapi.getRecords({
+      table: {
+        name: 'audit_approval',
+        access_group: 'authorized'
+      },
+      reference: auditId.value
+    });
 
-		return res.list;
-	} catch (error) {
-		console.error(error);
-	}
-	
-	isModalOpen.value = false;
-}
+    return res.list;
+  } catch (error) {
+    console.error(error);
+  }
+
+  isModalOpen.value = false;
+};
 
 // 결재 서류 가져오기
 const getAuditDetail = async () => {
-	getAuditDetailRunning.value = true;
+  getAuditDetailRunning.value = true;
 
-	// 초기화
-	auditDoContent.value = [];
-	approverList.value = [];
-	agreerList.value = [];
-	auditorList.value = [];
-	uploadedFile.value = [];
-	selectedAuditors.value = {
-		approvers: [],
-		agreers: [],
-		receivers: []
-	};
-	isCanceled.value = false;
+  // 초기화
+  auditDoContent.value = [];
+  approverList.value = [];
+  agreerList.value = [];
+  auditorList.value = [];
+  uploadedFile.value = [];
+  selectedAuditors.value = {
+    approvers: [],
+    agreers: [],
+    receivers: []
+  };
+  isCanceled.value = false;
 
-	if(!auditId.value) {
-		getAuditDetailRunning.value = false;
-		return;
-	}
+  if (!auditId.value) {
+    getAuditDetailRunning.value = false;
+    return;
+  }
 
-	try {
-		const auditDoc = (await skapi.getRecords({
-			record_id: auditId.value
-		})).list[0];
+  try {
+    const auditDoc = (
+      await skapi.getRecords({
+        record_id: auditId.value
+      })
+    ).list[0];
 
-		console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
+    console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
 
-		if (auditDoc) {
-			auditDoContent.value = auditDoc;
-		}
+    if (auditDoc) {
+      auditDoContent.value = auditDoc;
+    }
 
-		skapi.getRecords({
-			table: {
-				name: 'audit_canceled:' + auditId.value,
-				access_group: 'authorized'
-			}
-		}).then(res => {
-			if (res.list && res.list.length) {
-				isCanceled.value = true;
-			} else {
-				isCanceled.value = false;
-			}
-		}).catch(err => {
-			isCanceled.value = false;
-		})
+    skapi
+      .getRecords({
+        table: {
+          name: 'audit_canceled:' + auditId.value,
+          access_group: 'authorized'
+        }
+      })
+      .then((res) => {
+        if (res.list && res.list.length) {
+          isCanceled.value = true;
+        } else {
+          isCanceled.value = false;
+        }
+      })
+      .catch((err) => {
+        isCanceled.value = false;
+      });
 
-		const auditors = JSON.parse(auditDoc.data.auditors);
-		console.log('결재자 === auditors : ', auditors);
+    const auditors = JSON.parse(auditDoc.data.auditors);
+    console.log('결재자 === auditors : ', auditors);
 
-		let getAuditorInfo = async (uid) => {
-			let user_id = uid.replaceAll('_', '-');
-			let userInfo = await getUserInfo(user_id);
-			
-			return userInfo.list[0];
-		}
+    let getAuditorInfo = async (uid) => {
+      let user_id = uid.replaceAll('_', '-');
+      let userInfo = await getUserInfo(user_id);
 
-		let processAuditors = async (role: string) => {
-			if (auditors?.[role]) {
-				for (let uid of auditors[role]) {
-					let user = await getAuditorInfo(uid);
-					selectedAuditors.value[role].push(user);
-				}
-			}
-		};
+      return userInfo.list[0];
+    };
 
-		await Promise.all([
-			processAuditors('approvers'),
-			processAuditors('agreers'),
-			processAuditors('receivers'),
-		]);
+    let processAuditors = async (role: string) => {
+      if (auditors?.[role]) {
+        for (let uid of auditors[role]) {
+          let user = await getAuditorInfo(uid);
+          selectedAuditors.value[role].push(user);
+        }
+      }
+    };
 
-		if(Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
-			let fileList = [];
-			let additional_data = auditDoc.bin.additional_data;
+    await Promise.all([
+      processAuditors('approvers'),
+      processAuditors('agreers'),
+      processAuditors('receivers')
+    ]);
 
-			function getFileUserId(str) {
-				if (!str) return "";
-				return str.split("/")[3];
-			}
+    if (Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
+      let fileList = [];
+      let additional_data = auditDoc.bin.additional_data;
 
-			const result = additional_data.map((el) => ({
-				...el,
-				user_id: getFileUserId(el.path),
-			}));
+      function getFileUserId(str) {
+        if (!str) return '';
+        return str.split('/')[3];
+      }
 
-			fileList.push(...result);
+      const result = additional_data.map((el) => ({
+        ...el,
+        user_id: getFileUserId(el.path)
+      }));
 
-			uploadedFile.value = fileList;
-			// for(let f of fileList) {
-			// 	skapi.getFile(f.url, {dataType: 'endpoint'}).then(r=>console.log({r}));
-			// }
-			// console.log('uploadedFile : ', uploadedFile.value);
-		} else {
-			uploadedFile.value = [];
-		}
+      fileList.push(...result);
 
-		getAuditDetailRunning.value = false;
-		
-		const approvals = await approvedAudit();
-		console.log('결재완료자 === getAuditDetail === approvals : ', approvals);
+      uploadedFile.value = fileList;
+      // for(let f of fileList) {
+      // 	skapi.getFile(f.url, {dataType: 'endpoint'}).then(r=>console.log({r}));
+      // }
+      // console.log('uploadedFile : ', uploadedFile.value);
+    } else {
+      uploadedFile.value = [];
+    }
 
-		const approvalUserList = [];
-		const newTags = auditDoc.tags.map(a => a.replaceAll('_', '-')); // 모든 결재자
-		
-		newTags.forEach(auditor => {
+    getAuditDetailRunning.value = false;
 
-			if(auditor.includes('receiver')) return;
+    const approvals = await approvedAudit();
+    // console.log('결재완료자 === getAuditDetail === approvals : ', approvals);
 
-			let oa_has_audited_str = null;
+    const approvalUserList = [];
+    const newTags = auditDoc.tags.map((a) => a.replaceAll('_', '-')); // 모든 결재자
 
-			approvals.forEach(el => {
-				console.log('el : ', el);
+    await Promise.all(
+      newTags.map(async (auditor) => {
+        if (auditor.includes('receiver')) return;
 
-				if(approvals.user_id === auditor.split(':')[1]) {
-					oa_has_audited_str = el.data.approved ? '결재함' : '반려함';
-					
-				}
-			});
-		});
+        const [approvedType, userId] = auditor.split(':');
+        const approval = approvals.find((approval) => approval.user_id === userId);
 
-		// newTags.forEach((auditor) => {
-		// 	let oa_has_audited_str = null;
+        if (approval) {
+          const approvedStr = approval.data.approved ? '결재함' : '반려함';
 
-		// 	if(auditor.includes('receiver')) return;
+          // 도장 파일 가져오기
+          const stampFile = await skapi.getFile(approval.data.stamp, {
+            dataType: 'endpoint'
+          });
 
-		// 	approvals.forEach(async(approval) => {
-		// 		console.log('aprroval : ', approval);
-		// 		console.log('auditor : ', auditor);
+          approvalUserList.push({
+            user_id: userId,
+            approved_type: approvedType,
+            approved: approval.data.approved,
+            stamp: stampFile,
+            approved_str: approvedStr
+          });
+        } else {
+          approvalUserList.push({
+            user_id: userId,
+            approved_type: approvedType,
+            approved: null,
+            stamp: null,
+            approved_str: '결재대기중'
+          });
+        }
+      })
+    );
+    // console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
 
-		// 		if (approval.user_id === auditor.split(':')[1]) {
-		// 			oa_has_audited_str = approval.data.approved ? '결재함' : '반려함';
+    const userIds = approvalUserList.map((auditor) => auditor.user_id);
+    const userList = await Promise.all(userIds.map(async (auditor) => await getUserInfo(auditor)));
+    const userInfoList = userList.map((user) => (user.list.length ? user.list[0] : null));
 
-		// 			let getStampFile = await skapi.getFile((approval.data.stamp as string), {
-		// 				dataType: 'endpoint',
-		// 			});
-		// 			console.log({getStampFile});
+    // 결재자 정보와 결재 결과 합치기
+    const newAuditUserList = approvalUserList.map((auditor) => ({
+      ...auditor,
+      user_info: userInfoList.find((user) => user?.user_id === auditor.user_id),
+      comment: approvals.find((user) => user?.user_id === auditor.user_id)?.data.comment,
+      date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date
+    }));
 
-		// 			const result = {
-		// 				user_id: auditor.split(':')[1],
-		// 				approved_type: auditor.split(':')[0],
-		// 				approved: approval.data.approved,
-		// 				stamp: getStampFile,
-		// 				approved_str: oa_has_audited_str
-		// 			}
-		// 			console.log('AA result : ', result);
+    // 전체 결재자 리스트
+    auditorList.value = newAuditUserList;
 
-		// 			approvalUserList.push(result);
-		// 		}
-		// 	});
+    // auditorList 결재, 합의 순서대로
+    auditorList.value.sort((a, b) => {
+      if (a.approved_type === 'approver' && b.approved_type === 'agreer') return -1;
+      if (a.approved_type === 'agreer' && b.approved_type === 'approver') return 1;
+      return 0;
+    });
 
-		// 	if (!oa_has_audited_str) {
-		// 		const result = {
-		// 			user_id: auditor.split(':')[1],
-		// 			approved_type: auditor.split(':')[0],
-		// 			approved: null,
-		// 			stamp: null,
-		// 			approved_str: '결재대기중'
-		// 		}
-		// 		console.log('BB result : ', result);
-				
-		// 		approvalUserList.push(result);
-		// 	}
-		// })
-
-		// console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
-
-		// const userList = approvalUserList.map(auditor => {
-		// 	console.log('auditor : ', auditor);
-		// })
-
-		// const userList = await Promise.all(approvalUserList.map(async (auditor) => await getUserInfo(auditor.user_id)));
-		// console.log({userList});
-		// const userInfoList = userList.map(user => user.list.length ? user.list[0] : null);       
-		// console.log({userInfoList});
-
-		// // 결재자 정보와 결재 결과 합치기
-		// const newAuditUserList = approvalUserList.map((auditor) => ({
-		// 	...auditor,
-		// 	user_info: userInfoList.find((user) => user?.user_id === auditor.user_id),
-		// 	comment: approvals.find((user) => user?.user_id === auditor.user_id)?.data.comment,
-		// 	date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date,
-		// }));
-
-		// // 전체 결재자 리스트
-		// auditorList.value = newAuditUserList;
-
-		// // auditorList 결재, 합의 순서대로
-		// auditorList.value.sort((a, b) => {
-		// 	if (a.approved_type === 'approver' && b.approved_type === 'agreer') return -1;
-		// 	if (a.approved_type === 'agreer' && b.approved_type === 'approver') return 1;
-		// 	return 0;
-		// });
-
-		// // newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
-		// approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
-		// agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
-	} catch (error) {
-		getAuditDetailRunning.value = false;
-		console.error(error);
-	}
-}
+    // newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
+    approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
+    agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
+  } catch (error) {
+    getAuditDetailRunning.value = false;
+    console.error(error);
+  }
+};
 
 // 결재 하기
 const postApproval = async () => {
-	if (isPosting) return; // 중복 호출 방지
-	isPosting = true;
+  if (isPosting) return; // 중복 호출 방지
+  isPosting = true;
 
-	// if (e) {
-	// 	e.preventDefault();
-	// }
-  
-	try {
-		if (!auditId.value) return;
+  // if (e) {
+  // 	e.preventDefault();
+  // }
 
-		const userId = user.user_id;
-		// const approved = (document.querySelector('input[name="approved"]:checked') as HTMLInputElement)?.value;
-		const approved = approveAudit.value ? 'approve' : 'reject';
-		const approvedDate = new Date().getTime();
+  try {
+    if (!auditId.value) return;
 
-		console.log('=== postApproval === approved : ', approved);
+    const userId = user.user_id;
+    // const approved = (document.querySelector('input[name="approved"]:checked') as HTMLInputElement)?.value;
+    const approved = approveAudit.value ? 'approve' : 'reject';
+    const approvedDate = new Date().getTime();
 
-		if(approved === 'approve' && (!selectedStamp.value || !selectedStampComplete.value)) {
-			alert('도장을 선택해주세요.');
-			isPosting = false;
-			return;
-		}
+    console.log('=== postApproval === approved : ', approved);
 
-		const data = {
-			approved: approved,
-			comment: approvedComment.value,
-			stamp: selectedStamp.value,
-			date: approvedDate,
-		}
+    if (approved === 'approve' && (!selectedStamp.value || !selectedStampComplete.value)) {
+      alert('도장을 선택해주세요.');
+      isPosting = false;
+      return;
+    }
 
-		// 결재 하는 요청
-		const res = await skapi.postRecord(data, {
-			table: {
-				name: 'audit_approval',
-				access_group: 'authorized'
-			},
-			reference: auditId.value,
-			tags: [(userId as string).replaceAll('-', '_')], 
-		});
-		console.log('결재 === postApproval === res : ', res);
+    const data = {
+      approved: approved,
+      comment: approvedComment.value,
+      stamp: selectedStamp.value,
+      date: approvedDate
+    };
 
-		// 실시간 알림 보내기
-		skapi.postRealtime(
-			{
-				audit_approval: {
-					noti_id: res.record_id,
-					noti_type: 'audit',
-					send_date: approvedDate,
-					send_user: user.user_id,
-					audit_info: {
-						audit_type: 'approved',
-						to_audit: auditDoContent.value?.data?.to_audit,
-						audit_doc_id: auditId.value,
-						approval: res.data.approved,
-					}
-				}
-			},
-			auditDoContent.value.user_id
-		).then(res => {
-			console.log('결재알림 === postRealtime === res : ', res);
-		});
+    // 결재 하는 요청
+    const res = await skapi.postRecord(data, {
+      table: {
+        name: 'audit_approval',
+        access_group: 'authorized'
+      },
+      reference: auditId.value,
+      tags: [(userId as string).replaceAll('-', '_')]
+    });
+    console.log('결재 === postApproval === res : ', res);
 
-		// 실시간 못 받을 경우 알림 기록 저장
-		skapi.postRecord(
-			{
-				noti_id: res.record_id,
-				noti_type: 'audit',
-				send_date: approvedDate,
-				send_user: user.user_id,
-				audit_info: {
-					audit_type: 'approved',
-					to_audit: auditDoContent.value?.data?.to_audit,
-					audit_doc_id: auditId.value,
-					approval: res.data.approved,
-				}
-			},
-			{
-				readonly: true,
-				table: {
-					name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
-					access_group: "authorized",
-				},
-			}
-		)
-		.then((res) => {
-			console.log("결재알림기록 === postRecord === res : ", res);
-		});
+    // 실시간 알림 보내기
+    skapi
+      .postRealtime(
+        {
+          audit_approval: {
+            noti_id: res.record_id,
+            noti_type: 'audit',
+            send_date: approvedDate,
+            send_user: user.user_id,
+            audit_info: {
+              audit_type: 'approved',
+              to_audit: auditDoContent.value?.data?.to_audit,
+              audit_doc_id: auditId.value,
+              approval: res.data.approved
+            }
+          }
+        },
+        auditDoContent.value.user_id
+      )
+      .then((res) => {
+        console.log('결재알림 === postRealtime === res : ', res);
+      });
 
-		window.alert('결재가 완료되었습니다.');
-		closeModal();
-		getAuditDetail();
-	} catch (error) {
-		console.error(error);
-	} finally {
-		isPosting = false;
-	}
-}
+    // 실시간 못 받을 경우 알림 기록 저장
+    skapi
+      .postRecord(
+        {
+          noti_id: res.record_id,
+          noti_type: 'audit',
+          send_date: approvedDate,
+          send_user: user.user_id,
+          audit_info: {
+            audit_type: 'approved',
+            to_audit: auditDoContent.value?.data?.to_audit,
+            audit_doc_id: auditId.value,
+            approval: res.data.approved
+          }
+        },
+        {
+          readonly: true,
+          table: {
+            name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+            access_group: 'authorized'
+          }
+        }
+      )
+      .then((res) => {
+        console.log('결재알림기록 === postRecord === res : ', res);
+      });
+
+    window.alert('결재가 완료되었습니다.');
+    closeModal();
+    getAuditDetail();
+  } catch (error) {
+    console.error(error);
+  } finally {
+    isPosting = false;
+  }
+};
 
 const updateScreenSize = () => {
-	isDesktop.value = window.innerWidth > 768;
+  isDesktop.value = window.innerWidth > 768;
 };
 
 const loadStylesheet = () => {
   return new Promise((resolve) => {
-	if (document.getElementById('wysiwyg4all-style')) {
-	  resolve();
-	  return;
-	}
+    if (document.getElementById('wysiwyg4all-style')) {
+      resolve();
+      return;
+    }
 
-	const link = document.createElement('link');
-	link.id = 'wysiwyg4all-style';
-	link.rel = 'stylesheet';
-	link.href = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/wysiwyg4all.css';
-	
-	link.onload = () => resolve();
-	document.head.appendChild(link);
+    const link = document.createElement('link');
+    link.id = 'wysiwyg4all-style';
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/wysiwyg4all.css';
+
+    link.onload = () => resolve();
+    document.head.appendChild(link);
   });
 };
 
 // 결재요청 미리보기
 const previewAudit = () => {
-  const printArea = document.getElementById("printArea");
+  const printArea = document.getElementById('printArea');
 
   // 프린트 전에 input 값들을 span으로 변환
   const prepareForPrint = () => {
-	cleanupAfterPrint(); // 기존에 추가된 span 제거
+    cleanupAfterPrint(); // 기존에 추가된 span 제거
 
-	const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
-	inputs.forEach(input => {
-	  const value = input.value;
+    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+    inputs.forEach((input) => {
+      const value = input.value;
 
-	  // 입력값을 표시할 span 생성
-	  const span = document.createElement('span');
-	  span.className = 'print-value';
-	  span.textContent = value;
+      // 입력값을 표시할 span 생성
+      const span = document.createElement('span');
+      span.className = 'print-value';
+      span.textContent = value;
 
-	  // input 바로 뒤에 span 삽입
-	  input.parentNode.insertBefore(span, input.nextSibling);
+      // input 바로 뒤에 span 삽입
+      input.parentNode.insertBefore(span, input.nextSibling);
 
-	  // input을 숨김
-	  input.style.display = "none";
-	});
+      // input을 숨김
+      input.style.display = 'none';
+    });
   };
 
   // 프린트 후 추가했던 span 제거 및 input 복원
   const cleanupAfterPrint = () => {
-	const printValues = printArea.querySelectorAll('.print-value');
-	printValues.forEach(span => span.remove());
+    const printValues = printArea.querySelectorAll('.print-value');
+    printValues.forEach((span) => span.remove());
 
-	const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
-	inputs.forEach(input => {
-	  input.style.display = "";
-	});
+    const inputs = printArea.querySelectorAll('input:not([type="hidden"]), textarea');
+    inputs.forEach((input) => {
+      input.style.display = '';
+    });
   };
 
   // 동적으로 스타일 추가
   const addPrintStyle = () => {
-	const style = document.createElement("style");
-	style.id = "print-style";
-	style.textContent = `
+    const style = document.createElement('style');
+    style.id = 'print-style';
+    style.textContent = `
 	  @media print {
 		body * { visibility: hidden !important; }
 		#printArea, #printArea * { visibility: visible !important; }
 		#printArea { position: absolute; left: 0; top: 0; width: 100%; }
 	  }
 	`;
-	document.head.appendChild(style);
+    document.head.appendChild(style);
   };
 
   // 스타일 제거
   const removePrintStyle = () => {
-	const style = document.getElementById("print-style");
-	if (style) {
-	  style.remove();
-	}
+    const style = document.getElementById('print-style');
+    if (style) {
+      style.remove();
+    }
   };
 
   window.onbeforeprint = function () {
-	prepareForPrint();
-	addPrintStyle();
+    prepareForPrint();
+    addPrintStyle();
   };
 
   window.onafterprint = function () {
-	cleanupAfterPrint();
-	removePrintStyle();
+    cleanupAfterPrint();
+    removePrintStyle();
   };
 
   window.print();
 };
 
 // 결재 회수 함수
-const canceledAudit = async () => {	
-	// console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
-	// console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
-	
-	const auditors = auditDoContent.value.data.auditors;
-	const parsedAuditors = JSON.parse(auditors);
-	// console.log('결재회수 === canceledAudit === auditors : ', auditors);
-	// console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
+const canceledAudit = async () => {
+  // console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
+  // console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
 
-	// 각 배열에서 ID만 추출
-	const approverIds = parsedAuditors.approvers;
-	const agreerIds = parsedAuditors.agreers;
-	const receiverIds = parsedAuditors.receivers;
+  const auditors = auditDoContent.value.data.auditors;
+  const parsedAuditors = JSON.parse(auditors);
+  // console.log('결재회수 === canceledAudit === auditors : ', auditors);
+  // console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
 
-	// // 결재자 ID 배열 생성
-	const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
-	// console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
+  // 각 배열에서 ID만 추출
+  const approverIds = parsedAuditors.approvers;
+  const agreerIds = parsedAuditors.agreers;
+  const receiverIds = parsedAuditors.receivers;
 
-	// 결재 회수 레코드 저장
-	try {
-		const option = {
-			readonly: true,
-			table: {
-				name: 'audit_canceled:' + auditId.value,
-				access_group: 'authorized'
-			}
-		}
+  // // 결재자 ID 배열 생성
+  const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
+  // console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
 
-		const res = await skapi.postRecord(null, option);
-		console.log('결재회수 === postRecord === res : ', res);
+  // 결재 회수 레코드 저장
+  try {
+    const option = {
+      readonly: true,
+      table: {
+        name: 'audit_canceled:' + auditId.value,
+        access_group: 'authorized'
+      }
+    };
 
-	} catch (error) {
-		console.error(error);
-	}
+    const res = await skapi.postRecord(null, option);
+    console.log('결재회수 === postRecord === res : ', res);
+  } catch (error) {
+    console.error(error);
+  }
 
-	// 결재 회수 실시간 알림 data
-	const postRealtimeData = {
-		audit_canceled: {
-			noti_id: auditId.value,
-			noti_type: 'audit',
-			send_date: new Date().getTime(),
-			send_user: user.user_id,
-			audit_info: {
-				audit_type: 'canceled',
-				to_audit: auditDoContent.value?.data?.to_audit,
-				audit_doc_id: auditId.value,
-			}
-		}
-	};
+  // 결재 회수 실시간 알림 data
+  const postRealtimeData = {
+    audit_canceled: {
+      noti_id: auditId.value,
+      noti_type: 'audit',
+      send_date: new Date().getTime(),
+      send_user: user.user_id,
+      audit_info: {
+        audit_type: 'canceled',
+        to_audit: auditDoContent.value?.data?.to_audit,
+        audit_doc_id: auditId.value
+      }
+    }
+  };
 
-	// 결재 회수 알림 기록 data
-	const postRecordData = {
-		noti_id: auditId.value,
-		noti_type: 'audit',
-		send_date: new Date().getTime(),
-		send_user: user.user_id,
-		audit_info: {
-			audit_type: 'canceled',
-			to_audit: auditDoContent.value?.data?.to_audit,
-			audit_doc_id: auditId.value,
-		}
-	};
+  // 결재 회수 알림 기록 data
+  const postRecordData = {
+    noti_id: auditId.value,
+    noti_type: 'audit',
+    send_date: new Date().getTime(),
+    send_user: user.user_id,
+    audit_info: {
+      audit_type: 'canceled',
+      to_audit: auditDoContent.value?.data?.to_audit,
+      audit_doc_id: auditId.value
+    }
+  };
 
-	// 각 그룹별 알림 전송 Promise.all로 동시에 처리
-	try {
-		const results = await Promise.all(
-			allAuditors.map(async(auditor) => {
-				// 실시간 알림 전송
-				const realtimeResult = await skapi.postRealtime(postRealtimeData, auditor.replaceAll('_', '-'));
-				
-				// 알림 기록 저장
-				const recordResult = await skapi.postRecord(postRecordData, {
-					readonly: true,
-					table: {
-						name: `realtime:${auditor.replaceAll('-', '_')}`,
-						access_group: "authorized",
-					},
-				});
+  // 각 그룹별 알림 전송 Promise.all로 동시에 처리
+  try {
+    const results = await Promise.all(
+      allAuditors.map(async (auditor) => {
+        // 실시간 알림 전송
+        const realtimeResult = await skapi.postRealtime(
+          postRealtimeData,
+          auditor.replaceAll('_', '-')
+        );
 
-				return {
-					auditor: auditor,
-					realtimeResult: realtimeResult,
-					recordResult: recordResult,
-				};
-			})
-		);
-		console.log('결재회수 알림 전송 완료:', results);
-	} catch (error) {
-		console.error('결재회수 알림 전송 중 오류:', error);
-	}
+        // 알림 기록 저장
+        const recordResult = await skapi.postRecord(postRecordData, {
+          readonly: true,
+          table: {
+            name: `realtime:${auditor.replaceAll('-', '_')}`,
+            access_group: 'authorized'
+          }
+        });
 
-	// // 실시간 못 받을 경우 알림 기록 저장
-	// skapi.postRecord(
-	// 	{
-	// 		noti_id: auditId.value,
-	// 		noti_type: 'audit',
-	// 		send_date: new Date().getTime(),
-	// 		send_user: user.user_id,
-	// 		audit_info: {
-	// 			audit_type: 'canceled',
-	// 			to_audit: auditDoContent.value?.data?.to_audit,
-	// 			audit_doc_id: auditId.value,
-	// 		}
-	// 	},
-	// 	{
-	// 		readonly: true,
-	// 		table: {
-	// 			name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
-	// 			access_group: "authorized",
-	// 		},
-	// 	}
-	// )
-	// .then((res) => {
-	// 	console.log("결재회수 알림기록 === postRecord === res : ", res);
-	// });
+        return {
+          auditor: auditor,
+          realtimeResult: realtimeResult,
+          recordResult: recordResult
+        };
+      })
+    );
+    console.log('결재회수 알림 전송 완료:', results);
+  } catch (error) {
+    console.error('결재회수 알림 전송 중 오류:', error);
+  }
 
-	window.alert('결재가 회수되었습니다.');
-	disabled.value = true; // 회수 버튼 비활성화
-	isCanceled.value = true; // 회수 여부 변경
+  // // 실시간 못 받을 경우 알림 기록 저장
+  // skapi.postRecord(
+  // 	{
+  // 		noti_id: auditId.value,
+  // 		noti_type: 'audit',
+  // 		send_date: new Date().getTime(),
+  // 		send_user: user.user_id,
+  // 		audit_info: {
+  // 			audit_type: 'canceled',
+  // 			to_audit: auditDoContent.value?.data?.to_audit,
+  // 			audit_doc_id: auditId.value,
+  // 		}
+  // 	},
+  // 	{
+  // 		readonly: true,
+  // 		table: {
+  // 			name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+  // 			access_group: "authorized",
+  // 		},
+  // 	}
+  // )
+  // .then((res) => {
+  // 	console.log("결재회수 알림기록 === postRecord === res : ", res);
+  // });
 
-	await nextTick();
+  window.alert('결재가 회수되었습니다.');
+  disabled.value = true; // 회수 버튼 비활성화
+  isCanceled.value = true; // 회수 여부 변경
+
+  await nextTick();
 };
 
 onMounted(() => {
-	window.addEventListener('resize', updateScreenSize);
+  window.addEventListener('resize', updateScreenSize);
 
-	auditId.value = (route.params.auditId as string);
-	getAuditDetail();
-	loadStylesheet();
+  auditId.value = route.params.auditId as string;
+  getAuditDetail();
+  loadStylesheet();
 });
 
 onUnmounted(() => {
-	window.removeEventListener('resize', updateScreenSize);
+  window.removeEventListener('resize', updateScreenSize);
 });
 </script>
 
 <style scoped lang="less">
 .title {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: end;
-	gap: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
 
-	span {
-		color: var(--gray-color-400);
-		line-height: 1.4;
-	}
+  span {
+    color: var(--gray-color-400);
+    line-height: 1.4;
+  }
 }
 
 .wrap {
-	padding: 3rem 2.4rem;
+  padding: 3rem 2.4rem;
 }
 
 .form-wrap {
-	position: relative;
-	max-width: 900px;
+  position: relative;
+  max-width: 900px;
 
-	.title {
-		position: relative;
-		display: flex;
-		justify-content: center;
-		align-items: baseline;
-		gap: 4px;
-		flex-wrap: wrap;
-		margin-bottom: 2rem;
+  .title {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
 
-		h2 {
-			font-size: 2rem;
-			line-height: 1.2;
-		}
+    h2 {
+      font-size: 2rem;
+      line-height: 1.2;
+    }
 
-		.icon {
-			padding: 0;
-			cursor: pointer;
-		}
-	}
+    .icon {
+      padding: 0;
+      cursor: pointer;
+    }
+  }
 }
 
 .table {
-	tr {
-		td {
-			padding: 0.75rem;
-		}
-	}
+  tr {
+    td {
+      padding: 0.75rem;
+    }
+  }
 
-	tbody {
-		th {
-			position: relative;
+  tbody {
+    th {
+      position: relative;
 
-			.add-btn {
-				position: absolute;
-				left: 50%;
-				bottom: -12px;
-				background-color: #fff;
-				border: 1px solid var(--primary-color-300);
-				border-radius: 50%;
-				transform: translateX(-50%);
-				z-index: 10;
-				cursor: pointer;
+      .add-btn {
+        position: absolute;
+        left: 50%;
+        bottom: -12px;
+        background-color: #fff;
+        border: 1px solid var(--primary-color-300);
+        border-radius: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        cursor: pointer;
 
-				.icon {
-					padding: 0;
+        .icon {
+          padding: 0;
 
-					svg {
-						width: 18px;
-						height: 18px;
-						fill: var(--primary-color-400);
-					}
-				}
+          svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--primary-color-400);
+          }
+        }
 
-				&:hover {
-					background-color: var(--primary-color-50);
-				}
-			}
-		}
-		tr {
-			&:hover {
-				background-color: transparent;
-			}
+        &:hover {
+          background-color: var(--primary-color-50);
+        }
+      }
+    }
+    tr {
+      &:hover {
+        background-color: transparent;
+      }
 
-			&:first-of-type {
-				border-top: 1px solid var(--gray-color-300);
-			}
-		}
-	}
+      &:first-of-type {
+        border-top: 1px solid var(--gray-color-300);
+      }
+    }
+  }
 }
 
 .approver-wrap {
-	display: grid;
-	grid-template-columns: repeat(8, 1fr);
-	text-align: center;
-	height: 100%;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  text-align: center;
+  height: 100%;
 
-	.approver-list {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-		min-width: 100px;
-		min-height: 8rem;
-		border-right: 1px solid var(--gray-color-300);
-		border-bottom: 1px solid var(--gray-color-300);
-		margin-bottom: -1px;
-		position: relative;
+  .approver-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 100px;
+    min-height: 8rem;
+    border-right: 1px solid var(--gray-color-300);
+    border-bottom: 1px solid var(--gray-color-300);
+    margin-bottom: -1px;
+    position: relative;
 
-		&.noexist {
-			background-color: var(--gray-color-50);
+    &.noexist {
+      background-color: var(--gray-color-50);
 
-			span {
-				color: var(--gray-color-300);
-			}
-		}
-	}
+      span {
+        color: var(--gray-color-300);
+      }
+    }
+  }
 
-	.num {
-		border-bottom: 1px solid var(--gray-color-200);
-		padding: 0.25rem;
-	}
+  .num {
+    border-bottom: 1px solid var(--gray-color-200);
+    padding: 0.25rem;
+  }
 
-	.sign {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: 100%;
-		border-bottom: 1px solid var(--gray-color-200);
-	}
+  .sign {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    border-bottom: 1px solid var(--gray-color-200);
+  }
 
-	.approver {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		padding: 0.25rem;
-	}
+  .approver {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.25rem;
+  }
 }
 
 .reference-wrap {
-	display: flex;
-	gap: 8px;
-	flex-wrap: wrap;
-	text-align: center;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  text-align: center;
 
-	.reference-list {
-		display: flex;
-		justify-content: center;
-		background-color: var(--gray-color-50);
-		border: 1px solid var(--gray-color-300);
-		border-radius: 8px;
-	}
+  .reference-list {
+    display: flex;
+    justify-content: center;
+    background-color: var(--gray-color-50);
+    border: 1px solid var(--gray-color-300);
+    border-radius: 8px;
+  }
 
-	.referencer {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: 100%;
-		padding: 0.25rem;
-		gap: 2px;
+  .referencer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0.25rem;
+    gap: 2px;
 
-		.icon {
-			padding: 0;
+    .icon {
+      padding: 0;
 
-			&:hover {
-				cursor: pointer;
-			}
-		}
-	}
+      &:hover {
+        cursor: pointer;
+      }
+    }
+  }
 }
 
 // 추가의견 영역
 .sub-title {
-	margin-top: 4rem;
+  margin-top: 4rem;
 }
 
 .reply-list {
-	// margin-bottom: 3rem;
-	// margin-top: 3rem;
+  // margin-bottom: 3rem;
+  // margin-top: 3rem;
 
-	.reply-item {
-		// border: 1px dashed var(--gray-color-300);
-		// border-radius: 8px;
-		// padding: 0.5rem;
-		// display: flex;
-		// align-items: center;
-		gap: 0.5rem;
-		// margin-bottom: 0.5rem;
-		margin-bottom: 1.5rem;
+  .reply-item {
+    // border: 1px dashed var(--gray-color-300);
+    // border-radius: 8px;
+    // padding: 0.5rem;
+    // display: flex;
+    // align-items: center;
+    gap: 0.5rem;
+    // margin-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
 
-		&:last-of-type {
-			margin-bottom: 0;
-		}
-	}
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+  }
 
-	.icon {
-		padding: 0;
-	}
+  .icon {
+    padding: 0;
+  }
 
-	.reply-cont-wrap {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
+  .reply-cont-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
 
-	.auditor {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.7rem;
-		align-items: center;
-		margin-bottom: 0.5rem;
-		padding-left: 0.2rem;
+  .auditor {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding-left: 0.2rem;
 
-		.info {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-		}
-		.name {
-			// display: inline-block;
-			font-size: 0.9rem;
-		}
-		.approved {
-			// display: inline-block;
-			// margin-right: 4px;
-			font-size: 12px;
-			border: 1px solid var(--primary-color-300);
-			padding: 3px 4px;
-			border-radius: 8px;
-			color: var(--primary-color-400);
+    .info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .name {
+      // display: inline-block;
+      font-size: 0.9rem;
+    }
+    .approved {
+      // display: inline-block;
+      // margin-right: 4px;
+      font-size: 12px;
+      border: 1px solid var(--primary-color-300);
+      padding: 3px 4px;
+      border-radius: 8px;
+      color: var(--primary-color-400);
 
-			&.reject {
-				color: var(--warning-color-400);
-				border-color: var(--warning-color-400);
-			}
-		}
-		.date {
-			font-size: 0.8rem;
-			color: var(--gray-color-400);
-		}
-	}
+      &.reject {
+        color: var(--warning-color-400);
+        border-color: var(--warning-color-400);
+      }
+    }
+    .date {
+      font-size: 0.8rem;
+      color: var(--gray-color-400);
+    }
+  }
 
-	.comment {
-		background-color: var(--gray-color-50);
-		padding: 0.8rem 1rem;
-		border-radius: 20px;
-		font-size: 0.9rem;
+  .comment {
+    background-color: var(--gray-color-50);
+    padding: 0.8rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
 
-		&.reject {
-			color: var(--warning-color-400);
-		}
-	}
+    &.reject {
+      color: var(--warning-color-400);
+    }
+  }
 
-	.approver {
-		font-size: 0.9rem;
+  .approver {
+    font-size: 0.9rem;
 
-		// &::after {
-		// 	content: ' : ';
-		// 	display: inline-block;
-		// 	margin-left: 0.5rem;
-		// }
-	}
+    // &::after {
+    // 	content: ' : ';
+    // 	display: inline-block;
+    // 	margin-left: 0.5rem;
+    // }
+  }
 
-	.reply-cont {
-		font-size: 0.9rem;
-		color: var(--gray-color-500);
-		line-height: 1.2;
+  .reply-cont {
+    font-size: 0.9rem;
+    color: var(--gray-color-500);
+    line-height: 1.2;
 
-		&.reject {
-			color: var(--warning-color-400);
-		}
-	}
+    &.reject {
+      color: var(--warning-color-400);
+    }
+  }
 }
 
 .empty {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	height: 100%;
-	font-size: 0.875rem;
-	line-height: 1.2;
-	color: var(--gray-color-400);
-	// cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  color: var(--gray-color-400);
+  // cursor: pointer;
 }
 
 .button-wrap {
-	margin-top: 3rem;
+  margin-top: 3rem;
 }
 
 .btn {
-	margin-top: 0;
+  margin-top: 0;
 }
 
 .modal-stamp {
-	.modal-body {
-		p {
-			font-size: 0.9rem;
-			margin-bottom: 0.5rem;
-		}
-	}
+  .modal-body {
+    p {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+  }
 }
 
 .modal-approve {
-	.tab-menu {
-		display: flex;
-		align-items: center;
-		justify-content: center;
+  .tab-menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-		ul {
-			position: relative;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			background-color: var(--gray-color-50);
-			max-width: 300px;
-			border-radius: 30px;
+    ul {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--gray-color-50);
+      max-width: 300px;
+      border-radius: 30px;
 
-			li {
-				cursor: pointer;
-				font-size: 0.9rem;
-				color: var(--gray-color-400);
-				transition: all 0.3s;
-				padding: 0.5rem 1rem;
-				border-radius: 30px;
+      li {
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: var(--gray-color-400);
+        transition: all 0.3s;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
 
-				&.active {
-					color: #fff;
-					background-color: var(--primary-color-400);
-				}
-				&.disabled {
-					opacity: 0.5;
-					cursor: default;
-					pointer-events: none;
-				}
-			}
-		}
-	}
+        &.active {
+          color: #fff;
+          background-color: var(--primary-color-400);
+        }
+        &.disabled {
+          opacity: 0.5;
+          cursor: default;
+          pointer-events: none;
+        }
+      }
+    }
+  }
 }
 
 .stamp-wrap {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	// grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-	// grid-template-columns: repeat(4, minmax(220px, 1fr));
-	gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  // grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  // grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 1rem;
 
-	.stamp-grid {
-		position: relative;
-		width: 100%;
+  .stamp-grid {
+    position: relative;
+    width: 100%;
 
-		&::after {
-			content: '';
-			display: block;
-			padding-bottom: 100%;
-		}
+    &::after {
+      content: '';
+      display: block;
+      padding-bottom: 100%;
+    }
 
-		&.loading {
-			border: 0;
-		}
+    &.loading {
+      border: 0;
+    }
 
-		// .checkbox {
-		// 	position: absolute;
-		// 	top: 4px;
-		// 	left: 4px;
-		// 	z-index: 10;
-		// }
+    // .checkbox {
+    // 	position: absolute;
+    // 	top: 4px;
+    // 	left: 4px;
+    // 	z-index: 10;
+    // }
 
-		.stamp {
-			position: absolute;
-			width: 100%;
-			height: 100%;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			border: 1px solid var(--gray-color-100);
-			border-radius: 0.5rem;
-			cursor: pointer;
+    .stamp {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--gray-color-100);
+      border-radius: 0.5rem;
+      cursor: pointer;
 
-			&.selected {
-				border-color: var(--primary-color-400-dark);
-				border-width: medium;
-				background-color: var(--primary-color-25);
-			}
+      &.selected {
+        border-color: var(--primary-color-400-dark);
+        border-width: medium;
+        background-color: var(--primary-color-25);
+      }
 
-			// .checkbox {
-			//     position: absolute;
-			//     top: 0.5rem;
-			//     left: 0.5rem;
-			// }
+      // .checkbox {
+      //     position: absolute;
+      //     top: 0.5rem;
+      //     left: 0.5rem;
+      // }
 
-			.add-icon {
-				position: absolute;
-				width: 30px;
-				height: 30px;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-				fill: var(--primary-color-400);
-				// transition: all 0.3s;
-				// fill: var(--gray-color-300);
-			}
+      .add-icon {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        fill: var(--primary-color-400);
+        // transition: all 0.3s;
+        // fill: var(--gray-color-300);
+      }
 
-			.delete-icon {
-				position: absolute;
-				top: 0.5rem;
-				right: 0.5rem;
-				width: 25px;
-				height: 25px;
-				fill: var(--gray-color-300);
-				transition: all 0.3s;
-				cursor: pointer;
+      .delete-icon {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 25px;
+        height: 25px;
+        fill: var(--gray-color-300);
+        transition: all 0.3s;
+        cursor: pointer;
 
-				&:hover {
-					fill: var(--warning-color-400);
-				}
-			}
+        &:hover {
+          fill: var(--warning-color-400);
+        }
+      }
 
-			&.upload-btn {
-				cursor: pointer;
+      &.upload-btn {
+        cursor: pointer;
 
-				#stamp-img {
-					background-color: unset;
-					// transition: all 0.3s;
-					border-color: var(--primary-color-300);
+        #stamp-img {
+          background-color: unset;
+          // transition: all 0.3s;
+          border-color: var(--primary-color-300);
 
-					&::before {
-						content: '';
-						background-color: unset;
-					}
-				}
-				.name {
-					// transition: all 0.3s;
-					// color: var(--gray-color-300);
-					color:var(--primary-color-400);
-				}
+          &::before {
+            content: '';
+            background-color: unset;
+          }
+        }
+        .name {
+          // transition: all 0.3s;
+          // color: var(--gray-color-300);
+          color: var(--primary-color-400);
+        }
 
-				&.disabled {
-					cursor: default;
-					pointer-events: none;
+        &.disabled {
+          cursor: default;
+          pointer-events: none;
 
-					#stamp-img {
-						border-color: var(--gray-color-300);
-					}
-					.add-icon {
-						fill: var(--gray-color-300);
-					}
-					.name {
-						color:var(--gray-color-300);
-					}
-				}
+          #stamp-img {
+            border-color: var(--gray-color-300);
+          }
+          .add-icon {
+            fill: var(--gray-color-300);
+          }
+          .name {
+            color: var(--gray-color-300);
+          }
+        }
 
-				// &:hover {
-				//     #stamp-img {
-				//         border-color: var(--primary-color-300);
-				//     }
-				//     .add-icon {
-				//         fill: var(--primary-color-400);
-				//     }
-				//     .name {
-				//         color:var(--primary-color-400);
-				//     }
-				// }
-			}
+        // &:hover {
+        //     #stamp-img {
+        //         border-color: var(--primary-color-300);
+        //     }
+        //     .add-icon {
+        //         fill: var(--primary-color-400);
+        //     }
+        //     .name {
+        //         color:var(--primary-color-400);
+        //     }
+        // }
+      }
 
-			&.upload-preview {
-				background-color: var(--primary-color-25);
+      &.upload-preview {
+        background-color: var(--primary-color-25);
 
-				#stamp-img {
-					background-color: var(--primary-color-25);
-					border-color: var(--gray-color-200);
-					opacity: 0.3;
+        #stamp-img {
+          background-color: var(--primary-color-25);
+          border-color: var(--gray-color-200);
+          opacity: 0.3;
 
-					&::before {
-						content: '미리보기';
-						background-color: var(--primary-color-25);
-					}
-				}
-				.name {
-					opacity: 0.3;
-				}
-			}
-		}
+          &::before {
+            content: '미리보기';
+            background-color: var(--primary-color-25);
+          }
+        }
+        .name {
+          opacity: 0.3;
+        }
+      }
+    }
 
-		.upload-options {
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translateX(-50% + 50px) translateY(-50% + 25px);
-			// right: -113px;
-			// bottom: -40px;
-			z-index: 9;
-			background-color: var(--gray-color-100);
-			border: 1px solid var(--gray-color-300);
-			padding: 5px;
-			border-radius: 4px;
-			
-			li {
-				font-size: 0.8rem;
-				text-align: left;
-				cursor: pointer;
-				padding: 4px 8px;
-				border-radius: 4px;
+    .upload-options {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translateX(-50% + 50px) translateY(-50% + 25px);
+      // right: -113px;
+      // bottom: -40px;
+      z-index: 9;
+      background-color: var(--gray-color-100);
+      border: 1px solid var(--gray-color-300);
+      padding: 5px;
+      border-radius: 4px;
 
-				&:first-child {
-					margin-bottom: 4px;
-				}
-				&:hover {
-					background-color: var(--primary-color-400);
-					color: #fff;
+      li {
+        font-size: 0.8rem;
+        text-align: left;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
 
-					&.disabled {
-						background-color: unset;
-						color: unset;
-					}
-				}
-				&.disabled {
-					opacity: 0.25;
-					cursor: default;
-					pointer-events: none;
-				}
-			}
-		}
-	}
+        &:first-child {
+          margin-bottom: 4px;
+        }
+        &:hover {
+          background-color: var(--primary-color-400);
+          color: #fff;
+
+          &.disabled {
+            background-color: unset;
+            color: unset;
+          }
+        }
+        &.disabled {
+          opacity: 0.25;
+          cursor: default;
+          pointer-events: none;
+        }
+      }
+    }
+  }
 }
 
 .previewStamp {
-	display: inline-block;
-	text-align: center;
-	border: 1px solid var(--gray-color-100);
-	border-radius: 0.5rem;
-	padding: 4px;
-	cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  border: 1px solid var(--gray-color-100);
+  border-radius: 0.5rem;
+  padding: 4px;
+  cursor: pointer;
 
-	&.selected {
-		border-color: var(--primary-color-400-dark);
-		border-width: medium;
-		background-color: var(--primary-color-25);
-		border-style: solid;
-	}
+  &.selected {
+    border-color: var(--primary-color-400-dark);
+    border-width: medium;
+    background-color: var(--primary-color-25);
+    border-style: solid;
+  }
 }
 
-#stamp-img, .previewStamp img {
-	width: 100px;
-	height: 100px;
-	border-radius: 30%;
-	display: block;
-	object-fit: contain;
-	position: relative;
-	// background-color: #fff;
-	border: 2px dashed var(--gray-color-100);
-	// margin-bottom: 0.5rem;
+#stamp-img,
+.previewStamp img {
+  width: 100px;
+  height: 100px;
+  border-radius: 30%;
+  display: block;
+  object-fit: contain;
+  position: relative;
+  // background-color: #fff;
+  border: 2px dashed var(--gray-color-100);
+  // margin-bottom: 0.5rem;
 
-	&::before {
-		content: "도장 등록";
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		height: 100%;
-		color: #888;
-		background-color: #fff;
-		font-size: 14px;
-		text-align: center;
-		position: absolute;
-		top: 0;
-		left: 0;
-	}
+  &::before {
+    content: '도장 등록';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #888;
+    background-color: #fff;
+    font-size: 14px;
+    text-align: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
 }
 
 .rejected {
-	color: var(--warning-color-400);
+  color: var(--warning-color-400);
 }
 
 .waitting {
-	color: var(--gray-color-500);
+  color: var(--gray-color-500);
 }
 
 ._wysiwyg4all {
-	padding: 0;
+  padding: 0;
 }
 
 @media print {
-	#main,
-	.wrap {
-		padding: 0 !important;
-	}
+  #main,
+  .wrap {
+    padding: 0 !important;
+  }
 
-	.wrap {
-		+ .title {
-			display: none !important;
-		}
-	}
+  .wrap {
+    + .title {
+      display: none !important;
+    }
+  }
 
-	hr {
-		display: none !important;
-	}
+  hr {
+    display: none !important;
+  }
 
-	.form-wrap {
-		position: absolute;
-		top: 5%;
-		left: 0;
-		width: 100%;
-	}
+  .form-wrap {
+    position: absolute;
+    top: 5%;
+    left: 0;
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
-	.approver-wrap {
-		grid-template-columns: repeat(5, 1fr);
-	}
+  .approver-wrap {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 
 @media (max-width: 682px) {
-	.input-wrap {
-		&.upload-file {
-			.btn-upload-file {
-				input,
-				label,
-				button {
-					flex-grow: 1;
-				}
-			}
-			.btn-upload-file + .file-list {
-				.file-item {
-					width: 100%;
-				}
-			}
+  .input-wrap {
+    &.upload-file {
+      .btn-upload-file {
+        input,
+        label,
+        button {
+          flex-grow: 1;
+        }
+      }
+      .btn-upload-file + .file-list {
+        .file-item {
+          width: 100%;
+        }
+      }
 
-			.file-item {
-				width: 100%;
-			}
-		}
-		&.upload-stamp {
-		}
-	}
+      .file-item {
+        width: 100%;
+      }
+    }
+    &.upload-stamp {
+    }
+  }
 }
 </style>
 
 <style lang="less">
 ._wysiwyg4all {
-	ul {
-		list-style: disc !important;
-		padding: initial !important;
-		padding-inline-start: 40px !important;
-	}
+  ul {
+    list-style: disc !important;
+    padding: initial !important;
+    padding-inline-start: 40px !important;
+  }
 
-	ol {
-		list-style: decimal !important;
-		padding: initial !important;
-		padding-inline-start: 40px !important;
-	}
+  ol {
+    list-style: decimal !important;
+    padding: initial !important;
+    padding-inline-start: 40px !important;
+  }
 
-	li {
-		list-style: inherit !important;
-		padding: initial !important;
-	}
+  li {
+    list-style: inherit !important;
+    padding: initial !important;
+  }
 }
 </style>
