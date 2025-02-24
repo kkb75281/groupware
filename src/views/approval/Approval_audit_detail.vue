@@ -812,7 +812,11 @@ const postApproval = async () => {
             }
           }
         },
-        auditDoContent.value.user_id
+        auditDoContent.value.user_id,
+		{
+			title: '알림',
+			body: `${user.name}님께서 결재를 ${res.data.approved ? '승인' : '반려'}했습니다.`
+		}
       )
       .then((res) => {
         console.log('결재알림 === postRealtime === res : ', res);
