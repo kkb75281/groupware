@@ -710,6 +710,11 @@ const postAuditDocRecordId = async (auditId, userId) => {
 const requestAudit = async (e) => {
     e.preventDefault();
 
+	if (!editorContent.value || editorContent.value.trim() === '') {
+        alert('결재 내용을 입력해주세요.');
+        return;
+    }
+
     try {
         const formData = new FormData(e.target);
 		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
