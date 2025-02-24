@@ -76,7 +76,7 @@ hr
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
 //- Modal
-#modal.modal(v-if="isModalOpen" @click="closeModal")
+#modal.modal.edit-worktime(v-if="isModalOpen" @click="closeModal")
     .modal-cont(@click.stop)
         .modal-header
             h2.modal-title 출퇴근 시간 설정
@@ -392,11 +392,13 @@ onMounted(async () => {
     .item-wrap {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 8px 16px;
         margin-top: 16px;
+        flex-wrap: wrap;
 
         .label {
             flex: none;
+            margin-bottom: 0;
         }
     }
 
@@ -406,6 +408,10 @@ onMounted(async () => {
         gap: 8px;
         margin-top: 0;
         flex: 1;
+        
+        input {
+            flex: 1;
+        }
     }
 }
 </style>

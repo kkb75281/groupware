@@ -1205,7 +1205,7 @@ onUnmounted(() => {
     align-items: center;
     height: 100%;
     font-size: 0.875rem;
-    line-height: 1.2;
+    line-height: 1.3;
     color: var(--gray-color-400);
     cursor: pointer;
 }
@@ -1253,6 +1253,14 @@ onUnmounted(() => {
     .approver-wrap {
         grid-template-columns: repeat(5, 1fr);
     }
+
+	.table {
+		tbody {
+			th {
+				text-align: left;
+			}
+		}
+	}
 }
 
 @media (max-width: 682px) {
