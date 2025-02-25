@@ -3,23 +3,28 @@ h4 {{ realtimeTestingMsg }}
 
 .test-area
 	h3.title Notification Subscribe Test
-	p {{  notiState ? 'Notification is subscribed' : 'Notification is not subscribed' }}
+	p {{  subsState ? 'Notification is subscribed' : 'Notification is not subscribed' }}
 
 	br
 
-	button.btn(v-if="!notiState" @click="subscribeNotification") Subscribe
-	button.btn(v-if="notiState" @click="unsubscribeNotification") Unsubscribe
+	button.btn(v-if="!subsState" @click="subscribe") Subscribe
+	button.btn(v-if="subsState" @click="unsubscribeNotification") Unsubscribe
 
 	.input-wrap
 		input(type="text" v-model="notifications.content.title" placeholder="Title")
 		input(type="text" v-model="notifications.content.body" placeholder="Body")
-		input(type="text" v-model="notifications.user_id" placeholder="User ID")
+		//- input(type="text" v-model="notifications.user_id" placeholder="User ID")
 
-		br
-		br
+	.input-wrap
+		select(v-model="notifications.user_id")
+			option(value="" selected disabled) 유저선택
+			option(value="d80ac776-6fc3-496b-a4dd-357bd2be8df0") 권구글
+			option(value="75d7daa9-fc2d-4703-9e85-1bb8d6c57fbb") 오구글
 
-		button.btn(@click="pushNotification(notifications.content, notifications.user_id)") Push notifications
-		button.btn(@click="postRealTimeMsg") Post Realtime Msg
+	br
+
+	button.btn(@click="pushNotification(notifications.content, notifications.user_id)") Push notifications
+	button.btn(@click="postRealTimeMsg") Post Realtime Msg
 
 </template>
 
@@ -29,16 +34,21 @@ import { subscribeNotification, unsubscribeNotification, pushNotification } from
 import { skapi, realtimeTestingMsg } from "@/main";
 import { user } from "@/user";
 
-let notiState = ref(false);
+let subsState = ref(false);
 let notifications = {
 	content: {
 		title: "Test Title",
 		body: "Test Body",
 	},
-	user_id: user.user_id,
+	user_id: "",
 }
 
 console.log({user});
+
+function subscribe () {
+	subscribeNotification();
+	subsState.value = true;
+}
 
 // 마지막 매개변수 리얼타임 못받을 경우 꼭 노티피케이션 받아야 하면 추가
 function postRealTimeMsg () {
@@ -56,8 +66,12 @@ function postRealTimeMsg () {
 }
 
 onMounted(async() => {
-	let pms = await Notification.requestPermission();
-	pms ? notiState.value = true : notiState.value = false;
+	let subs = window.localStorage.getItem('skapi_subscription_obj');
+	if (subs) {
+		subsState.value = true;
+	}
+	// let pms = await Notification.requestPermission();
+	// pms ? notiState.value = true : notiState.value = false;
 })
 </script>
 
