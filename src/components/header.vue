@@ -140,7 +140,7 @@ header#header
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, watch } from 'vue';
 import { user, profileImage } from '@/user'
-import { skapi } from '@/main'
+import { skapi, currentBadgeCount } from '@/main'
 import { toggleOpen } from '@/components/navbar'
 import { realtimes, readList, unreadCount, readNoti } from '@/notifications'
 import { goToAuditDetail } from '@/audit'
@@ -175,8 +175,12 @@ function formatTimeAgo(timestamp) {
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
-	console.log({realtimes})
-	console.log({readList})
+	currentBadgeCount.value = 0;
+	navigator.setAppBadge(0).then(r => {
+		console.log('setAppBadge', r);
+	}).catch((error) => {
+		console.error('Failed to set app badge:', error);
+	});
 };
 
 let closeNotification = (event) => {
