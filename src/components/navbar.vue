@@ -2,15 +2,8 @@
 nav#navbar(ref="navbar")
     .navbar-wrap
         .logo
-            //- router-link.img-logo(to="/") 로고 부분
             router-link.img-logo(to="/")
                 img(src="/icon-192.png" style="width: 2rem;")
-                //- svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-groups-fill")
-            //- button.btn-menu(@click="toggleNavbarFold")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
             button.btn-close(@click="toggleNavbarFold")
                 .icon
                     svg
@@ -26,7 +19,7 @@ nav#navbar(ref="navbar")
                                 use(:href="getIconPath(item.icon)")
                         .text 
                             span {{ item.text }}
-                    router-link.router(v-if="!item.isExternal" :to="item.to")
+                    router-link.router(v-if="!item.isExternal" :to="item.to" @click="item.child && handleMenuClick($event, item.name)")
                         .icon
                             svg
                                 use(:href="getIconPath(item.icon)")
@@ -220,6 +213,16 @@ const getIconPath = computed(() => (iconName) => {
     return `${MaterialIcon}${iconName}`
 });
 
+// 메뉴 toggle
+const handleMenuClick = (event, menuName) => {
+  if (activeMenu.value === menuName) {
+    activeMenu.value = null; // 이미 열린 메뉴를 클릭하면 닫기
+  } else {
+    event.preventDefault(); // 페이지 이동을 막고 메뉴만 토글
+    activeMenu.value = menuName;
+  }
+};
+
 onMounted(() => {
     checkScreenWidth();
     window.addEventListener('resize', checkScreenWidth);
@@ -281,7 +284,8 @@ watch(() => route.fullPath, (nv) => {
 <style scoped lang="less">
 #navbar {
     width: var(--navbar-width);
-    height: 100vh;
+    // height: 100vh;
+    height: 100dvh;
     position: fixed;
     top: 0;
     left: 0;
