@@ -59,6 +59,13 @@ const isadmin = computed(() => user.access_group > 98);
 
 // menuList를 computed로 변경하여 isadmin 값 변화에 따라 자동 업데이트
 const menuList = computed(() => [
+	{
+        show: true,
+        name: 'test',
+        to: '/test',
+        icon: '#icon-settings',
+        text: '테스트 페이지',
+    },
     {
         show: true,
         name: 'home',
