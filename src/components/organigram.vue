@@ -39,11 +39,69 @@ const props = defineProps({
 	}
 });
 
+// const resetChecks = () => {
+//   checkedUsers.value = [];
+  
+//   // 모든 체크박스 상태 초기화
+//   const resetDepartment = (department) => {
+//     department.isChecked = false;
+    
+//     // 멤버 상태 초기화
+//     if (department.members && department.members.length > 0) {
+//       department.members.forEach(member => {
+//         member.isChecked = false;
+//       });
+//     }
+    
+//     // 하위 부서 상태 초기화
+//     if (department.subDepartments && department.subDepartments.length > 0) {
+//       department.subDepartments.forEach(sub => {
+//         resetDepartment(sub);
+//       });
+//     }
+//   };
+  
+//   organigram.value.forEach(department => {
+//     resetDepartment(department);
+//   });
+// };
+
+// // defineExpose를 통해 부모 컴포넌트에서 접근 가능하게 함
+// defineExpose({
+//   resetChecks
+// });
+
 let checkedUsers = ref<{}>([]);
+
+// 모든 부서와 멤버의 체크박스 상태를 초기화하는 함수 추가
+function resetAllCheckStatus() {
+  const resetDepartment = (department) => {
+    department.isChecked = false;
+    
+    // 멤버 상태 초기화
+    if (department.members && department.members.length > 0) {
+      department.members.forEach(member => {
+        member.isChecked = false;
+      });
+    }
+    
+    // 하위 부서 상태 초기화
+    if (department.subDepartments && department.subDepartments.length > 0) {
+      department.subDepartments.forEach(sub => {
+        resetDepartment(sub);
+      });
+    }
+  };
+  
+  // 최상위 부서부터 재귀적으로 초기화
+  organigram.value.forEach(department => {
+    resetDepartment(department);
+  });
+}
 
 onMounted(() => {
 	excludeCurrentUser.value = props.excludeCurrentUser;
-
+	// resetAllCheckStatus();
 	getOrganigram();
 });
 
@@ -116,6 +174,7 @@ function updateChildrenCheckStatus(department: any, isChecked: boolean) {
 
 // 부모 부서 상태를 업데이트하는 함수
 function updateParentCheckStatus(item: any) {
+	console.log('부모 부서 == item : ', item);
 	const parentDepartment = findParentDepartment(item); // 부모 부서를 찾는 함수
 	if (!parentDepartment) return;
 
@@ -131,6 +190,15 @@ function updateParentCheckStatus(item: any) {
 
 	// 부모 부서의 체크 상태 업데이트
 	parentDepartment.isChecked = allMembersChecked && allSubDepartmentsChecked;
+
+	// 멤버가 체크 안되어있으면 부모 부서도 체크 해제
+	if (!item.isChecked) {
+		parentDepartment.isChecked = false;
+	}
+
+	console.log('부모 부서 == allMembersChecked : ', allMembersChecked);
+	console.log('부모 부서 == allSubDepartmentsChecked : ', allSubDepartmentsChecked);
+	console.log('부모 부서 == parentDepartment : ', parentDepartment);
 
 	// 부모 부서의 부모 상태도 동기화
 	updateParentCheckStatus(parentDepartment);

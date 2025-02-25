@@ -327,10 +327,14 @@ watch(auditDoContent, () => {
 let isPosting = false;
 
 const openModal = (target) => {
+	// 초기화
+	approveAudit.value = false;
+	approvedComment.value = '';
+	approvalStep.value = 1;
+
   if (target && target.user_id !== user.user_id) return;
 
   isModalOpen.value = true;
-  // disabled.value = false;
 };
 
 const closeModal = () => {
