@@ -11,6 +11,7 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('push', function(event) {
     const data = event.data.json();
+	console.log('[Service Worker] Push Received.', data);
     const title = data.title || "Default Title";
     const options = {
         body: data.body || "Default Body",

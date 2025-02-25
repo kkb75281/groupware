@@ -1031,7 +1031,11 @@ const canceledAudit = async () => {
         // 실시간 알림 전송
         const realtimeResult = await skapi.postRealtime(
           postRealtimeData,
-          auditor.replaceAll('_', '-')
+          auditor.replaceAll('_', '-'),
+		  {
+			title: '알림',
+			body: `${user.name}님께서 결재를 회수했습니다.`
+		  }
         );
 
         // 알림 기록 저장

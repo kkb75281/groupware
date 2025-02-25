@@ -1,4 +1,5 @@
 <template lang="pug">
+h4 25.02.25 화 17:56
 ul.card-wrap.gmail
 	li.card
 		.title-wrap
@@ -110,7 +111,7 @@ button.btn(type="button" @click="router.push('/test')") 테스트 페이지 바�
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { skapi } from "@/main";
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
