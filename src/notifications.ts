@@ -322,6 +322,7 @@ export async function subscribeNotification() {
 	}
 
 	const permission = await Notification.requestPermission();
+	console.log({ permission });
 	if (permission !== "granted") {
 		console.error("Permission not granted for notifications");
 		return;
@@ -338,8 +339,10 @@ export async function subscribeNotification() {
 		.then((sub) => sub.toJSON()); // Convert to plain object
 
 	console.log("Subscription object:", subscription); // Debugging
+	window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
 
 	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
+	console.log({response})
 	return response;
 }
 
