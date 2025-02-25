@@ -18,15 +18,16 @@ export let mainPageLoading = ref(false);
 export let realtimeTestingMsg = ref('');
 let isConnected = false;
 let isTabVisible = ref(true); // 현재 탭을 보고 있는지 여부
-let currentBadgeCount = 0; // 현재 뱃지 값을 저장할 변수
+export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
 
 watch(isTabVisible, (nv) => {
 	if (nv) {
+		currentBadgeCount.value = 0;
 		navigator.setAppBadge(0).catch((error) => {
 			console.error('Failed to set app badge:', error);
-		  });
+		});
 	}
-})
+}, { immediate: true });
 
 // function getChanges(before:any, after:any) {
 //   const beforeKeys = new Set(Object.keys(before));
@@ -89,53 +90,54 @@ function setupVisibilityListener() {
 // checkSubscriptionStatus();
 
 // 알림 표시 함수
-function showNotification(message) {
-	// Service Worker 등록
-	if ('serviceWorker' in navigator) {
-		navigator.serviceWorker.register('/sw.js')
-			.then(registration => {
-				console.log('Service Worker 등록 성공:', registration);
+// function showNotification(message) {
+// 	// Service Worker 등록
+// 	if ('serviceWorker' in navigator) {
+// 		navigator.serviceWorker.register('/sw.js')
+// 			.then(registration => {
+// 				console.log('Service Worker 등록 성공:', registration);
 
-				// Service Worker의 상태 확인
-				if (!registration.active) {
-					console.warn('Service Worker가 아직 활성화되지 않았습니다.');
-					return;
-				}
+// 				// Service Worker의 상태 확인
+// 				if (!registration.active) {
+// 					console.warn('Service Worker가 아직 활성화되지 않았습니다.');
+// 					return;
+// 				}
 
-				// 알림 권한 요청
-				if (Notification.permission === 'granted') {
-					console.log('알림 권한이 허용되었습니다.');
+// 				// 알림 권한 요청
+// 				if (Notification.permission === 'granted') {
+// 					console.log('알림 권한이 허용되었습니다.');
 
-					// showNotification 메서드 확인
-					if (typeof registration.showNotification === 'function') {
-						registration.showNotification('서비스 워커 알림', {
-							body: message,
-							icon: 'favicon-icon.png'
-						});
-					} else {
-						console.error('showNotification 메서드를 사용할 수 없습니다.');
-					}
-				} else {
-					console.warn('알림 권한이 거부되었습니다.');
-				}
-			})
-			.catch(error => {
-				console.error('Service Worker 등록 실패:', error);
-			});
-	} else {
-		console.error('Service Worker를 지원하지 않는 브라우저입니다.');
-	}
+// 					// showNotification 메서드 확인
+// 					if (typeof registration.showNotification === 'function') {
+// 						registration.showNotification('서비스 워커 알림', {
+// 							body: message,
+// 							icon: 'favicon-icon.png'
+// 						});
+// 						console.log('알림이 표시되었습니다.');
+// 					} else {
+// 						console.error('showNotification 메서드를 사용할 수 없습니다.');
+// 					}
+// 				} else {
+// 					console.warn('알림 권한이 거부되었습니다.');
+// 				}
+// 			})
+// 			.catch(error => {
+// 				console.error('Service Worker 등록 실패:', error);
+// 			});
+// 	} else {
+// 		console.error('Service Worker를 지원하지 않는 브라우저입니다.');
+// 	}
 
-    // if (Notification.permission === 'granted') {
-    //     new Notification('새로운 메시지', {
-    //         body: message,
-    //         icon: '/favicon-icon.png' // 아이콘 경로 (옵션)
-    //     });
-	// 	console.log('알림이 표시되었습니다.');
-    // } else {
-    //     console.error('알림 권한이 없습니다.');
-    // }
-}
+//     if (Notification.permission === 'granted') {
+//         new Notification('새로운 메시지', {
+//             body: message,
+//             icon: '/favicon-icon.png' // 아이콘 경로 (옵션)
+//         });
+// 		console.log('알림이 표시되었습니다.');
+//     } else {
+//         console.error('알림 권한이 없습니다.');
+//     }
+// }
 
 // if ('serviceWorker' in navigator) {
 // 	navigator.serviceWorker.ready.then((registration) => {
@@ -150,14 +152,58 @@ function showNotification(message) {
 // 	});
 //   }
 
+function showNotification(message) {
+	// 알림 권한 확인
+	if (Notification.permission !== 'granted') {
+	  Notification.requestPermission().then(permission => {
+		if (permission === 'granted') {
+		  handleNotification(message);
+		} else {
+		  console.log('알림 권한이 거부되었습니다.');
+		}
+	  });
+	  return;
+	}
+  
+	// 알림 처리
+	handleNotification(message);
+  }
+  
+  function handleNotification(message) {
+	if (isTabVisible.value) {
+	  // 포그라운드 상태: 즉각적인 알림 표시
+	  new Notification('새로운 메시지', {
+		body: message,
+		icon: '/favicon-icon.png'
+	  });
+	  console.log('포그라운드 알림이 표시되었습니다.');
+	} else {
+	  // 백그라운드 상태: Service Worker를 통한 알림 표시
+	  if ('serviceWorker' in navigator) {
+		navigator.serviceWorker.ready.then(registration => {
+		  registration.showNotification('서비스 워커 알림', {
+			body: message,
+			icon: '/favicon-icon.png',
+			// badge: '/badge-icon.png'
+		  });
+		  console.log('백그라운드 알림이 표시되었습니다.');
+		}).catch(error => {
+		  console.error('Service Worker 준비 실패:', error);
+		});
+	  } else {
+		console.error('Service Worker를 지원하지 않는 브라우저입니다.');
+	  }
+	}
+  }
+
 // 뱃지 값을 증가시키는 함수
 function incrementBadge() {
 	if ('setAppBadge' in navigator) {
 	  // 현재 값에 +1
-	  currentBadgeCount += 1;
+	  currentBadgeCount.value ++;
   
 	  // 새로운 뱃지 값 설정
-	  navigator.setAppBadge(currentBadgeCount).catch((error) => {
+	  navigator.setAppBadge(currentBadgeCount.value).catch((error) => {
 		console.error('Failed to set app badge:', error);
 	  });
 	} else {
@@ -347,23 +393,24 @@ export let RealtimeCallback = async (rt: any) => {
 			// 탭이 비활성화된 경우에만 알림 표시
 			if (!isTabVisible.value) {
 				console.log('비활성화')
+				showNotification(realtimeBody);
 				// 실시간 알림 보내기
-				skapi
-				.postRealtime(
-					{
-						realtimeMsg
-					},
-					user.user_id,
-					{
-						title: '[그룹웨어]',
-						body: realtimeBody
-					}
-				)
-				.then((res) => {
-					console.log("탭 비활성화일때 결재 요청 날리기", res);
-				}).catch((err) => {
-					console.log({err})
-				});
+				// skapi
+				// .postRealtime(
+				// 	{
+				// 		realtimeMsg
+				// 	},
+				// 	user.user_id,
+				// 	{
+				// 		title: '[그룹웨어]',
+				// 		body: realtimeBody
+				// 	}
+				// )
+				// .then((res) => {
+				// 	console.log("탭 비활성화일때 결재 요청 날리기", res);
+				// }).catch((err) => {
+				// 	console.log({err})
+				// });
 			}
 
 			unreadCount.value = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
