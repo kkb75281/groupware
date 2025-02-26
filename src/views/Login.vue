@@ -49,7 +49,7 @@
 			.inner
 				img.google-logo(src="@/assets/img/icon_google.svg")
 				span Google 계정으로 로그인
-			input#input_googleAutoLogin(@change="(e)=>{setLocalStorage(e)}" type="checkbox" name="checkbox" checked hidden)
+			//- input#input_googleAutoLogin(@change="(e)=>{setLocalStorage(e)}" type="checkbox" name="checkbox" checked hidden)
 		//- label.checkbox(style="margin-top: 1rem;")
 			input#input_googleAutoLogin(@change="(e)=>{setLocalStorage(e)}" type="checkbox" name="checkbox" checked hidden)
 			span.label-checkbox 로그인 상태 유지
@@ -65,8 +65,13 @@
 		br
 		br
 
+		.bottom-wrap(style="display: flex; justify-content: space-between; align-items: center;")
+			label.checkbox
+				input#input_googleAutoLogin(@change="(e)=>{setLocalStorage(e)}" v-model='remVal' type="checkbox" name="checkbox" hidden)
+				span.label-checkbox 로그인 상태 유지
+			.master-login(@click="masterlogin = true") 마스터 계정 로그인
+
 		//- button.btn.outline(type="button" @click="masterlogin = true") 마스터 계정 로그인
-		.master-login(@click="masterlogin = true") 마스터 계정 로그인
 </template>
 
 <script setup>
