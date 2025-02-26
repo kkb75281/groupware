@@ -19,6 +19,7 @@ export let realtimeTestingMsg = ref('');
 let isConnected = ref(false);
 let isTabVisible = ref(document.visibilityState === 'visible'); // 현재 탭을 보고 있는지 여부
 export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
+let connectRunning:Promise<any> | null = null;
 
 watch(isConnected, (nv, ov) => {
 	if(nv !== ov && nv === false) {
@@ -52,8 +53,6 @@ watch(isConnected, (nv, ov) => {
 //   return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
 // }
 
-
-let connectRunning:Promise<any> | null = null;
 // 가시성 상태 감지
 function setupVisibilityListener() {
     document.addEventListener('visibilitychange', () => {

@@ -88,6 +88,7 @@ export default defineConfig({
 	// },
 	host: 'localhost',
 	port: 3333,
+	allowedHosts: ['dev.broadwayinc.computer'],
 	// port: 5173,
     // https: false, // HTTPS를 비활성화
     // host: 'localhost',
