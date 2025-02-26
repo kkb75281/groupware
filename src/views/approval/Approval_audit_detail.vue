@@ -248,7 +248,6 @@ import {
 
 import Loading from '@/components/Loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
-import { url } from 'inspector';
 
 const router = useRouter();
 const route = useRoute();
