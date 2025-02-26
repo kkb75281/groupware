@@ -39,10 +39,24 @@ self.addEventListener('notificationclick', function(event) {
 	// 	});
 	// });
 
+	// 알림 닫기
     event.notification.close();
-    // current website url
+
+    // 현재 웹사이트 URL
     let url = event.target.location.origin;
+
+	// 메인 애플리케이션에 메세지 전송
     event.waitUntil(
-        clients.openWindow(url)
+        // clients.openWindow(url)
+		clients.matchAll().then((clients) => {
+            clients.forEach((client) => {
+                client.postMessage({ type: 'notification-clicked' });
+            });
+
+            // 새 창 열기 (옵션)
+            if (!clients.length) {
+                return clients.openWindow(url);
+            }
+        })
     );
 });

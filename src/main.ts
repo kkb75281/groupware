@@ -156,47 +156,64 @@ function showNotification(message) {
 	console.log('showNotification')
 	// 알림 권한 확인
 	if (Notification.permission !== 'granted') {
-	  Notification.requestPermission().then(permission => {
-		if (permission === 'granted') {
-		  handleNotification(message);
-		} else {
-		  console.log('알림 권한이 거부되었습니다.');
-		}
-	  });
-	  return;
+		Notification.requestPermission().then(permission => {
+			if (permission === 'granted') {
+			handleNotification(message);
+			} else {
+			console.log('알림 권한이 거부되었습니다.');
+			}
+		});
+		return;
 	}
-  
+
 	// 알림 처리
 	handleNotification(message);
-  }
-  
-  function handleNotification(message) {
+}
+
+function handleNotification(message) {
 	console.log('handleNotification')
 	if (isTabVisible.value) {
-	  // 포그라운드 상태: 즉각적인 알림 표시
-	  new Notification('새로운 메시지', {
-		body: message,
-		icon: '/favicon-icon.png'
-	  });
-	  console.log('포그라운드 알림이 표시되었습니다.');
-	} else {
-	  // 백그라운드 상태: Service Worker를 통한 알림 표시
-	  if ('serviceWorker' in navigator) {
-		navigator.serviceWorker.ready.then(registration => {
-		  registration.showNotification('서비스 워커 알림', {
+		// 포그라운드 상태: 즉각적인 알림 표시
+		new Notification('새로운 메시지', {
 			body: message,
-			icon: '/favicon-icon.png',
-			// badge: '/badge-icon.png'
-		  });
-		  console.log('백그라운드 알림이 표시되었습니다.');
-		}).catch(error => {
-		  console.error('Service Worker 준비 실패:', error);
+			icon: '/favicon-icon.png'
 		});
-	  } else {
-		console.error('Service Worker를 지원하지 않는 브라우저입니다.');
-	  }
+		console.log('포그라운드 알림이 표시되었습니다.');
+	} else {
+		// 백그라운드 상태: Service Worker를 통한 알림 표시
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.ready.then(registration => {
+			registration.showNotification('서비스 워커 알림', {
+				body: message,
+				icon: '/favicon-icon.png',
+				// badge: '/badge-icon.png'
+			});
+			console.log('백그라운드 알림이 표시되었습니다.');
+			}).catch(error => {
+			console.error('Service Worker 준비 실패:', error);
+			});
+		} else {
+			console.error('Service Worker를 지원하지 않는 브라우저입니다.');
+		}
 	}
-  }
+}
+
+function handleNotificationClick() {
+	console.log('알림 클릭 감지됨');
+
+	// 뱃지 초기화
+	if ('clearAppBadge' in navigator) {
+		navigator.clearAppBadge().then(() => {
+			currentBadgeCount.value = 0;
+			console.log('뱃지 초기화 완료');
+		}).catch((error) => {
+			console.error('Failed to clear app badge:', error);
+		});
+	}
+	nextTick(() => {
+		getRealtime();
+	})
+}
 
 // 뱃지 값을 증가시키는 함수
 function incrementBadge() {
@@ -230,17 +247,6 @@ function checkNotificationPermission() {
         requestNotificationPermission();
     }
 }
-
-// 페이지 로드 시 알림 권한 요청
-document.addEventListener('DOMContentLoaded', () => {
-	console.log('DOMContentLoaded');
-	checkNotificationPermission();
-	console.log('DOMContentLoaded - checkNotificationPermission - complete');
-	if (Object.keys(user).length && !isConnected) {
-		skapi.connectRealtime(RealtimeCallback);
-		console.log('DOMContentLoaded - isConnected - connectRealtime - complete');
-	}
-});
 
 function requestNotificationPermission() {
     Notification.requestPermission().then(permission => {
@@ -282,6 +288,38 @@ function updateAuditsAndApprovals(audits, approvals) {
       getAuditsList[item.updated] = item;
     }
   }
+}
+
+
+// 페이지 로드 시 알림 권한 요청
+document.addEventListener('DOMContentLoaded', () => {
+	console.log('DOMContentLoaded');
+	checkNotificationPermission();
+	console.log('DOMContentLoaded - checkNotificationPermission - complete');
+	if (Object.keys(user).length && !isConnected) {
+		skapi.connectRealtime(RealtimeCallback);
+		console.log('DOMContentLoaded - isConnected - connectRealtime - complete');
+	}
+});
+
+// Service Worker로부터 메시지 수신
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'notification-clicked') {
+            handleNotificationClick();
+        }
+    });
+}
+
+// Service Worker 등록
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+            console.log('Service Worker registered:', registration);
+        })
+        .catch((error) => {
+            console.error('Service Worker registration failed:', error);
+        });
 }
 
 export let RealtimeCallback = async (rt: any) => {
