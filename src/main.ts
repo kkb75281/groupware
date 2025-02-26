@@ -81,6 +81,7 @@ function setupVisibilityListener() {
         } else {
             console.log('탭이 비활성화되었습니다.');
             isTabVisible.value = false;
+			skapi.closeRealtime();
         }
     });
 }
