@@ -21,17 +21,17 @@ let isTabVisible = ref(document.visibilityState === 'visible'); // 현재 탭을
 export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
 let connectRunning:Promise<any> | null = null;
 
-watch(isConnected, (nv, ov) => {
-	if(nv !== ov && nv === false) {
-		if(!isConnected.value && connectRunning === null) {
-			console.log('다시 연결합니다. isConnected Watcher');
-			connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
-				connectRunning = null
-				console.log({isConnected: isConnected.value});
-			});
-		}
-	}
-}, { immediate: true });
+// watch(isConnected, (nv, ov) => {
+// 	if(nv !== ov && nv === false) {
+// 		if(!isConnected.value && connectRunning === null) {
+// 			console.log('다시 연결합니다. isConnected Watcher');
+// 			connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
+// 				connectRunning = null
+// 				console.log({isConnected: isConnected.value});
+// 			});
+// 		}
+// 	}
+// }, { immediate: true });
 
 // watch(isTabVisible, (nv) => {
 // 	if (nv) {
