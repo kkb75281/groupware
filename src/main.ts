@@ -63,7 +63,7 @@ function setupVisibilityListener() {
 			// 뱃지 초기화
 			if ('clearAppBadge' in navigator) {
 				navigator.clearAppBadge().then(() => {
-					currentBadgeCount.value = 0;
+					resetBadgeCount();
 					console.log('뱃지 초기화 완료');
 				}).catch((error) => {
 					console.error('Failed to clear app badge:', error);
@@ -174,19 +174,19 @@ function incrementBadge() {
 // 뱃지 값을 초기화하는 함수
 function resetBadgeCount() {
     // 상태 관리 로직에서 뱃지 숫자를 0으로 초기화
-    const newBadgeCount = 0;
+	currentBadgeCount.value = 0;
 
     // 서비스 워커로 초기화된 뱃지 숫자 전송
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((registration) => {
             registration.active?.postMessage({
                 type: 'RESET_BADGE',
-                badgeCount: newBadgeCount
+                badgeCount: currentBadgeCount.value
             });
         });
     }
 
-    console.log(`[Main App] Badge count reset to ${newBadgeCount}`);
+    console.log(`[Main App] Badge count reset to ${currentBadgeCount.value}`);
 }
 
 export function checkNotificationPermission() {
