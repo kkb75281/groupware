@@ -246,7 +246,7 @@ import {
   handleStampBlobComplete
 } from '@/components/make_stamp';
 
-import Loading from '@/components/Loading.vue';
+import Loading from '@/components/loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
 
 const router = useRouter();
@@ -813,8 +813,8 @@ const postApproval = async () => {
 
 	let postRealtimeBody = {
 		text: `${user.name}님께서 결재를 ${approveAudit.value ? '승인' : '반려'}했습니다.`,
-		type: 'audit_approval',
-		url: `/approval/audit-detail/${auditId.value}`
+		type: 'audit',
+		id: auditId.value
 	}
 
     // 실시간 알림 보내기
@@ -1023,6 +1023,12 @@ const canceledAudit = async () => {
     }
   };
 
+  let postRealtimeBody = {
+	text: `${user.name}님께서 결재를 회수했습니다.`,
+	type: 'audit',
+	id: auditId.value
+}
+
   // 결재 회수 알림 기록 data
   const postRecordData = {
     noti_id: auditId.value,
@@ -1046,7 +1052,7 @@ const canceledAudit = async () => {
           auditor.replaceAll('_', '-'),
 		  {
 			title: '알림',
-			body: `${user.name}님께서 결재를 회수했습니다.`
+			body: JSON.stringify(postRealtimeBody)
 		  }
         );
 

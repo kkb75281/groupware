@@ -16,9 +16,22 @@ export let iwaslogged = ref(false);
 export let loaded = ref(false);
 export let mainPageLoading = ref(false);
 export let realtimeTestingMsg = ref('');
-let isConnected = false;
+let isConnected = ref(false);
 let isTabVisible = ref(document.visibilityState === 'visible'); // 현재 탭을 보고 있는지 여부
 export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
+let connectRunning:Promise<any> | null = null;
+
+watch(isConnected, (nv, ov) => {
+	if(nv !== ov && nv === false) {
+		if(!isConnected.value && connectRunning === null) {
+			console.log('다시 연결합니다. isConnected Watcher');
+			connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
+				connectRunning = null
+				console.log({isConnected: isConnected.value});
+			});
+		}
+	}
+}, { immediate: true });
 
 // watch(isTabVisible, (nv) => {
 // 	if (nv) {
@@ -40,20 +53,19 @@ export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
 //   return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
 // }
 
-
-let connectRunning:Promise<any> | null = null;
 // 가시성 상태 감지
 function setupVisibilityListener() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             console.log('탭이 활성화되었습니다.');
-			checkNotificationPermission();
+			
             isTabVisible.value = true;
-			if(!isConnected && connectRunning === null) {
+			console.log('탭 활성화 여부 함수 isConnected.value', isConnected.value);
+			if(!isConnected.value && connectRunning === null) {
 				console.log('다시 연결합니다.');
 				connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
 					connectRunning = null
-					console.log({isConnected});
+					console.log({isConnected: isConnected.value});
 				});
 			}
         } else {
@@ -83,7 +95,8 @@ function showNotification(message) {
 }
 
 function handleNotification(message) {
-	console.log('handleNotification')
+	console.log('handleNotification');
+	console.log({message})
 	if (isTabVisible.value) {
 		// 포그라운드 상태: 즉각적인 알림 표시
 		new Notification('새로운 메시지', {
@@ -253,17 +266,24 @@ export let RealtimeCallback = async (rt: any) => {
 		*/
 
 	if (rt.type === 'error' || rt.type === 'close') {
-		const errorTime = new Date();
+		const errorTime = new Date().toLocaleString();
 		console.log({rt})
     	console.error({ errorTime });
-		isConnected = false;
-		// if(isTabVisible.value) {
-		// 	console.log('탭이 활성화되어 있습니다.');
-		// 	await skapi.connectRealtime(RealtimeCallback).catch((err) => console.error({ err }));
-		// }
-		// getRealtime();
-		// console.log('다시 연결합니다.');
-		// console.log({isConnected});
+		isConnected.value = false;
+		if(isTabVisible.value) {
+			console.log('탭이 활성화되어 있습니다.');
+			// await skapi.connectRealtime(RealtimeCallback).catch((err) => console.error({ err }));
+			if(!isConnected.value && connectRunning === null) {
+				console.log('RealtimeCallback 안에서 다시 연결 시도')
+				connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
+					connectRunning = null
+					console.log({isConnected: isConnected.value});
+				});
+			}
+		}
+		getRealtime();
+		console.log('다시 연결합니다.');
+		console.log({isConnected});
 	}
 
 	if (rt.type === 'success') {
@@ -274,7 +294,7 @@ export let RealtimeCallback = async (rt: any) => {
 		// 과거 결재 요청 목록 가져오기
 		let getAudits, getApprovals;
 
-		isConnected = true; // 연결 상태 플래그 업데이트
+		isConnected.value = true; // 연결 상태 플래그 업데이트
 
 		// window.localStorage.setItem(`notification_count:${user.user_id}`, '0');
 
@@ -309,8 +329,11 @@ export let RealtimeCallback = async (rt: any) => {
 	}
 
 	if (rt.type === 'private') {
+		const errorTime = new Date().toLocaleString();
+		console.error({ errorTime });
 		console.log({rt})
 		console.log({type: rt.type});
+
 		// console.log('sender', rt.sender, user.user_id);
 		// console.log('msgg', rt.message);
 
@@ -378,6 +401,10 @@ export let RealtimeCallback = async (rt: any) => {
 
 			console.log({isTabVisible: isTabVisible.value})
 			console.log({realtimeSender})
+			if(realtimeSender === null) {
+				realtimeSender = { name: 'dev' };
+				realtimeBody = `${realtimeSender.name}님께서 보낸 테스트 메세지 입니다.`
+			}
 
 			// 탭이 비활성화된 경우에만 알림 표시
 			setTimeout(() => {
@@ -425,7 +452,7 @@ export let loginCheck = async (profile: any) => {
 	// // console.log('=== loginCheck === profile : ', profile);
 
 	if (!profile) {
-		if(!isConnected) {
+		if(!isConnected.value) {
 			skapi.closeRealtime();
 		}
 
@@ -440,6 +467,8 @@ export let loginCheck = async (profile: any) => {
 	}
 
 	else if (profile) {
+		checkNotificationPermission();
+
 		// console.log('=== loginCheck === profile : ', profile);
 		
 		let originalUser = { ...user };
@@ -509,7 +538,7 @@ export let loginCheck = async (profile: any) => {
 			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
 		}
 
-		if (!isConnected && connectRunning === null) {
+		if (!isConnected.value && connectRunning === null) {
 			connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
 				connectRunning = null
 			});

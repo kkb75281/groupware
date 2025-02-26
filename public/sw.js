@@ -12,11 +12,10 @@ self.addEventListener('install', (event) => {
 self.addEventListener('push', function(event) {
     const data = event.data.json();
     const title = data.title || "Default Title";
-	// const urlMap = {
-	// 	'approval-completed': '/approval-documents', // 결재완료 -> 결재문서 페이지
-    //     'comment-added': '/comments',               // 댓글 등록 -> 댓글 페이지
-    //     'default': '/'                              // 기본 페이지
-    // };
+	const urlMap = {
+		'audit': '/approval/audit-detail/',
+        'default': '/'                              // 기본 페이지
+    };
 	
 	console.log('sw.js에서 받은 알람 정보', data);
 
@@ -41,11 +40,13 @@ self.addEventListener('push', function(event) {
 		options.data.type = body.type
 	}
 
-	if(body.url) {
-		options.data.url = body.url
+	if(body.id) {
+		options.data.url = urlMap[body.url] + body.id;
 	} else {
 		options.data.url = '/';
 	}
+
+	console.log('sw.js에서 받은 옵션', options);
     
     event.waitUntil(
         self.registration.showNotification(title, options)
