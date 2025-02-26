@@ -170,7 +170,7 @@ function incrementBadge() {
 	}
 }
 
-function checkNotificationPermission() {
+export function checkNotificationPermission() {
     if (Notification.permission === "granted") {
         console.log("알림이 이미 허용되어 있습니다.");
     } else if (Notification.permission === "denied") {
