@@ -43,7 +43,7 @@ hr
 						td(colspan="5") 결재 목록이 없습니다.
 				template(v-else)
 					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
-						td {{ index + 1 }}
+						td {{ sendAuditList.length - index }}
 						td.left
 							.audit-title {{ audit.data.to_audit }}
 						td

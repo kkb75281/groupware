@@ -47,7 +47,7 @@ hr
 					td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : '수신참조 목록이 없습니다.' }}
 			template(v-else)
 				tr(v-for="(audit, index) of filterAuditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
-					td {{ index + 1 }}
+					td {{ filterAuditList.length - index }}
 					td.left
 						.audit-title {{ audit.data.to_audit }}
 					template(v-if="currentPage === 'audit-list'")
