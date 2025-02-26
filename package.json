@@ -11,6 +11,7 @@
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {
+    "basic-node-server": "^1.0.11",
     "cropperjs": "^1.6.2",
     "less": "^4.2.0",
     "prettier": "^3.5.2",

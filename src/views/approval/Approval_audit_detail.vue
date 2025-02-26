@@ -837,7 +837,8 @@ const postApproval = async () => {
         auditDoContent.value.user_id,
 		{
 			title: '알림',
-			body: JSON.stringify(postRealtimeBody)
+			// body: JSON.stringify(postRealtimeBody)
+			body: `${user.name}님께서 결재를 완료했습니다.`,
 		}
       )
       .then((res) => {
@@ -1052,7 +1053,8 @@ const canceledAudit = async () => {
           auditor.replaceAll('_', '-'),
 		  {
 			title: '알림',
-			body: JSON.stringify(postRealtimeBody)
+			// body: JSON.stringify(postRealtimeBody)
+			body: `${user.name}님께서 결재를 회수했습니다.`,
 		  }
         );
 
