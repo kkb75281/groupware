@@ -92,6 +92,8 @@ const initializeCheckState = () => {
     if (props.department.members.length > 0 && 
         props.department.members.every(member => member.isChecked)) {
         props.department.isChecked = true;
+    } else {
+        props.department.isChecked = false;
     }
 };
 

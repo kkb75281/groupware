@@ -299,7 +299,6 @@ const addRows = ref([]);
 const step = ref(2);
 const auditTitle = ref("");
 const disabled = ref(false);
-// const organigramRef = ref(null);
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -313,10 +312,6 @@ watch(auditTitle, (nv, ov) => {
 
 // 결재라인 모달 열기
 const openModal = () => {
-	// if (organigramRef.value) {
-	// 	organigramRef.value.resetChecks();
-	// }
-
 	// selectedAuditors 에 있는 모든 유저를 selectedUsers에 추가
 	selectedUsers.value = [];
 	for (const key in selectedAuditors.value) {
@@ -745,10 +740,11 @@ const postAuditDocRecordId = async (auditId, userId) => {
 const requestAudit = async (e) => {
     e.preventDefault();
 
-	if (!editorContent.value || editorContent.value.trim() === '') {
-        alert('결재 내용을 입력해주세요.');
-        return;
-    }
+	// 결재 내용이 없을 경우 결재 요청 안되게
+	if (!editorContent.value) {
+		alert("결재 내용을 입력해주세요.");
+		return;
+	};
 
     try {
         const formData = new FormData(e.target);
