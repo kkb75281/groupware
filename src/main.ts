@@ -459,7 +459,7 @@ export let RealtimeCallback = async (rt: any) => {
 };
 
 export let loginCheck = async (profile: any) => {
-	// // console.log('=== loginCheck === profile : ', profile);
+	console.log('=== loginCheck === profile : ', profile);
 
 	if (!profile) {
 		if(!isConnected.value) {
