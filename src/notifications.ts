@@ -339,7 +339,7 @@ export async function subscribeNotification() {
 		.then((sub) => sub.toJSON()); // Convert to plain object
 
 	console.log("Subscription object:", subscription); // Debugging
-	window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
+	// window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
 
 	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
 	console.log({response})
