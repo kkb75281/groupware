@@ -1,5 +1,5 @@
 <template lang="pug">
-h4 25.02.26 수 20:32
+h4 25.02.26 수 20:37
 ul.card-wrap.gmail
 	li.card
 		.title-wrap
