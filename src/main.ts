@@ -281,25 +281,27 @@ export let RealtimeCallback = async (rt: any) => {
 		console.log({rt})
     	console.error({ errorTime });
 		isConnected.value = false;
-		if(isTabVisible.value) {
-			console.log('탭이 활성화되어 있습니다.');
-			// await skapi.connectRealtime(RealtimeCallback).catch((err) => console.error({ err }));
-			if(!isConnected.value && connectRunning === null) {
-				console.log('RealtimeCallback 안에서 다시 연결 시도')
-				connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
-					connectRunning = null
-					console.log({isConnected: isConnected.value});
-				});
-			}
-		}
-		getRealtime();
-		console.log('다시 연결합니다.');
-		console.log({isConnected});
+		// if(isTabVisible.value) {
+		// 	console.log('탭이 활성화되어 있습니다.');
+		// 	// await skapi.connectRealtime(RealtimeCallback).catch((err) => console.error({ err }));
+		// 	if(!isConnected.value && connectRunning === null) {
+		// 		console.log('RealtimeCallback 안에서 다시 연결 시도')
+		// 		connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
+		// 			connectRunning = null
+		// 			console.log({isConnected: isConnected.value});
+		// 		});
+		// 	}
+		// }
+		// getRealtime();
+		// console.log('다시 연결합니다.');
+		// console.log({isConnected});
 	}
 
 	if (rt.type === 'success') {
 		console.log({rt})
 		console.log({type: rt.type});
+		await getRealtime(true);
+		
 		if (rt.message === 'Connected to WebSocket server.') {
 		// 실시간 통신 연결 성공
 		// 과거 결재 요청 목록 가져오기
