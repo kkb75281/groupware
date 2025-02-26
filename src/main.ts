@@ -171,6 +171,24 @@ function incrementBadge() {
 	}
 }
 
+// 뱃지 값을 초기화하는 함수
+function resetBadgeCount() {
+    // 상태 관리 로직에서 뱃지 숫자를 0으로 초기화
+    const newBadgeCount = 0;
+
+    // 서비스 워커로 초기화된 뱃지 숫자 전송
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+            registration.active?.postMessage({
+                type: 'RESET_BADGE',
+                badgeCount: newBadgeCount
+            });
+        });
+    }
+
+    console.log(`[Main App] Badge count reset to ${newBadgeCount}`);
+}
+
 export function checkNotificationPermission() {
     if (Notification.permission === "granted") {
         console.log("알림이 이미 허용되어 있습니다.");
@@ -182,7 +200,7 @@ export function checkNotificationPermission() {
         console.log("알림 권한이 아직 설정되지 않았습니다.");
         requestNotificationPermission();
     }
-	
+
 	console.log('checkNotificationPermission - complete');
 
 	return Notification.permission;
