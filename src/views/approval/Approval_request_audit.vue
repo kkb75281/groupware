@@ -299,6 +299,7 @@ const addRows = ref([]);
 const step = ref(2);
 const auditTitle = ref("");
 const disabled = ref(false);
+// const organigramRef = ref(null);
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -312,6 +313,10 @@ watch(auditTitle, (nv, ov) => {
 
 // 결재라인 모달 열기
 const openModal = () => {
+	// if (organigramRef.value) {
+	// 	organigramRef.value.resetChecks();
+	// }
+
 	// selectedAuditors 에 있는 모든 유저를 selectedUsers에 추가
 	selectedUsers.value = [];
 	for (const key in selectedAuditors.value) {
@@ -740,6 +745,11 @@ const postAuditDocRecordId = async (auditId, userId) => {
 const requestAudit = async (e) => {
     e.preventDefault();
 
+	if (!editorContent.value || editorContent.value.trim() === '') {
+        alert('결재 내용을 입력해주세요.');
+        return;
+    }
+
     try {
         const formData = new FormData(e.target);
 		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
@@ -804,6 +814,12 @@ const requestAudit = async (e) => {
 			postAuditDocRecordId(auditId, roleInfo.userId)
 		));
 		console.log('요청완료 === requestAudit === res : ', res);
+
+		// 결재자 선택 모달 체크박스 초기화
+		selectedUsers.value = [];
+		selectedAuditors.value.approvers = [];
+		selectedAuditors.value.agreers = [];
+		selectedAuditors.value.receivers = [];
 
         alert("결재 요청이 완료되었습니다.");
         router.push({
@@ -1307,6 +1323,12 @@ onUnmounted(() => {
 
 .audit-title {
 	text-align: left;
+}
+
+.select-approver {
+	.table {
+		min-width: 23rem;
+	}
 }
 
 @media (max-width: 768px) {
