@@ -19,9 +19,48 @@ self.addEventListener('push', function(event) {
         badge: 'icon-192x192.png'
     };
     
+    // event.waitUntil(
+    //     self.registration.showNotification(title, options)
+    // );
+
+	// 알림 표시 및 뱃지 업데이트
     event.waitUntil(
-        self.registration.showNotification(title, options)
+        Promise.all([
+            // 1. 알림 표시
+            self.registration.showNotification(title, options),
+
+            // 2. PWA 뱃지 업데이트
+            (async () => {
+                try {
+                    // 현재 뱃지 숫자를 1 증가
+                    const newBadgeCount = badgeCount + 1;
+
+                    // 새로운 뱃지 숫자 설정
+                    await navigator.setAppBadge(newBadgeCount);
+                    console.log(`[Service Worker] Badge updated to ${newBadgeCount}`);
+
+                    // 뱃지 숫자 업데이트
+                    badgeCount = newBadgeCount;
+
+                    // main.ts로 newBadgeCount 전송
+                    self.clients.matchAll().then(clients => {
+                        clients.forEach(client => {
+                            client.postMessage({
+                                type: 'BADGE_UPDATED',
+                                badgeCount: newBadgeCount
+                            });
+                        });
+                    });
+                } catch (error) {
+                    console.error('[Service Worker] Failed to update badge:', error);
+                }
+            })()
+        ])
     );
+
+
+
+
     // const data = event.data.json();
     // const title = data.title || "Default Title";
 	// const urlMap = {
