@@ -36,10 +36,14 @@ import { skapi, realtimeTestingMsg } from "@/main";
 import { user } from "@/user";
 
 let subsState = ref(false);
+let pushNotificationBody = {
+	text: '테스트 Realtime',
+	type: 'test',
+}
 let notifications = {
 	content: {
-		title: "Test Title",
-		body: "Test Body",
+		title: "알림",
+		body: JSON.stringify(pushNotificationBody),
 	},
 	user_id: "",
 }
@@ -52,7 +56,7 @@ function subscribe () {
 }
 
 let postRealtimeBody = {
-	text: '테스트 페이지에서 보내는 postRealtime 메시지',
+	text: '테스트 Realtime',
 	type: 'test',
 }
 
