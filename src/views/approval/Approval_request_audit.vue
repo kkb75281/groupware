@@ -216,7 +216,7 @@ template(v-if="step > 1")
 												svg
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 									td 
-										.input-wrap
+										.input-wrap.user-role
 											select(v-model="user.role")
 												option(value="approvers" selected) 결재
 												option(value="agreers") 합의
@@ -810,12 +810,16 @@ const requestAudit = async (e) => {
 				order: null
 			}))
 		];
-		console.log('요청완료 === requestAudit === processRoles : ', processRoles);
+		// console.log('요청완료 === requestAudit === processRoles : ', processRoles);
 
 		const res = await Promise.all(processRoles.map(roleInfo => 
 			postAuditDocRecordId(auditId, roleInfo.userId)
 		));
-		console.log('요청완료 === requestAudit === res : ', res);
+
+		// 결재라인 select option '결재'로 초기화
+		selectedUsers.value.forEach(user => {
+			user.role = 'approvers';
+		});
 
 		// 결재자 선택 모달 체크박스 초기화
 		selectedUsers.value = [];

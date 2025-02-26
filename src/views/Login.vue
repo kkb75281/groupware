@@ -49,6 +49,11 @@
 			.inner
 				img.google-logo(src="@/assets/img/icon_google.svg")
 				span Google 계정으로 로그인
+			input#input_googleAutoLogin(@change="(e)=>{setLocalStorage(e)}" type="checkbox" name="checkbox" checked hidden)
+		//- label.checkbox(style="margin-top: 1rem;")
+			input#input_googleAutoLogin(@change="(e)=>{setLocalStorage(e)}" type="checkbox" name="checkbox" checked hidden)
+			span.label-checkbox 로그인 상태 유지
+
 		//- .btn-login-google
 			img(src="@/assets/img/web_light_sq_SI@3x.png" style="width: 11rem;")
 		//- button#el_bt_login.btn.btn-login-google(type="button" @click="googleLogin" :disabled="loading" style="margin-top: 0;")
