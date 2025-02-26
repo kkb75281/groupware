@@ -1,5 +1,5 @@
 import { Reactive, reactive, type Ref, ref, watch } from "vue";
-import { skapi } from "@/main";
+import { skapi, checkNotificationPermission } from "@/main";
 import { user } from "@/user";
 import { getUserInfo } from "@/employee";
 import { fetchGmailEmails } from "@/utils/mail";
@@ -321,12 +321,14 @@ export async function subscribeNotification() {
 		});
 	}
 
-	const permission = await Notification.requestPermission();
-	console.log({ permission });
-	if (permission !== "granted") {
-		console.error("Permission not granted for notifications");
-		return;
-	}
+	await checkNotificationPermission();
+
+	// const permission = await Notification.requestPermission();
+	// console.log({ permission });
+	// if (permission !== "granted") {
+	// 	console.error("Permission not granted for notifications");
+	// 	return;
+	// }
 
 	const registration = await navigator.serviceWorker.register("/sw.js");
 	await navigator.serviceWorker.ready;
