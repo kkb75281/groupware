@@ -364,7 +364,7 @@ export async function unsubscribeNotification() {
 }
  
 export function pushNotification(content: { title: string; body: string }, userId: string | string[]) {
-	skapi.pushNotification(content, userId);											
+	skapi.pushNotification(content, userId).then((res) => {console.log(res)});											
 }
 
 watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
