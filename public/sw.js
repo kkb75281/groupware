@@ -19,34 +19,47 @@ self.addEventListener('push', function(event) {
 	
 	console.log('sw.js에서 받은 알람 정보', data);
 
-	let body = JSON.parse(data.body);
+	// let body = JSON.parse(data.body);
 
-	// try{
-	// 	body = JSON.parse(body);
+	// // try{
+	// // 	body = JSON.parse(body);
 
-	// 	if(body && body.data) {
-	// 		options.data = body.data;
-	// 	}
+	// // 	if(body && body.data) {
+	// // 		options.data = body.data;
+	// // 	}
+	// // }
+	// // catch(err){}
+
+	// const options = {
+	// 	body: body.text || "Default Body",
+	// 	icon: 'icon-192x192.png',
+	// 	badge: 'icon-192x192.png'
+	// };
+
+	// if(body.type) {
+	// 	options.data.type = body.type
 	// }
-	// catch(err){}
 
+	// if(body.id) {
+	// 	options.data.url = urlMap[body.url] + body.id;
+	// } else {
+	// 	options.data.url = '/';
+	// }
+
+	// console.log('sw.js에서 받은 옵션', options);
+
+
+
+
+	// 17:45
 	const options = {
-		body: body.text || "Default Body",
+		body: data.body || "Default Body",
 		icon: 'icon-192x192.png',
 		badge: 'icon-192x192.png'
-	};
-
-	if(body.type) {
-		options.data.type = body.type
 	}
 
-	if(body.id) {
-		options.data.url = urlMap[body.url] + body.id;
-	} else {
-		options.data.url = '/';
-	}
 
-	console.log('sw.js에서 받은 옵션', options);
+
     
     event.waitUntil(
         self.registration.showNotification(title, options)
@@ -78,28 +91,28 @@ self.addEventListener('notificationclick', function(event) {
     event.waitUntil(
         // clients.openWindow(url)
 
-		// clients.matchAll().then((clients) => {
-        //     clients.forEach((client) => {
-        //         client.postMessage({ type: 'notification-clicked' });
-        //     });
-
-        //     // 새 창 열기 (옵션)
-        //     if (!clients.length) {
-        //         return clients.openWindow(url);
-        //     }
-        // })
-
 		clients.matchAll().then((clients) => {
             clients.forEach((client) => {
-                client.postMessage({
-                    type: 'notification-clicked',
-                    notificationType: data.type, // 알림 종류
-                    url: data.url                // 연결할 URL
-                });
+                client.postMessage({ type: 'notification-clicked' });
             });
 
-            // 새 창 열기
-            return clients.openWindow(data.url || '/');
+            // 새 창 열기 (옵션)
+            if (!clients.length) {
+                return clients.openWindow(url);
+            }
         })
+
+		// clients.matchAll().then((clients) => {
+        //     clients.forEach((client) => {
+        //         client.postMessage({
+        //             type: 'notification-clicked',
+        //             notificationType: data.type, // 알림 종류
+        //             url: data.url                // 연결할 URL
+        //         });
+        //     });
+
+        //     // 새 창 열기
+        //     return clients.openWindow(data.url || '/');
+        // })
     );
 });

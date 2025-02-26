@@ -649,7 +649,8 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
             auditor_id,
 			{
 				title: '[그룹웨어]',
-				body: JSON.stringify(postRealtimeBody)
+				// body: JSON.stringify(postRealtimeBody)
+				body: `${user.name}님께서 결재를 올렸습니다.`,
 			}
         )
         .then((res) => {
@@ -679,7 +680,8 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 				auditor_id,
 				{
 					title: '[그룹웨어]',
-					body: JSON.stringify(postRealtimeBody)
+					// body: JSON.stringify(postRealtimeBody)
+					body: `${user.name}님께서 결재를 올렸습니다.`,
 				}
 			).then((res) => {
 				console.log("요청2 다시 === postRealtime === res : ", res);

@@ -37,13 +37,14 @@ import { user } from "@/user";
 
 let subsState = ref(false);
 let pushNotificationBody = {
-	text: '테스트 Realtime',
+	text: '테스트 Notification',
 	type: 'test',
 }
 let notifications = {
 	content: {
 		title: "알림",
-		body: JSON.stringify(pushNotificationBody),
+		// body: JSON.stringify(pushNotificationBody),
+		body: "테스트 Notification",
 	},
 	user_id: "",
 }
@@ -68,7 +69,8 @@ function postRealTimeMsg () {
 		notifications.user_id,
 		{
 			title: '알림',
-			body: JSON.stringify(postRealtimeBody),
+			// body: JSON.stringify(postRealtimeBody),
+			body: '테스트 Realtime',
 		}
 	).then((res) => {
 		console.log('postRealTimeMsg', res);
