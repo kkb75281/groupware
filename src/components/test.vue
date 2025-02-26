@@ -3,12 +3,12 @@ h4 {{ realtimeTestingMsg }}
 
 .test-area
 	h3.title Notification Subscribe Test
-	p {{  subsState ? 'Notification is subscribed' : 'Notification is not subscribed' }}
+	//- p {{  subsState ? 'Notification is subscribed' : 'Notification is not subscribed' }}
 
 	br
 
-	button.btn(v-if="!subsState" @click="subscribe") Subscribe
-	button.btn(v-if="subsState" @click="unsubscribeNotification") Unsubscribe
+	button.btn(@click="subscribe") Subscribe
+	button.btn(@click="unsubscribeNotification") Unsubscribe
 
 	.input-wrap
 		input(type="text" v-model="notifications.content.title" placeholder="Title")
@@ -78,10 +78,10 @@ function postRealTimeMsg () {
 }
 
 onMounted(async() => {
-	let subs = window.localStorage.getItem('skapi_subscription_obj');
-	if (subs) {
-		subsState.value = true;
-	}
+	// let subs = window.localStorage.getItem('skapi_subscription_obj');
+	// if (subs) {
+	// 	subsState.value = true;
+	// }
 	// let pms = await Notification.requestPermission();
 	// pms ? notiState.value = true : notiState.value = false;
 })
