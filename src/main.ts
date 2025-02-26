@@ -139,15 +139,15 @@ async function handleNotificationClick() {
 	await getRealtime(true);
 	console.log('getRealtime 완료');
 
-	// 뱃지 초기화
-	if ('clearAppBadge' in navigator) {
-		navigator.clearAppBadge().then(() => {
-			currentBadgeCount.value = 0;
-			console.log('뱃지 초기화 완료');
-		}).catch((error) => {
-			console.error('Failed to clear app badge:', error);
-		});
-	}
+	// // 뱃지 초기화
+	// if ('clearAppBadge' in navigator) {
+	// 	navigator.clearAppBadge().then(() => {
+	// 		currentBadgeCount.value = 0;
+	// 		console.log('뱃지 초기화 완료');
+	// 	}).catch((error) => {
+	// 		console.error('Failed to clear app badge:', error);
+	// 	});
+	// }
 }
 
 // 뱃지 값을 증가시키는 함수
