@@ -21,17 +21,17 @@ let isTabVisible = ref(document.visibilityState === 'visible'); // 현재 탭을
 export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
 let connectRunning:Promise<any> | null = null;
 
-watch(isConnected, (nv, ov) => {
-	if(nv !== ov && nv === false) {
-		if(!isConnected.value && connectRunning === null) {
-			console.log('다시 연결합니다. isConnected Watcher');
-			connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
-				connectRunning = null
-				console.log({isConnected: isConnected.value});
-			});
-		}
-	}
-}, { immediate: true });
+// watch(isConnected, (nv, ov) => {
+// 	if(nv !== ov && nv === false) {
+// 		if(!isConnected.value && connectRunning === null) {
+// 			console.log('다시 연결합니다. isConnected Watcher');
+// 			connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
+// 				connectRunning = null
+// 				console.log({isConnected: isConnected.value});
+// 			});
+// 		}
+// 	}
+// }, { immediate: true });
 
 // watch(isTabVisible, (nv) => {
 // 	if (nv) {
@@ -58,8 +58,18 @@ function setupVisibilityListener() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             console.log('탭이 활성화되었습니다.');
-			
             isTabVisible.value = true;
+
+			// 뱃지 초기화
+			if ('clearAppBadge' in navigator) {
+				navigator.clearAppBadge().then(() => {
+					currentBadgeCount.value = 0;
+					console.log('뱃지 초기화 완료');
+				}).catch((error) => {
+					console.error('Failed to clear app badge:', error);
+				});
+			}
+
 			console.log('탭 활성화 여부 함수 isConnected.value', isConnected.value);
 			if(!isConnected.value && connectRunning === null) {
 				console.log('다시 연결합니다.');

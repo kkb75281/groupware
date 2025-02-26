@@ -18,8 +18,9 @@ h4 {{ realtimeTestingMsg }}
 	.input-wrap
 		select(v-model="notifications.user_id")
 			option(value="" selected disabled) 유저선택
-			option(value="d80ac776-6fc3-496b-a4dd-357bd2be8df0") 권구글
-			option(value="75d7daa9-fc2d-4703-9e85-1bb8d6c57fbb") 오구글
+			option(value="d80ac776-6fc3-496b-a4dd-357bd2be8df0") 권구글(구글)
+			option(value="75d7daa9-fc2d-4703-9e85-1bb8d6c57fbb") 오구글(구글)
+			option(value="86a11d15-176e-4f31-bd49-f947c44e2a59") 김직원(+계정)
 
 	br
 
@@ -35,10 +36,14 @@ import { skapi, realtimeTestingMsg } from "@/main";
 import { user } from "@/user";
 
 let subsState = ref(false);
+let pushNotificationBody = {
+	text: '테스트 Realtime',
+	type: 'test',
+}
 let notifications = {
 	content: {
-		title: "Test Title",
-		body: "Test Body",
+		title: "알림",
+		body: JSON.stringify(pushNotificationBody),
 	},
 	user_id: "",
 }
@@ -51,7 +56,7 @@ function subscribe () {
 }
 
 let postRealtimeBody = {
-	text: '테스트 페이지에서 보내는 postRealtime 메시지',
+	text: '테스트 Realtime',
 	type: 'test',
 }
 
