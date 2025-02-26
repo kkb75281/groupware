@@ -89,18 +89,18 @@ self.addEventListener('notificationclick', function(event) {
 
 	// 메인 애플리케이션에 메세지 전송
     event.waitUntil(
-        // clients.openWindow(url)
+        clients.openWindow(url)
 
-		clients.matchAll().then((clients) => {
-            clients.forEach((client) => {
-                client.postMessage({ type: 'notification-clicked' });
-            });
+		// clients.matchAll().then((clients) => {
+        //     clients.forEach((client) => {
+        //         client.postMessage({ type: 'notification-clicked' });
+        //     });
 
-            // 새 창 열기 (옵션)
-            if (!clients.length) {
-                return clients.openWindow(url);
-            }
-        })
+        //     // 새 창 열기 (옵션)
+        //     if (!clients.length) {
+        //         return clients.openWindow(url);
+        //     }
+        // })
 
 		// clients.matchAll().then((clients) => {
         //     clients.forEach((client) => {
