@@ -82,12 +82,13 @@ export default defineConfig({
     }
   },
   server: {
-	https: {
-		key: fs.readFileSync('./certs/localhost-key.pem'),
-		cert: fs.readFileSync('./certs/localhost-cert.pem')
-	},
+	// https: {
+	// 	key: fs.readFileSync('./certs/localhost-key.pem'),
+	// 	cert: fs.readFileSync('./certs/localhost-cert.pem')
+	// },
 	host: 'localhost',
-	port: 5173,
+	port: 3333,
+	// port: 5173,
     // https: false, // HTTPS를 비활성화
     // host: 'localhost',
     // port: 5173,
