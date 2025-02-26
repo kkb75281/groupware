@@ -119,6 +119,21 @@ self.addEventListener('push', function(event) {
     // );
 });
 
+self.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'RESET_BADGE') {
+        // 메인 애플리케이션에서 전달된 뱃지 숫자로 초기화
+        badgeCount = event.data.badgeCount || 0;
+        console.log(`[Service Worker] Badge count reset to ${badgeCount}`);
+
+        // PWA 뱃지도 초기화
+        navigator.clearAppBadge().then(() => {
+            console.log('[Service Worker] App badge cleared.');
+        }).catch(error => {
+            console.error('[Service Worker] Failed to clear app badge:', error);
+        });
+    }
+});
+
 self.addEventListener('notificationclick', function(event) {
 	event.notification.close();
     // current website url
