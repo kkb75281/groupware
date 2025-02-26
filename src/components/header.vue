@@ -176,11 +176,11 @@ function formatTimeAgo(timestamp) {
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
 	currentBadgeCount.value = 0;
-	navigator.setAppBadge(0).then(r => {
-		console.log('setAppBadge', r);
-	}).catch((error) => {
-		console.error('Failed to set app badge:', error);
-	});
+	// navigator.setAppBadge(0).then(r => {
+	// 	console.log('setAppBadge', r);
+	// }).catch((error) => {
+	// 	console.error('Failed to set app badge:', error);
+	// });
 };
 
 let closeNotification = (event) => {
