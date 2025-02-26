@@ -244,6 +244,13 @@ if ('serviceWorker' in navigator) {
         if (event.data && event.data.type === 'notification-clicked') {
             handleNotificationClick();
         }
+		if (event.data && event.data.type === 'BADGE_UPDATED') {
+			const newBadgeCount = event.data.badgeCount;
+			console.log(`[Main App] Received new badge count: ${newBadgeCount}`);
+
+			// 뱃지 갱신
+			currentBadgeCount.value = newBadgeCount;
+		}
     });
 }
 
@@ -301,7 +308,7 @@ export let RealtimeCallback = async (rt: any) => {
 		console.log({rt})
 		console.log({type: rt.type});
 		await getRealtime(true);
-		
+
 		if (rt.message === 'Connected to WebSocket server.') {
 		// 실시간 통신 연결 성공
 		// 과거 결재 요청 목록 가져오기
