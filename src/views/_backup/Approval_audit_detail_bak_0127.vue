@@ -238,7 +238,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 
-import Loading from '@/components/Loading.vue';
+import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();

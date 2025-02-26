@@ -624,8 +624,8 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 
 	let postRealtimeBody = {
 		text: `${user.name}님께서 결재를 올렸습니다.`,
-		type: 'audit_request',
-		url: `/approval/audit-detail/${audit_id}`,
+		type: 'audit',
+		id: audit_id,
 	}
 
 	// 실시간 알림 보내기

@@ -231,7 +231,7 @@ import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
 
-import Loading from '@/components/Loading.vue';
+import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
