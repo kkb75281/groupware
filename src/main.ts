@@ -6,7 +6,7 @@ import { user, profileImage } from './user';
 import { fetchGmailEmails } from "@/utils/mail";
 import App from './App.vue';
 import router from './router';
-import { notifications, realtimes, unreadCount, readList, mailList, getRealtime, subscribeNotification } from './notifications';
+import { realtimes, unreadCount, readList, getRealtime, subscribeNotification } from './notifications';
 import { getUserInfo, employeeDict, getEmpDivisionPosition } from './employee';
 import { getAuditList, getSendAuditList } from './audit';
 
