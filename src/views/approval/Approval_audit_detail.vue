@@ -248,6 +248,7 @@ import {
 
 import Loading from '@/components/Loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
+import { url } from 'inspector';
 
 const router = useRouter();
 const route = useRoute();
@@ -811,6 +812,12 @@ const postApproval = async () => {
     });
     console.log('결재 === postApproval === res : ', res);
 
+	let postRealtimeBody = {
+		text: `${user.name}님께서 결재를 ${approveAudit.value ? '승인' : '반려'}했습니다.`,
+		type: 'audit_approval',
+		url: `/approval/audit-detail/${auditId.value}`
+	}
+
     // 실시간 알림 보내기
     skapi
       .postRealtime(
@@ -831,7 +838,7 @@ const postApproval = async () => {
         auditDoContent.value.user_id,
 		{
 			title: '알림',
-			body: `${user.name}님께서 결재를 ${approveAudit.value ? '승인' : '반려'}했습니다.`
+			body: JSON.stringify(postRealtimeBody)
 		}
       )
       .then((res) => {

@@ -20,14 +20,14 @@ let isConnected = false;
 let isTabVisible = ref(document.visibilityState === 'visible'); // 현재 탭을 보고 있는지 여부
 export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
 
-watch(isTabVisible, (nv) => {
-	if (nv) {
-		currentBadgeCount.value = 0;
-		navigator.setAppBadge(0).catch((error) => {
-			console.error('Failed to set app badge:', error);
-		});
-	}
-}, { immediate: true });
+// watch(isTabVisible, (nv) => {
+// 	if (nv) {
+// 		currentBadgeCount.value = 0;
+// 		navigator.setAppBadge(0).catch((error) => {
+// 			console.error('Failed to set app badge:', error);
+// 		});
+// 	}
+// }, { immediate: true });
 
 // function getChanges(before:any, after:any) {
 //   const beforeKeys = new Set(Object.keys(before));
@@ -40,117 +40,29 @@ watch(isTabVisible, (nv) => {
 //   return { added: addedKeys, removed: removedKeys, modified: modifiedKeys };
 // }
 
+
+let connectRunning:Promise<any> | null = null;
 // 가시성 상태 감지
 function setupVisibilityListener() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             console.log('탭이 활성화되었습니다.');
+			checkNotificationPermission();
             isTabVisible.value = true;
+			if(!isConnected && connectRunning === null) {
+				console.log('다시 연결합니다.');
+				connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
+					connectRunning = null
+					console.log({isConnected});
+				});
+			}
         } else {
             console.log('탭이 비활성화되었습니다.');
             isTabVisible.value = false;
         }
     });
 }
-
-// main.js
-
-// async function checkSubscriptionStatus() {
-//     try {
-//         const registration = await navigator.serviceWorker.ready;
-//         const subscription = await registration.pushManager.getSubscription();
-
-//         if (!subscription) {
-//             console.log("User is not subscribed to push notifications.");
-//             // 사용자에게 재구독 요청 로직 추가 가능
-//             requestNotificationPermission();
-//         } else {
-//             console.log("User is still subscribed:", subscription);
-//         }
-//     } catch (error) {
-//         console.error("Error checking subscription status:", error);
-//     }
-// }
-
-// function requestNotificationPermission() {
-//     Notification.requestPermission().then((permission) => {
-//         if (permission === "granted") {
-//             console.log("Notification permission granted.");
-//             // 여기서 새로운 구독 요청 가능
-//         } else {
-//             console.warn("Notification permission denied.");
-//         }
-//     });
-// }
-
-// // 주기적으로 구독 상태 체크 (예: 하루에 한 번)
-// setInterval(checkSubscriptionStatus, 24 * 60 * 60 * 1000);
-
-// // 초기 체크
-// checkSubscriptionStatus();
-
-// 알림 표시 함수
-// function showNotification(message) {
-// 	// Service Worker 등록
-// 	if ('serviceWorker' in navigator) {
-// 		navigator.serviceWorker.register('/sw.js')
-// 			.then(registration => {
-// 				console.log('Service Worker 등록 성공:', registration);
-
-// 				// Service Worker의 상태 확인
-// 				if (!registration.active) {
-// 					console.warn('Service Worker가 아직 활성화되지 않았습니다.');
-// 					return;
-// 				}
-
-// 				// 알림 권한 요청
-// 				if (Notification.permission === 'granted') {
-// 					console.log('알림 권한이 허용되었습니다.');
-
-// 					// showNotification 메서드 확인
-// 					if (typeof registration.showNotification === 'function') {
-// 						registration.showNotification('서비스 워커 알림', {
-// 							body: message,
-// 							icon: 'favicon-icon.png'
-// 						});
-// 						console.log('알림이 표시되었습니다.');
-// 					} else {
-// 						console.error('showNotification 메서드를 사용할 수 없습니다.');
-// 					}
-// 				} else {
-// 					console.warn('알림 권한이 거부되었습니다.');
-// 				}
-// 			})
-// 			.catch(error => {
-// 				console.error('Service Worker 등록 실패:', error);
-// 			});
-// 	} else {
-// 		console.error('Service Worker를 지원하지 않는 브라우저입니다.');
-// 	}
-
-//     if (Notification.permission === 'granted') {
-//         new Notification('새로운 메시지', {
-//             body: message,
-//             icon: '/favicon-icon.png' // 아이콘 경로 (옵션)
-//         });
-// 		console.log('알림이 표시되었습니다.');
-//     } else {
-//         console.error('알림 권한이 없습니다.');
-//     }
-// }
-
-// if ('serviceWorker' in navigator) {
-// 	navigator.serviceWorker.ready.then((registration) => {
-// 	  // Service Worker로부터 메시지 수신
-// 	  navigator.serviceWorker.addEventListener('message', (event) => {
-// 		if (event.data && event.data.type === 'clear-badge') {
-// 		  // 뱃지 카운트를 0으로 초기화
-// 		  currentBadgeCount = 0;
-// 		  console.log('Badge count cleared:', currentBadgeCount);
-// 		}
-// 	  });
-// 	});
-//   }
+setupVisibilityListener();
 
 function showNotification(message) {
 	console.log('showNotification')
@@ -198,8 +110,11 @@ function handleNotification(message) {
 	}
 }
 
-function handleNotificationClick() {
+async function handleNotificationClick() {
 	console.log('알림 클릭 감지됨');
+	console.log('getRealtime 실행');
+	await getRealtime(true);
+	console.log('getRealtime 완료');
 
 	// 뱃지 초기화
 	if ('clearAppBadge' in navigator) {
@@ -210,9 +125,6 @@ function handleNotificationClick() {
 			console.error('Failed to clear app badge:', error);
 		});
 	}
-	nextTick(() => {
-		getRealtime();
-	})
 }
 
 // 뱃지 값을 증가시키는 함수
@@ -292,15 +204,15 @@ function updateAuditsAndApprovals(audits, approvals) {
 
 
 // 페이지 로드 시 알림 권한 요청
-document.addEventListener('DOMContentLoaded', () => {
-	console.log('DOMContentLoaded');
-	checkNotificationPermission();
-	console.log('DOMContentLoaded - checkNotificationPermission - complete');
-	if (Object.keys(user).length && !isConnected) {
-		skapi.connectRealtime(RealtimeCallback);
-		console.log('DOMContentLoaded - isConnected - connectRealtime - complete');
-	}
-});
+// document.addEventListener('DOMContentLoaded', () => {
+// 	console.log('DOMContentLoaded');
+// 	checkNotificationPermission();
+// 	console.log('DOMContentLoaded - checkNotificationPermission - complete');
+// 	if (Object.keys(user).length && !isConnected) {
+// 		skapi.connectRealtime(RealtimeCallback);
+// 		console.log('DOMContentLoaded - isConnected - connectRealtime - complete');
+// 	}
+// });
 
 // Service Worker로부터 메시지 수신
 if ('serviceWorker' in navigator) {
@@ -341,16 +253,17 @@ export let RealtimeCallback = async (rt: any) => {
 		*/
 
 	if (rt.type === 'error' || rt.type === 'close') {
+		const errorTime = new Date();
 		console.log({rt})
-		console.log({type: rt.type});
+    	console.error({ errorTime });
 		isConnected = false;
-		if(isTabVisible.value) {
-			console.log('탭이 활성화되어 있습니다.');
-			await skapi.connectRealtime(RealtimeCallback).catch((err) => console.error({ err }));
-		}
+		// if(isTabVisible.value) {
+		// 	console.log('탭이 활성화되어 있습니다.');
+		// 	await skapi.connectRealtime(RealtimeCallback).catch((err) => console.error({ err }));
+		// }
 		// getRealtime();
-		console.log('다시 연결합니다.');
-		console.log({isConnected});
+		// console.log('다시 연결합니다.');
+		// console.log({isConnected});
 	}
 
 	if (rt.type === 'success') {
@@ -429,8 +342,6 @@ export let RealtimeCallback = async (rt: any) => {
 
 			realtimeTestingMsg.value = rt.message;
 			console.log('=== RealtimeCallback === realtimeTestingMsg : ', realtimeTestingMsg.value);
-
-			setupVisibilityListener();
 
 			let realtimeMsg = rt.message;
 			let realtimeSender = null;
@@ -598,8 +509,10 @@ export let loginCheck = async (profile: any) => {
 			skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => console.error({ err }));
 		}
 
-		if (!isConnected) {
-			skapi.connectRealtime(RealtimeCallback);
+		if (!isConnected && connectRunning === null) {
+			connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
+				connectRunning = null
+			});
 		}
 	}
 

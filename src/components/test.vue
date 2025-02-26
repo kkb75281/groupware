@@ -50,6 +50,11 @@ function subscribe () {
 	subsState.value = true;
 }
 
+let postRealtimeBody = {
+	text: '테스트 페이지에서 보내는 postRealtime 메시지',
+	type: 'test',
+}
+
 // 마지막 매개변수 리얼타임 못받을 경우 꼭 노티피케이션 받아야 하면 추가
 function postRealTimeMsg () {
 	// 실시간 알림 보내기
@@ -58,7 +63,7 @@ function postRealTimeMsg () {
 		notifications.user_id,
 		{
 			title: '알림',
-			body: `결재 요청이 도착했습니다.`
+			body: JSON.stringify(postRealtimeBody),
 		}
 	).then((res) => {
 		console.log('postRealTimeMsg', res);
