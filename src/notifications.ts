@@ -1,5 +1,5 @@
 import { Reactive, reactive, type Ref, ref, watch } from "vue";
-import { skapi } from "@/main";
+import { skapi, checkNotificationPermission } from "@/main";
 import { user } from "@/user";
 import { getUserInfo } from "@/employee";
 import { fetchGmailEmails } from "@/utils/mail";
@@ -321,7 +321,9 @@ export async function subscribeNotification() {
 		});
 	}
 
-	const permission = await Notification.requestPermission();
+	const permission = await checkNotificationPermission();
+
+	// const permission = await Notification.requestPermission();
 	console.log({ permission });
 	if (permission !== "granted") {
 		console.error("Permission not granted for notifications");
@@ -339,7 +341,7 @@ export async function subscribeNotification() {
 		.then((sub) => sub.toJSON()); // Convert to plain object
 
 	console.log("Subscription object:", subscription); // Debugging
-	window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
+	// window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
 
 	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
 	console.log({response})
