@@ -11,11 +11,12 @@
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {
+    "basic-node-server": "^1.0.11",
     "cropperjs": "^1.6.2",
     "less": "^4.2.0",
     "prettier": "^3.5.2",
     "pug": "^3.0.3",
-    "skapi-js": "^1.0.215",
+    "skapi-js": "^1.0.217",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5"
   },
