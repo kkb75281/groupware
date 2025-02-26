@@ -209,7 +209,9 @@ let resigterComp = async(e) => {
         return await skapi.deleteRecords({
                 unique_id: '[division_name_list]'
         });
-    }).finally(createDivisionName);
+    }).catch(err =>{
+		console.log({err});
+	}).finally(createDivisionName);
 
     // // 부서명 저장
     // skapi.getRecords({
