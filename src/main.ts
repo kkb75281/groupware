@@ -58,8 +58,18 @@ function setupVisibilityListener() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             console.log('탭이 활성화되었습니다.');
-			
             isTabVisible.value = true;
+
+			// 뱃지 초기화
+			if ('clearAppBadge' in navigator) {
+				navigator.clearAppBadge().then(() => {
+					currentBadgeCount.value = 0;
+					console.log('뱃지 초기화 완료');
+				}).catch((error) => {
+					console.error('Failed to clear app badge:', error);
+				});
+			}
+
 			console.log('탭 활성화 여부 함수 isConnected.value', isConnected.value);
 			if(!isConnected.value && connectRunning === null) {
 				console.log('다시 연결합니다.');
