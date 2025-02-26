@@ -381,14 +381,20 @@ watch(user, async(u) => { // 로딩되고 로그인되면 무조건 실행
 // }, { immediate: true, deep: true });
 
 watch([realtimes, readList, notifications.emails], () => {
+	console.log('=== watch === realtimes.value : ', realtimes.value);
     // 기존 알림 개수
     const auditCount = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
+    // const auditCount = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id));
+
+	// 만약 realtimes.value 중 읽은 알람이 audit_type: canceled 인 경우, 같은 레코드의 audit_type: "request"도 읽은 것으로 처리
     
     // 읽지 않은 이메일 개수
     const emailCount = notifications.emails.length;
     
     // 전체 읽지 않은 알림 개수
     unreadCount.value = auditCount + emailCount;
+
+	console.log('=== watch === auditCount : ', auditCount);
 }, { immediate: true, deep: true });
 
 // 컴포넌트 마운트 시 이메일 업데이트 되는 거에 따른 mails.value 변경 감지
