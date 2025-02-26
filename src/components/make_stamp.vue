@@ -219,6 +219,7 @@ onUnmounted(() => {
 
 .canvas-wrap {
     margin: 0;
+    touch-action: none;
 }
 
 canvas {
