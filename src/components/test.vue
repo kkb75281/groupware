@@ -18,8 +18,9 @@ h4 {{ realtimeTestingMsg }}
 	.input-wrap
 		select(v-model="notifications.user_id")
 			option(value="" selected disabled) 유저선택
-			option(value="d80ac776-6fc3-496b-a4dd-357bd2be8df0") 권구글
-			option(value="75d7daa9-fc2d-4703-9e85-1bb8d6c57fbb") 오구글
+			option(value="d80ac776-6fc3-496b-a4dd-357bd2be8df0") 권구글(구글)
+			option(value="75d7daa9-fc2d-4703-9e85-1bb8d6c57fbb") 오구글(구글)
+			option(value="86a11d15-176e-4f31-bd49-f947c44e2a59") 김직원(+계정)
 
 	br
 
