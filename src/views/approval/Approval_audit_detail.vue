@@ -332,16 +332,18 @@ const openModal = (target) => {
 	approveAudit.value = false;
 	approvedComment.value = '';
 	approvalStep.value = 1;
+  stempType.value === 'stamp';
 
   if (target && target.user_id !== user.user_id) return;
 
   isModalOpen.value = true;
+  document.body.classList.add('modal-open');
 };
 
 const closeModal = () => {
   isModalOpen.value = false;
   isStampModalOpen.value = false;
-  // disabled.value = true;
+  document.body.classList.remove('modal-open');
 };
 
 const goToPrev = () => {
