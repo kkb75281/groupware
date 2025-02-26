@@ -838,7 +838,7 @@ const postApproval = async () => {
 		{
 			title: '알림',
 			// body: JSON.stringify(postRealtimeBody)
-			body: `${user.name}님께서 결재를 ${approveAudit.value ? '승인' : '반려'}했습니다.`,
+			body: `${user.name}님께서 결재를 완료했습니다.`,
 		}
       )
       .then((res) => {

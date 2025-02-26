@@ -658,35 +658,35 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 			// console.log("=== postRealtime === auditor_id : ", auditor_id);
         }).catch(async(err) => {
 			console.error(err);
-			await skapi.connectRealtime(RealtimeCallback);
-			console.log('다시 connectRealtime 연결하고 다시 postRealtime 시도');
-			skapi
-			.postRealtime(
-				{
-					audit_request: {
-						noti_id: res.record_id,
-						noti_type: 'audit',
-						send_date: new Date().getTime(),
-						send_user: user.user_id,
-						audit_info: {
-							audit_type: 'request',
-							to_audit: to_audit,
-							audit_doc_id: audit_id,
-							audit_request_id: res.record_id,
-							send_auditors: send_auditors,
-						}
-					},
-				},
-				auditor_id,
-				{
-					title: '[그룹웨어]',
-					// body: JSON.stringify(postRealtimeBody)
-					body: `${user.name}님께서 결재를 올렸습니다.`,
-				}
-			).then((res) => {
-				console.log("요청2 다시 === postRealtime === res : ", res);
-				// console.log("=== postRealtime === auditor_id : ", auditor_id);
-			})
+			// await skapi.connectRealtime(RealtimeCallback);
+			// console.log('다시 connectRealtime 연결하고 다시 postRealtime 시도');
+			// skapi
+			// .postRealtime(
+			// 	{
+			// 		audit_request: {
+			// 			noti_id: res.record_id,
+			// 			noti_type: 'audit',
+			// 			send_date: new Date().getTime(),
+			// 			send_user: user.user_id,
+			// 			audit_info: {
+			// 				audit_type: 'request',
+			// 				to_audit: to_audit,
+			// 				audit_doc_id: audit_id,
+			// 				audit_request_id: res.record_id,
+			// 				send_auditors: send_auditors,
+			// 			}
+			// 		},
+			// 	},
+			// 	auditor_id,
+			// 	{
+			// 		title: '[그룹웨어]',
+			// 		// body: JSON.stringify(postRealtimeBody)
+			// 		body: `${user.name}님께서 결재를 올렸습니다.`,
+			// 	}
+			// ).then((res) => {
+			// 	console.log("요청2 다시 === postRealtime === res : ", res);
+			// 	// console.log("=== postRealtime === auditor_id : ", auditor_id);
+			// })
 		});
 
 	// 실시간 못 받을 경우 알림 기록 저장
