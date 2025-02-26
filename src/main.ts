@@ -182,6 +182,10 @@ export function checkNotificationPermission() {
         console.log("알림 권한이 아직 설정되지 않았습니다.");
         requestNotificationPermission();
     }
+	
+	console.log('checkNotificationPermission - complete');
+
+	return Notification.permission;
 }
 
 function requestNotificationPermission() {

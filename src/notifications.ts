@@ -321,14 +321,14 @@ export async function subscribeNotification() {
 		});
 	}
 
-	await checkNotificationPermission();
+	const permission = await checkNotificationPermission();
 
 	// const permission = await Notification.requestPermission();
-	// console.log({ permission });
-	// if (permission !== "granted") {
-	// 	console.error("Permission not granted for notifications");
-	// 	return;
-	// }
+	console.log({ permission });
+	if (permission !== "granted") {
+		console.error("Permission not granted for notifications");
+		return;
+	}
 
 	const registration = await navigator.serviceWorker.register("/sw.js");
 	await navigator.serviceWorker.ready;
