@@ -39,38 +39,6 @@ const props = defineProps({
 	}
 });
 
-// const resetChecks = () => {
-//   checkedUsers.value = [];
-  
-//   // 모든 체크박스 상태 초기화
-//   const resetDepartment = (department) => {
-//     department.isChecked = false;
-    
-//     // 멤버 상태 초기화
-//     if (department.members && department.members.length > 0) {
-//       department.members.forEach(member => {
-//         member.isChecked = false;
-//       });
-//     }
-    
-//     // 하위 부서 상태 초기화
-//     if (department.subDepartments && department.subDepartments.length > 0) {
-//       department.subDepartments.forEach(sub => {
-//         resetDepartment(sub);
-//       });
-//     }
-//   };
-  
-//   organigram.value.forEach(department => {
-//     resetDepartment(department);
-//   });
-// };
-
-// // defineExpose를 통해 부모 컴포넌트에서 접근 가능하게 함
-// defineExpose({
-//   resetChecks
-// });
-
 let checkedUsers = ref<{}>([]);
 
 // 모든 부서와 멤버의 체크박스 상태를 초기화하는 함수 추가
@@ -101,7 +69,6 @@ function resetAllCheckStatus() {
 
 onMounted(() => {
 	excludeCurrentUser.value = props.excludeCurrentUser;
-	// resetAllCheckStatus();
 	getOrganigram();
 });
 
