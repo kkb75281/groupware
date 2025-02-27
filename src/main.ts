@@ -16,10 +16,12 @@ export let iwaslogged = ref(false);
 export let loaded = ref(false);
 export let mainPageLoading = ref(false);
 export let realtimeTestingMsg = ref('');
-let isConnected = ref(false);
+export let isConnected = ref(false);
 let isTabVisible = ref(document.visibilityState === 'visible'); // 현재 탭을 보고 있는지 여부
 export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
-let connectRunning:Promise<any> | null = null;
+export let connectRunning:Promise<any> | null = null;
+export let serviceWorkerRegistMsg = ref('');
+export let notificationPermissionMsg = ref('');
 
 // watch(isConnected, (nv, ov) => {
 // 	if(nv !== ov && nv === false) {
@@ -192,12 +194,16 @@ function resetBadgeCount() {
 export function checkNotificationPermission() {
     if (Notification.permission === "granted") {
         console.log("알림이 이미 허용되어 있습니다.");
+		notificationPermissionMsg.value = '';
     } else if (Notification.permission === "denied") {
         console.log("알림이 차단되어 있습니다.");
         // 사용자에게 수동으로 권한 재요청을 유도
-        showPermissionRequestPrompt();
+        // showPermissionRequestPrompt();
+		// alert("브라우저 설정에서 알림 권한을 확인해주세요.");
+		notificationPermissionMsg.value = "알림이 차단되어 있습니다. 브라우저 설정에서 알림 권한을 확인해주세요.";
     } else if (Notification.permission === "default") {
         console.log("알림 권한이 아직 설정되지 않았습니다.");
+		notificationPermissionMsg.value = '';
         requestNotificationPermission();
     }
 
@@ -216,21 +222,21 @@ function requestNotificationPermission() {
     });
 }
 
-function showPermissionRequestPrompt() {
-    const isConfirmed = confirm(
-        "알림이 차단되어 있습니다. 알림을 활성화하려면 브라우저 설정에서 권한을 변경해주세요."
-    );
-    if (isConfirmed) {
-        // 브라우저 설정 페이지로 이동
-        if (navigator.userAgent.includes("Chrome")) {
-            window.open("chrome://settings/content/notifications", "_blank");
-        } else if (navigator.userAgent.includes("Firefox")) {
-            window.open("about:preferences#privacy", "_blank");
-        } else {
-            alert("브라우저 설정에서 알림 권한을 확인해주세요.");
-        }
-    }
-}
+// function showPermissionRequestPrompt() {
+//     const isConfirmed = confirm(
+//         "알림이 차단되어 있습니다. 알림을 활성화하려면 브라우저 설정에서 권한을 변경해주세요."
+//     );
+//     if (isConfirmed) {
+//         // 브라우저 설정 페이지로 이동
+//         if (navigator.userAgent.includes("Chrome")) {
+//             window.open("chrome://settings/content/notifications", "_blank");
+//         } else if (navigator.userAgent.includes("Firefox")) {
+//             window.open("about:preferences#privacy", "_blank");
+//         } else {
+//             alert("브라우저 설정에서 알림 권한을 확인해주세요.");
+//         }
+//     }
+// }
 
 function updateAuditsAndApprovals(audits, approvals) {
   if (audits.list.length > 0 || approvals.list.length > 0) {
@@ -329,7 +335,9 @@ export let RealtimeCallback = async (rt: any) => {
 	if (rt.type === 'success') {
 		console.log({rt})
 		console.log({type: rt.type});
+		console.log('리얼타임 연결 성공 후 getRealtime 실행시작');
 		await getRealtime(true);
+		console.log('리얼타임 연결 성공 후 getRealtime 실행완료');
 
 		if (rt.message === 'Connected to WebSocket server.') {
 		// 실시간 통신 연결 성공
