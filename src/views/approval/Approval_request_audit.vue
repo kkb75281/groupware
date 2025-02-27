@@ -749,7 +749,7 @@ const requestAudit = async (e) => {
     e.preventDefault();
 
 	// 결재 내용이 없을 경우 결재 요청 안되게
-	if (!editorContent.value) {
+	if (!editorContent.value || editorContent.value === '<p><br></p>') {
 		alert("결재 내용을 입력해주세요.");
 		return;
 	};
@@ -1348,6 +1348,16 @@ onUnmounted(() => {
 		tbody {
 			th {
 				text-align: left;
+			}
+		}
+	}
+
+	.input-title {
+		input {
+			font-size: 1.5rem;
+
+			&::placeholder {
+				font-size: 1.5rem;
 			}
 		}
 	}
