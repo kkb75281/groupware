@@ -175,14 +175,14 @@ export function checkNotificationPermission() {
 	return Notification.permission;
 }
 
-function requestNotificationPermission() {
-    Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-            console.log("사용자가 알림을 허용했습니다.");
-        } else if (permission === "denied") {
-            console.log("사용자가 알림을 차단했습니다.");
-        }
-    });
+async function requestNotificationPermission() {
+    let permission = await Notification.requestPermission();
+	
+	if (permission === "granted") {
+		console.log("사용자가 알림을 허용했습니다.");
+	} else if (permission === "denied") {
+		console.log("사용자가 알림을 차단했습니다.");
+	}
 }
 
 // function showPermissionRequestPrompt() {
@@ -233,7 +233,7 @@ function updateAuditsAndApprovals(audits, approvals) {
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'notification-clicked') {
-            handleNotificationClick();
+            // handleNotificationClick();
         }
 		if (event.data && event.data.type === 'BADGE_UPDATED') {
 			const newBadgeCount = event.data.badgeCount;
