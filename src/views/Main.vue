@@ -26,18 +26,16 @@ let emailCheckInterval;
 onMounted(async () => {
 	console.log('메인 페이지 onMounted');
 
-	// 로그인 상태 유지 시 토큰 복원
-    if (!sessionStorage.getItem('accessToken') && 
-        localStorage.getItem('remember') === 'true' && 
-        localStorage.getItem('googleRefreshToken')) {
-        
-        // 리프레시 토큰 복원
-        const refreshToken = localStorage.getItem('googleRefreshToken');
-        try {
-            const result = await refreshAccessToken(refreshToken);
-            console.log('토큰 복원 성공');
-        } catch (error) {
-            console.error('토큰 복원 실패:', error);
+    // 세션 스토리지에 액세스 토큰이 없는지 확인
+    if (!sessionStorage.getItem('accessToken')) {
+        // 로그인 상태 유지가 체크되어 있고 로컬 스토리지에 액세스 토큰이 있는지 확인
+        if (localStorage.getItem('remember') === 'true' && localStorage.getItem('accessToken')) {
+            // 로컬 스토리지에서 세션 스토리지로 토큰 복원
+            sessionStorage.setItem('accessToken', localStorage.getItem('accessToken'));
+            if (localStorage.getItem('refreshToken')) {
+                sessionStorage.setItem('refreshToken', localStorage.getItem('refreshToken'));
+            }
+            console.log('로컬 스토리지에서 액세스 토큰 복원 완료');
         }
     }
 
