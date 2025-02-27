@@ -32,3 +32,4 @@ coverage
 package-lock.json
 /certs
 /dev-dist
+/public/wrk.*
