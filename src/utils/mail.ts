@@ -16,7 +16,7 @@ async function fetchGmailEmails(accessToken) {
             if (response.status === 401) {
                 console.error('액세스 토큰이 만료되었습니다.');
                 // 세션 스토리지 토큰 삭제
-                sessionStorage.removeItem('accessToken');
+                localStorage.removeItem('accessToken');
                 return [];
             }
             throw new Error(`API 응답 오류: ${response.status}`);

@@ -244,8 +244,8 @@ let logout = () => {
 			delete user[key];
 		}
 		realtimes.value = [];
-		sessionStorage.removeItem('accessToken');
-		sessionStorage.removeItem('refreshToken');
+		localStorage.removeItem('accessToken');
+		localStorage.removeItem('refreshToken');
         router.push({ path: "/login" });
     });
 }

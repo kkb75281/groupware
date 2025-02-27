@@ -120,7 +120,7 @@ let login = (e) => {
 	loading.value = true;
 	promiseRunning.value = true;
 
-	sessionStorage.removeItem('accessToken');
+	localStorage.removeItem('accessToken');
 
 	skapi.login(e).then((u) => {
 		router.push('/');
@@ -199,7 +199,7 @@ async function refreshAccessToken(refreshToken) {
         const data = await response.json();
         if (response.ok) {
             const { access_token, expires_in } = data;
-			sessionStorage.setItem('accessToken', access_token);
+			localStorage.setItem('accessToken', access_token);
             console.log('새로운 Access Token:', access_token);
             console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
             return data;
@@ -210,8 +210,8 @@ async function refreshAccessToken(refreshToken) {
 					delete user[key];
 				}
 				realtimes.value = [];
-				sessionStorage.removeItem('accessToken');
-				sessionStorage.removeItem('refreshToken');
+				localStorage.removeItem('accessToken');
+				localStorage.removeItem('refreshToken');
 				router.push({ path: "/login" });
 			});
         } else {
@@ -271,8 +271,8 @@ async function handleOAuthCallback() {  // 파라미터로 해시값을 받도�
 	// }
 
 	const OPENID_LOGGER_ID = 'by_skapi';
-	const accessToken = sessionStorage.getItem('accessToken');
-	const refreshToken = sessionStorage.getItem('refreshToken');
+	const accessToken = localStorage.getItem('accessToken');
+	const refreshToken = localStorage.getItem('refreshToken');
 
 	if (isTokenExpired(accessToken)) {
 		console.log('Access Token이 만료되었습니다.');
@@ -322,15 +322,15 @@ async function exchangeCodeForTokens(code, redirectUri) {
             console.log('Refresh Token:', refresh_token);
             console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
 
-			sessionStorage.setItem('accessToken', access_token);
-			sessionStorage.setItem('refreshToken', refresh_token);
+			localStorage.setItem('accessToken', access_token);
+			localStorage.setItem('refreshToken', refresh_token);
 
-			// 로그인 상태 유지가 체크되어 있으면 로컬 스토리지에도 저장
-			if (remVal.value || localStorage.getItem('remember') === 'true') {
-				localStorage.setItem('accessToken', access_token);
-				localStorage.setItem('refreshToken', refresh_token);
-				console.log('토큰이 로컬 스토리지에 저장되었습니다.');
-			}
+			// // 로그인 상태 유지가 체크되어 있으면 로컬 스토리지에도 저장
+			// if (remVal.value || localStorage.getItem('remember') === 'true') {
+			// 	localStorage.setItem('accessToken', access_token);
+			// 	localStorage.setItem('refreshToken', refresh_token);
+			// 	console.log('토큰이 로컬 스토리지에 저장되었습니다.');
+			// }
 
             return data;
         } else {
