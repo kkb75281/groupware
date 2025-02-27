@@ -1,5 +1,5 @@
 <template lang="pug">
-h4(style="margin-bottom: 1rem;") 25.02.27 목 15:00
+h4(style="margin-bottom: 1rem;") 25.02.27 목 17:05
 
 .warning-msg(v-if="serviceWorkerRegistMsg")
 	.icon
@@ -157,8 +157,7 @@ let googleConnect = async() => {
 function googleLogin() {
 	loading.value = true;
 
-	// const GOOGLE_CLIENT_ID = '685505600375-tiheatfjtp0if764ri7ilop3o4nuhql3.apps.googleusercontent.com';	// mina(broadwayinc.com) 계정으로 생성
-	const GOOGLE_CLIENT_ID = '744531008220-v60665vfj19fgu1ajjlj0dj5sku7o4h8.apps.googleusercontent.com' // qb
+	const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 	const REDIRECT_URL = 'http://localhost:5173/login';
 
 	let rnd = Math.random().toString(36).substring(2); // Generate a random string
