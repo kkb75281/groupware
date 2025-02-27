@@ -150,7 +150,7 @@ let subscribe = () => {
 }
 
 let loading = ref(false);
-let googleAccountCheck = sessionStorage.getItem('accessToken') ? true : false;
+let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 let emailCheckInterval;  // interval 저장용 변수
 
 // 구글 계정 연동하기
