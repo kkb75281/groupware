@@ -24,10 +24,14 @@ let mainWrap = ref(null);
 let emailCheckInterval;
 
 onMounted(async () => {
+	console.log('메인 페이지 onMounted');
+
 	await updateEmails();
+	console.log('이메일 업데이트 완료');
 	
-	// 30초마다 이메일 업데이트
+	// 10초마다 이메일 업데이트
 	emailCheckInterval = setInterval(() => {
+		console.log('10초마다 이메일 업데이트');
 		updateEmails();
 	}, 10000);
 });

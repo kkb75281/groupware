@@ -220,6 +220,7 @@ export async function updateEmails(refresh = false) {
 	if(refresh) {
 		mailRefresh.value = true;
 	}
+
 	if (accessToken) {
 		try {
 			googleEmailUpdate.value = true;
@@ -235,6 +236,7 @@ export async function updateEmails(refresh = false) {
 		}
 	}
 }
+
 // 이메일 알림
 export const addEmailNotification = (emailData) => {
 	// // console.log('=== addEmailNotification === emailData : ', emailData);
@@ -420,6 +422,11 @@ watch([realtimes, readList, notifications.emails], () => {
     
     // 읽지 않은 이메일 개수
     const emailCount = notifications.emails.length;
+
+	// 이메일 업데이트
+	if(emailCount < 1 && googleEmailUpdate.value === false) {
+		updateEmails(true);
+	}
     
     // 전체 읽지 않은 알림 개수
     unreadCount.value = auditCount + emailCount;
