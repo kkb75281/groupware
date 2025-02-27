@@ -5,7 +5,7 @@
 
 .input-wrap(v-if="!onlySign")
     p.label 도장명
-    input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등")
+    input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등" @click.stop="restoreCanvasState(savedState)")
 
 .button-wrap
     button.btn.bg-gray(v-if="!onlySign" @click="closeDialog") 취소
@@ -27,6 +27,24 @@ let step = ref('options');
 let canvas = ref(null);
 let ctx = null;
 let painting = false;
+
+// 캔버스 상태 저장
+function saveCanvasState() {
+    return canvas.value.toDataURL();
+}
+
+// 캔버스 상태 복구
+function restoreCanvasState(dataUrl) {
+    const img = new Image();
+    img.src = dataUrl;
+    img.onload = () => {
+        ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
+        ctx.drawImage(img, 0, 0);
+    };
+}
+
+// input 클릭 시 상태 저장 및 복구
+const savedState = saveCanvasState();
 
 // 마우스 좌표를 캔버스에 맞게 조정
 function getMousePos(canvas, event) {
