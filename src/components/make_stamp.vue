@@ -63,14 +63,19 @@ function getMousePos(canvas, event) {
 
 // 캔버스 크기 설정
 const resizeCanvas = () => {
-    const width = canvas.value.offsetWidth;
-    const height = canvas.value.offsetHeight;
-    
-    canvas.value.width = width;
-    canvas.value.height = height;
+	// 현재 상태 저장
+    savedState.value = saveCanvasState();
 
-    // 기존 서명 복원 (리사이즈 시 데이터 손실 방지)
-    if (ctx) ctx.clearRect(0, 0, width, height);
+    // 상태 복구
+    restoreCanvasState(savedState.value);
+    // const width = canvas.value.offsetWidth;
+    // const height = canvas.value.offsetHeight;
+    
+    // canvas.value.width = width;
+    // canvas.value.height = height;
+
+    // // 기존 서명 복원 (리사이즈 시 데이터 손실 방지)
+    // if (ctx) ctx.clearRect(0, 0, width, height);
 };
 
 // 서명 시작
