@@ -835,11 +835,14 @@ const postApproval = async () => {
           }
         },
         auditDoContent.value.user_id,
-		{
-			title: '알림',
-			// body: JSON.stringify(postRealtimeBody)
-			body: `${user.name}님께서 결재를 완료했습니다.`,
-		}
+        {
+          title: '알림',
+          // body: JSON.stringify(postRealtimeBody)
+          body: `${user.name}님께서 결재를 완료했습니다.`,
+          config: {
+            always: true, // 무조건 알림 받기
+          },
+        },
       )
       .then((res) => {
         console.log('결재알림 === postRealtime === res : ', res);
@@ -1055,9 +1058,12 @@ const canceledAudit = async () => {
 			  postRealtimeData,
 			  auditor.replaceAll('_', '-'),
 			  {
-				title: '알림',
-				// body: JSON.stringify(postRealtimeBody)
-				body: `${user.name}님께서 결재를 회수했습니다.`,
+          title: '알림',
+          // body: JSON.stringify(postRealtimeBody)
+          body: `${user.name}님께서 결재를 회수했습니다.`,
+          config: {
+            always: true, // 무조건 알림 받기
+          },
 			  }
 			);
 		} catch (error) {
@@ -1070,6 +1076,9 @@ const canceledAudit = async () => {
 					title: '알림',
 					// body: JSON.stringify(postRealtimeBody)
 					body: `${user.name}님께서 결재를 회수했습니다.`,
+          config: {
+            always: true, // 무조건 알림 받기
+          },
 				}
 				);
 			});

@@ -81,6 +81,9 @@ function postRealTimeMsg () {
 		'postRealTimeMsgTest',
 		notifications.user_id,
 		{
+			config: {
+				always: true, // 무조건 알림 받기
+			},
 			title: '알림',
 			// body: JSON.stringify(postRealtimeBody),
 			body: '테스트 Realtime',

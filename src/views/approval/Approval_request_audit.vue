@@ -651,6 +651,9 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 				title: '[그룹웨어]',
 				// body: JSON.stringify(postRealtimeBody)
 				body: `${user.name}님께서 결재를 올렸습니다.`,
+				config: {
+					always: true, // 무조건 알림 받기
+				},
 			}
         )
         .then((res) => {
