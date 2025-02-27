@@ -6,7 +6,7 @@ import { user, profileImage } from './user';
 import { fetchGmailEmails } from "@/utils/mail";
 import App from './App.vue';
 import router from './router';
-import { realtimes, unreadCount, readList, getRealtime, subscribeNotification, unsubscribeNotification } from './notifications';
+import { realtimes, unreadCount, readList, getRealtime, updateEmails, subscribeNotification, unsubscribeNotification } from './notifications';
 import { getUserInfo, employeeDict, getEmpDivisionPosition } from './employee';
 import { getAuditList, getSendAuditList } from './audit';
 
@@ -22,27 +22,6 @@ export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
 export let connectRunning:Promise<any> | null = null;
 export let serviceWorkerRegistMsg = ref('');
 export let notificationPermissionMsg = ref('');
-
-// watch(isConnected, (nv, ov) => {
-// 	if(nv !== ov && nv === false) {
-// 		if(!isConnected.value && connectRunning === null) {
-// 			console.log('다시 연결합니다. isConnected Watcher');
-// 			connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
-// 				connectRunning = null
-// 				console.log({isConnected: isConnected.value});
-// 			});
-// 		}
-// 	}
-// }, { immediate: true });
-
-// watch(isTabVisible, (nv) => {
-// 	if (nv) {
-// 		currentBadgeCount.value = 0;
-// 		navigator.setAppBadge(0).catch((error) => {
-// 			console.error('Failed to set app badge:', error);
-// 		});
-// 	}
-// }, { immediate: true });
 
 // function getChanges(before:any, after:any) {
 //   const beforeKeys = new Set(Object.keys(before));
@@ -134,23 +113,6 @@ function handleNotification(message) {
 			console.error('Service Worker를 지원하지 않는 브라우저입니다.');
 		}
 	}
-}
-
-async function handleNotificationClick() {
-	console.log('알림 클릭 감지됨');
-	console.log('getRealtime 실행');
-	await getRealtime(true);
-	console.log('getRealtime 완료');
-
-	// // 뱃지 초기화
-	// if ('clearAppBadge' in navigator) {
-	// 	navigator.clearAppBadge().then(() => {
-	// 		currentBadgeCount.value = 0;
-	// 		console.log('뱃지 초기화 완료');
-	// 	}).catch((error) => {
-	// 		console.error('Failed to clear app badge:', error);
-	// 	});
-	// }
 }
 
 // 뱃지 값을 증가시키는 함수
@@ -316,20 +278,6 @@ export let RealtimeCallback = async (rt: any) => {
 		console.log({rt})
     	console.error({ errorTime });
 		isConnected.value = false;
-		// if(isTabVisible.value) {
-		// 	console.log('탭이 활성화되어 있습니다.');
-		// 	// await skapi.connectRealtime(RealtimeCallback).catch((err) => console.error({ err }));
-		// 	if(!isConnected.value && connectRunning === null) {
-		// 		console.log('RealtimeCallback 안에서 다시 연결 시도')
-		// 		connectRunning = skapi.connectRealtime(RealtimeCallback).finally(()=>{
-		// 			connectRunning = null
-		// 			console.log({isConnected: isConnected.value});
-		// 		});
-		// 	}
-		// }
-		// getRealtime();
-		// console.log('다시 연결합니다.');
-		// console.log({isConnected});
 	}
 
 	if (rt.type === 'success') {
@@ -337,6 +285,7 @@ export let RealtimeCallback = async (rt: any) => {
 		console.log({type: rt.type});
 		console.log('리얼타임 연결 성공 후 getRealtime 실행시작');
 		await getRealtime(true);
+		await updateEmails(true);
 		console.log('리얼타임 연결 성공 후 getRealtime 실행완료');
 
 		if (rt.message === 'Connected to WebSocket server.') {
@@ -518,9 +467,9 @@ export let loginCheck = async (profile: any) => {
 
 	else if (profile) {
 		// 이전에 로그인 한 유저가 있는지 localStorage 확인
-		if (window.localStorage.getItem(`${skapi.service}.loggedInUser`)) {
+		if (window.localStorage.getItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`)) {
 			// 이전에 로그인 한 유저가 있을 경우
-			let previousUser = JSON.parse(window.localStorage.getItem(`${skapi.service}.loggedInUser`) || '{}');
+			let previousUser = JSON.parse(window.localStorage.getItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`) || '{}');
 			// console.log('=== loginCheck === previousUser : ', previousUser);
 
 			// 이전 유저와 현재 로그인한 유저가 다를 경우
@@ -529,7 +478,7 @@ export let loginCheck = async (profile: any) => {
 					await unsubscribeNotification();
 				}
 				// 이전 유저 정보 초기화
-				window.localStorage.removeItem(`${skapi.service}.loggedInUser`);
+				window.localStorage.removeItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`);
 			}
 		}
 
@@ -547,7 +496,7 @@ export let loginCheck = async (profile: any) => {
 		}
 
 		// 로그인 한 유저 정보 localStorage에 저장
-		window.localStorage.setItem(`${skapi.service}.loggedInUser`, JSON.stringify(user_local_data));
+		window.localStorage.setItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`, JSON.stringify(user_local_data));
 
 		// console.log('=== loginCheck === profile : ', profile);
 		
@@ -651,14 +600,14 @@ const skapi = new Skapi(
 //   '5750ee2c-f7f7-43ff-b6a5-cce599d30101',
   // e :: qb
 
-  "ap21dOg74mAMPHaDCmGr", "5750ee2c-f7f7-43ff-b6a5-cce599d30101", // qb : groupwaretest1
+  import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID, // qb : groupwaretest1
 //   "ap21dtzcVgliDshfCmGr", "5750ee2c-f7f7-43ff-b6a5-cce599d30101", // qb : groupwaretest2
 
   // 'ap22SqnnCxZxkisPeFEc',
   // 'f8e16604-69e4-451c-9d90-4410f801c006',
   { autoLogin: window.localStorage.getItem('remember') === 'true', eventListener: { onLogin: loginCheck } },
 // { autoLogin: true, eventListener: { onLogin: loginCheck } },
-  { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir', network_logs: false }
+//   { hostDomain: 'skapi.app', target_cdn: 'd1wrj5ymxrt2ir', network_logs: false }
 ); // pb
 
 // const skapi = new Skapi(
