@@ -1,7 +1,5 @@
 <template lang="pug">
-h4 25.02.27 목 15:00
-
-br
+h4(style="margin-bottom: 1rem;") 25.02.27 목 15:00
 
 .warning-msg(v-if="serviceWorkerRegistMsg")
 	.icon
@@ -16,8 +14,6 @@ br
 		svg
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ notificationPermissionMsg }}
-
-br
 
 ul.card-wrap.gmail
 	li.card
@@ -371,6 +367,7 @@ onUnmounted(() => {
 	align-items: flex-start;
 	gap: 4px;
 	line-height: 1.2;
+	margin-bottom: 1rem;
 
 	.icon {
 		padding: 0;
