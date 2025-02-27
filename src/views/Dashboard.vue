@@ -1,9 +1,9 @@
 <template lang="pug">
-h4 25.02.27 목 14:17
+h4 25.02.27 목 14:47
 
 br
 
-.warning-msg 
+.warning-msg(v-if="serviceWorkerRegistMsg")
 	.icon
 		svg
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
