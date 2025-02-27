@@ -30,7 +30,7 @@ let painting = false;
 
 // 캔버스 상태 저장
 function saveCanvasState() {
-    return canvas.toDataURL();
+    return canvas.value.toDataURL();
 }
 
 // 캔버스 상태 복구
