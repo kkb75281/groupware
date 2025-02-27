@@ -372,6 +372,8 @@ onUnmounted(() => {
 	.icon {
 		padding: 0;
 		flex: none;
+		position: relative;
+		top: 2px;
 
 		svg {
 			width: 16px;
