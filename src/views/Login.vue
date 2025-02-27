@@ -161,9 +161,11 @@ function googleLogin() {
 	url += '?client_id=' + GOOGLE_CLIENT_ID;
 	url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
 	url += '&response_type=token';
+	// url += '&response_type=code'; // Authorization Code Flow 사용
 	url += '&scope=' + encodeURIComponent('https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly');
 	url += '&prompt=select_account';
 	url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
+	// url += '&access_type=offline'; // Refresh Token을 받기 위해 필수
 
 	window.location.href = url;
 }
@@ -181,9 +183,9 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
 	const state = params.get('state');
 	const storedState = sessionStorage.getItem('oauth_state');
 
-	// console.log('=== handleOAuthCallback === parms : ', params);
-	// console.log('=== handleOAuthCallback === state : ', state);
-	// console.log('=== handleOAuthCallback === storedState : ', storedState);
+	console.log('=== handleOAuthCallback === parms : ', params);
+	console.log('=== handleOAuthCallback === state : ', state);
+	console.log('=== handleOAuthCallback === storedState : ', storedState);
 
 	loading.value = true;
 
@@ -196,21 +198,63 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
 	const accessToken = params.get('access_token');
 	sessionStorage.setItem('accessToken', accessToken);
 
-	// console.log('=== handleOAuthCallback === accessToken : ', accessToken);
+	console.log('=== handleOAuthCallback === accessToken : ', accessToken);
 
-	skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
-		// console.log('=== handleOAuthCallback === u : ', u);
-		window.location.href = '/';
-	}).catch(() => {
-		loading.value = false;
-	});
+	// skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
+	// 	// console.log('=== handleOAuthCallback === u : ', u);
+	// 	window.location.href = '/';
+	// }).catch(() => {
+	// 	loading.value = false;
+	// });
 }
+
+// async function exchangeCodeForTokens(code, redirectUri) {
+//     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+//     const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+
+//     const tokenUrl = 'https://oauth2.googleapis.com/token';
+//     const params = new URLSearchParams();
+//     params.append('code', code);
+//     params.append('client_id', GOOGLE_CLIENT_ID);
+//     params.append('client_secret', GOOGLE_CLIENT_SECRET);
+//     params.append('redirect_uri', redirectUri);
+//     params.append('grant_type', 'authorization_code');
+
+//     try {
+//         const response = await fetch(tokenUrl, {
+//             method: 'POST',
+//             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+//             body: params,
+//         });
+
+//         const data = await response.json();
+//         if (response.ok) {
+//             const { access_token, refresh_token, expires_in } = data;
+//             console.log('Access Token:', access_token);
+//             console.log('Refresh Token:', refresh_token);
+//             console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+//             return data;
+//         } else {
+//             console.error('토큰 교환 실패:', data);
+//         }
+//     } catch (error) {
+//         console.error('토큰 교환 중 오류 발생:', error);
+//     }
+// }
 
 onMounted(() => {
 	const currentHash = window.location.hash;
+	console.log({currentHash});
 	if (currentHash) {
 		handleOAuthCallback(currentHash);
 	}
+
+	// const urlParams = new URLSearchParams(window.location.search);
+	// const authorizationCode = urlParams.get('code');
+	// if (authorizationCode) {
+	// 	const redirectUri = window.location.href.split('?')[0]; // Redirect URI
+	// 	exchangeCodeForTokens(authorizationCode, redirectUri);
+	// }
 });
 </script>
 
