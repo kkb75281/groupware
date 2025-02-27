@@ -211,11 +211,15 @@ async function updateReadList (type: string) {
 
 export const mailList = ref([]);
 export let googleEmailUpdate = ref(false);
+export let mailRefresh = ref(false);
 
 // 이메일 업데이트
-export async function updateEmails() {
+export async function updateEmails(refresh = false) {
 	const accessToken = sessionStorage.getItem('accessToken');
 	
+	if(refresh) {
+		mailRefresh.value = true;
+	}
 	if (accessToken) {
 		try {
 			googleEmailUpdate.value = true;
@@ -360,7 +364,7 @@ export async function subscribeNotification() {
 	}
 
 	// localStorage에 subscribeNotification 저장
-	window.localStorage.setItem(`${skapi.service}.loggedInUser`, JSON.stringify(user_local_data));
+	window.localStorage.setItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`, JSON.stringify(user_local_data));
 	return response;
 }
 
@@ -390,7 +394,7 @@ export async function unsubscribeNotification() {
 	}
 
 	// localStorage에 unsubscribeNotification 저장
-	window.localStorage.setItem(`${skapi.service}.loggedInUser`, JSON.stringify(user_local_data));
+	window.localStorage.setItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`, JSON.stringify(user_local_data));
 }
  
 export function pushNotification(content: { title: string; body: string }, userId: string | string[]) {
@@ -432,12 +436,14 @@ watch(mailList, (newVal, oldVal) => {
 		return;
 	}
 
-	if((newVal.length && !oldVal) || (newVal.length > oldVal.length)) {
+	if((newVal.length && !oldVal) || (newVal.length > oldVal.length) || mailRefresh.value) {
 		// // console.log('=== watch === new email');
 		// console.log('dddd')
 		for(let i in newVal) {
 			addEmailNotification(newVal[i]);
 		}
+
+		mailRefresh.value = false;
 	} else {
 		// console.log('wwww');
 	}
