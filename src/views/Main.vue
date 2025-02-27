@@ -26,6 +26,10 @@ let emailCheckInterval;
 onMounted(async () => {
 	console.log('메인 페이지 onMounted');
 
+	setInterval(() => {
+		console.log('메인 페이지 setInterval');
+	}, 300);
+
 	await updateEmails();
 	console.log('이메일 업데이트 완료');
 	
