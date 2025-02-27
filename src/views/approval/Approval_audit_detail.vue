@@ -1838,6 +1838,19 @@ onUnmounted(() => {
   .approver-wrap {
     grid-template-columns: repeat(5, 1fr);
   }
+
+  .stamp-wrap {
+    .stamp-grid {
+        .upload-options {
+            transform: translateX(10%) translateY(-12%);
+            
+            li {
+                font-size: 1rem;
+                padding: 10px 14px;
+            }
+        }
+    }
+  }
 }
 
 @media (max-width: 682px) {

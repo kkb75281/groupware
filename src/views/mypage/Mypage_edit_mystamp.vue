@@ -155,7 +155,7 @@ let uploadStamp = async () => {
 	// 이미지 업로드 후 도장 정보 다시 불러오기
 	uploadingStamp.value = {};
 	alert('도장 등록이 완료되었습니다.');
-	await getStampList(true);
+	getStampList(true);
 	uploading.value = false;
 	mainPageLoading.value = false;
 }
@@ -450,6 +450,21 @@ onUnmounted(() => {
         button {
             min-width: 150px;
             flex-grow: 1;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .stamp-wrap {
+        .stamp-grid {
+            .upload-options {
+                transform: translateX(10%) translateY(-12%);
+                
+                li {
+                    font-size: 1rem;
+                    padding: 10px 14px;
+                }
+            }
         }
     }
 }
