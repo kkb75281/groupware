@@ -114,6 +114,7 @@ CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCropped
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import { skapi, mainPageLoading } from '@/main';
+import { getInvitationsCache } from '@/employee';
 import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
 
 import CropImage from '@/components/crop_image.vue';
@@ -367,32 +368,7 @@ const registerEmp = async (e) => {
 		// 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
 		await createReference({ user_id_safe, user_division_name, user_id });
 
-		await getInvitations(true); // refresh invitation list
-		// const invitations = await getInvitations(true);
-
-		// // 초대된 직원 정보와 부서/직책 정보를 결합
-		// const currentPositions = await skapi.getRecords({
-		//     table: {
-		//         name: 'emp_position_current',
-		//         access_group: 1
-		//     },
-		//     index: {
-		//         name: user_division_name + '.' + _el_position.value,
-		//         value: user_name
-		//     }
-		// });
-
-		// console.log('AA === registerEmp === invitations : ', invitations);
-		// console.log('=== registerEmp === currentPositions : ', currentPositions);
-
-		// invitations.list = invitations.list.filter(inv => inv.user_id === user_id);
-		// invitations.list = invitations.list.map(inv => {
-		//     inv.division = currentPositions.list[0].index.name.split('.')[0];
-		//     inv.position = currentPositions.list[0].index.name.split('.')[1];
-		//     return inv;
-		// });
-
-		// console.log('BB === registerEmp === invitations : ', invitations);
+		const invitations = await getInvitations(true); // refresh invitation list
 
 		// 직원별 출퇴근 기록을 위한 저장소 레코드 생성하기
 		const res = await skapi.postRecord(null, {
@@ -403,18 +379,32 @@ const registerEmp = async (e) => {
 			unique_id: `emp_id:${user_id_safe}`,
 		});
 
-		// console.log('AAAAAA === registerEmp === res : ', res);
-
 		await grantPrivateRecordAccess({
 			record_id: res.record_id,
 			user_id: user_id
 		});
+		
+		// 새로 등록한 직원 정보 찾기
+		const newEmployee = invitations.list.find(inv => inv.user_id === user_id);
+		
+		if (newEmployee) {
+			// 부서와 직책 정보 결합
+			newEmployee.division = user_division_name;
+			newEmployee.position = _el_position.value;
+			
+			// 캐시에 직접 추가
+			if (typeof window.getInvitationsCache !== 'undefined') {
+				if (!window.getInvitationsCache.find(inv => inv.user_id === user_id)) {
+					window.getInvitationsCache.push(user_id);
+				}
+			}
+		}
 
 		window.alert('직원 등록이 완료되었습니다.');
 
 		router.push({
 			path: '/list-employee',
-			query: { empListType: '초청여부' }
+			query: { empListType: '초청여부', refresh: 'true' },
 		});
 
 	} catch (error) {

@@ -851,6 +851,10 @@ const updateScreenSize = () => {
 
 onMounted(() => {
   window.addEventListener('resize', updateScreenSize);
+
+    if(empListType.value === '초청여부' && route.query.refresh) {
+        refresh();
+    }
 });
 
 onUnmounted(() => {
