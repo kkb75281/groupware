@@ -1,5 +1,5 @@
 import { Reactive, reactive, type Ref, ref, watch } from "vue";
-import { skapi, checkNotificationPermission, serviceWorkerRegistMsg } from "@/main";
+import { skapi, checkNotificationPermission, serviceWorkerRegistMsg, onlyUserGesture } from "@/main";
 import { user } from "@/user";
 import { getUserInfo } from "@/employee";
 import { fetchGmailEmails } from "@/utils/mail";

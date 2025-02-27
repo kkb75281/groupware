@@ -7,6 +7,8 @@ h4(style="margin-bottom: 1rem;") 25.02.27 목 17:05
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ serviceWorkerRegistMsg }}
 
+button.btn(v-if="onlyUserGesture" @click="subscribeNotification") 그룹웨어 알림 허용하기
+
 //- br
 
 //- .warning-msg 
@@ -126,16 +128,22 @@ button.btn(type="button" @click="router.push('/test')") 테스트 페이지 바�
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { skapi, serviceWorkerRegistMsg, notificationPermissionMsg } from "@/main";
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { skapi, serviceWorkerRegistMsg, notificationPermissionMs, onlyUserGesture } from "@/main";
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
-import { mailList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
+import { mailList, readNoti, newsletterList, getNewsletterList, subscribeNotification } from "@/notifications";
 
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+// watch(onlyUserGesture, (nv) => {
+// 	if (nv) {
+// 		router.push('/notification-permission');
+// 	}
+// });
 
 let loading = ref(false);
 let googleAccountCheck = sessionStorage.getItem('accessToken') ? true : false;

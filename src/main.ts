@@ -22,6 +22,7 @@ export let currentBadgeCount = ref(0); // 현재 뱃지 값을 저장할 변수
 export let connectRunning:Promise<any> | null = null;
 export let serviceWorkerRegistMsg = ref('');
 export let notificationPermissionMsg = ref('');
+export let onlyUserGesture = ref(false);
 
 let serviceID = import.meta.env.VITE_SERVICE_ID;
 // function getChanges(before:any, after:any) {
@@ -154,20 +155,34 @@ function resetBadgeCount() {
     console.log(`[Main App] Badge count reset to ${currentBadgeCount.value}`);
 }
 
+function isSafari() {
+    const userAgent = navigator.userAgent;
+    return /^((?!chrome|android).)*safari/i.test(userAgent);
+}
+
 export function checkNotificationPermission() {
     if (Notification.permission === "granted") {
         console.log("알림이 이미 허용되어 있습니다.");
 		notificationPermissionMsg.value = '';
+		onlyUserGesture.value = false;
     } else if (Notification.permission === "denied") {
         console.log("알림이 차단되어 있습니다.");
         // 사용자에게 수동으로 권한 재요청을 유도
         // showPermissionRequestPrompt();
 		// alert("브라우저 설정에서 알림 권한을 확인해주세요.");
 		notificationPermissionMsg.value = "알림이 차단되어 있습니다. 브라우저 설정에서 알림 권한을 확인해주세요.";
+		onlyUserGesture.value = false;
     } else if (Notification.permission === "default") {
         console.log("알림 권한이 아직 설정되지 않았습니다.");
 		notificationPermissionMsg.value = '';
-        requestNotificationPermission();
+
+		if (isSafari()) {
+			console.log("현재 브라우저는 Safari입니다.");
+			onlyUserGesture.value = true;
+		} else {
+			console.log("현재 브라우저는 Safari가 아닙니다.");
+			requestNotificationPermission();
+		}
     }
 
 	console.log('checkNotificationPermission - complete');
@@ -175,14 +190,14 @@ export function checkNotificationPermission() {
 	return Notification.permission;
 }
 
-async function requestNotificationPermission() {
-    let permission = await Notification.requestPermission();
-	
-	if (permission === "granted") {
-		console.log("사용자가 알림을 허용했습니다.");
-	} else if (permission === "denied") {
-		console.log("사용자가 알림을 차단했습니다.");
-	}
+function requestNotificationPermission() {
+    Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+            console.log("사용자가 알림을 허용했습니다.");
+        } else if (permission === "denied") {
+            console.log("사용자가 알림을 차단했습니다.");
+        }
+    });
 }
 
 // function showPermissionRequestPrompt() {
@@ -233,7 +248,7 @@ function updateAuditsAndApprovals(audits, approvals) {
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'notification-clicked') {
-            // handleNotificationClick();
+            handleNotificationClick();
         }
 		if (event.data && event.data.type === 'BADGE_UPDATED') {
 			const newBadgeCount = event.data.badgeCount;
