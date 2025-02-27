@@ -155,7 +155,7 @@ let uploadStamp = async () => {
 	// 이미지 업로드 후 도장 정보 다시 불러오기
 	uploadingStamp.value = {};
 	alert('도장 등록이 완료되었습니다.');
-	getStampList(true);
+	await getStampList(true);
 	uploading.value = false;
 	mainPageLoading.value = false;
 }
