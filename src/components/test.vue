@@ -17,10 +17,12 @@ h4 {{ realtimeTestingMsg }}
 
 	.input-wrap
 		select(v-model="notifications.user_id")
-			option(value="" selected disabled) 유저선택
-			option(value="9b9a927f-7de0-4f37-932e-2009bed90e28") 권구글(구글)
-			option(value="43f04f10-8b33-40ee-8bfc-1c54d8711ad5") 오구글(구글)
-			option(value="c11c0501-156e-4027-bb2f-97a6758033a6") 김박사(구글)
+			template(v-for="emp in emps")
+				option(:value="emp.user_id") {{ emp.name }}
+			//- option(value="" selected disabled) 유저선택
+			//- option(value="efac1396-00ec-43c3-829d-c17ab2d3c534") 권구글(구글)
+			//- option(value="8592d676-9463-4391-9a7a-9a177736b2b9") 오구글(구글)
+			//- option(value="81e6cd7f-1363-4ea9-a919-ff0051ed32f9") 김박사(구글)
 
 	br
 
@@ -34,7 +36,9 @@ import { onMounted, ref } from "vue";
 import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications";
 import { skapi, realtimeTestingMsg } from "@/main";
 import { user } from "@/user";
+import { getUsers } from "@/employee";
 
+let emps = ref([]);
 let subsState = ref(false);
 let pushNotificationBody = {
 	text: '테스트 Notification',
@@ -48,6 +52,15 @@ let notifications = {
 	},
 	user_id: "",
 }
+
+getUsers({
+	searchFor: 'approved',
+	value: 'by_skapi:approved',
+	condition: '>='
+}, true).then((res) => {
+	console.log('getUsers', res);
+	emps.value = res;
+});
 
 console.log({user});
 
