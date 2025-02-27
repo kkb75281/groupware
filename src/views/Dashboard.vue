@@ -352,25 +352,31 @@ onUnmounted(() => {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		flex-wrap: wrap;
 		gap: 4px;
 		font-size: 0.8rem;
 		font-weight: 600;
 		color: var(--gray-color-500);
-		line-height: 1.2;
+		line-height: 1.4;
 		min-height: 150px;
 		text-align: center;
+
+		.icon {
+			flex: none;
+		}
 	}
 }
 
 .warning-msg {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
+	align-items: flex-start;
 	gap: 4px;
+	line-height: 1.2;
 
 	.icon {
 		padding: 0;
+		flex: none;
+		position: relative;
+		top: 2px;
 
 		svg {
 			width: 16px;

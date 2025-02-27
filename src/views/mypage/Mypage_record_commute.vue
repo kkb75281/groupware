@@ -108,7 +108,7 @@ const route = useRoute();
 //   res.list.forEach(record => {
 //     console.log(record.data.date);
 
-//     if(record.data.date === '2025-02-24') {
+//     if(record.data.date === '2025-02-27') {
 //       const config = {
 //         record_id: record.record_id
 //       };
