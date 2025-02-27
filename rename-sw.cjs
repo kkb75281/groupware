@@ -1,11 +1,9 @@
-import { skapi } from "@/main";
-
 const fs = require('fs');
 const path = require('path');
 
 // 원본 파일 경로와 새 파일 경로 설정
 const sourceFile = path.resolve(__dirname, '../public/sw.js'); // 원본 sw.js 파일
-const targetFileName = `${skapi.service}.js`; // 변경할 파일 이름
+const targetFileName = process.env.VITE_SW_FILE_NAME;
 const targetFile = path.resolve(__dirname, '../public', targetFileName);
 
 // 파일 이름 변경 함수
