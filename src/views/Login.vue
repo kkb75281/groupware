@@ -325,6 +325,11 @@ async function exchangeCodeForTokens(code, redirectUri) {
 			sessionStorage.setItem('accessToken', access_token);
 			sessionStorage.setItem('refreshToken', refresh_token);
 
+			// 로그인 상태 유지가 체크되어 있으면 로컬 스토리지에도 저장
+			if (localStorage.getItem('remember') === 'true') {
+				localStorage.setItem('googleRefreshToken', refresh_token);
+			}
+
             return data;
         } else {
             console.error('토큰 교환 실패:', data);
