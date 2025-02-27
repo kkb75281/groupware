@@ -1,5 +1,8 @@
 <template lang="pug">
-//- h4 25.02.26 수 23:06
+h4 25.02.27 목 14:17
+
+br
+
 .warning-msg 
 	.icon
 		svg
