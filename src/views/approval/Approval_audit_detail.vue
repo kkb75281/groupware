@@ -17,7 +17,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				.tb-overflow
 					table.table#tb-auditRequest
 						colgroup
-							col(style="width: 15%")
+							col(style="width: 13%")
 							col
 							col(style="width: 15%")
 							col(style="width: 20%")
@@ -835,11 +835,14 @@ const postApproval = async () => {
           }
         },
         auditDoContent.value.user_id,
-		{
-			title: '알림',
-			// body: JSON.stringify(postRealtimeBody)
-			body: `${user.name}님께서 결재를 완료했습니다.`,
-		}
+        {
+          title: '알림',
+          // body: JSON.stringify(postRealtimeBody)
+          body: `${user.name}님께서 결재를 완료했습니다.`,
+          config: {
+            always: true, // 무조건 알림 받기
+          },
+        },
       )
       .then((res) => {
         console.log('결재알림 === postRealtime === res : ', res);
@@ -1055,9 +1058,12 @@ const canceledAudit = async () => {
 			  postRealtimeData,
 			  auditor.replaceAll('_', '-'),
 			  {
-				title: '알림',
-				// body: JSON.stringify(postRealtimeBody)
-				body: `${user.name}님께서 결재를 회수했습니다.`,
+          title: '알림',
+          // body: JSON.stringify(postRealtimeBody)
+          body: `${user.name}님께서 결재를 회수했습니다.`,
+          config: {
+            always: true, // 무조건 알림 받기
+          },
 			  }
 			);
 		} catch (error) {
@@ -1070,6 +1076,9 @@ const canceledAudit = async () => {
 					title: '알림',
 					// body: JSON.stringify(postRealtimeBody)
 					body: `${user.name}님께서 결재를 회수했습니다.`,
+          config: {
+            always: true, // 무조건 알림 받기
+          },
 				}
 				);
 			});
@@ -1744,6 +1753,83 @@ onUnmounted(() => {
     top: 5%;
     left: 0;
     width: 100%;
+  }
+
+  #tb-auditRequest {
+    font-size: 0.75rem;
+  }
+
+  .sub-title {
+		margin-bottom: 1.5rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid var(--gray-color-300);
+	}
+
+  .reply-list {
+    .auditor {
+      margin-bottom: 0.75rem;
+    }
+
+    .comment {
+      border: 1px solid var(--gray-color-300);
+      font-size: 0.75rem;
+      padding: 0.75rem 1rem;
+    }
+  }
+
+  .input-wrap.upload-file .file-item, .selected-wrap.upload-file .file-item {
+    border-color: var(--gray-color-400);
+  }
+
+  .approver-wrap {
+    grid-template-columns: repeat(6, 1fr) !important;
+
+    .approver-list {
+      min-height: 5rem;
+
+      .auditor {
+        .name {
+          font-size: 0.75rem;
+        }
+
+        .approved {
+          font-size: 0.625rem;
+        }
+
+        .date {
+          font-size: 0.75rem;
+        }
+      }
+    }
+
+    .sign {
+      height: 3.5rem;
+
+      img {
+        width: 3rem;
+        height: 3rem;
+      }
+    }
+  }
+
+  .table {
+    tbody {
+      th {
+        border-right: 1px solid var(--gray-color-300);
+        border-left: 1px solid var(--gray-color-300);
+      }
+
+      td {
+        height: 2rem;
+        padding: 0.5rem;
+      }
+    }
+
+    tr {
+      td {
+        border-right: 1px solid var(--gray-color-300);
+      }
+    }
   }
 }
 

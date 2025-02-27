@@ -32,7 +32,7 @@ template(v-if="step > 1")
 					.tb-overflow
 						table.table#tb-auditRequest
 							colgroup
-								col(style="width: 15%")
+								col(style="width: 13%")
 								col
 								col(style="width: 15%")
 								col(style="width: 20%")
@@ -154,7 +154,7 @@ template(v-if="step > 1")
 													li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
 			.button-wrap
-				button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
+				//- button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
 					.icon(style="padding: 0;")
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
@@ -651,6 +651,9 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
 				title: '[그룹웨어]',
 				// body: JSON.stringify(postRealtimeBody)
 				body: `${user.name}님께서 결재를 올렸습니다.`,
+				config: {
+					always: true, // 무조건 알림 받기
+				},
 			}
         )
         .then((res) => {
@@ -885,10 +888,10 @@ onUnmounted(() => {
 	}
 
 	#printArea {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
 	}
 
 	body {
@@ -953,6 +956,81 @@ onUnmounted(() => {
 				display: none !important;
 			}
     }
+
+	#tb-auditRequest {
+		font-size: 0.75rem;
+	}
+
+	.sub-title {
+		margin-bottom: 1.5rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid var(--gray-color-300);
+	}
+
+	.reply-list {
+		.auditor {
+			margin-bottom: 0.75rem;
+		}
+
+		.comment {
+			border: 1px solid var(--gray-color-300);
+			font-size: 0.75rem;
+			padding: 0.75rem 1rem;
+		}
+	}
+
+	.approver-wrap {
+		.approver-list {
+			min-height: 5rem;
+
+				.auditor {
+				.name {
+					font-size: 0.75rem;
+				}
+
+				.approved {
+					font-size: 0.625rem;
+				}
+
+				.date {
+					font-size: 0.75rem;
+				}
+			}
+		}
+
+		.sign {
+			height: 4rem;
+
+			img {
+				width: 4rem;
+				height: 4rem;
+			}
+		}
+	}
+
+	.input-wrap.upload-file .file-item, .selected-wrap.upload-file .file-item {
+		border-color: var(--gray-color-400);
+	}
+
+	.table {
+		tbody {
+			th {
+				border-right: 1px solid var(--gray-color-300);
+				border-left: 1px solid var(--gray-color-300);
+			}
+
+			td {
+				height: 2rem;
+				padding: 0.5rem;
+			}
+		}
+
+		tr {
+			td {
+				border-right: 1px solid var(--gray-color-300);
+			}
+		}
+	}
   }
 
 	#main,
