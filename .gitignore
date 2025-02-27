@@ -32,4 +32,3 @@ coverage
 package-lock.json
 /certs
 /dev-dist
-.env
