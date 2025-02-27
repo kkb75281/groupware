@@ -1351,6 +1351,16 @@ onUnmounted(() => {
 			}
 		}
 	}
+
+	.input-title {
+		input {
+			font-size: 1.5rem;
+
+			&::placeholder {
+				font-size: 1.5rem;
+			}
+		}
+	}
 }
 
 @media (max-width: 682px) {
