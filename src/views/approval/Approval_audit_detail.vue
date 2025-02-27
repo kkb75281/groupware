@@ -1637,7 +1637,8 @@ onUnmounted(() => {
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translateX(-50% + 50px) translateY(-50% + 25px);
+      // transform: translateX(-50% + 50px) translateY(-50% + 25px);
+      transform: translateX(11%) translateY(-16%);
       // right: -113px;
       // bottom: -40px;
       z-index: 9;
@@ -1650,7 +1651,7 @@ onUnmounted(() => {
         font-size: 0.8rem;
         text-align: left;
         cursor: pointer;
-        padding: 4px 8px;
+        padding: 8px 12px;
         border-radius: 4px;
 
         &:first-child {
@@ -1836,6 +1837,19 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .approver-wrap {
     grid-template-columns: repeat(5, 1fr);
+  }
+
+  .stamp-wrap {
+    .stamp-grid {
+        .upload-options {
+            transform: translateX(10%) translateY(-12%);
+            
+            li {
+                font-size: 1rem;
+                padding: 10px 14px;
+            }
+        }
+    }
   }
 }
 

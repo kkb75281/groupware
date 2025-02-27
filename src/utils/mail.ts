@@ -1,10 +1,26 @@
 async function fetchGmailEmails(accessToken) {
+    if (!accessToken) {
+        console.error('액세스 토큰이 없어 이메일을 가져올 수 없습니다.');
+        return [];
+    }
+
     try {
         const response = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?labelIds=UNREAD&maxResults=10', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
         });
+
+        // 토큰 만료 또는 오류 처리
+        if (!response.ok) {
+            if (response.status === 401) {
+                console.error('액세스 토큰이 만료되었습니다.');
+                // 세션 스토리지 토큰 삭제
+                sessionStorage.removeItem('accessToken');
+                return [];
+            }
+            throw new Error(`API 응답 오류: ${response.status}`);
+        }
 
         const data = await response.json();
         const messages = data.messages || [];
@@ -23,6 +39,7 @@ async function fetchGmailEmails(accessToken) {
     } catch (error) {
         sessionStorage.clear();
         console.error('Error fetching Gmail emails:', error);
+        return [];
     }
 }
 
