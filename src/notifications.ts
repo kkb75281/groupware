@@ -1,5 +1,5 @@
 import { Reactive, reactive, type Ref, ref, watch } from "vue";
-import { skapi, checkNotificationPermission } from "@/main";
+import { skapi, checkNotificationPermission, serviceWorkerRegistMsg } from "@/main";
 import { user } from "@/user";
 import { getUserInfo } from "@/employee";
 import { fetchGmailEmails } from "@/utils/mail";
@@ -55,12 +55,13 @@ export const getRealtime = (refresh = false) => {
 
 			const realtime_list = await Promise.all(
 				realtime.list.map(async (request) => {
+					// console.log({request});
                     try {
-                        const senderInfo = await getUserInfo(request.data.send_user);
-                        console.log({senderInfo});
+                        const senderInfo = await getUserInfo(request?.data?.send_user);
+                        // console.log({senderInfo});
 
 						return {
-							...request.data,
+							...request?.data,
 							send_name: senderInfo.list[0]?.name,
 						};
 					} catch (err) {
@@ -197,7 +198,7 @@ async function updateReadList (type: string) {
 	if(type === 'email') {
 		id = readAudit.value.id;
 	} else {
-		id = readAudit.value.audit_info.audit_doc_id;
+		id = readAudit.value.noti_id;
 	}
 
 	if (!Object.keys(readList.value).includes(id)) {
@@ -312,9 +313,11 @@ export async function subscribeNotification() {
 	}
 
 	if (!("serviceWorker" in navigator)) {
-		console.error("Service workers are not supported in this browser.");
+		// console.error("Service workers are not supported in this browser.");
+		serviceWorkerRegistMsg.value = "배너, 배지 기능을 지원하지 않는 브라우저입니다.";
 		return;
 	} else {
+		serviceWorkerRegistMsg.value = "";
 		navigator.serviceWorker.getRegistrations().then(registrations => {
 			registrations.forEach(registration => {
 				console.log('Service Worker Script URL:', registration.active?.scriptURL);
