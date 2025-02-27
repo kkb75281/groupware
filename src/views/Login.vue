@@ -222,11 +222,36 @@ async function refreshAccessToken(refreshToken) {
     }
 }
 
+function base64UrlToBase64(base64Url) {
+    // Replace URL-safe characters with standard Base64 characters
+    return base64Url.replace(/-/g, '+').replace(/_/g, '/');
+}
+
+function decodeJwt(token) {
+    try {
+        const [header, payload, signature] = token.split('.');
+        const decodedHeader = JSON.parse(atob(base64UrlToBase64(header)));
+        const decodedPayload = JSON.parse(atob(base64UrlToBase64(payload)));
+
+        return { header: decodedHeader, payload: decodedPayload };
+    } catch (error) {
+        console.error('Failed to decode JWT:', error.message);
+        return null;
+    }
+}
+
 // 토큰 만료 여부 확인
 function isTokenExpired(token) {
-    const payload = JSON.parse(atob(token.split('.')[1])); // JWT의 Payload 부분 디코딩
-    const currentTime = Math.floor(Date.now() / 1000); // 현재 시간 (Unix 타임스탬프)
-    return payload.exp < currentTime; // 만료 시간이 현재 시간보다 작으면 true
+    const decoded = decodeJwt(token);
+    if (!decoded || !decoded.payload.exp) {
+        console.error('Invalid or missing expiration time in token');
+        return true; // Assume expired if decoding fails
+    }
+
+    const expirationTime = decoded.payload.exp * 1000; // Convert to milliseconds
+    const currentTime = Date.now();
+
+    return currentTime >= expirationTime;
 }
 
 async function handleOAuthCallback() {  // 파라미터로 해시값을 받도록 수정
