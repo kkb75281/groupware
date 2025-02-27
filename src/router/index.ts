@@ -51,6 +51,11 @@ const router = createRouter({
 			name: 'mailing',
 			component: () => import('@/views/Mailing.vue'),
 		},
+		// {
+		// 	path: '/notification-permission',
+		// 	name: 'notification-permission',
+		// 	component: () => import('@/views/Notification_permission.vue'),
+		// },
 		{
 			path: '/',
 			component: Main,
