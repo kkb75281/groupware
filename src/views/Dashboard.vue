@@ -1,5 +1,21 @@
 <template lang="pug">
-h4 25.02.26 수 23:06
+//- h4 25.02.26 수 23:06
+.warning-msg 
+	.icon
+		svg
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+	p {{ serviceWorkerRegistMsg }}
+
+//- br
+
+//- .warning-msg 
+	.icon
+		svg
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+	p {{ notificationPermissionMsg }}
+
+br
+
 ul.card-wrap.gmail
 	li.card
 		.title-wrap
@@ -112,7 +128,7 @@ button.btn(type="button" @click="router.push('/test')") 테스트 페이지 바�
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { skapi } from "@/main";
+import { skapi, serviceWorkerRegistMsg, notificationPermissionMsg } from "@/main";
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
 import { mailList, readNoti, newsletterList, getNewsletterList } from "@/notifications";
@@ -341,6 +357,27 @@ onUnmounted(() => {
 		line-height: 1.2;
 		min-height: 150px;
 		text-align: center;
+	}
+}
+
+.warning-msg {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+
+	.icon {
+		padding: 0;
+
+		svg {
+			width: 16px;
+			height: 16px;
+			fill: var(--warning-color-400);
+		}
+	}
+	p {
+		font-size: 0.8rem;
+		color: var(--warning-color-500);
 	}
 }
 
