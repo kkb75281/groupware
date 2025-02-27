@@ -178,10 +178,86 @@ function googleLogin() {
 // 	console.log('=== googleLogin === data : ', data);
 // });
 
-async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을 받도록 수정
-	const params = new URLSearchParams(hashValue.substring(1));
-	const state = params.get('state');
-	const storedState = sessionStorage.getItem('oauth_state');
+async function refreshAccessToken(refreshToken) {
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+
+    const tokenUrl = 'https://oauth2.googleapis.com/token';
+    const params = new URLSearchParams();
+    params.append('client_id', GOOGLE_CLIENT_ID);
+    params.append('client_secret', GOOGLE_CLIENT_SECRET);
+    params.append('refresh_token', refreshToken);
+    params.append('grant_type', 'refresh_token');
+
+    try {
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params,
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            const { access_token, expires_in } = data;
+			sessionStorage.setItem('accessToken', access_token);
+            console.log('새로운 Access Token:', access_token);
+            console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+            return data;
+        } else if (data.error === 'invalid_grant') {
+            console.error('Refresh Token이 무효화되었습니다. 사용자에게 재인증을 요청하세요.');
+            skapi.logout().then(() => {
+				for (let key in user) {
+					delete user[key];
+				}
+				realtimes.value = [];
+				sessionStorage.removeItem('accessToken');
+				sessionStorage.removeItem('refreshToken');
+				router.push({ path: "/login" });
+			});
+        } else {
+            console.error('Access Token 갱신 실패:', data);
+        }
+    } catch (error) {
+        console.error('Access Token 갱신 중 오류 발생:', error);
+    }
+}
+
+function base64UrlToBase64(base64Url) {
+    // Replace URL-safe characters with standard Base64 characters
+    return base64Url.replace(/-/g, '+').replace(/_/g, '/');
+}
+
+function decodeJwt(token) {
+    try {
+        const [header, payload, signature] = token.split('.');
+        const decodedHeader = JSON.parse(atob(base64UrlToBase64(header)));
+        const decodedPayload = JSON.parse(atob(base64UrlToBase64(payload)));
+
+        return { header: decodedHeader, payload: decodedPayload };
+    } catch (error) {
+        console.error('Failed to decode JWT:', error.message);
+        return null;
+    }
+}
+
+// 토큰 만료 여부 확인
+function isTokenExpired(token) {
+    const decoded = decodeJwt(token);
+    if (!decoded || !decoded.payload.exp) {
+        console.error('Invalid or missing expiration time in token');
+        return true; // Assume expired if decoding fails
+    }
+
+    const expirationTime = decoded.payload.exp * 1000; // Convert to milliseconds
+    const currentTime = Date.now();
+
+    return currentTime >= expirationTime;
+}
+
+async function handleOAuthCallback() {  // 파라미터로 해시값을 받도록 수정
+	// const params = new URLSearchParams(hashValue.substring(1));
+	// const state = params.get('state');
+	// const storedState = sessionStorage.getItem('oauth_state');
 
 	// console.log('=== handleOAuthCallback === parms : ', params);
 	// console.log('=== handleOAuthCallback === state : ', state);
@@ -189,14 +265,24 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
 
 	loading.value = true;
 
-	if (state !== storedState || !state || !storedState) {
-		console.error('Invalid state parameter');
-		return;
-	}
+	// if (state !== storedState || !state || !storedState) {
+	// 	console.error('Invalid state parameter');
+	// 	return;
+	// }
 
 	const OPENID_LOGGER_ID = 'by_skapi';
-	const accessToken = params.get('access_token');
-	sessionStorage.setItem('accessToken', accessToken);
+	const accessToken = sessionStorage.getItem('accessToken');
+	const refreshToken = sessionStorage.getItem('refreshToken');
+
+	if (isTokenExpired(accessToken)) {
+		console.log('Access Token이 만료되었습니다.');
+		await refreshAccessToken(refreshToken);
+	} else {
+		console.log('Access Token이 유효합니다.');
+	}
+
+	// const accessToken = params.get('access_token');
+	// sessionStorage.setItem('accessToken', accessToken);
 
 	// console.log('=== handleOAuthCallback === accessToken : ', accessToken);
 
@@ -235,6 +321,10 @@ async function exchangeCodeForTokens(code, redirectUri) {
             console.log('Access Token:', access_token);
             console.log('Refresh Token:', refresh_token);
             console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+
+			sessionStorage.setItem('accessToken', access_token);
+			sessionStorage.setItem('refreshToken', refresh_token);
+
             return data;
         } else {
             console.error('토큰 교환 실패:', data);
@@ -244,7 +334,7 @@ async function exchangeCodeForTokens(code, redirectUri) {
     }
 }
 
-onMounted(() => {
+onMounted(async() => {
 	// const currentHash = window.location.hash;
 	// if (currentHash) {
 	// 	handleOAuthCallback(currentHash);
@@ -257,7 +347,8 @@ onMounted(() => {
 	if (authorizationCode) {
 		const redirectUri = window.location.href.split('?')[0]; // Redirect URI
 		console.log({redirectUri})
-		exchangeCodeForTokens(authorizationCode, redirectUri);
+		await exchangeCodeForTokens(authorizationCode, redirectUri);
+		handleOAuthCallback();
 	}
 });
 </script>

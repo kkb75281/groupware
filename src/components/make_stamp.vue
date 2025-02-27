@@ -5,7 +5,7 @@
 
 .input-wrap(v-if="!onlySign")
     p.label 도장명
-    input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등")
+    input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등" @click.stop="savedState.value && restoreCanvasState(savedState.value)")
 
 .button-wrap
     button.btn.bg-gray(v-if="!onlySign" @click="closeDialog") 취소
@@ -28,6 +28,29 @@ let canvas = ref(null);
 let ctx = null;
 let painting = false;
 
+// 캔버스 상태 저장
+function saveCanvasState() {
+    if (!canvas.value) return null;
+    return canvas.value.toDataURL();
+}
+
+// 캔버스 상태 복구
+function restoreCanvasState(dataUrl) {
+    if (!dataUrl) return;
+
+    const img = new Image();
+    img.src = dataUrl;
+    img.onload = () => {
+        if (ctx && canvas.value) {
+            ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
+            ctx.drawImage(img, 0, 0);
+        }
+    };
+}
+
+// input 클릭 시 상태 저장 및 복구
+const savedState = ref(null);
+
 // 마우스 좌표를 캔버스에 맞게 조정
 function getMousePos(canvas, event) {
     let rect = canvas.getBoundingClientRect();
@@ -40,14 +63,19 @@ function getMousePos(canvas, event) {
 
 // 캔버스 크기 설정
 const resizeCanvas = () => {
-    const width = canvas.value.offsetWidth;
-    const height = canvas.value.offsetHeight;
-    
-    canvas.value.width = width;
-    canvas.value.height = height;
+	// 현재 상태 저장
+    savedState.value = saveCanvasState();
 
-    // 기존 서명 복원 (리사이즈 시 데이터 손실 방지)
-    if (ctx) ctx.clearRect(0, 0, width, height);
+    // 상태 복구
+    restoreCanvasState(savedState.value);
+    // const width = canvas.value.offsetWidth;
+    // const height = canvas.value.offsetHeight;
+    
+    // canvas.value.width = width;
+    // canvas.value.height = height;
+
+    // // 기존 서명 복원 (리사이즈 시 데이터 손실 방지)
+    // if (ctx) ctx.clearRect(0, 0, width, height);
 };
 
 // 서명 시작
@@ -59,6 +87,7 @@ function startPosition(e) {
 // 서명 끝
 function endPosition() {
     painting = false;
+	savedState.value = saveCanvasState(); // 상태 저장
     ctx.beginPath(); // 새로운 경로 시작
 }
 
@@ -144,6 +173,9 @@ onMounted(() =>{
     ctx = canvas.value.getContext("2d");
 
     reset();
+
+	// 초기 상태 저장
+	savedState.value = saveCanvasState();
     
     // Pointer 이벤트로 마우스/터치 통합 처리
     canvas.value.addEventListener("pointerdown", startPosition);
