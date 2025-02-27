@@ -349,6 +349,18 @@ export async function subscribeNotification() {
 
 	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
 	console.log({response})
+
+	let user_local_data = {
+		user_id: user.user_id,
+		subscribeNotification: false,
+	}
+
+	if(response && response.includes('SUCCESS')) {
+		user_local_data.subscribeNotification = true;
+	}
+
+	// localStorage에 subscribeNotification 저장
+	window.localStorage.setItem(`${skapi.service}.loggedInUser`, JSON.stringify(user_local_data));
 	return response;
 }
 
@@ -367,6 +379,18 @@ export async function unsubscribeNotification() {
 	await subscription.unsubscribe();
 
 	const response = await skapi.unsubscribeNotification(subscription.endpoint, subscriptionJSON.keys);
+	
+	let user_local_data = {
+		user_id: user.user_id,
+		subscribeNotification: true,
+	}
+
+	if(response && response.includes('SUCCESS')) {
+		user_local_data.subscribeNotification = false;
+	}
+
+	// localStorage에 unsubscribeNotification 저장
+	window.localStorage.setItem(`${skapi.service}.loggedInUser`, JSON.stringify(user_local_data));
 }
  
 export function pushNotification(content: { title: string; body: string }, userId: string | string[]) {

@@ -6,7 +6,7 @@ import { user, profileImage } from './user';
 import { fetchGmailEmails } from "@/utils/mail";
 import App from './App.vue';
 import router from './router';
-import { realtimes, unreadCount, readList, getRealtime, subscribeNotification } from './notifications';
+import { realtimes, unreadCount, readList, getRealtime, subscribeNotification, unsubscribeNotification } from './notifications';
 import { getUserInfo, employeeDict, getEmpDivisionPosition } from './employee';
 import { getAuditList, getSendAuditList } from './audit';
 
@@ -517,7 +517,37 @@ export let loginCheck = async (profile: any) => {
 	}
 
 	else if (profile) {
+		// 이전에 로그인 한 유저가 있는지 localStorage 확인
+		if (window.localStorage.getItem(`${skapi.service}.loggedInUser`)) {
+			// 이전에 로그인 한 유저가 있을 경우
+			let previousUser = JSON.parse(window.localStorage.getItem(`${skapi.service}.loggedInUser`) || '{}');
+			// console.log('=== loginCheck === previousUser : ', previousUser);
+
+			// 이전 유저와 현재 로그인한 유저가 다를 경우
+			if (previousUser.user_id !== profile.user_id) {
+				if(previousUser.subscribeNotification) {
+					await unsubscribeNotification();
+				}
+				// 이전 유저 정보 초기화
+				window.localStorage.removeItem(`${skapi.service}.loggedInUser`);
+			}
+		}
+
 		checkNotificationPermission();
+
+		let user_local_data = {
+			user_id: profile.user_id,
+			subscribeNotification: false,
+		}
+		
+		let subsNoti = await subscribeNotification();
+
+		if(subsNoti && subsNoti.includes('SUCCESS')) {
+			user_local_data.subscribeNotification = true;
+		}
+
+		// 로그인 한 유저 정보 localStorage에 저장
+		window.localStorage.setItem(`${skapi.service}.loggedInUser`, JSON.stringify(user_local_data));
 
 		// console.log('=== loginCheck === profile : ', profile);
 		
@@ -554,8 +584,6 @@ export let loginCheck = async (profile: any) => {
 		// if (!subscription_key) {
 		// 	await 
 		// }
-
-		await subscribeNotification();
 
 		let misc = JSON.parse(user.misc || '{}');
 
