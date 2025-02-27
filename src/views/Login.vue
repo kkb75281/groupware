@@ -87,9 +87,9 @@ const route = useRoute();
 let masterlogin = ref(false);
 
 if(window.location.hash) {
-    console.log('OAuth 콜백 처리중...');
+	console.log('OAuth 콜백 처리중...');
 } else if(iwaslogged.value) {
-    router.push('/');
+	router.push('/');
 }
 
 if(iwaslogged.value) {
@@ -113,18 +113,18 @@ if (window.localStorage.getItem('remember') === 'true') {
 }
 
 let setLocalStorage = (e) => {
-    localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
+	localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
 };
 
 let login = (e) => {
 	loading.value = true;
-    promiseRunning.value = true;
+	promiseRunning.value = true;
 
 	sessionStorage.removeItem('accessToken');
 
-    skapi.login(e).then((u) => {
-        router.push('/');
-    }).catch(err => {
+	skapi.login(e).then((u) => {
+		router.push('/');
+	}).catch(err => {
 		for (let k in user) {
 			delete user[k];
 		}
@@ -140,10 +140,10 @@ let login = (e) => {
 		else {
 			alert(err.message);
 		}
-    }).finally(() => {
-        promiseRunning.value = false;
+	}).finally(() => {
+		promiseRunning.value = false;
 		loading.value = false;
-    })
+	})
 };
 
 // google login
@@ -160,10 +160,12 @@ function googleLogin() {
 	let url = 'https://accounts.google.com/o/oauth2/v2/auth';
 	url += '?client_id=' + GOOGLE_CLIENT_ID;
 	url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
-	url += '&response_type=token';
+	// url += '&response_type=token';
+	url += '&response_type=code'; // Authorization Code Flow 사용
 	url += '&scope=' + encodeURIComponent('https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly');
 	url += '&prompt=select_account';
 	url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
+	url += '&access_type=offline'; // Refresh Token을 받기 위해 필수
 
 	window.location.href = url;
 }
@@ -177,40 +179,86 @@ function googleLogin() {
 // });
 
 async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을 받도록 수정
-    const params = new URLSearchParams(hashValue.substring(1));
-    const state = params.get('state');
-    const storedState = sessionStorage.getItem('oauth_state');
+	const params = new URLSearchParams(hashValue.substring(1));
+	const state = params.get('state');
+	const storedState = sessionStorage.getItem('oauth_state');
 
-    // console.log('=== handleOAuthCallback === parms : ', params);
-    // console.log('=== handleOAuthCallback === state : ', state);
-    // console.log('=== handleOAuthCallback === storedState : ', storedState);
+	// console.log('=== handleOAuthCallback === parms : ', params);
+	// console.log('=== handleOAuthCallback === state : ', state);
+	// console.log('=== handleOAuthCallback === storedState : ', storedState);
 
-    loading.value = true;
+	loading.value = true;
 
-    if (state !== storedState || !state || !storedState) {
-        console.error('Invalid state parameter');
-        return;
-    }
+	if (state !== storedState || !state || !storedState) {
+		console.error('Invalid state parameter');
+		return;
+	}
 
-    const OPENID_LOGGER_ID = 'by_skapi';
-    const accessToken = params.get('access_token');
-    sessionStorage.setItem('accessToken', accessToken);
+	const OPENID_LOGGER_ID = 'by_skapi';
+	const accessToken = params.get('access_token');
+	sessionStorage.setItem('accessToken', accessToken);
 
 	// console.log('=== handleOAuthCallback === accessToken : ', accessToken);
 
-    skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
+	skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
 		// console.log('=== handleOAuthCallback === u : ', u);
-        window.location.href = '/';
-    }).catch(() => {
-        loading.value = false;
-    });
+		window.location.href = '/';
+	}).catch(() => {
+		loading.value = false;
+	});
+}
+
+async function exchangeCodeForTokens(code, redirectUri) {
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+
+    const tokenUrl = 'https://oauth2.googleapis.com/token';
+    const params = new URLSearchParams();
+    params.append('code', code);
+    params.append('client_id', GOOGLE_CLIENT_ID);
+    params.append('client_secret', GOOGLE_CLIENT_SECRET);
+    params.append('redirect_uri', redirectUri);
+    params.append('grant_type', 'authorization_code');
+
+	console.log('=== exchangeCodeForTokens === params : ', params);
+
+    try {
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params,
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            const { access_token, refresh_token, expires_in } = data;
+            console.log('Access Token:', access_token);
+            console.log('Refresh Token:', refresh_token);
+            console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+            return data;
+        } else {
+            console.error('토큰 교환 실패:', data);
+        }
+    } catch (error) {
+        console.error('토큰 교환 중 오류 발생:', error);
+    }
 }
 
 onMounted(() => {
-    const currentHash = window.location.hash;
-    if (currentHash) {
-        handleOAuthCallback(currentHash);
-    }
+	// const currentHash = window.location.hash;
+	// if (currentHash) {
+	// 	handleOAuthCallback(currentHash);
+	// }
+
+	const urlParams = new URLSearchParams(window.location.search);
+	console.log({urlParams})
+	const authorizationCode = urlParams.get('code');
+	console.log({authorizationCode})
+	if (authorizationCode) {
+		const redirectUri = window.location.href.split('?')[0]; // Redirect URI
+		console.log({redirectUri})
+		exchangeCodeForTokens(authorizationCode, redirectUri);
+	}
 });
 </script>
 
@@ -222,11 +270,11 @@ onMounted(() => {
 
 	height: 100vh;
 	min-height: calc(100vh - 4.7244rem);
-    display: flex;
-    justify-content: center;
-    position: relative;
-    flex-direction: column;
-    // top: 2.3622rem;
+	display: flex;
+	justify-content: center;
+	position: relative;
+	flex-direction: column;
+	// top: 2.3622rem;
 
 	.logo {
 		display: block;
@@ -239,7 +287,7 @@ onMounted(() => {
 	}
 
 	.title {
-		    font-size: 1.5rem;
+			font-size: 1.5rem;
 			// margin-bottom: 1.5rem;
 			// padding-bottom: 1.5rem;
 			// border-bottom: 1px solid var(--gray-color-400);
