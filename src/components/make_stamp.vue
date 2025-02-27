@@ -5,7 +5,7 @@
 
 .input-wrap(v-if="!onlySign")
     p.label 도장명
-    input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등" @click="restoreCanvasState(savedState)")
+    input(v-model="stampName" type="text" name="fileName" placeholder="도장명을 입력해주세요. 예) 회사직인, 개인직인 등" @click.stop="restoreCanvasState(savedState)")
 
 .button-wrap
     button.btn.bg-gray(v-if="!onlySign" @click="closeDialog") 취소
