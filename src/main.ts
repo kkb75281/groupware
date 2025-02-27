@@ -181,8 +181,8 @@ export function checkNotificationPermission() {
 			onlyUserGesture.value = true;
 		} else {
 			console.log("현재 브라우저는 Safari가 아닙니다.");
-			requestNotificationPermission();
 		}
+		requestNotificationPermission();
     }
 
 	console.log('checkNotificationPermission - complete');
