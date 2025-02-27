@@ -326,8 +326,10 @@ async function exchangeCodeForTokens(code, redirectUri) {
 			sessionStorage.setItem('refreshToken', refresh_token);
 
 			// 로그인 상태 유지가 체크되어 있으면 로컬 스토리지에도 저장
-			if (localStorage.getItem('remember') === 'true') {
-				localStorage.setItem('googleRefreshToken', refresh_token);
+			if (remVal.value || localStorage.getItem('remember') === 'true') {
+				localStorage.setItem('accessToken', access_token);
+				localStorage.setItem('refreshToken', refresh_token);
+				console.log('토큰이 로컬 스토리지에 저장되었습니다.');
 			}
 
             return data;
