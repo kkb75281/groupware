@@ -7,7 +7,7 @@ h4(style="margin-bottom: 1rem;") 25.02.27 목 17:05
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ serviceWorkerRegistMsg }}
 
-button.btn(v-if="onlyUserGesture" @click="subscribeNotification") 그룹웨어 알림 허용하기
+button.btn(v-if="onlyUserGesture" @click="subscribe") 그룹웨어 알림 허용하기
 
 //- br
 
@@ -144,6 +144,10 @@ const route = useRoute();
 // 		router.push('/notification-permission');
 // 	}
 // });
+
+let subscribe = () => {
+	subscribeNotification();
+}
 
 let loading = ref(false);
 let googleAccountCheck = sessionStorage.getItem('accessToken') ? true : false;
