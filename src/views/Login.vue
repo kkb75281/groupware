@@ -76,7 +76,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { user } from '@/user';
+import { user, makeSafe } from '@/user';
 import { skapi, iwaslogged } from "@/main";
 import { ref, onMounted } from 'vue';
 import Loading from '@/components/loading.vue';
@@ -160,10 +160,13 @@ function googleLogin() {
 	let url = 'https://accounts.google.com/o/oauth2/v2/auth';
 	url += '?client_id=' + GOOGLE_CLIENT_ID;
 	url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
-	url += '&response_type=token';
+	// url += '&response_type=token';
+	url += '&response_type=code'; // Authorization Code Flow 사용
 	url += '&scope=' + encodeURIComponent('https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly');
 	url += '&prompt=select_account';
 	url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
+	url += '&access_type=offline'; // Refresh Token을 받기 위해 필수
+    // url += '&include_granted_scopes=true'; // 선택 사항: 추가 권한 요청 시 사용
 
 	window.location.href = url;
 }
@@ -175,6 +178,109 @@ function googleLogin() {
 // }).then(response => response.json()).then(data => {
 // 	console.log('=== googleLogin === data : ', data);
 // });
+
+// Refresh Token으로 Google OAuth 서버로부터 새로운 액세스 토큰을 받는 함수
+async function refreshAccessToken(refreshToken) {
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+
+    const tokenUrl = 'https://oauth2.googleapis.com/token';
+    const params = new URLSearchParams();
+    params.append('client_id', GOOGLE_CLIENT_ID);
+    params.append('client_secret', GOOGLE_CLIENT_SECRET);
+    params.append('refresh_token', refreshToken);
+    params.append('grant_type', 'refresh_token');
+
+    try {
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params,
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            const { access_token, expires_in } = data;
+            console.log('새로운 Access Token:', access_token);
+            return data;
+        } else if (data.error === 'invalid_grant') {
+            console.error('Refresh Token이 무효화되었습니다. 사용자에게 재인증을 요청하세요.');
+            skapi.logout().then(() => {
+				for (let key in user) {
+					delete user[key];
+				}
+				realtimes.value = [];
+				sessionStorage.removeItem('accessToken');
+				sessionStorage.removeItem('refreshToken');
+				router.push({ path: "/login" });
+			});
+        } else {
+            console.error('Refresh Token 갱신 실패:', data);
+        }
+    } catch (error) {
+        console.error('Access Token 갱신 중 오류 발생:', error);
+    }
+}
+
+// Google OAuth 서버로부터 Authorization Code을 받아서 액세스 토큰, 리프레시 토큰을 받는 함수
+async function exchangeCodeForTokens(code, redirectUri) {
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+
+    const tokenUrl = 'https://oauth2.googleapis.com/token';
+    const params = new URLSearchParams();
+    params.append('code', code);
+    params.append('client_id', GOOGLE_CLIENT_ID);
+    params.append('client_secret', GOOGLE_CLIENT_SECRET);
+    params.append('redirect_uri', redirectUri);
+    params.append('grant_type', 'authorization_code');
+
+    try {
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params,
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            const { access_token, refresh_token } = data;
+
+			if (isTokenExpired(access_token)) {
+				console.log('Access Token이 만료되었습니다.');
+				refreshAccessToken(refresh_token); // Refresh Token으로 새로운 Access Token 요청
+			} else {
+				console.log('Access Token이 유효합니다.');
+			}
+
+            // 토큰 저장
+            sessionStorage.setItem('accessToken', access_token);
+            sessionStorage.setItem('refreshToken', refresh_token);
+            console.log('토큰 저장 완료:', data);
+
+            // skapi.openIdLogin 호출
+            const OPENID_LOGGER_ID = 'by_skapi';
+            skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: access_token }).then(u => {
+                console.log('로그인 성공:', u);
+                window.location.href = '/'; // 메인 페이지로 리다이렉트
+            }).catch(error => {
+                console.error('skapi.openIdLogin 실패:', error);
+                loading.value = false;
+            });
+        } else {
+            console.error('토큰 교환 실패:', data);
+        }
+    } catch (error) {
+        console.error('토큰 교환 중 오류 발생:', error);
+    }
+}
+
+// 액세스 토큰 유효기간 체크
+function isTokenExpired(token) {
+    const payload = JSON.parse(atob(token.split('.')[1])); // JWT의 Payload 부분 디코딩
+    const currentTime = Math.floor(Date.now() / 1000); // 현재 시간 (Unix 타임스탬프)
+    return payload.exp < currentTime; // 만료 시간이 현재 시간보다 작으면 true
+}
 
 async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을 받도록 수정
     const params = new URLSearchParams(hashValue.substring(1));
@@ -194,7 +300,17 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
 
     const OPENID_LOGGER_ID = 'by_skapi';
     const accessToken = params.get('access_token');
+	const getSessionRefreshToken = sessionStorage.getItem('refreshToken');
+
+	if (isTokenExpired(accessToken)) {
+		console.log('Access Token이 만료되었습니다.');
+		refreshAccessToken(refreshToken); // Refresh Token으로 새로운 Access Token 요청
+	} else {
+		console.log('Access Token이 유효합니다.');
+	}
+	
     sessionStorage.setItem('accessToken', accessToken);
+	sessionStorage.setItem('refreshToken', refreshToken);
 
 	// console.log('=== handleOAuthCallback === accessToken : ', accessToken);
 
@@ -207,9 +323,19 @@ async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을
 }
 
 onMounted(() => {
-    const currentHash = window.location.hash;
-    if (currentHash) {
-        handleOAuthCallback(currentHash);
+    // const currentHash = window.location.hash;
+    // if (currentHash) {
+    //     handleOAuthCallback(currentHash);
+    // }
+
+	const urlParams = new URLSearchParams(window.location.search);
+
+    if (urlParams.has('code')) {
+        const authorizationCode = urlParams.get('code');
+        const redirectUri = window.location.href.split('?')[0]; // Redirect URI
+        exchangeCodeForTokens(authorizationCode, redirectUri);
+    } else if (urlParams.has('error')) {
+        console.error('OAuth 인증 중 오류 발생:', urlParams.get('error'));
     }
 });
 </script>

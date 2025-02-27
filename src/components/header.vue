@@ -245,6 +245,7 @@ let logout = () => {
 		}
 		realtimes.value = [];
 		sessionStorage.removeItem('accessToken');
+		sessionStorage.removeItem('refreshToken');
         router.push({ path: "/login" });
     });
 }
