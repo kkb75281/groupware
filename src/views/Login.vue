@@ -251,9 +251,12 @@ onMounted(() => {
 	// }
 
 	const urlParams = new URLSearchParams(window.location.search);
+	console.log({urlParams})
 	const authorizationCode = urlParams.get('code');
+	console.log({authorizationCode})
 	if (authorizationCode) {
 		const redirectUri = window.location.href.split('?')[0]; // Redirect URI
+		console.log({redirectUri})
 		exchangeCodeForTokens(authorizationCode, redirectUri);
 	}
 });
