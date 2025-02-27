@@ -26,6 +26,19 @@ let emailCheckInterval;
 onMounted(async () => {
 	console.log('메인 페이지 onMounted');
 
+    // 세션 스토리지에 액세스 토큰이 없는지 확인
+    if (!sessionStorage.getItem('accessToken')) {
+        // 로그인 상태 유지가 체크되어 있고 로컬 스토리지에 액세스 토큰이 있는지 확인
+        if (localStorage.getItem('remember') === 'true' && localStorage.getItem('accessToken')) {
+            // 로컬 스토리지에서 세션 스토리지로 토큰 복원
+            sessionStorage.setItem('accessToken', localStorage.getItem('accessToken'));
+            if (localStorage.getItem('refreshToken')) {
+                sessionStorage.setItem('refreshToken', localStorage.getItem('refreshToken'));
+            }
+            console.log('로컬 스토리지에서 액세스 토큰 복원 완료');
+        }
+    }
+
 	await updateEmails();
 	console.log('이메일 업데이트 완료');
 	
@@ -35,6 +48,33 @@ onMounted(async () => {
 		updateEmails();
 	}, 10000);
 });
+
+async function refreshAccessToken(refreshToken) {
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+
+    const tokenUrl = 'https://oauth2.googleapis.com/token';
+    const params = new URLSearchParams();
+    params.append('client_id', GOOGLE_CLIENT_ID);
+    params.append('client_secret', GOOGLE_CLIENT_SECRET);
+    params.append('refresh_token', refreshToken);
+    params.append('grant_type', 'refresh_token');
+
+    const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+        sessionStorage.setItem('accessToken', data.access_token);
+        return data;
+    } else {
+        console.error('토큰 갱신 실패:', data);
+        throw new Error('토큰 갱신 실패');
+    }
+}
 
 watch(mainPageLoading, (nv) => {
 	if (nv) {
