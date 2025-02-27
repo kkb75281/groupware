@@ -340,7 +340,9 @@ export async function subscribeNotification() {
 		return;
 	}
 
-	const registration = await navigator.serviceWorker.register("/sw.js");
+	let serviceID = import.meta.env.VITE_SERVICE_ID;
+
+	const registration = await navigator.serviceWorker.register(`/wrk.${serviceID}.js`);
 	await navigator.serviceWorker.ready;
 
 	const subscription = await registration.pushManager

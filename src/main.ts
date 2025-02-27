@@ -23,6 +23,7 @@ export let connectRunning:Promise<any> | null = null;
 export let serviceWorkerRegistMsg = ref('');
 export let notificationPermissionMsg = ref('');
 
+let serviceID = import.meta.env.VITE_SERVICE_ID;
 // function getChanges(before:any, after:any) {
 //   const beforeKeys = new Set(Object.keys(before));
 //   const afterKeys = new Set(Object.keys(after));
@@ -246,7 +247,7 @@ if ('serviceWorker' in navigator) {
 
 // Service Worker 등록
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register(`/wrk.${serviceID}.js`)
         .then((registration) => {
             console.log('Service Worker registered:', registration);
         })
