@@ -215,7 +215,7 @@ export let mailRefresh = ref(false);
 
 // 이메일 업데이트
 export async function updateEmails(refresh = false) {
-	const accessToken = sessionStorage.getItem('accessToken');
+	const accessToken = localStorage.getItem('accessToken');
 	
 	if(refresh) {
 		mailRefresh.value = true;

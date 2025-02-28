@@ -45,7 +45,7 @@ const route = useRoute();
 
 let navbar = ref(null);
 let activeMenu = ref(null);
-let googleAccountCheck = sessionStorage.getItem('accessToken') ? true : false;
+let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 
 // isadmin을 computed로 변경하여 반응성 부여
 const isadmin = computed(() => user.access_group > 98);
