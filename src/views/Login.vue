@@ -86,18 +86,18 @@ const route = useRoute();
 
 let masterlogin = ref(false);
 
-if(window.location.hash) {
-	console.log('OAuth 콜백 처리중...');
-} else if(iwaslogged.value) {
-	router.push('/');
-}
+// if(window.location.hash) {
+// 	console.log('OAuth 콜백 처리중...');
+// } else if(iwaslogged.value) {
+// 	router.push('/');
+// }
 
-if(iwaslogged.value) {
-	router.push('/'); // 이미 로그인 되어있으면 바로 메인페이지로 이동
-}
-else {
-	// window.sessionStorage.clear();
-}
+// if(iwaslogged.value) {
+// 	router.push('/'); // 이미 로그인 되어있으면 바로 메인페이지로 이동
+// }
+// else {
+// 	// window.sessionStorage.clear();
+// }
 
 let showPassword = ref(false);
 let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위함

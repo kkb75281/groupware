@@ -11,7 +11,7 @@ import { watch } from 'vue';
 const router = useRouter();
 const route = useRoute();
 
-let isRefreshing = false;
+// let isRefreshing = false;
 
 // document.addEventListener('touchstart', (e) => {
 //     const startY = e.touches[0].pageY;
@@ -32,14 +32,14 @@ let isRefreshing = false;
 //     }
 // });
 
-function refreshPage() {
-    window.location.reload();
-}
+// function refreshPage() {
+//     window.location.reload();
+// }
 
-watch(loaded, async(nv) => {
+watch(loaded, (nv) => {
     if (!nv) return;
 
-    await router.isReady();
+    // await router.isReady();
 
     if(route.name === 'mailing') {
         return;
@@ -50,9 +50,14 @@ watch(loaded, async(nv) => {
         return;
     }
 
-    if(!iwaslogged.value && Object.keys(user).length === 0) {
-        await router.push('/login');
+    // if(!iwaslogged.value && Object.keys(user).length === 0) {
+    //     await router.push('/login');
+    // }
+
+    if(!user?.user_id) {
+        router.push('/login');
     }
+
 }, { immediate: true });
 </script>
 

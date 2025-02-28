@@ -471,14 +471,18 @@ export let loginCheck = async (profile: any) => {
 			skapi.closeRealtime();
 		}
 
-		if (iwaslogged.value) {
-			// Object.assign(user, {}); // 이렇게 하면 지워지지 않음
-			for (let key in user) {
-				delete user[key];
-			}
-
-			iwaslogged.value = false;
+		for (let key in user) {
+			delete user[key];
 		}
+
+		// if (iwaslogged.value) {
+		// 	// Object.assign(user, {}); // 이렇게 하면 지워지지 않음
+		// 	for (let key in user) {
+		// 		delete user[key];
+		// 	}
+
+		// 	iwaslogged.value = false;
+		// }
 	}
 
 	else if (profile) {
