@@ -86,108 +86,20 @@
 
 <script setup>
 	import { onMounted, onBeforeUnmount } from 'vue';
-	// import { skapi } from '@/main';
 	import { Wysiwyg4All } from 'wysiwyg4all';
 	import 'wysiwyg4all/css';
-	// import Loading from '@/components/loading.vue';
 
 	// 이벤트 emit 방식으로 에디터 내용을 실시간으로 부모 컴포넌트로 전달
 	const emit = defineEmits(['update:content', 'editor-ready']);
-	// const emit = defineEmits(['update:content']);
-
-	// const wysiwyg = ref(null);
 	let wysiwyg = null;
 
-	// const loadScript = () => {
-	//   return new Promise((resolve, reject) => {
-	//     if (document.getElementById('wysiwyg4all-script')) {
-	//       resolve();
-	//       return;
-	//     }
-
-	//     const script = document.createElement('script');
-	//     script.id = 'wysiwyg4all-script';
-	//     script.src = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/dist/wysiwyg4all.min.js';  // dist 폴더의 minified 버전 사용
-	//     script.async = true;
-
-	//     script.onload = () => resolve();
-	//     script.onerror = () => reject(new Error('Failed to load Wysiwyg4All'));
-
-	//     document.head.appendChild(script);
-	//   });
-	// };
-
-	// const loadStylesheet = () => {
-	//   return new Promise((resolve) => {
-	//     if (document.getElementById('wysiwyg4all-style')) {
-	//       resolve();
-	//       return;
-	//     }
-
-	//     const link = document.createElement('link');
-	//     link.id = 'wysiwyg4all-style';
-	//     link.rel = 'stylesheet';
-	//     link.href = 'https://cdn.jsdelivr.net/npm/wysiwyg4all@latest/wysiwyg4all.css';
-
-	//     link.onload = () => resolve();
-	//     document.head.appendChild(link);
-	//   });
-	// };
-
-	// const initEditor = async () => {
-	//   try {
-	//     // await Promise.all([loadScript(), loadStylesheet()]);
-	// 	// await Promise.all([loadStylesheet()]);
-
-	//     setTimeout(() => {
-	//       if (typeof Wysiwyg4All === 'function') {
-	//         wysiwyg.value = new Wysiwyg4All({
-	//           elementId: 'myeditor',
-	//           placeholder: '결재 내용',
-	//           spellcheck: false,
-	//           highlightColor: '#4a90e2',
-	//           lastLineBlank: true,
-	//           hashtag: false,
-	//           urllink: true,
-	//           callback: (c) => {
-	//             if (c.commandTracker) {
-	//               // 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
-	// 			  wysiwyg.value.export().then(r => {
-	// 				emit('update:content', r.html);
-	// 			  });
-	//             }
-	//             return c;
-	//           }
-	//         });
-	//         editorReady.value = true;
-	//         emit('editor-ready', true);
-	//       }
-	//     }, 100);
-	//   } catch (error) {
-	//     console.error('Failed to initialize editor:', error);
-	//     emit('editor-ready', false);
-	//   }
-	// };
-
 	const handleCommand = (command) => {
-		// if (wysiwyg.value && editorReady.value) {
-		// wysiwyg.value.command(command);
-		// }
+		if (!wysiwyg) return;
 		wysiwyg.command(command);
 	};
 
-	const handleBlur = () => {
-		// if (wysiwyg.value && editorReady.value) {
-		// wysiwyg.value.restoreLastSelection();
-		// }
-		wysiwyg.restoreLastSelection();
-	};
-
-	// const exportData = () => {
-	//   if (wysiwyg.value && editorReady.value) {
-	//     const content = wysiwyg.value.export();
-	//     emit('update:content', content);
-	//   }
+	// const handleBlur = () => {
+	// 	wysiwyg.restoreLastSelection();
 	// };
 
 	onMounted(() => {
@@ -197,7 +109,7 @@
 			placeholder: '결재 내용',
 			spellcheck: false,
 			highlightColor: '#4a90e2',
-			lastLineBlank: true,
+			// lastLineBlank: true,
 			hashtag: false,
 			urllink: true,
 			callback: (c) => {
@@ -211,35 +123,14 @@
 				return c;
 			}
 		});
-		// wysiwyg.value = new Wysiwyg4All({
-		// 	elementId: 'myeditor',
-		// 	placeholder: '결재 내용',
-		// 	spellcheck: false,
-		// 	highlightColor: '#4a90e2',
-		// 	lastLineBlank: true,
-		// 	hashtag: false,
-		// 	urllink: true,
-		// 	callback: (c) => {
-		// 		if (c.commandTracker) {
-		// 			// 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
-		// 			wysiwyg.value.export().then(r => {
-		// 				emit('update:content', r.html);
-		// 			});
-		// 		}
-		// 		return c;
-		// 	}
-		// });
 		emit('editor-ready', true);
 	});
 
 	onBeforeUnmount(() => {
 		wysiwyg = null;
-		// wysiwyg.value = null;
-		// editorReady.value = false;
 	});
 
 	defineExpose({
-		// getContent: () => wysiwyg.value?.export() || '',
 		getContent: () => wysiwyg.export() || '',
 	});
 </script>
