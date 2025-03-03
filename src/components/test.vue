@@ -1,5 +1,6 @@
 <template lang="pug">
 h4 {{ realtimeTestingMsg }}
+h4(style="margin-bottom: 1rem;") {{buildTime}}
 
 .test-area
 	h3.title Notification Subscribe Test
@@ -34,7 +35,7 @@ h4 {{ realtimeTestingMsg }}
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications";
-import { skapi, realtimeTestingMsg } from "@/main";
+import { skapi, realtimeTestingMsg, buildTime } from "@/main";
 import { user } from "@/user";
 import { getUsers } from "@/employee";
 

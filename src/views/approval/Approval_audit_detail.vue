@@ -232,7 +232,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
-import { skapi, isConnected, RealtimeCallback } from '@/main';
+import { skapi, RealtimeCallback } from '@/main';
 import { user, makeSafe } from '@/user';
 import { getUserInfo } from '@/employee';
 import { auditList } from '@/audit';

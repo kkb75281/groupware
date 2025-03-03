@@ -274,21 +274,7 @@ let resigterComp = async(e) => {
             unique_id: uniqueId
         };
 
-        // console.log('== workTimeData:', workTimeData);  
-
         skapi.postRecord(workTimeData, config);
-
-
-        // let sessionDivisions = window.sessionStorage.getItem('divisions'); // 세션 스토리지 쓸 이유가 없음.
-
-        // if(sessionDivisions == 'no data' || !JSON.parse(sessionDivisions)) {
-        //     sessionDivisions = {};
-        // } else {
-        //     sessionDivisions = JSON.parse(sessionDivisions);
-        // }
-        
-        // sessionDivisions[r.record_id] = r;
-        // window.sessionStorage.setItem('divisions', JSON.stringify(sessionDivisions));
 
         window.alert('등록되었습니다.');
         router.push('/admin/list-divisions');

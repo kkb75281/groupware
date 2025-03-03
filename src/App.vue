@@ -1,65 +1,10 @@
 <template lang="pug">
-router-view(v-if="loaded")
+div(v-if='!loaded' style='display: flex;align-items: center;justify-content: center;height: 100vh;position: fixed;width: 100%;')
+    Loading
+router-view(v-else)
 </template>
 
 <script setup>
-import { useRoute, useRouter } from 'vue-router';
-import { loaded, iwaslogged } from '@/main';
-import { user } from '@/user';
-import { watch } from 'vue';
-
-const router = useRouter();
-const route = useRoute();
-
-// let isRefreshing = false;
-
-// document.addEventListener('touchstart', (e) => {
-//     const startY = e.touches[0].pageY;
-//     document.addEventListener('touchmove', onTouchMove);
-//     document.addEventListener('touchend', onTouchEnd);
-
-//     function onTouchMove(e) {
-//         const currentY = e.touches[0].pageY;
-//         if (currentY - startY > 100 && !isRefreshing) {
-//             isRefreshing = true;
-//             refreshPage();
-//         }
-//     }
-
-//     function onTouchEnd() {
-//         document.removeEventListener('touchmove', onTouchMove);
-//         document.removeEventListener('touchend', onTouchEnd);
-//     }
-// });
-
-// function refreshPage() {
-//     window.location.reload();
-// }
-
-watch(loaded, (nv) => {
-    if (!nv) return;
-
-    // await router.isReady();
-
-    if(route.name === 'mailing') {
-        return;
-    }
-
-    if (window.location.hash && window.location.hash.includes('access_token')) {
-        console.log('OAuth 콜백 처리 중...');
-        return;
-    }
-
-    // if(!iwaslogged.value && Object.keys(user).length === 0) {
-    //     await router.push('/login');
-    // }
-
-    if(!user?.user_id) {
-        router.push('/login');
-    }
-
-}, { immediate: true });
+import { loaded } from '@/main'
+import Loading from '@/components/loading.vue';
 </script>
-
-<style scoped lang="less">
-</style>
