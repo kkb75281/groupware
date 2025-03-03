@@ -221,37 +221,40 @@ export async function refreshAccessToken() {
 		return;
 	}
 	const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-	const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 
 	const tokenUrl = 'https://oauth2.googleapis.com/token';
-	const params = new URLSearchParams();
-	params.append('client_id', GOOGLE_CLIENT_ID);
-	params.append('client_secret', GOOGLE_CLIENT_SECRET);
-	params.append('refresh_token', refreshToken);
-	params.append('grant_type', 'refresh_token');
+	const params = {
+		client_id: GOOGLE_CLIENT_ID,
+		client_secret: "$CLIENT_SECRET",
+		refresh_token: refreshToken,
+		grant_type: 'refresh_token'
+	}
 
 	try {
-		const response = await fetch(tokenUrl, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: params,
+		const data = await skapi.clientSecretRequest({
+			clientSecretName: "ggltoken",
+			url: tokenUrl,
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			data: params
 		});
 
-		const data = await response.json();
-		if (response.ok) {
-			const { access_token, expires_in } = data;
-			localStorage.setItem('accessToken', access_token);
-			console.log('새로운 Access Token:', access_token);
-			console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
-			return data;
-		} else if (data.error === 'invalid_grant') {
+		console.log({ data })
+
+		if (data.error === 'invalid_grant') {
 			console.error('Refresh Token이 무효화되었습니다. 사용자에게 재인증을 요청하세요.');
 			skapi.logout().then(() => {
 				router.push({ path: "/login" });
 			});
-		} else {
-			console.error('Access Token 갱신 실패:', data);
 		}
+
+		const { access_token, expires_in } = data;
+		localStorage.setItem('accessToken', access_token);
+		console.log('새로운 Access Token:', access_token);
+		console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+		return data;
 	} catch (error) {
 		console.error('Access Token 갱신 중 오류 발생:', error);
 	}
@@ -272,7 +275,7 @@ export async function loginCheck(profile: any) {
 		realtimes.value = [];
 		localStorage.removeItem('accessToken');
 		localStorage.removeItem('refreshToken');
-		
+
 		if (emailCheckInterval) {
 			emailCheckInterval.clearInterval();
 			emailCheckInterval = null;
@@ -358,7 +361,7 @@ export async function loginCheck(profile: any) {
 		await subscribeNotification();
 	}
 
-	if(!loaded.value) {
+	if (!loaded.value) {
 		app.use(router);
 		app.mount('#app');
 	}

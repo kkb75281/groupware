@@ -140,40 +140,44 @@
 
 	async function exchangeCodeForTokens(code, redirectUri) {
 		const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-		const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 
 		const tokenUrl = 'https://oauth2.googleapis.com/token';
-		const params = new URLSearchParams();
-		params.append('code', code);
-		params.append('client_id', GOOGLE_CLIENT_ID);
-		params.append('client_secret', GOOGLE_CLIENT_SECRET);
-		params.append('redirect_uri', redirectUri);
-		params.append('grant_type', 'authorization_code');
-
+		const params = {
+			code: code,
+			client_id: GOOGLE_CLIENT_ID,
+			client_secret: "$CLIENT_SECRET",
+			redirect_uri: redirectUri,
+			grant_type: 'authorization_code'
+		}
 		console.log('=== exchangeCodeForTokens === params : ', params);
 
-		const response = await fetch(tokenUrl, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: params,
+		const data = await skapi.clientSecretRequest({
+			clientSecretName: "ggltoken",
+			url: tokenUrl,
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			data: params
 		});
 
-		const data = await response.json();
-		if (response.ok) {
-			const { access_token, refresh_token, expires_in } = data;
-			console.log({ data });
-			console.log('Access Token:', access_token);
-			console.log('Refresh Token:', refresh_token);
-			console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+		console.log({ data })
 
-			localStorage.setItem('accessToken', access_token);
-			localStorage.setItem('refreshToken', refresh_token);
-
-			return { access_token, refresh_token, expires_in };
-		} else {
+		if (data.error) {
 			console.error('토큰 교환 실패:', data);
 			throw data
 		}
+
+		const { access_token, refresh_token, expires_in } = data;
+		console.log({ data });
+		console.log('Access Token:', access_token);
+		console.log('Refresh Token:', refresh_token);
+		console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+
+		localStorage.setItem('accessToken', access_token);
+		localStorage.setItem('refreshToken', refresh_token);
+
+		return { access_token, refresh_token, expires_in };
 	}
 
 	onMounted(async () => {
