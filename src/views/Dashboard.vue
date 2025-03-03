@@ -117,7 +117,6 @@ ul.card-wrap
 
 <script setup>
 import { ref } from 'vue';
-import { skapi } from "@/main";
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
 import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture } from "@/notifications";
