@@ -436,7 +436,6 @@ export async function unsubscribeNotification() {
 	await subscription.unsubscribe();
 
 	const response = await skapi.unsubscribeNotification(subscription.endpoint, subscriptionJSON.keys);
-
 	let user_local_data = {
 		user_id: user.user_id,
 		subscribeNotification: true,
