@@ -29,7 +29,7 @@ header#header
 		.popup-main
 			ul
 				li(v-if="unreadEmailNotiMsg" @click.stop="(e) => showRealtimeNoti(e, 'gmail')")
-					.router
+					.router(@click="closePopup")
 						h4.noti-type [Gmail]
 						h5.noti-title 읽지 않은 이메일이 있습니다.
 				li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, 'realtime', rt)")
