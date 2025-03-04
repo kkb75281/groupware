@@ -121,8 +121,14 @@ template(v-if="step > 1")
 								tr.tr-hover(v-for="(row, index) in addRows" :key="index")
 									th {{ row.title }}
 									td(colspan="3")
-										.input-wrap
-											input(type="text" :name="'addRow'+index" v-model="row.value")
+										.row-wrap
+											.input-wrap
+												input(type="text" :name="'addRow'+index" v-model="row.value")
+											.btn-remove(@click.stop="removeRow($event, index)")
+												.icon
+													svg
+														use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+										
 
 								tr
 									th.essential 제목
@@ -350,6 +356,10 @@ const closeRowModal = () => {
 	isRowModalOpen.value = false;
 };
 
+const removeRow = (event, index: number) => {
+    addRows.value.splice(index, 1);
+};
+
 // 결재요청 미리보기
 const previewAudit = () => {
   const printArea = document.getElementById("printArea");
@@ -554,6 +564,9 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 		additionalFormData.append('to_audit', to_audit);
         additionalFormData.append('auditors', JSON.stringify(send_auditors_data));
         additionalFormData.append('to_audit_content', to_audit_content);
+
+		// 추가 행 데이터
+		additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
 
         if (filebox && filebox.files.length) {
             Array.from(filebox.files).forEach(file => {
@@ -1191,6 +1204,36 @@ onUnmounted(() => {
             }
         }
     }
+}
+
+.row-wrap {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+
+	.input-wrap {
+		flex: 1;
+	}
+
+	.btn-remove {
+		flex: none;
+		width: 2rem;
+		height: 2rem;
+		
+		.icon {
+			padding: 0;
+			height: 100%;
+			display: flex;
+			align-items: center;
+
+			svg {
+				width: 1rem;
+				height: 1rem;
+				fill: var(--warning-color-500);
+				margin: 0 auto;
+			}
+		}
+	}
 }
 
 .button-wrap {
