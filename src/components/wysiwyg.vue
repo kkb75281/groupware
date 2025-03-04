@@ -116,7 +116,7 @@
 				if (c.commandTracker) {
 					// 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
 					wysiwyg.export().then(r => {
-						console.log('r', r);
+						// console.log('r', r);
 						emit('update:content', r.html);
 					});
 				}
@@ -136,66 +136,65 @@
 </script>
 
 <style lang="less">
-	._wysiwyg4all {
-		padding: 1rem;
+._wysiwyg4all {
+	padding: 1.5rem 1rem 1rem 1rem;
+	min-height: calc(14em + 50px) !important;
 
-		&::before {
-			color: var(--gray-color-300) !important;
-		}
-
-		ul {
-			list-style: disc !important;
-			padding: initial !important;
-			padding-inline-start: 40px !important;
-		}
-
-		ol {
-			list-style: decimal !important;
-			padding: initial !important;
-			padding-inline-start: 40px !important;
-		}
-
-		li {
-			list-style: inherit !important;
-			padding: initial !important;
-		}
+	&::before {
+		color: var(--gray-color-300) !important;
 	}
 
-	.input-color {
-		display: inline-block;
-		position: relative;
+	ul {
+		list-style: disc !important;
+		padding: initial !important;
+		padding-inline-start: 40px !important;
 	}
 
-	.btns-wrap {
-		justify-content: flex-start !important;
-		gap: 0 !important;
-		margin-bottom: 0.5rem;
-		display: flex;
-		flex-wrap: wrap;
-		// align-content: stretch;
-
-		&:after {
-			content: "";
-			flex: 1 1 auto;
-			border-bottom: 1px solid var(--gray-color-200);
-		}
+	ol {
+		list-style: decimal !important;
+		padding: initial !important;
+		padding-inline-start: 40px !important;
 	}
 
-	.btn-custom {
-		display: inline-block;
+	li {
+		list-style: inherit !important;
+		padding: initial !important;
+	}
+}
+
+.input-color {
+	display: inline-block;
+	position: relative;
+}
+
+.btns-wrap {
+	justify-content: flex-start !important;
+	gap: 0 !important;
+	display: flex;
+	flex-wrap: wrap;
+
+	&:after {
+		content: "";
+		flex: 1 1 auto;
 		border-bottom: 1px solid var(--gray-color-200);
-		padding: 0 8px;
-		height: 2rem;
-
-		&:hover,
-		&:focus,
-		&:active {
-			border-bottom: 1px solid var(--gray-color-200);
-			background-color: var(--gray-color-200);
-		}
-
-		.icon {
-			padding: 0;
-		}
 	}
+}
+
+.btn-custom {
+	display: inline-block;
+	border-bottom: 1px solid var(--gray-color-200);
+	padding: 0 8px;
+	height: 2rem;
+
+	&:hover,
+	&:focus,
+	&:active {
+		border-bottom: 1px solid var(--gray-color-200);
+		background-color: var(--gray-color-200);
+	}
+
+	.icon {
+		padding: 0;
+	}
+}
 </style>
