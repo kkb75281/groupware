@@ -249,17 +249,17 @@ let sendMail = async (mail: string) => {
         // Gmail 앱 링크를 시도
         window.location.href = gmailAppUrl;
 
-        // Gmail 앱이 없는 경우를 대비해 타임아웃 설정
-        setTimeout(() => {
-            // Gmail 앱이 없으면 웹 버전으로 이동
-            window.open(gmailWebUrl, "_blank");
-        }, 1000); // 1초 후에 웹 버전으로 이동
+        // // Gmail 앱이 없는 경우를 대비해 타임아웃 설정
+        // setTimeout(() => {
+        //     // Gmail 앱이 없으면 웹 버전으로 이동
+        //     window.open(gmailWebUrl, "_blank");
+        // }, 1000); // 1초 후에 웹 버전으로 이동
     } catch (error) {
         console.error("Failed to open Gmail app, redirecting to web version...", error);
         // 에러 발생 시 웹 버전으로 이동
         window.open(gmailWebUrl, "_blank");
     }
-	
+
 	// const maillink = encodeURIComponent(mail);
 	// const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
     
