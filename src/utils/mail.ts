@@ -144,7 +144,7 @@ function convertToTimestamp(dateTimeString) {
     return timestamp;
 }
 
-function openGmailAppOrWeb(link:string | null, show: false) {
+function openGmailAppOrWeb(link:string | null, show = false) {
 	// Gmail 앱용 딥 링크
 	let gmailAppUrlIOS = '';
 	// const gmailAppUrlAndroid = `intent://co?to=${maillink}#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
