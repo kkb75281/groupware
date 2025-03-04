@@ -154,29 +154,28 @@ function openGmailAppOrWeb(link:string | null, show: false) {
 
 	if(link) {
 		if(show) {
-			// gmailAppUrlIOS = `googlegmail://`;
-			// gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
+			// Gmail 앱 내에서 특정 이메일 보기 (현재 Gmail 앱의 URL 스킴으로는 지원되지 않음, 웹 버전으로 폴백)
 			gmailWebUrl = link;
 		} else {
-			// 특정 이메일 주소로 이동
+			// 특정 이메일 주소 메일 작성하는 경우
 			gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
 			gmailAppUrlAndroid = `mailto:${link}`;
 			gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${link}`;
 		}
 	} else {
-		// 기본 Gmail 앱 또는 웹 버전 열기
+		// 기본 Gmail 앱 메일함 열기
 		gmailAppUrlIOS = `googlegmail://`;
 		gmailAppUrlAndroid = `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.google.android.gm;end;`;
 		// gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
-		// gmailAppUrlAndroid = `googlegmail://`;
+		// gmailAppUrlAndroid = `intent://#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
 		gmailWebUrl = `https://mail.google.com/mail/u/0/#inbox`;
 	}
 
     try {
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !show) {
+        if (!show && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
             // iOS: Gmail 앱 딥 링크 호출
             window.location.href = gmailAppUrlIOS;
-        } else if (/Android/i.test(navigator.userAgent) && !show) {
+        } else if (!show && /Android/i.test(navigator.userAgent)) {
             // Android: Gmail 앱 딥 링크 호출
             const fallbackTimeout = 1000; // 1초 대기 시간
             let appOpened = false;
