@@ -156,7 +156,7 @@ function openGmailAppOrWeb(link:string | null, show: false) {
 		if(show) {
 			// gmailAppUrlIOS = `googlegmail://`;
 			// gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
-			gmailWebUrl = `https://mail.google.com/mail/u/0/#inbox/${link}`;
+			gmailWebUrl = link;
 		} else {
 			// 특정 이메일 주소로 이동
 			gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
