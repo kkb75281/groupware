@@ -140,7 +140,7 @@ header#header
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, watch } from 'vue';
 import { user, profileImage } from '@/user'
-import { skapi, currentBadgeCount } from '@/main'
+import { skapi, resetBadgeCount } from '@/main'
 import { toggleOpen } from '@/components/navbar'
 import { realtimes, readList, unreadCount, readNoti } from '@/notifications'
 import { goToAuditDetail } from '@/audit'
@@ -175,12 +175,7 @@ function formatTimeAgo(timestamp) {
 
 let openNotification = () => {
 	isNotiOpen.value = !isNotiOpen.value;
-	currentBadgeCount.value = 0;
-	// navigator.setAppBadge(0).then(r => {
-	// 	console.log('setAppBadge', r);
-	// }).catch((error) => {
-	// 	console.error('Failed to set app badge:', error);
-	// });
+	resetBadgeCount();
 };
 
 let closeNotification = (event) => {
@@ -240,12 +235,6 @@ let showRealtimeNoti = (e, rt) => {
 
 let logout = () => {
 	skapi.logout().then(() => {
-		for (let key in user) {
-			delete user[key];
-		}
-		realtimes.value = [];
-		localStorage.removeItem('accessToken');
-		localStorage.removeItem('refreshToken');
         router.push({ path: "/login" });
     });
 }

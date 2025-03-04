@@ -32,4 +32,14 @@ fs.readFile(envFilePath, 'utf8', (err, data) => {
     } else {
         console.error('VITE_SERVICE_ID not found in .env file');
     }
+    // Create a environment variable named VITE_BUILD_TIME and edit/replace the .env file
+    const buildTime = new Date().toLocaleString();
+    const updatedData = data.replace(/^VITE_BUILD_TIME\s*=\s*(.*)$/m, `VITE_BUILD_TIME=${buildTime}`);
+    fs.writeFile(envFilePath, updatedData, 'utf8', (err) => {
+        if (err) {
+            console.error('Error updating .env file:', err);
+            process.exit(1);
+        }
+        console.log(`Updated .env file with VITE_BUILD_TIME=${buildTime}`);
+    });
 });

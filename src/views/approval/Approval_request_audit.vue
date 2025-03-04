@@ -18,11 +18,12 @@ template(v-if="step > 1")
 	.form-wrap
 		form#_el_request_form(@submit.prevent="requestAudit")
 			#printArea
-				input(:value="auditTitle" type="hidden" required name="to_audit" hidden)
+				//- input(:value="auditTitle" type="hidden" required name="to_audit" hidden)
 
 				.title
 					.input-wrap.input-title
-						input#to_audit(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
+						//- input#to_audit(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
+						input#to_audit(v-model="auditTitle" type="text" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
 					//- h2(style="text-align:center" :style="{color: !auditTitle ? '#ddd' : 'black', fontWeight: !auditTitle ? '400' : 'bold'}") {{ auditTitle || "결재 제목을 입력해주세요." }}
 					//- .icon(v-if="!showBackStep" @click="showBackStep = !showBackStep")
 						svg
@@ -130,13 +131,15 @@ template(v-if="step > 1")
 												svg
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 									td(colspan="3")
-										p.audit-title(:style="{color: !auditTitle ? '#ddd' : 'black'}") {{ auditTitle || "결재 제목을 입력해주세요." }}
+										.input-wrap
+											input(type="text" v-model="auditTitle" placeholder="결재 제목을 입력해주세요.")
+										//- p.audit-title(:style="{color: !auditTitle ? '#ddd' : 'black'}") {{ auditTitle || "결재 제목을 입력해주세요." }}
 										//- .input-wrap
 										//- 	input#to_audit(type="text" placeholder="제목" required name="to_audit")
 								tr
 									th.essential 결재 내용
 									td(colspan="3")
-										.wysiwyg-wrap
+										.wysiwyg-wrap(style="cursor: text;")
 											//- Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
 											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)

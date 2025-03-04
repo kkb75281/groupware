@@ -28,10 +28,18 @@ const router = createRouter({
 	routes: [
 		{
 			path: '/login',
+			beforeEnter: (to, from, next) => {
+				console.log('beforeEnter for /login', { user });
+				if (Object.keys(user).length) {
+					next({ name: 'home' });
+					return;
+				}
+				next();
+			},
 			name: 'login',
 			component: Login,
 		},
-			{
+		{
 			path: '/verification',
 			name: 'verification',
 			component: () => import('@/views/Verification.vue'),
@@ -58,6 +66,13 @@ const router = createRouter({
 		// },
 		{
 			path: '/',
+			beforeEnter: (to, from, next) => {
+				if (!Object.keys(user).length) {
+					next({ name: 'login' });
+					return;
+				}
+				next();
+			},
 			component: Main,
 			children: [
 				{
@@ -111,7 +126,7 @@ const router = createRouter({
 						{
 							path: 'request-audit',
 							name: 'request-audit',
-							  component: () => import('@/views/approval/Approval_request_audit.vue'), // Approval_request_audit,
+							component: () => import('@/views/approval/Approval_request_audit.vue'), // Approval_request_audit,
 							// component: () => import('@/views/approval/Approval_request_audit_qb.vue'), // Approval_request_audit,
 						},
 						{
@@ -152,7 +167,7 @@ const router = createRouter({
 						{
 							path: 'edit-mystamp',
 							name: 'edit-mystamp',
-							component: ()=>import('@/views/mypage/Mypage_edit_mystamp.vue')
+							component: () => import('@/views/mypage/Mypage_edit_mystamp.vue')
 						},
 						// {
 						// 	path: 'edit-myfile',
@@ -171,9 +186,9 @@ const router = createRouter({
 					beforeEnter: (to, from, next) => {
 						if (user.access_group > 98) {
 							next();
-						} else {
-							next({ name: 'home' });
+							return;
 						}
+						next({ name: 'home' });
 					},
 					children: [
 						{
@@ -211,7 +226,7 @@ const router = createRouter({
 							name: 'commute-detail',
 							component: () => import('@/views/admin/Admin_commute_detail.vue'),  //Admin_commute_detail,
 						},
-							{
+						{
 							path: 'edit-worktime',
 							name: 'edit-worktime',
 							component: () => import('@/views/admin/Admin_edit_worktime.vue'), // Admin_edit_worktime,

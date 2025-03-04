@@ -1,3 +1,4 @@
+import { refreshAccessToken } from "../main";
 async function fetchGmailEmails(accessToken) {
     if (!accessToken) {
         console.error('액세스 토큰이 없어 이메일을 가져올 수 없습니다.');
@@ -16,8 +17,9 @@ async function fetchGmailEmails(accessToken) {
             if (response.status === 401) {
                 console.error('액세스 토큰이 만료되었습니다.');
                 // 세션 스토리지 토큰 삭제
-                localStorage.removeItem('accessToken');
-                return [];
+
+                await refreshAccessToken();
+                return fetchGmailEmails(localStorage.getItem('accessToken'));
             }
             throw new Error(`API 응답 오류: ${response.status}`);
         }
@@ -37,7 +39,6 @@ async function fetchGmailEmails(accessToken) {
         // 최신 5개 메일만 가져오기
         return detailedMails.splice(0, 5);
     } catch (error) {
-        sessionStorage.clear();
         console.error('Error fetching Gmail emails:', error);
         return [];
     }
@@ -50,6 +51,19 @@ async function fetchMessageDetails(accessToken, messageId, threadId) {
                 'Authorization': `Bearer ${accessToken}`
             }
         });
+
+        // 토큰 만료 또는 오류 처리
+        if (!response.ok) {
+            if (response.status === 401) {
+                console.error('액세스 토큰이 만료되었습니다.');
+                // 세션 스토리지 토큰 삭제
+
+                await refreshAccessToken();
+                return fetchMessageDetails(localStorage.getItem('accessToken'), messageId, threadId);
+            }
+            throw new Error(`API 응답 오류: ${response.status}`);
+        }
+
         const data = await response.json();
         const headers = data.payload.headers;
         // console.log('=== fetchMessageDetails === headers : ', headers);
@@ -73,11 +87,11 @@ async function fetchMessageDetails(accessToken, messageId, threadId) {
             link: `https://mail.google.com/mail/u/0/#inbox/${threadId}`,
             hasAttachment: hasAttachment,
             dateTimeStamp: convertToTimestamp(rawDate),
-			noti_id: messageId,
-			send_date: convertToTimestamp(rawDate),
-			audit_info: {
-				audit_type: 'email',
-			}
+            noti_id: messageId,
+            send_date: convertToTimestamp(rawDate),
+            audit_info: {
+                audit_type: 'email',
+            }
         };
     } catch (error) {
         console.error('Error fetching message details:', error);
@@ -114,7 +128,7 @@ function formatMailDate(dateString) {
 function checkForAttachments(payload) {
     // 첨부파일이 있는 경우 filename과 mimeType이 존재
     if (payload.parts) {
-        return payload.parts.some(part => 
+        return payload.parts.some(part =>
             part.filename && part.filename.length > 0
         );
     }
