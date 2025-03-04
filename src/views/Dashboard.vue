@@ -35,7 +35,7 @@ ul.card-wrap.gmail
 				| 등록된 공지사항이 없습니다.
 ul.card-wrap.gmail(v-if="googleAccountCheck")
 	li.card
-		.title-wrap(:style="{ marginBottom: googleAccountCheck ? '1rem' : '0' }")
+		.title-wrap
 			h3.title 
 				.icon.img
 					svg
@@ -186,18 +186,18 @@ getNewsletterList();
 			}
 
 			ul {
-				padding-bottom: 1rem;
+				padding-bottom: 1.5rem;
 			}
 		}
 
 		.title-wrap {
-			padding: 1.5rem 1.5rem 0;
+			padding: 1.5rem;
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
 			gap: 1rem;
 			flex-wrap: wrap;
-			margin-bottom: 1rem;
+			border-bottom: 1px solid var(--gray-color-300);
 		}
 
 		.title {
@@ -224,7 +224,7 @@ getNewsletterList();
 
 		.mail {
 			// padding: 1.5rem 0;
-			border-top: 1px solid var(--gray-color-300);
+			// border-top: 1px solid var(--gray-color-300);
 			padding: 0.75rem 0.5rem;
 			cursor: pointer;
 
@@ -298,6 +298,7 @@ getNewsletterList();
 		line-height: 1.4;
 		min-height: 150px;
 		text-align: center;
+		padding-top: 1.5rem;
 
 		.icon {
 			flex: none;
