@@ -86,6 +86,10 @@ Loading#loading(v-if="getAuditDetailRunning")
 								th 수신 참조
 								td.left(colspan="3") {{ selectedAuditors.receivers.map(receiver => receiver.name).join(', ') }}
 
+							tr(v-for="(row, index) in customRows" :key="'custom_' + index")
+								th {{ row.title }}
+								td.left(colspan="3") {{ row.value }}
+
 							tr
 								th 제목
 								td.left(colspan="3") {{ auditDoContent?.data?.to_audit }}
@@ -273,6 +277,7 @@ const makeStampComplete = ref(false);
 const makeSignComplete = ref(false);
 const isCanceled = ref(false); // 결재 회수 여부
 const getAuditDetailRunning = ref(false);
+const customRows = ref([]);
 
 // 결재 회수 가능 여부 확인
 const isCancelPossible = computed(() => {
@@ -591,6 +596,7 @@ const getAuditDetail = async () => {
   agreerList.value = [];
   auditorList.value = [];
   uploadedFile.value = [];
+	customRows.value = [];
   selectedAuditors.value = {
     approvers: [],
     agreers: [],
@@ -614,6 +620,16 @@ const getAuditDetail = async () => {
 
     if (auditDoc) {
       auditDoContent.value = auditDoc;
+      
+      // 추가된 코드: custom_rows 데이터 추출
+      if (auditDoc.data.custom_rows) {
+        try {
+          customRows.value = JSON.parse(auditDoc.data.custom_rows);
+        } catch (e) {
+          console.error('Custom rows parsing error:', e);
+          customRows.value = [];
+        }
+      }
     }
 
     skapi
