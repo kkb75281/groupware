@@ -242,7 +242,8 @@ let sendMail = async (mail: string) => {
 
     // Gmail 앱용 딥 링크
     const gmailAppUrlIOS = `googlegmail:///co?to=${maillink}`;
-    const gmailAppUrlAndroid = `intent://co?to=${maillink}#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
+    // const gmailAppUrlAndroid = `intent://co?to=${maillink}#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
+    const gmailAppUrlAndroid = `mailto:${maillink}`;
     // 웹용 Gmail 링크
     const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
 
