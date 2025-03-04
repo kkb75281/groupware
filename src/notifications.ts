@@ -13,6 +13,11 @@ export const notifications: Reactive<{ messages: { fromUserId: string; msg: any 
 export let serviceWorkerRegistMsg = ref('');
 export let onlyUserGesture = ref(false);
 
+export async function setNotificationPermission() {
+	await Notification.requestPermission();
+	return checkNotificationPermission();
+}
+
 export async function checkNotificationPermission() {
 	onlyUserGesture.value = false;
 
@@ -34,10 +39,8 @@ export async function checkNotificationPermission() {
 			onlyUserGesture.value = true;
 		} else {
 			console.log("현재 브라우저는 Safari가 아닙니다.");
+			setNotificationPermission();
 		}
-
-		await Notification.requestPermission();
-		return checkNotificationPermission();
 	}
 
 	console.log('checkNotificationPermission - complete');
