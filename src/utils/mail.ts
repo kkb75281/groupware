@@ -154,8 +154,8 @@ function openGmailAppOrWeb(link:string | null, show: false) {
 
 	if(link) {
 		if(show) {
-			gmailAppUrlIOS = `googlegmail://`;
-			gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
+			// gmailAppUrlIOS = `googlegmail://`;
+			// gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
 			gmailWebUrl = `https://mail.google.com/mail/u/0/#inbox/${link}`;
 		} else {
 			// 특정 이메일 주소로 이동
@@ -172,10 +172,10 @@ function openGmailAppOrWeb(link:string | null, show: false) {
 	}
 
     try {
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !show) {
             // iOS: Gmail 앱 딥 링크 호출
             window.location.href = gmailAppUrlIOS;
-        } else if (/Android/i.test(navigator.userAgent)) {
+        } else if (/Android/i.test(navigator.userAgent) && !show) {
             // Android: Gmail 앱 딥 링크 호출
             const fallbackTimeout = 1000; // 1초 대기 시간
             let appOpened = false;
