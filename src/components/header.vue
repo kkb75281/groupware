@@ -28,10 +28,11 @@ header#header
 	template(v-if="realtimes.length > 0")
 		.popup-main
 			ul
-				li(v-if="unreadEmailNotiMsg")
-					h4.noti-type [Gmail]
-					h5.noti-title 읽지 않은 이메일이 있습니다.
-				li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, rt)")
+				li(v-if="unreadEmailNotiMsg" @click.stop="(e) => showRealtimeNoti(e, 'gmail')")
+					.router
+						h4.noti-type [Gmail]
+						h5.noti-title 읽지 않은 이메일이 있습니다.
+				li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, 'realtime', rt)")
 					.router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
 						template(v-if="rt.audit_info.audit_type === 'request'")
 							h4.noti-type [{{ rt.audit_info.send_auditors.includes(`receiver:${user.user_id.replaceAll('-', '_')}`) ? '수신참조' : '결재요청' }}]
@@ -146,7 +147,8 @@ import { onUnmounted, onMounted, ref, watch } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi, resetBadgeCount } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { realtimes, readList, unreadCount, readNoti } from '@/notifications'
+import { realtimes, readList, unreadCount, readNoti, unreadEmailNotiMsg } from '@/notifications'
+import { openGmailAppOrWeb } from '@/utils/mail';
 import { goToAuditDetail } from '@/audit'
 
 const router = useRouter();
@@ -227,14 +229,13 @@ onUnmounted(() => {
 	document.removeEventListener('click', closeProfile);
 });
 
-let showRealtimeNoti = (e, rt) => {
-	if(rt.audit_info.audit_type === 'email') {
-		window.open(rt.link, "_blank");
-	} else {
+let showRealtimeNoti = (e, type, rt) => {
+	if(type === 'gmail') {
+		openGmailAppOrWeb(null);
+	} else if(type === 'realtime' && rt) {
 		goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
+		readNoti(rt);
 	}
-
-	readNoti(rt);
 }
 
 let logout = () => {
