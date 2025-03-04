@@ -504,7 +504,8 @@ watch([realtimes, readList, notifications.emails], () => {
 	const auditCount = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
 
 	// 읽지 않은 이메일 개수
-	const emailCount = notifications.emails.length;
+	// const emailCount = notifications.emails.length;
+	const emailCount = unreadEmailNotiMsg.value ? 1 : 0;
 
 	// 이메일 업데이트
 	if (emailCount < 1 && googleEmailUpdate.value === false) {
