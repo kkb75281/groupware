@@ -55,19 +55,20 @@ let navbar = ref(null);
 let activeMenu = ref(null);
 // let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const googleAccountCheck = computed(() => !!localStorage.getItem('accessToken'));
+console.log('= navbar = googleAccountCheck : ', googleAccountCheck.value);
 
 const handleLinkClick = (to) => {
-    console.log('to : ', to);
-    console.log('route.path : ', route.path);
+    // console.log('to : ', to);
+    // console.log('route.path : ', route.path);
     if (route.path === to || route.path.startsWith(to) || isSubMenuPath(to)) {
         closeMobileNavbar();
     }
 };
 
 const isSubMenuPath = (to) => {
-    console.log('=== isSubMenuPath === to : ', to);
+    // console.log('=== isSubMenuPath === to : ', to);
     return menuList.value.some(item => {
-        console.log('item : ', item);
+        // console.log('item : ', item);
         if (item.child) {
             return item.child.list.some(child => route.path === child.to);
         }
@@ -77,15 +78,15 @@ const isSubMenuPath = (to) => {
 
 // 메뉴 toggle
 const handleMenuClick = (event, menuName) => {
-    console.log('menuName : ', menuName);
-    console.log('activeMenu.value : ', activeMenu.value);
+    // console.log('menuName : ', menuName);
+    // console.log('activeMenu.value : ', activeMenu.value);
 
     // 이미 열린 메뉴를 클릭하면 닫기
     if (activeMenu.value === menuName) {
-        console.log('yes')
+        // console.log('yes')
         activeMenu.value = null; // 이미 열린 메뉴를 클릭하면 닫기
     } else {
-        console.log('no')
+        // console.log('no')
         event.preventDefault(); // 페이지 이동을 막고 메뉴만 토글
         activeMenu.value = menuName;
     }
