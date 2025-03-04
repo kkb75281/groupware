@@ -186,7 +186,7 @@ getNewsletterList();
 			}
 
 			ul {
-				padding-bottom: 1rem;
+				padding-bottom: 1.5rem;
 			}
 		}
 
@@ -197,7 +197,7 @@ getNewsletterList();
 			align-items: center;
 			gap: 1rem;
 			flex-wrap: wrap;
-			margin-bottom: 1rem;
+			border-bottom: 1px solid var(--gray-color-300);
 		}
 
 		.title {
@@ -224,7 +224,7 @@ getNewsletterList();
 
 		.mail {
 			// padding: 1.5rem 0;
-			border-top: 1px solid var(--gray-color-300);
+			// border-top: 1px solid var(--gray-color-300);
 			padding: 0.75rem 0.5rem;
 			cursor: pointer;
 
