@@ -156,6 +156,8 @@ function openGmailAppOrWeb(link:string | null, show: false) {
 		if(show) {
 			// Gmail 앱 내에서 특정 이메일 보기 (현재 Gmail 앱의 URL 스킴으로는 지원되지 않음, 웹 버전으로 폴백)
 			gmailWebUrl = link;
+			console.log('특정 이메일 보기 : ', gmailWebUrl);
+			console.log('특정 이메일 보기 : ', show);
 		} else {
 			// 특정 이메일 주소 메일 작성하는 경우
 			gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
