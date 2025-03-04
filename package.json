@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "node read-env-file.cjs; run-p type-check \"build-only {@}\" --",
+    "build": "npm i; node read-env-file.cjs; run-p type-check \"build-only {@}\" --",
     "preview": "vite preview --host",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force"
