@@ -499,7 +499,7 @@ watch(user, async (u) => { // 로딩되고 로그인되면 무조건 실행
 	}
 }, { immediate: true });
 
-watch([realtimes, readList, notifications.emails], () => {
+watch([realtimes, readList, unreadEmailNotiMsg], () => {
 	// 기존 알림 개수
 	const auditCount = realtimes.value.filter((audit) => !Object.keys(readList.value).includes(audit.noti_id)).length;
 
