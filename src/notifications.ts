@@ -274,38 +274,68 @@ export async function updateEmails(refresh = false) {
 
 // 이메일 알림
 export const addEmailNotification = (emailData) => {
-	// // console.log('=== addEmailNotification === emailData : ', emailData);
-	let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
+    // console.log('=== addEmailNotification === emailData : ', emailData);
+    let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
 
-	if (checkOrigin) return;
+    if (checkOrigin) return;
 
-	// const addEmailData = {
-	// 	...emailData,
-	// 	noti_id: emailData.id,
-	// 	send_date: emailData.dateTimeStamp,
-	// 	audit_info: {
-	// 		audit_type: 'email',
-	// 	}
-	// };
+    // "읽지 않은 메일이 있습니다" 알림이 이미 있는지 확인
+    let unreadEmailNotification = realtimes.value.find((audit) => audit.audit_info?.audit_type === 'email' && audit.subject === '읽지 않은 메일이 있습니다');
 
-	realtimes.value.push(emailData);
-	realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
+    if (unreadEmailNotification) return;
 
-	// console.log('Updated realtimes:', realtimes.value);
+    const addEmailData = {
+        ...emailData,
+        noti_id: emailData.id,
+        send_date: emailData.dateTimeStamp,
+        audit_info: {
+            audit_type: 'email',
+        },
+        subject: '읽지 않은 메일이 있습니다', // 안내 문구로 대체
+        from: '', // 발신자 정보 제거
+    };
 
-	// notifications.emails.unshift({
-	//     type: 'email',
-	//     title: emailData.subject,
-	//     from: emailData.from,
-	//     date: emailData.date,
-	//     dateTimeStamp: emailData.dateTimeStamp,
-	//     link: emailData.link
-	// });
+    realtimes.value.push(addEmailData);
+    realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 
-	unreadCount.value++;
+    // console.log('Updated realtimes:', realtimes.value);
 
-	// return notifications.emails;
+    unreadCount.value++;
 }
+
+// export const addEmailNotification = (emailData) => {
+// 	// // console.log('=== addEmailNotification === emailData : ', emailData);
+// 	let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
+
+// 	if (checkOrigin) return;
+
+// 	// const addEmailData = {
+// 	// 	...emailData,
+// 	// 	noti_id: emailData.id,
+// 	// 	send_date: emailData.dateTimeStamp,
+// 	// 	audit_info: {
+// 	// 		audit_type: 'email',
+// 	// 	}
+// 	// };
+
+// 	realtimes.value.push(emailData);
+// 	realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
+
+// 	// console.log('Updated realtimes:', realtimes.value);
+
+// 	// notifications.emails.unshift({
+// 	//     type: 'email',
+// 	//     title: emailData.subject,
+// 	//     from: emailData.from,
+// 	//     date: emailData.date,
+// 	//     dateTimeStamp: emailData.dateTimeStamp,
+// 	//     link: emailData.link
+// 	// });
+
+// 	unreadCount.value++;
+
+// 	// return notifications.emails;
+// }
 
 export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
