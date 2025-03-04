@@ -205,7 +205,7 @@ getNewsletterList();
 		}
 
 		.mail {
-			border-top: 1px solid var(--gray-color-200);
+			border-top: 1px solid var(--gray-color-300);
 			padding: 0.75rem 0.5rem;
 			cursor: pointer;
 

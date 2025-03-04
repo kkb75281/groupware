@@ -716,6 +716,7 @@
   .tb-overflow {
     word-break: keep-all;
     overflow-x: auto;
+    overflow-y: hidden;
   }
 }
 
@@ -758,7 +759,7 @@
   }
 
   thead {
-    background-color: var(--gray-color-50);
+    background-color: var(--gray-color-100);
     color: var(--gray-color-900);
     border-bottom: 1px solid var(--gray-color-400);
 
@@ -841,7 +842,7 @@
     }
 
     th {
-      background-color: var(--gray-color-50);
+      background-color: var(--gray-color-100);
       color: var(--gray-color-900);
       // border-bottom: 1px solid var(--gray-color-400);
 
@@ -1181,15 +1182,14 @@
 
   .card {
     background-color: #fff;
-    // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.05);
-    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.18);
+    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
     border-radius: 16px;
     overflow: hidden;
-    transition: all 0.2s ease-in-out;
+    // transition: all 0.2s ease-in-out;
 
     &:hover {
-      transform: translateY(-6px);
-      box-shadow: 1px 1px 10px rgba(72, 127, 242, 0.5);
+      // transform: translateY(-6px);
+      box-shadow: 1px 1px 10px rgba(72, 127, 242, 0.8);
     }
 
     .router {
@@ -1214,7 +1214,7 @@
       margin-top: 2rem;
       gap: 4px;
       color: var(--gray-color-500);
-      border-top: 1px solid var(--gray-color-100);
+      border-top: 1px solid var(--gray-color-300);
       padding-top: 1.5rem;
     }
 

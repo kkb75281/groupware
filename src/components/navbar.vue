@@ -53,7 +53,8 @@ const route = useRoute();
 
 let navbar = ref(null);
 let activeMenu = ref(null);
-let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
+// let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
+const googleAccountCheck = computed(() => !!localStorage.getItem('accessToken'));
 
 const handleLinkClick = (to) => {
     console.log('to : ', to);
@@ -115,7 +116,7 @@ const menuList = computed(() => [
         text: '대시보드',
     },
     {
-        show: googleAccountCheck,
+        show: googleAccountCheck.value,
         name: 'email',
         to: 'https://mail.google.com/mail/u/0/#inbox',
         icon: '#icon-mail',
@@ -184,7 +185,7 @@ const menuList = computed(() => [
                     text: '근태 관리',
                 },
                 {
-                    show: !googleAccountCheck, // 구글 로그인 시 비밀번호 변경 메뉴 숨기기
+                    show: !googleAccountCheck.value, // 구글 로그인 시 비밀번호 변경 메뉴 숨기기
                     name: 'change-password',
                     to: '/change-password',
                     text: '비밀번호 변경',
@@ -339,7 +340,7 @@ watch(() => route.fullPath, (nv) => {
     left: 0;
     overflow-y: overlay;
     background-color: #fff;
-    box-shadow: 5px 1px 30px rgba(0,0,0,0.05);
+    box-shadow: 5px 1px 20px rgba(0,0,0,0.2);
     z-index: 9999;
     // transition: width 0.15s linear;
     transition: left 0.15s linear;
