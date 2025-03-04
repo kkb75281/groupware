@@ -176,7 +176,7 @@ getNewsletterList();
 		display: flex;
 
 		.card {
-			padding: 1.5rem;
+			// padding: 1.5rem;
 			transition: none;
 			width: 100%;
 
@@ -184,6 +184,20 @@ getNewsletterList();
 				transform: none;
 				// box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
 			}
+
+			ul {
+				padding-bottom: 1rem;
+			}
+		}
+
+		.title-wrap {
+			padding: 1.5rem 1.5rem 0;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 1rem;
+			flex-wrap: wrap;
+			margin-bottom: 1rem;
 		}
 
 		.title {
@@ -209,6 +223,7 @@ getNewsletterList();
 		}
 
 		.mail {
+			// padding: 1.5rem 0;
 			border-top: 1px solid var(--gray-color-300);
 			padding: 0.75rem 0.5rem;
 			cursor: pointer;
@@ -222,6 +237,7 @@ getNewsletterList();
 			display: flex;
 			align-items: center;
 			gap: 1rem;
+			padding: 0 1.5rem;
 			font-size: 0.875rem;
 			line-height: 1.2;
 			color: var(--gray-color-500);
@@ -269,15 +285,6 @@ getNewsletterList();
 			margin-left: auto;
 			flex: none;
 		}
-	}
-
-	.title-wrap {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 1rem;
-		flex-wrap: wrap;
-		margin-bottom: 1rem;
 	}
 
 	.empty {
