@@ -458,6 +458,7 @@ watch(() => route.path, (newPath, oldPath) => {
 
 		.popup-header {
 			padding: 34px 30px 24px;
+			border-bottom: 1px solid var(--gray-color-300);
 
 			.title {
 				font-size: 24px;
@@ -473,6 +474,10 @@ watch(() => route.path, (newPath, oldPath) => {
 
 				li {
 					border-top: none;
+
+					&:first-child {
+						padding-top: 0.5rem;
+					}
 				}
 			}
 
