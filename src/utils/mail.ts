@@ -166,7 +166,8 @@ function openGmailAppOrWeb(link:string | null, show: false) {
 	} else {
 		// 기본 Gmail 앱 또는 웹 버전 열기
 		gmailAppUrlIOS = `googlegmail://`;
-		gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
+		gmailAppUrlAndroid = `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.google.android.gm;end;`;
+		// gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
 		// gmailAppUrlAndroid = `googlegmail://`;
 		gmailWebUrl = `https://mail.google.com/mail/u/0/#inbox`;
 	}
