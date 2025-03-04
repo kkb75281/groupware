@@ -28,6 +28,9 @@ header#header
 	template(v-if="realtimes.length > 0")
 		.popup-main
 			ul
+				li(v-if="unreadEmailNotiMsg")
+					h4.noti-type [Gmail]
+					h5.noti-title 읽지 않은 이메일이 있습니다.
 				li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, rt)")
 					.router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
 						template(v-if="rt.audit_info.audit_type === 'request'")

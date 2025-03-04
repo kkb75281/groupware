@@ -144,4 +144,59 @@ function convertToTimestamp(dateTimeString) {
     return timestamp;
 }
 
-export { fetchGmailEmails, fetchMessageDetails, extractSenderName, formatMailDate, checkForAttachments };
+function openGmailAppOrWeb(link:string | null) {
+	// Gmail 앱용 딥 링크
+	let gmailAppUrlIOS = '';
+	// const gmailAppUrlAndroid = `intent://co?to=${maillink}#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
+	let gmailAppUrlAndroid = '';
+	// 웹용 Gmail 링크
+	let gmailWebUrl = '';
+
+	if(link) {
+		// 특정 이메일 주소로 이동
+		gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
+		gmailAppUrlAndroid = `mailto:${link}`;
+		gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${link}`;
+	} else {
+		// 기본 Gmail 앱 또는 웹 버전 열기
+		gmailAppUrlIOS = `googlegmail:///co`;
+		gmailAppUrlAndroid = `mailto:`;
+		gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1`;
+	}
+
+    try {
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            // iOS: Gmail 앱 딥 링크 호출
+            window.location.href = gmailAppUrlIOS;
+        } else if (/Android/i.test(navigator.userAgent)) {
+            // Android: Gmail 앱 딥 링크 호출
+            const fallbackTimeout = 1000; // 1초 대기 시간
+            let appOpened = false;
+
+            // Gmail 앱 딥 링크 호출
+            window.location.href = gmailAppUrlAndroid;
+
+            // Gmail 앱이 열리지 않으면 웹 버전으로 폴백
+            setTimeout(() => {
+                if (!appOpened) {
+                    console.log("Gmail app not opened, redirecting to web version...");
+                    window.open(gmailWebUrl, "_blank");
+                }
+            }, fallbackTimeout);
+
+            // Gmail 앱이 열렸는지 확인 (사용자 정의 플래그)
+            window.addEventListener("blur", () => {
+                appOpened = true;
+            });
+        } else {
+            // 기타 플랫폼에서는 웹 버전으로 이동
+            window.open(gmailWebUrl, "_blank");
+        }
+    } catch (error) {
+        console.error("Failed to open Gmail app, redirecting to web version...", error);
+        // 에러 발생 시 웹 버전으로 이동
+        window.open(gmailWebUrl, "_blank");
+    }
+}
+
+export { fetchGmailEmails, fetchMessageDetails, extractSenderName, formatMailDate, checkForAttachments, openGmailAppOrWeb };

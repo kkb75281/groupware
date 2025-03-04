@@ -119,6 +119,8 @@ import { skapi, mainPageLoading } from '@/main';
 import { user, makeSafe } from '@/user';
 import { divisionNameList, getDivisionNames } from '@/division'
 import { getEmpDivisionPosition, getUsers, employeeDict } from '@/employee';
+import { openGmailAppOrWeb } from '@/utils/mail';
+
 const router = useRouter();
 const route = useRoute();
 
@@ -240,50 +242,7 @@ let displayDivisionOptions = () => {
 let sendMail = async (mail: string) => {
 	const maillink = encodeURIComponent(mail);
 
-    // Gmail 앱용 딥 링크
-    const gmailAppUrlIOS = `googlegmail:///co?to=${maillink}`;
-    const gmailAppUrlAndroid = `intent://co?to=${maillink}#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
-    // 웹용 Gmail 링크
-    const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
-
-    try {
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-            // iOS: Gmail 앱 딥 링크 호출
-            window.location.href = gmailAppUrlIOS;
-        } else if (/Android/i.test(navigator.userAgent)) {
-            // Android: Gmail 앱 딥 링크 호출
-            const fallbackTimeout = 1000; // 1초 대기 시간
-            let appOpened = false;
-
-            // Gmail 앱 딥 링크 호출
-            window.location.href = gmailAppUrlAndroid;
-
-            // Gmail 앱이 열리지 않으면 웹 버전으로 폴백
-            setTimeout(() => {
-                if (!appOpened) {
-                    console.log("Gmail app not opened, redirecting to web version...");
-                    window.open(gmailWebUrl, "_blank");
-                }
-            }, fallbackTimeout);
-
-            // Gmail 앱이 열렸는지 확인 (사용자 정의 플래그)
-            window.addEventListener("blur", () => {
-                appOpened = true;
-            });
-        } else {
-            // 기타 플랫폼에서는 웹 버전으로 이동
-            window.open(gmailWebUrl, "_blank");
-        }
-    } catch (error) {
-        console.error("Failed to open Gmail app, redirecting to web version...", error);
-        // 에러 발생 시 웹 버전으로 이동
-        window.open(gmailWebUrl, "_blank");
-    }
-
-	// const maillink = encodeURIComponent(mail);
-	// const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
-    
-    // window.open(gmailUrl, "_blank"); // 새 탭에서 Gmail 열기
+    openGmailAppOrWeb(maillink);
 }
 
 // 파일 업로드 리스트 업데이트

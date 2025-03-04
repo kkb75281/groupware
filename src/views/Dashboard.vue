@@ -119,6 +119,7 @@ ul.card-wrap
 import { ref } from 'vue';
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
+import { openGmailAppOrWeb } from '@/utils/mail';
 import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture } from "@/notifications";
 import Loading from '@/components/loading.vue';
 
@@ -146,8 +147,9 @@ function googleLogin() {
 }
 
 let showMailDoc = (e, rt) => {
-	window.open(rt.link, "_blank");
-	readNoti(rt);
+	openGmailAppOrWeb(null);
+	// window.open(rt.link, "_blank");
+	// readNoti(rt);
 }
 
 getNewsletterList();
