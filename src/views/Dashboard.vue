@@ -6,7 +6,10 @@
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ serviceWorkerRegistMsg }}
 
-button.btn(v-if="onlyUserGesture" @click="subscribeNotification") 그룹웨어 알림 허용하기
+template(v-if="onlyUserGesture")
+	button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
+	
+	br
 
 ul.card-wrap.gmail
 	li.card
@@ -120,7 +123,7 @@ import { ref } from 'vue';
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
 import { openGmailAppOrWeb } from '@/utils/mail';
-import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture } from "@/notifications";
+import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications";
 import Loading from '@/components/loading.vue';
 
 let loading = ref(false);
