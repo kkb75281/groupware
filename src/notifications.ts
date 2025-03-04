@@ -245,6 +245,7 @@ async function updateReadList(type: string) {
 }
 
 export const mailList = ref([]);
+export let unreadEmailNotiMsg: Ref<string | null> = ref(null);
 export let googleEmailUpdate = ref(false);
 export let mailRefresh = ref(false);
 
@@ -516,17 +517,20 @@ watch(mailList, (newVal, oldVal) => {
 	}
 
 	if ((newVal.length && !oldVal) || (newVal.length > oldVal.length) || mailRefresh.value) {
-		// "읽지 않은 메일이 있습니다" 알림이 이미 있는지 확인
-		let unreadEmailNotification = realtimes.value.find((audit) => audit.audit_info?.audit_type === 'email' && audit.subject === '읽지 않은 메일이 있습니다');
+		unreadEmailNotiMsg.value = '읽지 않은 메일이 있습니다';
+		// // "읽지 않은 메일이 있습니다" 알림이 이미 있는지 확인
+		// let unreadEmailNotification = realtimes.value.find((audit) => audit.audit_info?.audit_type === 'email' && audit.subject === '읽지 않은 메일이 있습니다');
 
-		if (!unreadEmailNotification) {
-			addEmailNotification(newVal[0]);
-		}
+		// if (!unreadEmailNotification) {
+		// 	addEmailNotification(newVal[0]);
+		// }
 
 		// for (let i in newVal) {
 		// 	addEmailNotification(newVal[i]);
 		// }
 
 		mailRefresh.value = false;
+	} else {
+		unreadEmailNotiMsg.value = null;
 	}
 });
