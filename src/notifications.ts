@@ -512,11 +512,15 @@ watch([realtimes, readList, notifications.emails], () => {
 
 // 컴포넌트 마운트 시 이메일 업데이트 되는 거에 따른 mails.value 변경 감지
 watch(mailList, (newVal, oldVal) => {
+	console.log('=== mailList === newVal : ', newVal);
+	console.log('=== mailList === oldVal : ', oldVal);
+	
 	if (!newVal) {
 		return;
 	}
 
 	if ((newVal.length && !oldVal) || (newVal.length > oldVal.length) || mailRefresh.value) {
+		console.log('이메일 읽어 알람 추가');
 		unreadEmailNotiMsg.value = true;
 		// // "읽지 않은 메일이 있습니다" 알림이 이미 있는지 확인
 		// let unreadEmailNotification = realtimes.value.find((audit) => audit.audit_info?.audit_type === 'email' && audit.subject === '읽지 않은 메일이 있습니다');
