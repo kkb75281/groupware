@@ -8,7 +8,7 @@
 
 template(v-if="onlyUserGesture")
 	button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
-	
+
 	br
 
 ul.card-wrap.gmail
@@ -150,7 +150,7 @@ function googleLogin() {
 }
 
 let showMailDoc = (e, rt) => {
-	openGmailAppOrWeb(null);
+	openGmailAppOrWeb(rt.link);
 	// window.open(rt.link, "_blank");
 	// readNoti(rt);
 }
