@@ -184,11 +184,12 @@ const menuList = computed(() => [
                     text: '근태 관리',
                 },
                 {
+                    show: !googleAccountCheck, // 구글 로그인 시 비밀번호 변경 메뉴 숨기기
                     name: 'change-password',
                     to: '/change-password',
                     text: '비밀번호 변경',
                 },
-            ]
+            ].filter(item => item.show !== false) // show가 false인 항목을 필터링
         }
     },
     {
