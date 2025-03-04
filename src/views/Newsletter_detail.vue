@@ -74,7 +74,13 @@ async function fetchHtml(url: string) {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 		const html = await response.text(); // 응답을 텍스트로 변환
-		htmlContent.value = html; // 가져온 HTML을 반응형 변수에 할당
+		// htmlContent.value = html; // 가져온 HTML을 반응형 변수에 할당
+		
+		// html 안에 <div dir="ltr"></div> 만 가져오기
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(html, 'text/html');
+		const content = doc.querySelector('div[dir="ltr"]');
+		htmlContent.value = content?.innerHTML || '<p>콘텐츠를 불러오는 데 실패했습니다.</p>';
 	} catch (error) {
 		loading.value = false;
 		console.error('HTML을 가져오는 중 오류 발생:', error);
