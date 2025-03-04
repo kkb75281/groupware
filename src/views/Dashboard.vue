@@ -150,7 +150,7 @@ function googleLogin() {
 }
 
 let showMailDoc = (e, rt) => {
-	openGmailAppOrWeb(rt.link);
+	openGmailAppOrWeb(rt.link, true);
 	// window.open(rt.link, "_blank");
 	// readNoti(rt);
 }

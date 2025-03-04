@@ -144,7 +144,7 @@ function convertToTimestamp(dateTimeString) {
     return timestamp;
 }
 
-function openGmailAppOrWeb(link:string | null) {
+function openGmailAppOrWeb(link:string | null, show: false) {
 	// Gmail 앱용 딥 링크
 	let gmailAppUrlIOS = '';
 	// const gmailAppUrlAndroid = `intent://co?to=${maillink}#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
@@ -153,14 +153,20 @@ function openGmailAppOrWeb(link:string | null) {
 	let gmailWebUrl = '';
 
 	if(link) {
-		// 특정 이메일 주소로 이동
-		gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
-		gmailAppUrlAndroid = `mailto:${link}`;
-		gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${link}`;
+		if(show) {
+			gmailAppUrlIOS = `googlegmail://`;
+			gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
+			gmailWebUrl = `https://mail.google.com/mail/u/0/#inbox/${link}`;
+		} else {
+			// 특정 이메일 주소로 이동
+			gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
+			gmailAppUrlAndroid = `mailto:${link}`;
+			gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${link}`;
+		}
 	} else {
 		// 기본 Gmail 앱 또는 웹 버전 열기
 		gmailAppUrlIOS = `googlegmail://`;
-		gmailAppUrlAndroid = `"intent://#Intent;scheme=googlegmail;package=com.google.android.gm;end";`;
+		gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
 		// gmailAppUrlAndroid = `googlegmail://`;
 		gmailWebUrl = `https://mail.google.com/mail/u/0/#inbox`;
 	}
