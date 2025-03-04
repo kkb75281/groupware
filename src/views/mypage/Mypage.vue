@@ -48,7 +48,8 @@ ul.card-wrap
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-    li.card(v-if="!googleAccountCheck")
+
+    li.card(v-if="googleAccountCheck")
         router-link.router(to="/change-password")
             .icon.img
                 svg
@@ -69,6 +70,7 @@ const router = useRouter();
 const route = useRoute();
 
 const googleAccountCheck = ref(localStorage.getItem('accessToken') ? true : false);
+console.log('googleAccountCheck : ', googleAccountCheck.value);
 </script>
 
 <style scoped lang="less">

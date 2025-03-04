@@ -18,6 +18,7 @@ import Admin from '@/views/admin/Admin.vue';
 // import Admin_edit_divisions from '@/views/admin/Admin_edit_divisions.vue';
 // import Admin_list_divisions from '@/views/admin/Admin_list_divisions.vue';
 import Approval from '@/views/approval/Approval.vue';
+import NotFound from '@/views/NotFound.vue';
 // import Approval_request_audit from '@/views/approval/Approval_request_audit.vue';
 // import Approval_request_list from '@/views/approval/Approval_request_list.vue';
 // import Approval_audit_list from '@/views/approval/Approval_audit_list.vue';
@@ -58,11 +59,6 @@ const router = createRouter({
 			path: '/mailing',
 			name: 'mailing',
 			component: () => import('@/views/Mailing.vue'),
-		},
-		{
-			path: '/404',
-			name: '404',
-			component: () => import('@/views/Error.vue'),
 		},
 		// {
 		// 	path: '/notification-permission',
@@ -275,6 +271,17 @@ const router = createRouter({
 		//   // which is lazy-loaded when the route is visited.
 		//   component: () => import('../views/AboutView.vue')
 		// }
+
+		// 404 page
+		{
+			path: "/404page",
+			name: "404page",
+			component: NotFound
+		},
+		{
+			path: "/:pathMatch(.*)*",
+			redirect: "/404page"
+		},
 	],
 });
 
