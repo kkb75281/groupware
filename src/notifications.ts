@@ -279,10 +279,10 @@ export const addEmailNotification = (emailData) => {
 
     if (checkOrigin) return;
 
-    // "읽지 않은 메일이 있습니다" 알림이 이미 있는지 확인
-    let unreadEmailNotification = realtimes.value.find((audit) => audit.audit_info?.audit_type === 'email' && audit.subject === '읽지 않은 메일이 있습니다');
+    // // "읽지 않은 메일이 있습니다" 알림이 이미 있는지 확인
+    // let unreadEmailNotification = realtimes.value.find((audit) => audit.audit_info?.audit_type === 'email' && audit.subject === '읽지 않은 메일이 있습니다');
 
-    if (unreadEmailNotification) return;
+    // if (unreadEmailNotification) return;
 
     const addEmailData = {
         ...emailData,
@@ -516,9 +516,16 @@ watch(mailList, (newVal, oldVal) => {
 	}
 
 	if ((newVal.length && !oldVal) || (newVal.length > oldVal.length) || mailRefresh.value) {
-		for (let i in newVal) {
-			addEmailNotification(newVal[i]);
+		// "읽지 않은 메일이 있습니다" 알림이 이미 있는지 확인
+		let unreadEmailNotification = realtimes.value.find((audit) => audit.audit_info?.audit_type === 'email' && audit.subject === '읽지 않은 메일이 있습니다');
+
+		if (!unreadEmailNotification) {
+			addEmailNotification(newVal[0]);
 		}
+
+		// for (let i in newVal) {
+		// 	addEmailNotification(newVal[i]);
+		// }
 
 		mailRefresh.value = false;
 	}
