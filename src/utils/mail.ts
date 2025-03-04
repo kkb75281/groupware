@@ -161,7 +161,7 @@ function openGmailAppOrWeb(link:string | null) {
 		// 기본 Gmail 앱 또는 웹 버전 열기
 		gmailAppUrlIOS = `googlegmail:///co`;
 		gmailAppUrlAndroid = `mailto:`;
-		gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1`;
+		gmailWebUrl = `https://mail.google.com/`;
 	}
 
     try {
