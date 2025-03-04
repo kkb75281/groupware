@@ -246,11 +246,11 @@ let sendMail = async (mail: string) => {
     // 웹용 Gmail 링크
     const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
 
-    // 타임아웃 설정
-    const timeout = setTimeout(() => {
-        // Gmail 앱이 열리지 않으면 웹 버전으로 이동
-        window.open(gmailWebUrl, "_blank");
-    }, 1000); // 1초 후에 웹 버전으로 이동
+    // // 타임아웃 설정
+    // const timeout = setTimeout(() => {
+    //     // Gmail 앱이 열리지 않으면 웹 버전으로 이동
+    //     window.open(gmailWebUrl, "_blank");
+    // }, 1000); // 1초 후에 웹 버전으로 이동
 
     try {
         if (/Android/i.test(navigator.userAgent)) {
@@ -266,7 +266,7 @@ let sendMail = async (mail: string) => {
     } catch (error) {
         console.error("Failed to open Gmail app, redirecting to web version...", error);
         // 에러 발생 시 웹 버전으로 이동
-        clearTimeout(timeout); // 타임아웃 취소
+        // clearTimeout(timeout); // 타임아웃 취소
         window.open(gmailWebUrl, "_blank");
     }
 
