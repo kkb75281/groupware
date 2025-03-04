@@ -38,9 +38,10 @@ header#header
 
 						template(v-else-if="rt.audit_info.audit_type === 'email'")
 							h4.noti-type [새이메일]
-							h5.noti-title {{ rt.subject }}
-							//- .noti-info
-							p.noti-sender {{ rt.from }}
+							h5.noti-title 읽지 않은 메일이 있습니다.
+							//- h5.noti-title {{ rt.subject }}
+							//- //- .noti-info
+							//- p.noti-sender {{ rt.from }}
 							span.upload-time {{ formatTimeAgo(rt.dateTimeStamp) }}
 
 						template(v-else-if="rt.audit_info.audit_type === 'canceled'")
