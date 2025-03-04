@@ -146,7 +146,7 @@ import { onUnmounted, onMounted, ref, watch } from 'vue';
 import { user, profileImage } from '@/user'
 import { skapi, resetBadgeCount } from '@/main'
 import { toggleOpen } from '@/components/navbar'
-import { realtimes, readList, unreadCount, readNoti } from '@/notifications'
+import { realtimes, readList, unreadCount, readNoti, unreadEmailNotiMsg } from '@/notifications'
 import { goToAuditDetail } from '@/audit'
 
 const router = useRouter();
