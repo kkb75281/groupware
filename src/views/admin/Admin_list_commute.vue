@@ -424,6 +424,10 @@ onMounted(async () => {
                 cursor: pointer;
             }
         }
+
+        td {
+            white-space: nowrap;
+        }
     }
 }
 </style>

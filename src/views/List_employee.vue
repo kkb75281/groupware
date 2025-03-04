@@ -895,6 +895,14 @@ onUnmounted(() => {
 	}
 }
 
+#employee_list {
+    tbody {
+        td {
+            white-space: nowrap;
+        }
+    }
+}
+
 .go-detail {
     display: flex;
     flex-wrap: nowrap;
