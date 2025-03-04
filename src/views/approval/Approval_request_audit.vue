@@ -50,7 +50,7 @@ template(v-if="step > 1")
 										span.drafter {{ user.name }}
 
 								//- 모바일 경우 레이아웃
-								tr.mo(v-show="!isDesktop")
+								tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
 									th 작성 일자
 									td(colspan="3")
 										.input-wrap
@@ -1129,6 +1129,7 @@ onUnmounted(() => {
 				}
 			}
 		}
+
         tr {
             &:hover {
                 background-color: transparent;

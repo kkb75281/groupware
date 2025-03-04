@@ -339,7 +339,7 @@ watch(() => route.fullPath, (nv) => {
     left: 0;
     overflow-y: overlay;
     background-color: #fff;
-    box-shadow: 5px 1px 30px rgba(0,0,0,0.05);
+    box-shadow: 5px 1px 20px rgba(0,0,0,0.2);
     z-index: 9999;
     // transition: width 0.15s linear;
     transition: left 0.15s linear;

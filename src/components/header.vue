@@ -265,7 +265,7 @@ watch(() => route.path, (newPath, oldPath) => {
 	transition: padding 0.15s linear;
 	transition: top 0.3s;
 	z-index: 999;
-	box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.05);
+	box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
 
 	.btn-mo-navbar {
 		display: none;
