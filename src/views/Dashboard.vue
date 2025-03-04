@@ -1,5 +1,4 @@
 <template lang="pug">
-h4(style="margin-bottom: 1rem;") 25.02.27 목 17:05
 
 .warning-msg(v-if="serviceWorkerRegistMsg")
 	.icon
@@ -7,15 +6,7 @@ h4(style="margin-bottom: 1rem;") 25.02.27 목 17:05
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ serviceWorkerRegistMsg }}
 
-button.btn(v-if="onlyUserGesture" @click="subscribe") 그룹웨어 알림 허용하기
-
-//- br
-
-//- .warning-msg 
-	.icon
-		svg
-			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-	p {{ notificationPermissionMsg }}
+button.btn(v-if="onlyUserGesture" @click="subscribeNotification") 그룹웨어 알림 허용하기
 
 ul.card-wrap.gmail
 	li.card
@@ -51,7 +42,7 @@ ul.card-wrap.gmail(v-if="googleAccountCheck")
 				.icon
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-			button.btn.outline(v-else @click="googleConnect")
+			button.btn.outline(v-else @click="googleLogin")
 				img(src="@/assets/img/icon_google.svg")
 				| 구글 계정 연동하기
 		template(v-if="googleAccountCheck")
@@ -122,48 +113,17 @@ ul.card-wrap
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
-button.btn(type="button" @click="router.push('/test')") 테스트 페이지 바로가기
 </template>
 
-<script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
-import { skapi, serviceWorkerRegistMsg, notificationPermissionMs, onlyUserGesture } from "@/main";
+<script setup>
+import { ref } from 'vue';
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
-import { mailList, readNoti, newsletterList, getNewsletterList, subscribeNotification } from "@/notifications";
-
+import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture } from "@/notifications";
 import Loading from '@/components/loading.vue';
-
-const router = useRouter();
-const route = useRoute();
-
-// watch(onlyUserGesture, (nv) => {
-// 	if (nv) {
-// 		router.push('/notification-permission');
-// 	}
-// });
-
-let subscribe = () => {
-	subscribeNotification();
-}
 
 let loading = ref(false);
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
-let emailCheckInterval;  // interval 저장용 변수
-
-// 구글 계정 연동하기
-let googleConnect = async() => {
-	googleLogin();
-	// const GOOGLE_CLIENT_ID = '685505600375-tiheatfjtp0if764ri7ilop3o4nuhql3.apps.googleusercontent.com';
-	// const REDIRECT_URL = 'http://localhost:5173/login';
-	// const SCOPE = encodeURIComponent('https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly');
-
-	// const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URL}&response_type=token&scope=${SCOPE}`;
-	// // #ggl_skp_connect_ing
-	// window.location.href = authUrl;
-}
 
 // google login
 function googleLogin() {
@@ -173,7 +133,6 @@ function googleLogin() {
 	const REDIRECT_URL = 'http://localhost:5173/login';
 
 	let rnd = Math.random().toString(36).substring(2); // Generate a random string
-	sessionStorage.setItem('oauth_state', rnd); // Store the state value in session storage
 
 	let url = 'https://accounts.google.com/o/oauth2/v2/auth';
 	url += '?client_id=' + GOOGLE_CLIENT_ID;
@@ -186,52 +145,12 @@ function googleLogin() {
 	window.location.href = url;
 }
 
-// async function handleOAuthCallback(hashValue) {  // 파라미터로 해시값을 받도록 수정
-//     const params = new URLSearchParams(hashValue.substring(1));
-//     const state = params.get('state');
-//     const storedState = sessionStorage.getItem('oauth_state');
-
-//     console.log('=== handleOAuthCallback === parms : ', params);
-//     console.log('=== handleOAuthCallback === state : ', state);
-//     console.log('=== handleOAuthCallback === storedState : ', storedState);
-
-//     loading.value = true;
-
-//     if (state !== storedState || !state || !storedState) {
-//         console.error('Invalid state parameter');
-//         return;
-//     }
-
-//     const OPENID_LOGGER_ID = 'by_skapi';
-//     const accessToken = params.get('access_token');
-//     sessionStorage.setItem('accessToken', accessToken);
-
-// 	console.log('=== handleOAuthCallback === accessToken : ', accessToken);
-// 	loading.value = false;
-
-
-//     skapi.openIdLogin({ id: OPENID_LOGGER_ID, token: accessToken }).then(u => {
-// 		console.log('=== handleOAuthCallback === u : ', u);
-//         window.location.href = '/';
-//     }).finally(() => {
-//     });
-// }
-
-let showMailDoc = (e: Event, rt: any) => {
+let showMailDoc = (e, rt) => {
 	window.open(rt.link, "_blank");
 	readNoti(rt);
 }
 
-onMounted(async () => {
-	getNewsletterList();
-});
-
-// 컴포넌트 언마운트 시 인터벌 정리
-onUnmounted(() => {
-	// if (emailCheckInterval) {
-	//     clearInterval(emailCheckInterval);
-	// }
-});
+getNewsletterList();
 
 </script>
 

@@ -57,7 +57,7 @@ AlertModal(:open="!!selectedStamp")
 
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { skapi, mainPageLoading } from '@/main';
 import { user, makeSafe } from '@/user';
@@ -163,7 +163,7 @@ let uploadStamp = async () => {
 let deleteStampRunning = ref(false);
 let deleteStampStep = ref(1);
 
-let deleteStamp = async(stamp: object) => {
+let deleteStamp = async(stamp) => {
     if(!uploadedRecordId.value) return;
     if(!selectedStamp.value) return;
 
