@@ -298,6 +298,7 @@ getNewsletterList();
 		line-height: 1.4;
 		min-height: 150px;
 		text-align: center;
+		padding-top: 1.5rem;
 
 		.icon {
 			flex: none;
