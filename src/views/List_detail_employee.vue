@@ -241,22 +241,32 @@ let sendMail = async (mail: string) => {
 	const maillink = encodeURIComponent(mail);
 
     // Gmail 앱용 딥 링크
-    const gmailAppUrl = `googlegmail:///co?to=${maillink}`;
+    const gmailAppUrlIOS = `googlegmail:///co?to=${maillink}`;
+    const gmailAppUrlAndroid = `intent://co?to=${maillink}#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
     // 웹용 Gmail 링크
     const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
 
-    try {
-        // Gmail 앱 링크를 시도
-        window.location.href = gmailAppUrl;
+    // 타임아웃 설정
+    const timeout = setTimeout(() => {
+        // Gmail 앱이 열리지 않으면 웹 버전으로 이동
+        window.open(gmailWebUrl, "_blank");
+    }, 1000); // 1초 후에 웹 버전으로 이동
 
-        // // Gmail 앱이 없는 경우를 대비해 타임아웃 설정
-        // setTimeout(() => {
-        //     // Gmail 앱이 없으면 웹 버전으로 이동
-        //     window.open(gmailWebUrl, "_blank");
-        // }, 1000); // 1초 후에 웹 버전으로 이동
+    try {
+        if (/Android/i.test(navigator.userAgent)) {
+            // 안드로이드
+            window.location.href = gmailAppUrlAndroid;
+        } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            // iOS
+            window.location.href = gmailAppUrlIOS;
+        } else {
+            // 기타 플랫폼에서는 웹 버전으로 이동
+            window.open(gmailWebUrl, "_blank");
+        }
     } catch (error) {
         console.error("Failed to open Gmail app, redirecting to web version...", error);
         // 에러 발생 시 웹 버전으로 이동
+        clearTimeout(timeout); // 타임아웃 취소
         window.open(gmailWebUrl, "_blank");
     }
 
