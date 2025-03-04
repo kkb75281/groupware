@@ -200,6 +200,7 @@ function openGmailAppOrWeb(link:string | null, show = false) {
         } else {
             // 기타 플랫폼에서는 웹 버전으로 이동
             window.open(gmailWebUrl, "_blank");
+			console.log('웹 버전 열림')
         }
     } catch (error) {
         console.error("Failed to open Gmail app, redirecting to web version...", error);
