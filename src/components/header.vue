@@ -475,9 +475,9 @@ watch(() => route.path, (newPath, oldPath) => {
 				li {
 					border-top: none;
 
-					&:first-child {
-						padding-top: 0.5rem;
-					}
+					// &:first-child {
+					// 	padding-top: 0.5rem;
+					// }
 				}
 			}
 
