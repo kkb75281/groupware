@@ -239,9 +239,31 @@ let displayDivisionOptions = () => {
 
 let sendMail = async (mail: string) => {
 	const maillink = encodeURIComponent(mail);
-	const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
+
+    // Gmail 앱용 딥 링크
+    const gmailAppUrl = `googlegmail:///co?to=${maillink}`;
+    // 웹용 Gmail 링크
+    const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
+
+    try {
+        // Gmail 앱 링크를 시도
+        window.location.href = gmailAppUrl;
+
+        // // Gmail 앱이 없는 경우를 대비해 타임아웃 설정
+        // setTimeout(() => {
+        //     // Gmail 앱이 없으면 웹 버전으로 이동
+        //     window.open(gmailWebUrl, "_blank");
+        // }, 1000); // 1초 후에 웹 버전으로 이동
+    } catch (error) {
+        console.error("Failed to open Gmail app, redirecting to web version...", error);
+        // 에러 발생 시 웹 버전으로 이동
+        window.open(gmailWebUrl, "_blank");
+    }
+
+	// const maillink = encodeURIComponent(mail);
+	// const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${maillink}`;
     
-    window.open(gmailUrl, "_blank"); // 새 탭에서 Gmail 열기
+    // window.open(gmailUrl, "_blank"); // 새 탭에서 Gmail 열기
 }
 
 // 파일 업로드 리스트 업데이트

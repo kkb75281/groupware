@@ -369,5 +369,6 @@ export async function loginCheck(profile: any) {
 	loaded.value = true;
 };
 
+skapi.version();
 
 export { skapi };
