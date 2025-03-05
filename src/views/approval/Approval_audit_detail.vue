@@ -565,6 +565,8 @@ let selectStamp = (url) => {
     selectedStamp.value = url.split('?')[0];
   }
   selectedStampComplete.value = true;
+  console.log({ selectedStamp: selectedStamp.value });
+  console.log({ url: url });
 };
 
 // 다른 사람 결재 여부 확인
