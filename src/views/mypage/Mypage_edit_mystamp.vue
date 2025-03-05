@@ -456,6 +456,8 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
     .stamp-wrap {
+        grid-template-columns: repeat(1, 1fr);
+
         .stamp-grid {
             .upload-options {
                 transform: translateX(10%) translateY(-12%);
@@ -474,14 +476,16 @@ onUnmounted(() => {
         grid-template-columns: repeat(3, 1fr);
     }
 }
-@media (max-width: 576px) {
-    .stamp-wrap {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-@media (max-width: 390px) {
-    .stamp-wrap {
-        grid-template-columns: repeat(1, 1fr);
-    }
-}
+
+// @media (max-width: 576px) {
+//     .stamp-wrap {
+//         grid-template-columns: repeat(2, 1fr);
+//     }
+// }
+
+// @media (max-width: 390px) {
+//     .stamp-wrap {
+//         grid-template-columns: repeat(1, 1fr);
+//     }
+// }
 </style>
