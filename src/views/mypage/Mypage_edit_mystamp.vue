@@ -454,7 +454,30 @@ onUnmounted(() => {
     }
 }
 
+@media (max-width: 950px) {
+    .stamp-wrap {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
+    .stamp-wrap {
+        grid-template-columns: repeat(2, 1fr);
+        
+        .stamp-grid {
+            .upload-options {
+                transform: translateX(10%) translateY(-12%);
+                
+                li {
+                    font-size: 0.875rem;
+                    padding: 10px 8px;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 576px) {
     .stamp-wrap {
         grid-template-columns: repeat(1, 1fr);
 
@@ -470,18 +493,6 @@ onUnmounted(() => {
         }
     }
 }
-
-@media (max-width: 950px) {
-    .stamp-wrap {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-// @media (max-width: 576px) {
-//     .stamp-wrap {
-//         grid-template-columns: repeat(2, 1fr);
-//     }
-// }
 
 // @media (max-width: 390px) {
 //     .stamp-wrap {
