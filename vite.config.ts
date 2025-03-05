@@ -96,7 +96,9 @@ const config = {
         // https: false, // HTTPS를 비활성화
         // host: 'localhost',
         // port: 5173,
+        // cors: true,
     },
+    // base: './',
 }
 
 // https://vite.dev/config/
