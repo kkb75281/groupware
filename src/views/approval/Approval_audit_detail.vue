@@ -562,13 +562,11 @@ let createStamp = () => {
 
 let selectStamp = (url) => {
   if (url.includes('?')) {
-	nextTick(() => {
-		selectedStamp.value = url.split('?')[0];
-	})
+	  selectedStamp.value = url.split('?')[0];
   }
   selectedStampComplete.value = true;
   console.log({ selectedStamp: selectedStamp.value });
-  console.log({ url: url });
+  console.log({ url: url.split('?')[0] });
 };
 
 // 다른 사람 결재 여부 확인
