@@ -25,7 +25,7 @@ header#header
 	.popup-header
 		h3.title 알림 목록
 
-	template(v-if="realtimes.length > 0")
+	template(v-if="unreadEmailNotiMsg || realtimes.length > 0")
 		.popup-main
 			ul
 				li(v-if="unreadEmailNotiMsg" @click.stop="(e) => showRealtimeNoti(e, 'gmail')")

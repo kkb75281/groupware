@@ -5,7 +5,7 @@ import { Skapi } from 'skapi-js';
 import { user, profileImage } from './user';
 import App from './App.vue';
 import router from './router';
-import { realtimes, unreadCount, readList, getRealtime, updateEmails, subscribeNotification, unsubscribeNotification } from './notifications';
+import { realtimes, unreadCount, readList, getRealtime, updateEmails, subscribeNotification, unsubscribeNotification, unreadEmailNotiMsg } from './notifications';
 import { getUserInfo, employeeDict, getEmpDivisionPosition } from './employee';
 import { getAuditList } from './audit';
 
@@ -273,6 +273,7 @@ export async function loginCheck(profile: any) {
 		skapi.closeRealtime();
 
 		realtimes.value = [];
+		unreadEmailNotiMsg.value = false;
 		localStorage.removeItem('accessToken');
 		localStorage.removeItem('refreshToken');
 
