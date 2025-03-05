@@ -389,6 +389,7 @@ onUnmounted(() => {
                 cursor: pointer;
                 padding: 8px 12px;
                 border-radius: 4px;
+				white-space: nowrap;
 
                 &:first-child {
                     margin-bottom: 4px;
