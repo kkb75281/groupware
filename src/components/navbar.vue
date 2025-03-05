@@ -385,7 +385,7 @@ watch(() => route.fullPath, (nv) => {
     }
 
     .menu-item {
-        padding: 20px 16px 0;
+        padding: 20px 16px 40px;
 
         .item {
             margin-top: 0.8rem;
