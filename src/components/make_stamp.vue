@@ -56,27 +56,51 @@ function getMousePos(canvas, event) {
     let rect = canvas.getBoundingClientRect();
 
     return {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
+        x: ((event.clientX - rect.left) / (rect.right - rect.left)) * canvas.width,
+        y: ((event.clientY - rect.top) / (rect.bottom - rect.top)) * canvas.height
     };
 }
+// function getMousePos(canvas, event) {
+//     let rect = canvas.getBoundingClientRect();
+
+//     return {
+//         x: event.clientX - rect.left,
+//         y: event.clientY - rect.top
+//     };
+// }
 
 // 캔버스 크기 설정
 const resizeCanvas = () => {
-	// 현재 상태 저장
-    savedState.value = saveCanvasState();
+    if (!canvas.value) return;
+
+    // 현재 상태 저장
+    const savedStateData = saveCanvasState();
+
+    // 캔버스의 CSS 크기와 실제 픽셀 크기를 일치시킵니다.
+    const width = canvas.value.offsetWidth;
+    const height = canvas.value.offsetHeight;
+
+    canvas.value.width = width;
+    canvas.value.height = height;
 
     // 상태 복구
-    restoreCanvasState(savedState.value);
-    // const width = canvas.value.offsetWidth;
-    // const height = canvas.value.offsetHeight;
-    
-    // canvas.value.width = width;
-    // canvas.value.height = height;
-
-    // // 기존 서명 복원 (리사이즈 시 데이터 손실 방지)
-    // if (ctx) ctx.clearRect(0, 0, width, height);
+    restoreCanvasState(savedStateData);
 };
+// const resizeCanvas = () => {
+// 	// 현재 상태 저장
+//     savedState.value = saveCanvasState();
+
+//     // 상태 복구
+//     restoreCanvasState(savedState.value);
+//     // const width = canvas.value.offsetWidth;
+//     // const height = canvas.value.offsetHeight;
+    
+//     // canvas.value.width = width;
+//     // canvas.value.height = height;
+
+//     // // 기존 서명 복원 (리사이즈 시 데이터 손실 방지)
+//     // if (ctx) ctx.clearRect(0, 0, width, height);
+// };
 
 // 서명 시작
 function startPosition(e) {
