@@ -206,7 +206,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 									.stamp-grid(v-for="stamp in uploadedStamp" :key="stamp.url" @click="selectStamp(stamp.url)")
 										.stamp(:class="{'selected' : selectedStamp === stamp.url.split('?')[0]}")
 											img#stamp-img(:src="stamp.url" alt="도장 이미지")
-								.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp}" @click="selectStamp(previewStamp)")
+								.previewStamp(v-else-if="previewStamp" :class="{'selected' : selectedStamp === previewStamp.split('?')[0]}" @click="selectStamp(previewStamp)")
 									img(:src="previewStamp" style="display: block;margin: 0 auto;" alt="도장 미리보기")
 								.no-stamp(v-else style="text-align: center;border: 1px solid var(--gray-color-100);padding: 3rem 1rem;border-radius: 8px;color: var(--gray-color-400); font-size:0.9rem") 
 									template(v-if="makeStampRunning")
@@ -565,8 +565,6 @@ let selectStamp = (url) => {
 	  selectedStamp.value = url.split('?')[0];
   }
   selectedStampComplete.value = true;
-  console.log({ selectedStamp: selectedStamp.value });
-  console.log({ url: url.split('?')[0] });
 };
 
 // 다른 사람 결재 여부 확인
