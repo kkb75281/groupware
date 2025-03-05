@@ -562,7 +562,9 @@ let createStamp = () => {
 
 let selectStamp = (url) => {
   if (url.includes('?')) {
-    selectedStamp.value = url.split('?')[0];
+	nextTick(() => {
+		selectedStamp.value = url.split('?')[0];
+	})
   }
   selectedStampComplete.value = true;
   console.log({ selectedStamp: selectedStamp.value });
