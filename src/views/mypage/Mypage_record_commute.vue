@@ -143,11 +143,17 @@ const getWorkTime = async () => {
     };
 
     const res = await skapi.getRecords(query);
+    console.log('=== getWorkTime === res : ', res);
+
+		
 
     // 현재 로그인한 유저의 부서 근무시간 찾기
-    const myDivisionWorkTime = res.list.find(
-      (workTime) => workTime.data.division_key === user.division
-    );
+    const myDivisionWorkTime = res.list.find(workTime => {
+			console.log('=== getWorkTime === workTime : ', workTime);
+    	console.log('=== getWorkTime === user : ', user);
+      workTime.data.division_key === user.division;
+    });
+    console.log('=== getWorkTime === myDivisionWorkTime : ', myDivisionWorkTime);
 
     if (myDivisionWorkTime) {
       // 마스터가 설정한 시간으로 업데이트
@@ -619,11 +625,13 @@ watch(commuteRecords, (newVal) => {
 });
 
 onMounted(async () => {
+  console.log('출퇴근 기록 페이지');
   timeRecords.value.date = getDate();
 
   try {
     // 마스터가 설정한 부서별 근무시간 가져오기
-    await getWorkTime();
+    const getWorkTimes = await getWorkTime();
+    console.log('=== getWorkTimes ===', getWorkTimes);
 
     // DB에서 기록 조회
     const res = await fetchCommuteRecords();

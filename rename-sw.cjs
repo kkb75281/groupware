@@ -20,7 +20,7 @@ function renameFile() {
       console.error(`파일 이름 변경 실패: ${err.message}`);
       return;
     }
-    console.log(`파일 이름이 ${targetFileName}으로 변경되었습니다.`);
+    // console.log(`파일 이름이 ${targetFileName}으로 변경되었습니다.`);
   });
 }
 

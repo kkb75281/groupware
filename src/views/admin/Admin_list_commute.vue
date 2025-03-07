@@ -394,7 +394,6 @@ onMounted(async () => {
     if(res.length > 0) {
         employee.value = res.filter(emp => emp.approved.split(':')[1] !== 'suspended');
     }
-    // console.log('=== onMounted === employee.value : ', employee.value);
 });
 </script>
 

@@ -7,7 +7,6 @@ import { loadEnv } from 'vite'
 
 const env = loadEnv(process.env.NODE_ENV || 'development', process.cwd(), '')
 const serviceId = env.VITE_SERVICE_ID || 'default'
-console.log({serviceId});
 
 const config = {
     plugins: [

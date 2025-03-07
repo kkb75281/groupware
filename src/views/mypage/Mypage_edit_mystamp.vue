@@ -180,11 +180,6 @@ let deleteStamp = async(stamp) => {
 
     post_params.remove_bin.push(stamp);
 
-    // // uploadedStamp.value.map((stamp, idx) => {
-    // //     if(stamp.url === url) {
-    // //         post_params.remove_bin.push(stamp);
-    // //     }
-    // // });
     deleteStampRunning.value = true;
 
     try {
@@ -194,7 +189,7 @@ let deleteStamp = async(stamp) => {
         deleteStampStep.value++;
         uploadedStamp.value = uploadedStamp.value.filter(stamp => stamp.url !== deleteStampUrl);
     } catch(e) {
-        console.log({e});
+        // console.log({e});
         deleteStampStep.value = 1;
         alert('도장 삭제 중 오류가 발생했습니다.');
     } finally {

@@ -136,7 +136,7 @@ let deleteDivision = async () => {
             return skapi
                 .deleteRecords({ record_id: el })
                 .then((res) => {
-                    // console.log('=== deleteDivision === res : ', res);
+                    
                     isSuccess.push(el);
                     delete divisions.value[el];
                 })
@@ -182,7 +182,7 @@ let deleteDivision = async () => {
                 access_group: 1,
             },
         }).then((res) => {
-            console.log('=== deleteDivision === res : ', res);
+
         });
     } catch (error) {
         alert("부서명 리스트를 업데이트하는데 실패하였습니다. 관리자에게 문의해주세요.");

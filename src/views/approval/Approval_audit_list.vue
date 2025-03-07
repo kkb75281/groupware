@@ -86,11 +86,8 @@ const currentPage = computed(() => {
 const filterAuditList = computed(() => {
 	if (!auditList.value) return [];
 
-	// console.log('=== filterAuditList === auditList.value : ', auditList.value);
-
 	return auditList.value.filter(audit => {
 		const auditors = JSON.parse(audit.data.auditors);
-		// console.log('=== filterAuditList === auditors : ', auditors);
 
 		if (currentPage.value === 'audit-list') {
 			// 결재 수신함: approvers나 agreers에 포함된 문서

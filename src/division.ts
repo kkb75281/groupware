@@ -76,37 +76,11 @@ export async function getDivisionNames(refresh = false) {
     let res = await getDivisionNamesRunning;
     if (res && res.list && res.list.length) {
         if (res.list[0].data) {
-            // console.log('res.list[0].data', res.list[0].data)
             divisionNameList.value = res.list[0].data;
         }
     }
 
     return divisionNameList.value;
-
-	// try{
-	// 	let res = await skapi.getRecords({
-	// 		unique_id: '[division_name_list]'
-	// 	})
-	// 	if (res.list.length) {
-	// 		if (res.list[0].data) {
-	// 			divisionNameList.value = res.list[0].data;
-	// 		}
-	// 	}
-	
-	// 	return divisionNameList.value;
-	// }
-	// finally {
-		        
-    //     getDivisionNamesRunning = null;
-
-    //     if (getDivisionDataRunning instanceof Promise) {
-    //         getDivisionDataRunning.finally(() => {
-    //             loading.value = false;
-    //         });
-    //     } else {
-    //         loading.value = false;
-    //     }
-	// }
 }
 
 export async function getDivisionData(refresh: boolean = false) {
