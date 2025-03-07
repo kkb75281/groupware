@@ -98,13 +98,13 @@
 				delete user[k];
 			}
 			if (err.code === "USER_IS_DISABLED") {
-				alert("This account is disabled."); // 한글로 할것
+				alert("이 계정은 비활성화되었습니다.");
 			}
 			else if (err.code === "INCORRECT_USERNAME_OR_PASSWORD") {
-				alert("Incorrect email or password."); // 한글로 할것
+				alert("이메일 또는 비밀번호가 올바르지 않습니다.");
 			}
 			else if (err.code === "NOT_EXISTS") {
-				alert("Incorrect email or password."); // 한글로 할것
+				alert("이메일 또는 비밀번호가 올바르지 않습니다.");
 			}
 			else {
 				alert(err.message);
