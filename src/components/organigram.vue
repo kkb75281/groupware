@@ -102,8 +102,6 @@ function onDepartmentCheck(obj: { type: string; target: any; isChecked: boolean 
 		updateParentCheckStatus(target);
 	}
 
-	// console.log('chchchchchchch', checkedUsers.value);
-
 	emit('selection-change', checkedUsers.value);
 }
 
@@ -141,7 +139,7 @@ function updateChildrenCheckStatus(department: any, isChecked: boolean) {
 
 // 부모 부서 상태를 업데이트하는 함수
 function updateParentCheckStatus(item: any) {
-	console.log('부모 부서 == item : ', item);
+
 	const parentDepartment = findParentDepartment(item); // 부모 부서를 찾는 함수
 	if (!parentDepartment) return;
 
@@ -163,9 +161,9 @@ function updateParentCheckStatus(item: any) {
 		parentDepartment.isChecked = false;
 	}
 
-	console.log('부모 부서 == allMembersChecked : ', allMembersChecked);
-	console.log('부모 부서 == allSubDepartmentsChecked : ', allSubDepartmentsChecked);
-	console.log('부모 부서 == parentDepartment : ', parentDepartment);
+
+
+
 
 	// 부모 부서의 부모 상태도 동기화
 	updateParentCheckStatus(parentDepartment);
@@ -201,7 +199,7 @@ function findParentDepartmentRecursive(department: any, item: any): any {
 
 watch(() => props.selectedEmployees, async(nv, ov) => {
 	if (!ov) {
-		// console.log('ov없음', nv)
+		//
 
 		// 모달 열었을때 체크된 사용자가 있을 경우
 		if(nv && nv.length > 0) {
@@ -212,7 +210,7 @@ watch(() => props.selectedEmployees, async(nv, ov) => {
 			});
 		}
 	} else {
-		// console.log('ov있음', nv, ov);
+		//
 	
 		if(nv.length !== ov.length) {
 			// 삭제된 유저 찾기 (oldValue에는 있지만 newValue에는 없는 항목)

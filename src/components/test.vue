@@ -59,11 +59,11 @@ getUsers({
 	value: 'by_skapi:approved',
 	condition: '>='
 }, true).then((res) => {
-	console.log('getUsers', res);
+	// console.log('getUsers', res);
 	emps.value = res;
 });
 
-console.log({user});
+// console.log({user});
 
 function subscribe () {
 	subscribeNotification();
@@ -90,7 +90,7 @@ function postRealTimeMsg () {
 			body: '테스트 Realtime',
 		}
 	).then((res) => {
-		console.log('postRealTimeMsg', res);
+		// console.log('postRealTimeMsg', res);
 	});
 }
 

@@ -149,7 +149,6 @@
 			redirect_uri: redirectUri,
 			grant_type: 'authorization_code'
 		}
-		console.log('=== exchangeCodeForTokens === params : ', params);
 
 		const data = await skapi.clientSecretRequest({
 			clientSecretName: "ggltoken",
@@ -161,18 +160,16 @@
 			data: params
 		});
 
-		console.log({ data })
-
 		if (data.error) {
 			console.error('토큰 교환 실패:', data);
 			throw data
 		}
 
 		const { access_token, refresh_token, expires_in } = data;
-		console.log({ data });
-		console.log('Access Token:', access_token);
-		console.log('Refresh Token:', refresh_token);
-		console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+		// console.log({ data });
+		// console.log('Access Token:', access_token);
+		// console.log('Refresh Token:', refresh_token);
+		// console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
 
 		localStorage.setItem('accessToken', access_token);
 		localStorage.setItem('refreshToken', refresh_token);
@@ -181,21 +178,16 @@
 	}
 
 	onMounted(async () => {
-		console.log('is Mounted');
 		const urlParams = new URLSearchParams(window.location.search);
-		console.log({ urlParams })
 		const authorizationCode = urlParams.get('code');
-		console.log({ authorizationCode })
 
 		loading.value = false;
 
 		if (authorizationCode) {
 			loading.value = true;
 			const redirectUri = window.location.href.split('?')[0]; // Redirect URI
-			console.log({ redirectUri })
 			try {
 				let { access_token } = await exchangeCodeForTokens(authorizationCode, redirectUri);
-				console.log({ access_token })
 				if (access_token) {
 					// 로그인
 					await skapi.openIdLogin({ id: import.meta.env.VITE_OPENID_LOGGER_ID, token: access_token });

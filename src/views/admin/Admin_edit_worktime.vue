@@ -124,28 +124,18 @@ const startTimeMax = ref("");
 const endTimeMin = ref("");
 const endTimeMax = ref("");
 
-console.log('divisions : ', divisions.value);
-console.log('AA === divisionNameList : ', divisionNameList.value);
-
 // 근무시간 저장
 const saveWorkTime = async () => {
     loading.value = true;
 
     try {
-        console.log('== AA ===');
-        console.log('== selectedDivision : ', selectedDivision.value);
-
         const findDivision = divisions.value[selectedDivision.value.record_id];
-
-        console.log('== findDivision : ', findDivision);
-         console.log('== BB ===');
 
         if (!findDivision) {
             alert('부서를 찾을 수 없습니다.');
             return;
         }
 
-        // const divisionId = makeSafe(findDivision.record_id);
         const divisionId = makeSafe(selectedDivision.value.record_id);
         const uniqueId = `dvs_workTime_${divisionId}`;
 
@@ -157,7 +147,6 @@ const saveWorkTime = async () => {
             };
             
             await skapi.deleteRecords(query);
-            console.log('기존 시간 설정 삭제 완료');
         }
 
         const findDivisionKey = Object.entries(divisionNameList.value).find(([key, value]) => value === findDivision.data.division_name);
@@ -184,18 +173,13 @@ const saveWorkTime = async () => {
             unique_id: uniqueId
         };
 
-        console.log('== workTimeData:', workTimeData);  
-
         const savedRecord = await skapi.postRecord(workTimeData, config);
-        console.log('=== saveWorkTime === savedRecord : ', savedRecord);
         
         // 업데이트
         workTimes.value[divisionId] = savedRecord.data;
-
         alert('근무시간이 성공적으로 저장되었습니다.');
 
     } catch (error) {
-        console.log('=== saveWorkTime === error : ', error);
         alert('근무시간 저장을 실패했습니다.');
     } finally {
         selectedDivision.value = null;
@@ -222,22 +206,14 @@ const getWorkTime = async () => {
         };
         
         const res = await skapi.getRecords(query);
-        console.log('=== getWorkTime === res.list : ', res.list);
         
         // 부서별 근무시간 데이터를 객체로 변환
         const workTimeMap = res.list.reduce((acc, record) => {
-            console.log('=== getWorkTime === acc : ', acc);
-            console.log('=== getWorkTime === record : ', record);
-
             const divisionId = record.unique_id.replace('dvs_workTime_', '');
             acc[divisionId] = record.data;
 
-            console.log('=== getWorkTime === divisionId : ', divisionId);
-
             return acc;
         }, {});
-
-        console.log('=== getWorkTime === workTimeMap : ', workTimeMap);
         
         return workTimeMap;
         
@@ -260,19 +236,10 @@ const cancelEdit = () => {
 
 // 수정 버튼 클릭 시
 const onEditDivision = (division) => {
-    console.log('=== onEditDivision === : division:', division);
-    console.log('divisionNameList:', divisionNameList.value);
-
-    // const result = Object.keys(divisionNameList.value).find((item) => item.record_id === division.record_id);
-    // console.log('=== onEditDivision === result : ', result);
-
     selectedDivision.value = division;
 
     const divisionId = makeSafe(division.record_id);
     const existingWorkTime = workTimes.value[divisionId];
-
-    console.log('=== onEditDivision === divisionId : ', divisionId);
-    console.log('=== onEditDivision === existingWorkTime : ', existingWorkTime);
 
     // 기존 시간 데이터가 있는 경우
     if (existingWorkTime) {
@@ -300,7 +267,7 @@ const refresh = async () => {
         const refreshedWorkTimes = await getWorkTime();
         workTimes.value = refreshedWorkTimes;
     } catch (error) {
-        console.log('=== refresh === error : ', error);
+        console.log('=== refresh === error : ', {error});
         alert('데이터 새로고침에 실패했습니다.');
     } finally {
         loading.value = false;
@@ -311,8 +278,6 @@ onMounted(async () => {
     try {
         const workTimeData = await getWorkTime();
         workTimes.value = workTimeData;
-
-        console.log('=== onMounted === workTimes.value : ', workTimes.value);
     } catch (error) {
         console.log('=== onMounted === error : ', error);
     }

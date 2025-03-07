@@ -259,7 +259,6 @@ const getEmpList = async () => {
         });
 
         const results = await Promise.all(empPromises);
-		console.log('=== getEmpList === results : ', results);
         newEmpList.push(...results);
 
         return newEmpList;

@@ -30,9 +30,7 @@ export let handleStampBlob = async (makeStampImage) => {
 		if(uploadedStamp.value && uploadedStamp.value.length) {
 			// 도장 이미지가 있을때 각각의 도장 이름 중 generated-stamp-가 있는지 확인
 			const stampNames = uploadedStamp.value.map(stamp => stamp.filename);
-			console.log(stampNames);
 			const generatedStamp = stampNames.filter(name => name.includes('generated-stamp-'));
-			console.log(generatedStamp);
 			
 			// generatedStamp가 있으면 그 다음 숫자를 찾아서 도장 이름을 만들어줌
 			if(generatedStamp.length) {
@@ -63,9 +61,6 @@ export let handleStampBlob = async (makeStampImage) => {
             stampImages.value.name = stampName.value;
             stampImages.value.blob = blob;
         }
-
-        console.log(onlyStampFile.value);
-        console.log(stampImages.value);
 
         openStampModal.value = false;
 		handleStampBlobComplete.value = true;
