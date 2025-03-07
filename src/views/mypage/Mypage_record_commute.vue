@@ -61,6 +61,9 @@ hr
 											td.remark
 												.input-wrap
 													input(type="text" v-model="record.data.remark" @blur="updateDesc(record)")
+
+//- 테스트용 삭제 버튼 (추후 삭제)
+button.btn.sm(@click="testDelete") delete
 </template>
 
 <script setup lang="ts">
@@ -77,12 +80,31 @@ import {
   convertMsToTime
 } from '@/utils/time';
 import { user, makeSafe } from '@/user';
+// import { divisionNameList } from '@/division';
 import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+// 테스트용 삭제 함수 (추후 삭제)
+const testDelete = async() => {
+  const res = await fetchCommuteRecords();
+  console.log('=== testDelete === res : ', res.list);
+
+  res.list.forEach(record => {
+    console.log(record.data.date);
+
+    if(record.data.date === '2025-03-07') {
+      const config = {
+        record_id: record.record_id
+      };
+
+      skapi.deleteRecords(config);
+    }
+  })
+};
 
 // 출퇴근 기록 관련
 interface IWorkFormat {
@@ -116,8 +138,6 @@ let commuteStorage = []; // 직원별 출퇴근 정보 저장소
 const masterStartTime = {
   min: '08:00:00',
   max: '19:59:59',
-  minTime: `${currentDate} 08:00:00`,
-  maxTime: `${currentDate} 19:59:59`,
   minTimestamp: convertToTimestamp(`${currentDate} 08:00:00`),
   maxTimestamp: convertToTimestamp(`${currentDate} 19:59:59`)
 };
@@ -126,8 +146,6 @@ const masterStartTime = {
 const masterEndTime = {
   min: '23:00:00',
   max: '02:00:00',
-  minTime: `${getDate()} 23:00:00`,
-  maxTime: `${getDate()} 02:00:00`,
   minTimestamp: convertTimeToTimestamp(`${getDate()} 23:00:00`),
   maxTimestamp: convertTimeToTimestamp(`${getDate()} 02:00:00`)
 };
@@ -144,34 +162,40 @@ const getWorkTime = async () => {
 
     const res = await skapi.getRecords(query);
     console.log('=== getWorkTime === res : ', res);
+		// console.log('divisionNameList : ', divisionNameList.value);
 
-		
+		// 직원의 부서, 직급 정보 가져오기
+		const getDvs = await skapi.getRecords({
+				table: {
+						name: 'emp_position_current',
+						access_group: 1
+				},
+				unique_id: "[emp_position_current]" + makeSafe(user.user_id),
+		});
 
     // 현재 로그인한 유저의 부서 근무시간 찾기
     const myDivisionWorkTime = res.list.find(workTime => {
-			console.log('=== getWorkTime === workTime : ', workTime);
-    	console.log('=== getWorkTime === user : ', user);
-      workTime.data.division_key === user.division;
+			if(workTime.data.division_key === getDvs.list[0].index.name.split('.')[0]) {
+				return workTime.data.division_startTime;
+			}
     });
     console.log('=== getWorkTime === myDivisionWorkTime : ', myDivisionWorkTime);
 
     if (myDivisionWorkTime) {
       // 마스터가 설정한 시간으로 업데이트
       masterStartTime.min = myDivisionWorkTime.data.division_startTime.min;
+			// console.log('=== masterStartTime.min ===', masterStartTime.min);
       masterStartTime.max = myDivisionWorkTime.data.division_startTime.max;
-      masterStartTime.minTime = `${currentDate} ${myDivisionWorkTime.data.division_startTime.min}`;
-      masterStartTime.maxTime = `${currentDate} ${myDivisionWorkTime.data.division_startTime.max}`;
       masterStartTime.minTimestamp = convertToTimestamp(
         `${currentDate} ${myDivisionWorkTime.data.division_startTime.min}`
       );
+			// console.log('=== masterStartTime.minTimestamp ===', masterStartTime.minTimestamp);
       masterStartTime.maxTimestamp = convertToTimestamp(
         `${currentDate} ${myDivisionWorkTime.data.division_startTime.max}`
       );
 
       masterEndTime.min = myDivisionWorkTime.data.division_endTime.min;
       masterEndTime.max = myDivisionWorkTime.data.division_endTime.max;
-      masterEndTime.minTime = `${currentDate} ${myDivisionWorkTime.data.division_endTime.min}`;
-      masterEndTime.maxTime = `${currentDate} ${myDivisionWorkTime.data.division_endTime.max}`;
       masterEndTime.minTimestamp = convertToTimestamp(
         `${currentDate} ${myDivisionWorkTime.data.division_endTime.min}`
       );

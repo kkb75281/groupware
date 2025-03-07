@@ -161,7 +161,6 @@ const getEmpList = async () => {
                 access_group: 1
             },
         });
-		// console.log('=== getEmpList === workTime : ', workTime);
 
 		if(!workTime.list.length) {
 			loading.value = false;
@@ -170,8 +169,6 @@ const getEmpList = async () => {
 
         // 기준 근무시간 가져오기
         const getTimestampFromTimeString = (timeString) => {
-            // console.log('=== getTimestampFromTimeString === timeString : ', timeString);
-
             // 현재 날짜 가져오기
             const today = new Date();
 
