@@ -31,34 +31,34 @@ let emailCheckInterval: any = null;
 
 function handleVisibilityChange() {
 	if (document.visibilityState === 'visible') {
-		console.log('탭이 활성화되었습니다.');
+		// console.log('탭이 활성화되었습니다.');
 		// isTabVisible = true;
 
 		// 뱃지 초기화
 		if ('clearAppBadge' in navigator) {
 			navigator.clearAppBadge().then(() => {
 				resetBadgeCount();
-				console.log('뱃지 초기화 완료');
+				// console.log('뱃지 초기화 완료');
 			}).catch((error) => {
 				console.error('Failed to clear app badge:', error);
 			});
 		}
 
-		console.log('탭 활성화 여부 함수 realtimeIsConnected.value', realtimeIsConnected);
+		// console.log('탭 활성화 여부 함수 realtimeIsConnected.value', realtimeIsConnected);
 
 		if (!realtimeIsConnected && user.user_id) {
 			// 실시간 연결이 끊어진 경우 + 유저 로그인이 있는 경우 다시 연결
-			console.log('다시 연결합니다.');
+			// console.log('다시 연결합니다.');
 			skapi.connectRealtime(RealtimeCallback);
 		}
 		if (user.user_id && !emailCheckInterval && localStorage.getItem('refreshToken')) {
 			emailCheckInterval = setInterval(() => {
-				console.log('10초마다 이메일 업데이트');
+				// console.log('10초마다 이메일 업데이트');
 				updateEmails();
 			}, 10000);
 		}
 	} else {
-		console.log('탭이 비활성화되었습니다.');
+		// console.log('탭이 비활성화되었습니다.');
 		// isTabVisible = false;
 		skapi.closeRealtime();
 		if (emailCheckInterval) {
@@ -86,7 +86,7 @@ export function resetBadgeCount() {
 		});
 	}
 
-	console.log(`[Main App] Badge count reset to ${currentBadgeCount}`);
+	// console.log(`[Main App] Badge count reset to ${currentBadgeCount}`);
 }
 
 
@@ -95,7 +95,7 @@ if ('serviceWorker' in navigator) {
 	navigator.serviceWorker.addEventListener('message', (event) => {
 		if (event.data && event.data.type === 'BADGE_UPDATED') {
 			const newBadgeCount = event.data.badgeCount;
-			console.log(`[Main App] Received new badge count: ${newBadgeCount}`);
+			// console.log(`[Main App] Received new badge count: ${newBadgeCount}`);
 
 			// 뱃지 갱신
 			currentBadgeCount = newBadgeCount;
@@ -105,7 +105,7 @@ if ('serviceWorker' in navigator) {
 	// Service Worker 등록
 	navigator.serviceWorker.register(`/wrk.${serviceID}.js`)
 		.then((registration) => {
-			console.log('Service Worker registered:', registration);
+			// console.log('Service Worker registered:', registration);
 		})
 		.catch((error) => {
 			console.error('Service Worker registration failed:', error);
@@ -116,18 +116,18 @@ if ('serviceWorker' in navigator) {
 export let RealtimeCallback = async (rt: any) => {
 	if (rt.type === 'error' || rt.type === 'close') {
 		const errorTime = new Date().toLocaleString();
-		console.log({ rt })
+		// console.log({ rt })
 		console.error({ errorTime });
 		realtimeIsConnected = false;
 	}
 
 	if (rt.type === 'success') {
-		console.log({ rt })
-		console.log({ type: rt.type });
-		console.log('리얼타임 연결 성공 후 getRealtime 실행시작');
+		// console.log({ rt })
+		// console.log({ type: rt.type });
+		// console.log('리얼타임 연결 성공 후 getRealtime 실행시작');
 		await getRealtime(true);
 		await updateEmails(true);
-		console.log('리얼타임 연결 성공 후 getRealtime 실행완료');
+		// console.log('리얼타임 연결 성공 후 getRealtime 실행완료');
 
 		if (rt.message === 'Connected to WebSocket server.') {
 			// 실시간 통신 연결 성공
@@ -147,7 +147,7 @@ export let RealtimeCallback = async (rt: any) => {
 					// senderInfo 가져오기
 					const senderInfo = await getUserInfo(audit_msg.send_user);
 
-					// console.log({ senderInfo });
+					// // console.log({ senderInfo });
 
 					// audit_request에 이름 추가
 					const enrichedAuditRequest = {
@@ -166,13 +166,13 @@ export let RealtimeCallback = async (rt: any) => {
 			};
 
 			realtimeTestingMsg.value = rt.message;
-			console.log('=== RealtimeCallback === realtimeTestingMsg : ', realtimeTestingMsg.value);
+			// console.log('=== RealtimeCallback === realtimeTestingMsg : ', realtimeTestingMsg.value);
 
 			let realtimeMsg = rt.message;
 			let realtimeSender = null;
 			let realtimeBody = ''
 
-			console.log({ realtimeMsg })
+			// console.log({ realtimeMsg })
 
 			// 결재 요청이 들어옴
 			if (rt.message?.audit_request) {
@@ -201,8 +201,8 @@ export let RealtimeCallback = async (rt: any) => {
 				realtimeBody = `${realtimeSender.name}님께서 결재를 취소했습니다.`
 			}
 
-			// console.log({ isTabVisible })
-			console.log({ realtimeSender })
+			// // console.log({ isTabVisible })
+			// console.log({ realtimeSender })
 			if (realtimeSender === null) {
 				realtimeSender = { name: 'dev' };
 				realtimeBody = `${realtimeSender.name}님께서 보낸 테스트 메세지 입니다.`
@@ -241,7 +241,7 @@ export async function refreshAccessToken() {
 			data: params
 		});
 
-		console.log({ data })
+		// console.log({ data })
 
 		if (data.error === 'invalid_grant') {
 			console.error('Refresh Token이 무효화되었습니다. 사용자에게 재인증을 요청하세요.');
@@ -252,8 +252,8 @@ export async function refreshAccessToken() {
 
 		const { access_token, expires_in } = data;
 		localStorage.setItem('accessToken', access_token);
-		console.log('새로운 Access Token:', access_token);
-		console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
+		// console.log('새로운 Access Token:', access_token);
+		// console.log('Expires In:', expires_in); // 초 단위 (예: 3600)
 		return data;
 	} catch (error) {
 		console.error('Access Token 갱신 중 오류 발생:', error);
@@ -262,14 +262,14 @@ export async function refreshAccessToken() {
 
 
 export async function loginCheck(profile: any) {
-	console.log('=== loginCheck === profile : ', profile);
+	// console.log('=== loginCheck === profile : ', profile);
 
 	for (let key in user) {
 		delete user[key];
 	}
 
 	if (!profile) {
-		console.log('로그아웃 처리');
+		// console.log('로그아웃 처리');
 		skapi.closeRealtime();
 
 		realtimes.value = [];
@@ -288,7 +288,7 @@ export async function loginCheck(profile: any) {
 
 		refreshAccessToken();
 
-		console.log('메인 페이지 onMounted');
+		// console.log('메인 페이지 onMounted');
 
 		if (localStorage.getItem('refreshToken')) {
 			updateEmails();
@@ -297,7 +297,7 @@ export async function loginCheck(profile: any) {
 			if (!emailCheckInterval) {
 				emailCheckInterval = setInterval(
 					() => {
-						console.log('10초마다 이메일 업데이트');
+						// console.log('10초마다 이메일 업데이트');
 						updateEmails();
 					},
 					10000
@@ -306,7 +306,7 @@ export async function loginCheck(profile: any) {
 		}
 
 		profile = await getEmpDivisionPosition(profile); // user profile에 현재 유저 부서, 직책을 추가 (없으면 추가 안하고 다시 user profile return)
-		console.log({ profile })
+		// console.log({ profile })
 		employeeDict[profile.user_id] = profile;
 
 		if (user.picture) {

@@ -151,7 +151,7 @@ onMounted(() => {
             uploadSrc.value.division_logo = record?.bin.division_logo ? record?.bin.division_logo[0].url : '';
             uploadSrc.value.division_used_seal = record?.bin.division_used_seal ? record?.bin.division_used_seal[0].url : '';
             uploadSrc.value.division_official_seal = record?.bin.division_official_seal ? record?.bin.division_official_seal[0].url : '';
-            console.log({bin});
+            
         }
         loading.value = false;
     }
@@ -188,10 +188,10 @@ let editDivision = async(e) => {
 
     // 이미지 변경시 예전 이미지 모두 삭제
     if(deleteList.value.length > 0) {
-        console.log(deleteList.value);
+        
         deleteList.value.forEach(id => {
             let deleteBinObj = record.bin[id] ? record.bin[id][0] : null;   // 파일 객체 전체
-            console.log({deleteBinObj});
+            
 
             if(deleteBinObj) {
                 post_params.remove_bin.push(deleteBinObj);

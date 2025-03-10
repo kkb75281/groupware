@@ -29,8 +29,6 @@ export async function getAuditList() {
     console.error({ err });
   }
 
-  // console.log({audits});
-
   try {
     if (!audits.list.length) {
       auditListRunning.value = false;
@@ -56,7 +54,7 @@ export async function getAuditList() {
             access_group: 'authorized',
           },
         });
-        // console.log('canceledAudit : ', canceledAudit);
+        
 
         // 회수 여부 체크
         const isCanceled = canceledAudit.list && canceledAudit.list.length > 0;
@@ -71,11 +69,11 @@ export async function getAuditList() {
             reference: list.data.audit_id,
           })
         ).list;
-        // console.log({approvals});
+        
 
         // 결재자 목록에서 각 결재자 ID 가져오기
         const auditors = audit_doc.tags.map((a) => a.replaceAll('_', '-'));
-        // console.log({auditors});
+        
 
         const auditors_type = auditors.reduce((acc, item) => {
           const [key, value] = item.split(':');
@@ -85,13 +83,13 @@ export async function getAuditList() {
 
           return acc;
         }, {});
-        // console.log({auditors_type});
+        
 
         let has_approved_data = true;
 
         auditors.forEach((auditor) => {
           let oa_has_audited_str = null;
-          // console.log({auditor});
+          
 
           approvals.forEach((approval) => {
             if (approval.user_id !== auditor.split(':')[1]) {
@@ -118,7 +116,6 @@ export async function getAuditList() {
         };
       })
     );
-    console.log('=== getAuditList === auditDocs : ', auditDocs);
   } catch (err) {
     auditListRunning.value = false;
     console.error({ err });
@@ -135,7 +132,7 @@ export async function getAuditList() {
 
     auditList.value = newAuditUserList;
 
-    // console.log({auditList: auditList.value});
+    
   } catch (err) {
     auditListRunning.value = false;
     console.error({ err });
@@ -187,7 +184,6 @@ export async function getSendAuditList() {
     );
 
     sendAuditList.value = auditDocs;
-    console.log('내가 올린 결재 서류 가져오기', sendAuditList.value);
   } catch (err) {
     sendAuditListRunning.value = false;
     console.error({ err });

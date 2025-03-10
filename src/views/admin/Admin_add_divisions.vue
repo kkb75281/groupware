@@ -162,29 +162,11 @@ let resigterComp = async(e) => {
     }
     
     let currentData = divisionNameList.value;
-    
-    // let deleteDivisionName = async() => {
-    //     try {
-    //         await skapi.deleteRecords({
-    //             unique_id: '[division_name_list]'
-    //         });
-    //     } catch(e) {
-    //         // alert('부서명 삭제 중 오류가 발생했습니다.');
-    //         throw e;
-    //     }
-
-    //     // createDivisionName();
-    // }
 
     let createDivisionName = async() => {
         if(Object.keys(currentData).length) {
             let keys = Object.keys(currentData);
             let numbers = keys.map(key => parseInt(key.split("_")[1], 10));
-            // let newNumber = 1;
-            
-            // while (numbers.includes(newNumber)) {
-            //     newNumber++; // 겹치지 않는 숫자를 찾을 때까지 증가
-            // }
             let maxNumber = Math.max(...numbers);
             let newNumber = maxNumber + 1; // 가장 큰 번호 다음 숫자 지정
             let newKey = `DVS_${newNumber}`;
@@ -213,25 +195,6 @@ let resigterComp = async(e) => {
 		console.log({err});
 	}).finally(createDivisionName);
 
-    // // 부서명 저장
-    // skapi.getRecords({
-    //     unique_id: '[division_name_list]'
-    // }).then(r => {
-    //     console.log(r);
-    //     if(r.list.length) {
-    //         let data = r.list[0].data;
-    //         if(data) {
-    //             currentData = data;
-    //         }
-    //         deleteDivisionName();
-    //     }
-    // }).catch(e => {
-    //     console.log({e})
-    //     if(e.code === 'NOT_EXISTS') {
-    //         createDivisionName();
-    //     }
-    // })
-
     //form data에 이미지 파일 추가
     skapi.postRecord(formData, {
         table: {
@@ -240,12 +203,9 @@ let resigterComp = async(e) => {
         },
         index: {
             name: 'divisionName',
-            // value: ext.data.division_name,
             value: ext.data.division_name.replace(/\//g, '_')
         }
     }).then((r) => {
-        console.log('=== resigterComp === r : ', r);
-
         divisions.value[r.record_id] = r; // divisions.value에 추가
 
 		const divisionId = makeSafe(r.record_id);

@@ -22,8 +22,6 @@ export let getStampList = async (refresh = false) => {
       },
     });
 
-    console.log('도장 === getStampList === res : ', JSON.parse(JSON.stringify(res)));
-
     if (res.list.length) {
       uploadedStamp.value = res.list[0].bin.stamp_data;
       uploadedRecordId.value = res.list[0].record_id;
@@ -31,8 +29,6 @@ export let getStampList = async (refresh = false) => {
     }
   } catch (e) {
     getStampListRunning.value = false;
-
-    console.log({ e });
 
     if (e.code === 'NOT_EXISTS') {
       uploadedStamp.value = [];

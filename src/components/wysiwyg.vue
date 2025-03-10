@@ -116,7 +116,6 @@
 				if (c.commandTracker) {
 					// 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
 					wysiwyg.export().then(r => {
-						// console.log('r', r);
 						emit('update:content', r.html);
 					});
 				}

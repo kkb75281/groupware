@@ -22,28 +22,26 @@ export async function checkNotificationPermission() {
 	onlyUserGesture.value = false;
 
 	if (Notification.permission === "granted") {
-		console.log("알림이 허용되어 있습니다.");
+		// console.log("알림이 허용되어 있습니다.");
 		onlyUserGesture.value = false;
 	} else if (Notification.permission === "denied") {
-		console.log("알림이 차단되어 있습니다.");
+		// console.log("알림이 차단되어 있습니다.");
 		onlyUserGesture.value = false;
 	} else if (Notification.permission === "default") {
-		console.log("알림 권한이 아직 설정되지 않았습니다.");
+		// console.log("알림 권한이 아직 설정되지 않았습니다.");
 		function isSafari() {
 			const userAgent = navigator.userAgent;
 			return /^((?!chrome|android).)*safari/i.test(userAgent);
 		}
 
 		if (isSafari()) {
-			console.log("현재 브라우저는 Safari입니다.");
+			// console.log("현재 브라우저는 Safari입니다.");
 			onlyUserGesture.value = true;
 		} else {
-			console.log("현재 브라우저는 Safari가 아닙니다.");
+			// console.log("현재 브라우저는 Safari가 아닙니다.");
 			setNotificationPermission();
 		}
 	}
-
-	console.log('checkNotificationPermission - complete');
 
 	return Notification.permission;
 }
@@ -369,7 +367,6 @@ export const getNewsletterList = async (refresh = false) => {
 
 	if (res && res.list) {
 		newsletterList.value = res.list;
-		console.log('newsletterList.value : ', newsletterList.value);
 	}
 
 	return newsletterList.value;
@@ -405,22 +402,20 @@ export async function subscribeNotification() {
 		serviceWorkerRegistMsg.value = "";
 		navigator.serviceWorker.getRegistrations().then(registrations => {
 			registrations.forEach(registration => {
-				console.log('Service Worker Script URL:', registration.active?.scriptURL);
+				// console.log('Service Worker Script URL:', registration.active?.scriptURL);
 			});
 		});
 	}
 
 	const permission = await checkNotificationPermission();
 
-	// const permission = await Notification.requestPermission();
-	console.log({ permission });
 	if (permission !== "granted") {
 		console.error("Permission not granted for notifications");
 		return;
 	}
 	else {
 		let hasSub = window.localStorage.getItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`);
-		console.log({ hasSub, user });
+
 		if (hasSub === user?.user_id) {
 			console.error("Already subscribed");
 			return;
@@ -439,11 +434,10 @@ export async function subscribeNotification() {
 		})
 		.then((sub) => sub.toJSON()); // Convert to plain object
 
-	console.log("Subscription object:", subscription); // Debugging
+	// console.log("Subscription object:", subscription); // Debugging
 	// window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
 
 	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
-	console.log({ response })
 
 	let user_local_data = {
 		user_id: user.user_id,

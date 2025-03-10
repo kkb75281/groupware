@@ -161,7 +161,6 @@ const getEmpList = async () => {
                 access_group: 1
             },
         });
-		// console.log('=== getEmpList === workTime : ', workTime);
 
 		if(!workTime.list.length) {
 			loading.value = false;
@@ -170,8 +169,6 @@ const getEmpList = async () => {
 
         // 기준 근무시간 가져오기
         const getTimestampFromTimeString = (timeString) => {
-            // console.log('=== getTimestampFromTimeString === timeString : ', timeString);
-
             // 현재 날짜 가져오기
             const today = new Date();
 
@@ -259,7 +256,6 @@ const getEmpList = async () => {
         });
 
         const results = await Promise.all(empPromises);
-		console.log('=== getEmpList === results : ', results);
         newEmpList.push(...results);
 
         return newEmpList;
@@ -394,7 +390,6 @@ onMounted(async () => {
     if(res.length > 0) {
         employee.value = res.filter(emp => emp.approved.split(':')[1] !== 'suspended');
     }
-    // console.log('=== onMounted === employee.value : ', employee.value);
 });
 </script>
 

@@ -30,7 +30,7 @@ const router = createRouter({
 		{
 			path: '/login',
 			beforeEnter: (to, from, next) => {
-				console.log('beforeEnter for /login', { user });
+				// console.log('beforeEnter for /login', { user });
 				if (Object.keys(user).length) {
 					next({ name: 'home' });
 					return;

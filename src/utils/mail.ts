@@ -156,8 +156,8 @@ function openGmailAppOrWeb(link:string | null, show = false) {
 		if(show) {
 			// Gmail 앱 내에서 특정 이메일 보기 (현재 Gmail 앱의 URL 스킴으로는 지원되지 않음, 웹 버전으로 폴백)
 			gmailWebUrl = link;
-			console.log('특정 이메일 보기 : ', gmailWebUrl);
-			console.log('특정 이메일 보기 : ', show);
+			// console.log('특정 이메일 보기 : ', gmailWebUrl);
+			// console.log('특정 이메일 보기 : ', show);
 		} else {
 			// 특정 이메일 주소 메일 작성하는 경우
 			gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
@@ -188,7 +188,7 @@ function openGmailAppOrWeb(link:string | null, show = false) {
             // Gmail 앱이 열리지 않으면 웹 버전으로 폴백
             setTimeout(() => {
                 if (!appOpened) {
-                    console.log("Gmail app not opened, redirecting to web version...");
+                    // console.log("Gmail app not opened, redirecting to web version...");
                     window.open(gmailWebUrl, "_blank");
                 }
             }, fallbackTimeout);
@@ -200,7 +200,7 @@ function openGmailAppOrWeb(link:string | null, show = false) {
         } else {
             // 기타 플랫폼에서는 웹 버전으로 이동
             window.open(gmailWebUrl, "_blank");
-			console.log('웹 버전 열림')
+			// console.log('웹 버전 열림')
         }
     } catch (error) {
         console.error("Failed to open Gmail app, redirecting to web version...", error);

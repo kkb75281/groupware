@@ -150,7 +150,6 @@ getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l
 
 	let emp = res[0];
 	currentEmp.value = emp;
-	console.log({emp});
 	
 	currentEmpTags.value.emp_dvs = emp.division || '';
 	currentEmpTags.value.emp_pst = emp.position || '';
