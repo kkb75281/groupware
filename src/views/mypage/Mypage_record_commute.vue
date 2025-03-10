@@ -273,7 +273,6 @@ const saveCommuteRecord = async (record, isUpdate = false) => {
     };
 
     const res = await skapi.postRecord(record, config);
-		console.log('=== saveCommuteRecord === res : ', res);
 
     return res.list ? res.list[0] : res; // list가 있으면 첫 번째 항목 반환, 아니면 res 그대로 반환
   } catch (error) {
@@ -300,8 +299,8 @@ const startWork = async () => {
   // 이미 오늘 출근한 이력이 있을 경우
   if (isCommuted) {
     const checkMaxHour = addTimeToTimestamp(lastCommute, {
-      // hours: maxHour
-      seconds: 5,
+      hours: maxHour
+      // seconds: 5,
     });
 
     // 출근시간으로부터 16시간이 지나기 전까지는 출근 재기록 불가
@@ -391,14 +390,14 @@ const endWork = async () => {
 
   // 퇴근 기록 가능한 최대 시간 (출근시간으로부터 16시간이 기준)
   const maxEndTime = addTimeToTimestamp(value.data.startTimeStamp, {
-    // hours: maxHour
-    seconds: 70,
+    hours: maxHour
+    // seconds: 70,
   });
 
   // 새로운 퇴근 기록 가능한 시간
   const newEndTime = addTimeToTimestamp(maxEndTime, {
-    // hours: 2
-    seconds: 5,
+    hours: 2
+    // seconds: 5,
   });
 
   // 마스터가 정한 출근시간 범위 안에 있는지 확인
@@ -424,41 +423,39 @@ const endWork = async () => {
       commuteStorage && commuteStorage.length > 0 && commuteStorage[0];
 
     if (newEndWork) {
-      // if (lastCommute && lastCommute.data.date === getDate()) {
+      if (lastCommute && lastCommute.data.date === getDate()) {
 
-      //   // 이전 퇴근기록에서 업데이트
-      //   const config = {
-      //     record_id: lastCommute.record_id
-      //   };
+        // 이전 퇴근기록에서 업데이트
+        const config = {
+          record_id: lastCommute.record_id
+        };
 
-      //   await skapi.postRecord(value.data, config).then((res) => {
-			// 		console.log('=== skapi.postRecord === res : ', res);
-			// 	});
+        await skapi.postRecord(value.data, config);
 
-      //   // 상태 업데이트
-      //   const updatedRecord = {
-      //     record_id: lastCommute.record_id,
-      //     data: value.data
-      //   };
+        // 상태 업데이트
+        const updatedRecord = {
+          record_id: lastCommute.record_id,
+          data: value.data
+        };
 
-      //   let notActiveDataList = commuteRecords.value.filter(
-      //     (record) => record.data.startTimeStamp !== value.data.startTimeStamp
-      //   );
+        let notActiveDataList = commuteRecords.value.filter(
+          (record) => record.data.startTimeStamp !== value.data.startTimeStamp
+        );
 
-      //   if (notActiveDataList.length < 1) {
-      //     const notLastCommutes = commuteStorage.slice(0, commuteRecords.value.length - 1);
-      //     notActiveDataList = notLastCommutes;
-      //   }
+        if (notActiveDataList.length < 1) {
+          const notLastCommutes = commuteStorage.slice(0, commuteRecords.value.length - 1);
+          notActiveDataList = notLastCommutes;
+        }
 
-      //   const commutes = [updatedRecord, ...notActiveDataList];
+        const commutes = [updatedRecord, ...notActiveDataList];
 
-      //   commuteStorage = commutes;
-      //   commuteRecords.value = commuteStorage;
-      //   timeRecords.value = value.data;
+        commuteStorage = commutes;
+        commuteRecords.value = commuteStorage;
+        timeRecords.value = value.data;
 
-      //   alert('퇴근 기록이 저장되었습니다.');
-      //   return;
-      // }
+        alert('퇴근 기록이 저장되었습니다.');
+        return;
+      }
 
       alert('새로운 출퇴근 기록이 시작됩니다.');
 
@@ -508,9 +505,7 @@ const endWork = async () => {
       record_id: value.record_id
     };
 
-    await skapi.postRecord(value.data, config).then((res) => {
-			console.log('=== skapi.postRecord === res : ', res);
-		});
+    await skapi.postRecord(value.data, config);
 
     // 상태 업데이트
     const updatedRecord = {
@@ -674,8 +669,6 @@ onMounted(async () => {
     commuteStorage = [];
     onRecord();
   }
-
-	console.log('=== commuteStorage ===', commuteStorage);
 });
 </script>
 
