@@ -69,6 +69,12 @@ export async function getAuditList() {
             reference: list.data.audit_id,
           })
         ).list;
+
+        // 반려 여부 확인
+        const isRejected = approvals.find((approval) => approval.data.approved === 'reject');
+
+        // 결재요청자가 직접 회수 or 결재자 중 반려자가 있을 경우 회수로 처리
+        const auditCanceled = isCanceled || isRejected;
         
 
         // 결재자 목록에서 각 결재자 ID 가져오기
@@ -103,8 +109,7 @@ export async function getAuditList() {
           });
 
           if (!oa_has_audited_str) {
-            // audit_doc.my_state = '대기중';
-            audit_doc.my_state = isCanceled ? '회수됨' : '대기중';
+            audit_doc.my_state = auditCanceled ? '회수됨' : '대기중';
           }
         });
 
@@ -112,7 +117,7 @@ export async function getAuditList() {
           ...audit_doc,
           approved: has_approved_data,
           draftUserId: list.user_id,
-          isCanceled: isCanceled, // 회수 여부 추가
+          isCanceled: auditCanceled, // 회수 여부 추가
         };
       })
     );
@@ -129,6 +134,7 @@ export async function getAuditList() {
       ...auditor,
       user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId),
     }));
+    console.log('newAuditUserList : ', newAuditUserList);
 
     auditList.value = newAuditUserList;
 
@@ -162,8 +168,6 @@ export async function getSendAuditList() {
       }
     );
 
-    // sendAuditList.value = audits.list;
-
     const auditDocs = await Promise.all(
       audits.list.map(async (audit) => {
         // 회수 여부 확인
@@ -176,9 +180,22 @@ export async function getSendAuditList() {
 
         const isCanceled = canceledAudit.list.length > 0; // 회수된 문서가 있는지 체크
 
+        // 반려 여부 확인
+        const approvals = (
+          await skapi.getRecords({
+            table: {
+              name: 'audit_approval',
+              access_group: 'authorized',
+            },
+            reference: audit.record_id,
+          })
+        ).list;
+
+        const isRejected = approvals.some((approval) => approval.data.approved === 'reject');
+
         return {
           ...audit,
-          isCanceled, // 회수 여부 저장
+          isCanceled: isCanceled || isRejected, // 회수 여부 저장
         };
       })
     );

@@ -63,7 +63,7 @@ hr
 													input(type="text" v-model="record.data.remark" @blur="updateDesc(record)")
 
 //- 테스트용 삭제 버튼 (추후 삭제)
-button.btn.sm(@click="testDelete") delete
+//- button.btn.sm(@click="testDelete") delete
 </template>
 
 <script setup lang="ts">
@@ -89,22 +89,22 @@ const router = useRouter();
 const route = useRoute();
 
 // 테스트용 삭제 함수 (추후 삭제)
-const testDelete = async() => {
-  const res = await fetchCommuteRecords();
-  console.log('=== testDelete === res : ', res.list);
+// const testDelete = async() => {
+//   const res = await fetchCommuteRecords();
+//   console.log('=== testDelete === res : ', res.list);
 
-  res.list.forEach(record => {
-    console.log(record.data.date);
+//   res.list.forEach(record => {
+//     console.log(record.data.date);
 
-    if(record.data.date === '2025-03-09') {
-      const config = {
-        record_id: record.record_id
-      };
+//     if(record.data.date === '2025-03-09') {
+//       const config = {
+//         record_id: record.record_id
+//       };
 
-      skapi.deleteRecords(config);
-    }
-  })
-};
+//       skapi.deleteRecords(config);
+//     }
+//   })
+// };
 
 // 출퇴근 기록 관련
 interface IWorkFormat {
