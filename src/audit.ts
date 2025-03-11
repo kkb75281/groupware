@@ -94,8 +94,7 @@ export async function getAuditList() {
         let has_approved_data = true;
 
         auditors.forEach((auditor) => {
-          let oa_has_audited_str = null;
-          
+          let oa_has_audited_str = null;          
 
           approvals.forEach((approval) => {
             if (approval.user_id !== auditor.split(':')[1]) {
@@ -209,7 +208,7 @@ export async function getSendAuditList() {
   sendAuditListRunning.value = false;
 }
 
-export const goToAuditDetail = (e, auditId, router) => {
+export const goToAuditDetail = (e: any, auditId: any, router: any) => {
   // if(e.target.classList.contains('label-checkbox')) return;
   router.push({ name: 'audit-detail', params: { auditId } });
 

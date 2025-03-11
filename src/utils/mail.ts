@@ -1,5 +1,5 @@
 import { refreshAccessToken } from "../main";
-async function fetchGmailEmails(accessToken) {
+async function fetchGmailEmails(accessToken: any) {
     if (!accessToken) {
         console.error('액세스 토큰이 없어 이메일을 가져올 수 없습니다.');
         return [];
@@ -29,7 +29,7 @@ async function fetchGmailEmails(accessToken) {
 
         // 메일 상세 정보 모두 가져오기
         const detailedMails = await Promise.all(
-            messages.map(message => fetchMessageDetails(accessToken, message.id, message.threadId))
+            messages.map((message: any) => fetchMessageDetails(accessToken, message.id, message.threadId))
         );
         // console.log('detailedMails : ', detailedMails);
 
@@ -44,7 +44,7 @@ async function fetchGmailEmails(accessToken) {
     }
 }
 
-async function fetchMessageDetails(accessToken, messageId, threadId) {
+async function fetchMessageDetails(accessToken: any, messageId: any, threadId: any) {
     try {
         const response = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${messageId}`, {
             headers: {
@@ -67,9 +67,9 @@ async function fetchMessageDetails(accessToken, messageId, threadId) {
         const data = await response.json();
         const headers = data.payload.headers;
         // console.log('=== fetchMessageDetails === headers : ', headers);
-        const subjectHeader = headers.find(header => header.name === 'Subject');
-        const fromHeader = headers.find(header => header.name === 'From');
-        const dateHeader = headers.find(header => header.name === 'Date');
+        const subjectHeader = headers.find((header: any) => header.name === 'Subject');
+        const fromHeader = headers.find((header: any) => header.name === 'From');
+        const dateHeader = headers.find((header: any) => header.name === 'Date');
         const rawDate = dateHeader ? dateHeader.value : null;
         const snippet = data.snippet;
         const hasAttachment = checkForAttachments(data.payload);
@@ -107,7 +107,7 @@ async function fetchMessageDetails(accessToken, messageId, threadId) {
     }
 }
 
-function extractSenderName(fromValue) {
+function extractSenderName(fromValue: any) {
     const nameRegex = /"([^"]+)"|([^<]+)</;
     const match = nameRegex.exec(fromValue);
 
@@ -115,7 +115,7 @@ function extractSenderName(fromValue) {
 }
 
 // 메일 날짜 형식 변환 (ex. 2025/1/1)
-function formatMailDate(dateString) {
+function formatMailDate(dateString: any) {
     const date = new Date(dateString);
     const year = date.getFullYear() % 100; // 연도의 마지막 두 자리 (2025 -> 25)
     const month = date.getMonth() + 1;    // 월 (0부터 시작하므로 +1)
@@ -125,10 +125,10 @@ function formatMailDate(dateString) {
 }
 
 // 첨부파일 확인
-function checkForAttachments(payload) {
+function checkForAttachments(payload: any) {
     // 첨부파일이 있는 경우 filename과 mimeType이 존재
     if (payload.parts) {
-        return payload.parts.some(part =>
+        return payload.parts.some((part: any) =>
             part.filename && part.filename.length > 0
         );
     }
@@ -136,7 +136,7 @@ function checkForAttachments(payload) {
 }
 
 // 날짜 문자열을 타임스탬프로 변환
-function convertToTimestamp(dateTimeString) {
+function convertToTimestamp(dateTimeString: any) {
     // 날짜 객체 생성
     const date = new Date(dateTimeString);
     // 타임스탬프로 변환 (밀리초 단위)

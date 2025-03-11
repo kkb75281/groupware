@@ -214,7 +214,7 @@ export const createReadListRecord = (read = false) => {
 		}
 	)
 }
-export const readNoti = async (rt) => {
+export const readNoti = async (rt: any) => {
 	// 기존 readAudit 초기화
 	for (let key in readAudit.value) {
 		delete readAudit.value[key];
@@ -281,7 +281,7 @@ export async function updateEmails(refresh = false) {
 }
 
 // 이메일 알림
-export const addEmailNotification = (emailData) => {
+export const addEmailNotification = (emailData: any) => {
     // console.log('=== addEmailNotification === emailData : ', emailData);
     let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
 
@@ -382,7 +382,7 @@ export async function subscribeNotification() {
 		localStorage.setItem(skapi.service + '-vapid', vapid);
 	}
 
-	function urlBase64ToUint8Array(base64String) {
+	function urlBase64ToUint8Array(base64String: any) {
 		const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
 		const base64 = (base64String + padding)
 			.replace(/\-/g, "+")

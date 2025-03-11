@@ -22,7 +22,7 @@ export let openStampDialog = () => {
 export let closeStampDialog = () => {
     openStampModal.value = false;
 }
-export let handleStampBlob = async (makeStampImage) => {
+export let handleStampBlob = async (makeStampImage: any) => {
 	handleStampBlobComplete.value = false;
 	if(!stampName.value) {
 		await getStampList();
