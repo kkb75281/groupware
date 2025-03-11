@@ -87,7 +87,7 @@ import Loading from "@/components/loading.vue";
 const router = useRouter();
 const route = useRoute();
 
-const loading = ref(true);
+// const loading = ref(true);
 const employee = ref([]);
 const selectedEmp = ref(null);
 const searchFor = ref('name');
