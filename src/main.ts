@@ -21,7 +21,7 @@ export let buildTime = import.meta.env.VITE_BUILD_TIME;
 
 let serviceID = import.meta.env.VITE_SERVICE_ID;
 
-console.log(`[Main App] Build Time: ${buildTime} 바뀐 코드 입니다.`);
+console.log("바뀐 버전 입니다. 14:57");
 
 const skapi = new Skapi(
 	import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID,
