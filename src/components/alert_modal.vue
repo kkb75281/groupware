@@ -10,7 +10,7 @@ dialog.alert-modal(ref='dialog' @keydown.esc.prevent="emit('close')")
         slot
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { onMounted, ref, watch } from 'vue';
 
 let props = defineProps({

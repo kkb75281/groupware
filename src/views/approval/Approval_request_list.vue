@@ -52,7 +52,7 @@ hr
 
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main';
@@ -71,7 +71,7 @@ const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
 
-let showSendAuditDoc = (e:Event, audit: any) => {
+let showSendAuditDoc = (e, audit) => {
 	let searchCurrentAuditNotis = realtimes.value.filter(rt => rt?.audit_info?.audit_doc_id === audit.record_id);
 
 	// 읽지 않은 알람만 필터링

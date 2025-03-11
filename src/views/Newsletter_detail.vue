@@ -17,7 +17,7 @@ template(v-else)
 		button.btn.bg-gray(@click="router.push('/newsletter')") 목록으로
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { skapi } from '@/main';
@@ -42,7 +42,7 @@ let getCurrentNewsletter = async() => {
 
 	loading.value = true;
 
-	let findNewsletter = newsletterList.value.find((news: { message_id: string; }) => news.message_id === message_id);
+	let findNewsletter = newsletterList.value.find((news) => news.message_id === message_id);
 
 	if(findNewsletter) {
 		currentNewsletter.value = findNewsletter;
@@ -53,7 +53,7 @@ let getCurrentNewsletter = async() => {
 			searchFor: 'message_id',
 			value: message_id,
 			group: 'public'
-		}).then((res: any) => {
+		}).then((res) => {
 			if(res && res.list.length > 0) {
 				currentNewsletter.value = res.list[0];
 			}
@@ -64,7 +64,7 @@ let getCurrentNewsletter = async() => {
 	}
 }
 
-async function fetchHtml(url: string) {
+async function fetchHtml(url) {
 	loading.value = true;
 
 	try {

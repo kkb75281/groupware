@@ -53,7 +53,7 @@ hr
 						td {{ convertTimestampToDateMillis(news.timestamp) }}
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { type Ref, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { newsletterList, getNewsletterList } from '@/notifications'
@@ -68,14 +68,8 @@ const router = useRouter();
 const route = useRoute();
 
 let loading = ref(false);
-let searchFor: Ref<"subject" | "timestamp" | "message_id" | "read" | "complaint"> = ref('subject');
-let searchValue: Ref<{
-	subject: string;
-	timestamp: {
-		start: string;
-		end: string;
-	}
-}> = ref({
+let searchFor = ref('subject');
+let searchValue = ref({
 	subject: '',
 	timestamp: {
 		start: '',
@@ -114,16 +108,6 @@ let searchNewsletter = async() => {
 	}
 
 	loading.value = false;
-
-	// if(searchValue.value.subject === '') {
-	// 	await getNewsletterList(true);
-	// 	loading.value = false;
-	// } else {
-	// 	newsletterList.value = newsletterList.value.filter((news: any) => {
-	// 		return news.subject.includes(searchValue.value);
-	// 	});
-	// 	loading.value = false;
-	// }
 }
 
 let sendAdminNewsletter = async() => {

@@ -14,7 +14,7 @@
           use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { ref } from 'vue';
 import { skapi } from '@/main';
 </script>

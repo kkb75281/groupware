@@ -6,11 +6,11 @@
 		Department(v-for="(department, index) in organigram" :key="index" :useCheckbox="useCheckbox" :department="department" :selectedAuditors="selectedAuditors" @update-check="onDepartmentCheck")
 </template>
 
-<script lang="ts" setup>
-import { type Ref, ref, watch, nextTick, onMounted } from 'vue'
+<script setup>
+import { ref, watch, nextTick, onMounted } from 'vue'
 import { skapi } from '@/main'
 import { user } from '@/user'
-import { type Organigram, organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram'
+import { organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram'
 
 import Loading from '@/components/loading.vue'
 import Department from '@/components/department.vue'
@@ -72,7 +72,7 @@ onMounted(() => {
 	getOrganigram();
 });
 
-function onDepartmentCheck(obj: { type: string; target: any; isChecked: boolean }) {
+function onDepartmentCheck(obj) {
 	const { type, target, isChecked } = obj;
 
 	if (type === 'department') {
@@ -87,12 +87,12 @@ function onDepartmentCheck(obj: { type: string; target: any; isChecked: boolean 
 
 		// 체크된 멤버를 checkedUsers 배열에 추가
 		if (isChecked) {
-			if(!checkedUsers.value.some((user: any) => user.data.user_id === target.data.user_id)) {
+			if(!checkedUsers.value.some((user) => user.data.user_id === target.data.user_id)) {
 				checkedUsers.value.push(target);
 			}
 		} else {
 			// 체크 해제된 멤버를 checkedUsers 배열에서 제거
-			const index = checkedUsers.value.findIndex((user: any) => user.data.user_id === target.data.user_id);
+			const index = checkedUsers.value.findIndex((user) => user.data.user_id === target.data.user_id);
 			if (index !== -1) {
 				checkedUsers.value.splice(index, 1);
 			}
@@ -106,22 +106,22 @@ function onDepartmentCheck(obj: { type: string; target: any; isChecked: boolean 
 }
 
 // 자식(하위 부서 및 멤버) 상태를 업데이트하는 함수
-function updateChildrenCheckStatus(department: any, isChecked: boolean) {
+function updateChildrenCheckStatus(department, isChecked) {
 	department.isChecked = isChecked;
 
 	// 멤버 상태 동기화
 	if (department.members && department.members.length > 0) {
-		department.members.forEach((member: any) => {
+		department.members.forEach((member) => {
 			member.isChecked = isChecked;
 
 			// 체크된 멤버를 checkedUsers 배열에 추가
 			if (isChecked) {
-				if(!checkedUsers.value.some((user: any) => user.data.user_id === member.data.user_id)) {
+				if(!checkedUsers.value.some((user) => user.data.user_id === member.data.user_id)) {
 					checkedUsers.value.push(member);
 				}
 			} else {
 				// 체크 해제된 멤버를 checkedUsers 배열에서 제거
-				const index = checkedUsers.value.findIndex((user: any) => user.data.user_id === member.data.user_id);
+				const index = checkedUsers.value.findIndex((user) => user.data.user_id === member.data.user_id);
 				if (index !== -1) {
 					checkedUsers.value.splice(index, 1);
 				}
@@ -131,14 +131,14 @@ function updateChildrenCheckStatus(department: any, isChecked: boolean) {
 
 	// 하위 부서 상태 동기화
 	if (department.subDepartments && department.subDepartments.length > 0) {
-		department.subDepartments.forEach((sub: any) => {
+		department.subDepartments.forEach((sub) => {
 			updateChildrenCheckStatus(sub, isChecked);
 		});
 	}	
 }
 
 // 부모 부서 상태를 업데이트하는 함수
-function updateParentCheckStatus(item: any) {
+function updateParentCheckStatus(item) {
 
 	const parentDepartment = findParentDepartment(item); // 부모 부서를 찾는 함수
 	if (!parentDepartment) return;
@@ -146,12 +146,12 @@ function updateParentCheckStatus(item: any) {
 	// 모든 멤버가 체크되었는지 확인
 	const allMembersChecked =
 		parentDepartment.members.length === 0 ||
-		parentDepartment.members.every((member: any) => member.isChecked);
+		parentDepartment.members.every((member) => member.isChecked);
 
 	// 모든 하위 부서가 체크되었는지 확인
 	const allSubDepartmentsChecked =
 		parentDepartment.subDepartments.length === 0 ||
-		parentDepartment.subDepartments.every((sub: any) => sub.isChecked);
+		parentDepartment.subDepartments.every((sub) => sub.isChecked);
 
 	// 부모 부서의 체크 상태 업데이트
 	parentDepartment.isChecked = allMembersChecked && allSubDepartmentsChecked;
@@ -161,16 +161,12 @@ function updateParentCheckStatus(item: any) {
 		parentDepartment.isChecked = false;
 	}
 
-
-
-
-
 	// 부모 부서의 부모 상태도 동기화
 	updateParentCheckStatus(parentDepartment);
 }
 
 // 부모 부서를 찾는 함수
-function findParentDepartment(item: any): any {
+function findParentDepartment(item) {
 	for (const department of organigram.value) {
 		if (department.members.includes(item) || department.subDepartments.includes(item)) {
 			return department;
@@ -184,7 +180,7 @@ function findParentDepartment(item: any): any {
 	return null;
 }
 
-function findParentDepartmentRecursive(department: any, item: any): any {
+function findParentDepartmentRecursive(department, item) {
 	if (department.members.includes(item) || department.subDepartments.includes(item)) {
 		return department;
 	}
@@ -205,7 +201,7 @@ watch(() => props.selectedEmployees, async(nv, ov) => {
 		if(nv && nv.length > 0) {
 			await nextTick();
 
-			nv.forEach((user: any) => {
+			nv.forEach((user) => {
 				onDepartmentCheck({type: 'member', target: user, isChecked: true});
 			});
 		}

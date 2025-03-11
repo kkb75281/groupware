@@ -64,7 +64,7 @@ hr
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from "vue-router";
 import { ref, computed } from "vue";
 import { skapi } from "@/main";

@@ -83,7 +83,7 @@
 				button.btn.btn-reset-password(type="submit" value="Reset Password") 변경
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { skapi } from "@/main";
 import { ref, nextTick } from 'vue';
@@ -135,7 +135,7 @@ let forgotPassword = async (event) => {
         await skapi.forgotPassword({ email: email.value });
         step.value++;
     }
-    catch (err:any) {
+    catch (err) {
         alert(err.message);
 		email.value = '';
     }

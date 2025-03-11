@@ -66,7 +66,7 @@ hr
 //- button.btn.sm(@click="testDelete") delete
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, watch } from 'vue';
 import { skapi } from '@/main';
@@ -81,7 +81,7 @@ import {
 } from '@/utils/time';
 import { user, makeSafe } from '@/user';
 // import { divisionNameList } from '@/division';
-import type { Ref } from 'vue';
+// import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
 
@@ -107,17 +107,17 @@ const route = useRoute();
 // };
 
 // 출퇴근 기록 관련
-interface IWorkFormat {
-  date: string | null;
-  startTime: string | null;
-  endTime: string | null;
-  startTimeStamp: number | null;
-  endTimeStamp: number | null;
-  dailyCommuteTime: number | null;
-}
+// interface IWorkFormat {
+//   date: string | null;
+//   startTime: string | null;
+//   endTime: string | null;
+//   startTimeStamp: number | null;
+//   endTimeStamp: number | null;
+//   dailyCommuteTime: number | null;
+// }
 
 // 초기화
-const initWorkFormat: IWorkFormat = {
+const initWorkFormat = {
   date: null,
   startTime: null,
   endTime: null,

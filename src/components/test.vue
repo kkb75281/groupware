@@ -32,7 +32,7 @@ h4(style="margin-bottom: 1rem;") {{buildTime}}
 
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { onMounted, ref } from "vue";
 import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications";
 import { skapi, realtimeTestingMsg, buildTime } from "@/main";

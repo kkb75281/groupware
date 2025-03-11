@@ -235,14 +235,14 @@ br
                 button.btn.btn-register(type="submit" @click="registerEmp") 등록
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { divisionNameList } from '@/division'
 import { getEmpDivisionPosition, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
-import type { Ref } from 'vue';
+// import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
 
@@ -267,7 +267,7 @@ let selectedEmpTags = ref({
     emp_dvs: '',
     emp_pst: '',
 });
-let searchFor: Ref<"name" | "division" | "email" | "timestamp"> = ref('name');
+let searchFor = ref('name');
 let searchValue = ref('');
 let searchPositionValue = ref('');
 let uploadFile = ref([]);
@@ -397,8 +397,8 @@ let refresh = () => {
     getEmpList(empListType.value, true);
 }
 
-let displayDivisionOptions = (selectName: string) => {
-    let divisionList = document.querySelector(`select[name="${selectName}"]`) as HTMLSelectElement;
+let displayDivisionOptions = (selectName) => {
+    let divisionList = document.querySelector(`select[name="${selectName}"]`);
 
     // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
     divisionList.innerHTML = ''; // 기존 옵션 초기화
@@ -513,7 +513,7 @@ let getAdditionalData = () => {
         if(res.list.length > 0) {
             let fileList = [];
 
-            function getFileUserId(str: string) {
+            function getFileUserId(str) {
                 if (!str) return '';
 
                 return str.split('/')[3]

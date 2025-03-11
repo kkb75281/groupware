@@ -241,7 +241,7 @@ template(v-if="step > 1")
 
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { skapi, mainPageLoading, RealtimeCallback } from "@/main";
@@ -297,7 +297,7 @@ const auditForms = ref([
 ]); // 결재 양식 목록
 const backupSelected = ref(null);	// 선택된 결재자 백업
 const same_division_auditors = ref({});	// 동일 부서 직원 목록
-let send_auditors_arr:string[] = [];
+let send_auditors_arr = [];
 
 const uploadedFile = ref([]);
 const backupUploadFile = ref([]);
@@ -356,7 +356,7 @@ const closeRowModal = () => {
 	isRowModalOpen.value = false;
 };
 
-const removeRow = (event, index: number) => {
+const removeRow = (event, index) => {
     addRows.value.splice(index, 1);
 };
 
@@ -452,7 +452,7 @@ const addRow = () => {
 }
 
 // 직원 부서 가져오기
-const getEmpDivision = async(userId: string) => {
+const getEmpDivision = async(userId) => {
     if(!userId) return;
 
     await skapi.getRecords({
@@ -508,14 +508,14 @@ const saveAuditor = () => {
 };
 
 // 결재자 제거
-const removeAuditor = (user:object, type:string) => {
+const removeAuditor = (user, type) => {
 	const newAuditors = selectedUsers.value.filter(u => u.data.user_id !== user.data.user_id);
 
     selectedUsers.value = newAuditors;
 };
 
 // 에디터 준비
-const handleEditorReady = (status: boolean) => {
+const handleEditorReady = (status) => {
   editorIsReady.value = status;
 };
 
@@ -607,7 +607,7 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 };
 
 // 결재 요청을 생성하고 알림을 보내는 함수
-const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: string[]) => {
+const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
     if (!audit_id || !auditor_id) return;
 
 	// 결재 요청
@@ -633,7 +633,7 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors: strin
         user_id: auditor_id,
     });
 
-    let to_audit = (document.getElementById('to_audit') as HTMLInputElement).value;
+    let to_audit = (document.getElementById('to_audit')).value;
 
 	let postRealtimeBody = {
 		text: `${user.name}님께서 결재를 올렸습니다.`,

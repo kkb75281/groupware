@@ -15,7 +15,7 @@ br
 Organigram(:useCheckbox="false")
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { ref } from 'vue';
 import { organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram'
 

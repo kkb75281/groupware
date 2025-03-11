@@ -191,7 +191,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { skapi, RealtimeCallback } from '@/main';
@@ -259,7 +259,7 @@ const selectedAuditors = ref({
 });
 
 watch(
-  () => route.params.auditId as string,
+  () => route.params.auditId,
   async (nv, ov) => {
     if (nv !== ov) {
       auditId.value = nv;
@@ -323,7 +323,7 @@ const goToPrev = () => {
   }
 };
 
-function formatTimestampToDate(timestamp: number) {
+function formatTimestampToDate(timestamp) {
   const date = new Date(timestamp); // timestamp를 Date 객체로 변환
 
   const year = date.getFullYear(); // 연도 가져오기
@@ -431,7 +431,7 @@ let createStamp = () => {
   const ctx = canvas.getContext('2d');
 
   // 도장 생성 함수
-  function drawStamp(name: string) {
+  function drawStamp(name) {
     const radius = 30; // 원의 반지름
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -618,7 +618,7 @@ const getAuditDetail = async () => {
       return userInfo.list[0];
     };
 
-    let processAuditors = async (role: string) => {
+    let processAuditors = async (role) => {
       if (auditors?.[role]) {
         for (let uid of auditors[role]) {
           let user = await getAuditorInfo(uid);
@@ -768,7 +768,7 @@ const postApproval = async () => {
         access_group: 'authorized'
       },
       reference: auditId.value,
-      tags: [(userId as string).replaceAll('-', '_')]
+      tags: [(userId).replaceAll('-', '_')]
     });
     console.log('결재 === postApproval === res : ', res);
 
@@ -1076,7 +1076,7 @@ const canceledAudit = async () => {
 onMounted(() => {
   window.addEventListener('resize', updateScreenSize);
 
-  auditId.value = route.params.auditId as string;
+  auditId.value = route.params.auditId;
   getAuditDetail();
   loadStylesheet();
 });

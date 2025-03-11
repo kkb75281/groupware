@@ -52,7 +52,7 @@ details(:class="{ 'disabled-department': isDepartmentDisabled }")
       )
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { computed, onMounted } from 'vue';
 
 const props = defineProps({

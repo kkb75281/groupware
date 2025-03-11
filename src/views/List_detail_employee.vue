@@ -112,7 +112,7 @@ br
 br  
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, nextTick } from 'vue';
 import { skapi, mainPageLoading } from '@/main';
@@ -142,7 +142,7 @@ let access_group = {
 };
 
 const userId = route.params.userId;
-getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l: any) => getEmpDivisionPosition(l)))).then(res=>{
+getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l) => getEmpDivisionPosition(l)))).then(res=>{
 	if(res.length === 0) {
 		window.alert('해당 직원을 찾을 수 없습니다.');
 		router.push('/list-employee');
@@ -170,7 +170,7 @@ let getAdditionalData = () => {
 		if(res.list.length > 0) {
 			let fileList = [];
 
-			function getFileUserId(str: string) {
+			function getFileUserId(str) {
 				if (!str) return '';
 
 				return str.split('/')[3]
@@ -196,7 +196,7 @@ getAdditionalData();
 
 // 부서 목록 옵션으로 가져오기 (회원 수정시 사용)
 let displayDivisionOptions = () => {
-	let divisionList = document.querySelector(`select[name="division"]`) as HTMLSelectElement;
+	let divisionList = document.querySelector(`select[name="division"]`);
 
 	// 기존 옵션을 제거하지 않고 새로운 옵션을 추가
 	divisionList.innerHTML = ''; // 기존 옵션 초기화
@@ -238,7 +238,7 @@ let displayDivisionOptions = () => {
 	divisionList.disabled = false;
 }
 
-let sendMail = async (mail: string) => {
+let sendMail = async (mail) => {
 	const maillink = encodeURIComponent(mail);
 
     openGmailAppOrWeb(maillink);

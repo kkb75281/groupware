@@ -13,7 +13,7 @@
     button.btn(@click="sendStampBlob") {{ onlySign ? '완료' : '등록' }}
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { openStampModal, uploadingStamp, handleStampBlob, stampName, onlyStamp } from '@/components/make_stamp';
 

@@ -59,7 +59,7 @@ hr
 
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { skapi } from '@/main';
@@ -100,7 +100,7 @@ const filterAuditList = computed(() => {
 	});
 	});
 
-	const showAuditDoc = (e:Event, audit: any) => {
+	const showAuditDoc = (e, audit) => {
 	// if(audit.isCanceled) return;
 
 	const searchCurrentAuditNoti = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id)[0];

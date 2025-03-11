@@ -162,7 +162,7 @@ section.componet-wrap
 
 </template>
 
-<script setup lang="ts">
+<script setup>
 
 </script>
 
