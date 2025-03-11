@@ -239,27 +239,16 @@ const customRows = ref([]);
 
 // 결재 회수 가능 여부 확인
 const isCancelPossible = computed(() => {
-  console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
+  // console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
 
-  // 모든 결재자가 결재를 완료한 경우 회수 불가능 & 반려자가 한명이라도 있는 경우 회수 가능
-	  if (auditorList.value.every((auditor) => auditor.approved)) {
+  // 모든 결재자가 결재를 완료한 경우에는 회수 불가능
+  if (auditorList.value.every((auditor) => auditor.approved)) {
     console.log('모두 결재 완료!!');
     return false;
-  } else if(auditorList.value.some((auditor) => auditor.approved === 'reject')) {
-		console.log('반려자가 있음!!');
-		return true;
-	} else {
-		console.log('결재 진행중!!');
-		return true;
-	}
-
-  // if (auditorList.value.every((auditor) => auditor.approved)) {
-  //   console.log('모두 결재 완료!!');
-  //   return false;
-  // } else {
-  //   console.log('결재 진행중!!');
-  //   return true;
-  // }
+  } else {
+    console.log('결재 진행중!!');
+    return true;
+  }
 });
 
 // 결재자 정보 저장
@@ -400,17 +389,26 @@ let uploadStampImage = async (imageUrl) => {
     throw e;
   }
 
+  // if(uploadGeneratedStamp.value?.bin && Object.keys(uploadGeneratedStamp.value?.bin).length && uploadGeneratedStamp.value?.bin?.stamp_data?.length) {
+  // 	uploadGeneratedStampUrl = uploadGeneratedStamp.value.bin.stamp_data.filter((stamp) => stamp.filename === uploadingStamp.value.name)[0].url;
+  // 	console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
+  // }
+
   if (
     uploadGeneratedStamp.value?.bin &&
     Object.keys(uploadGeneratedStamp.value?.bin).length &&
     uploadGeneratedStamp.value?.bin?.stamp_data?.length
   ) {
+    // console.log({onlyStampFile: onlyStampFile.value})
+    // console.log({name: uploadingStamp.value.name})
     let searchStamp = uploadGeneratedStamp.value.bin.stamp_data.filter(
       (stamp) => stamp.filename === uploadingStamp.value.name
     );
+    // console.log({searchStamp})
     if (searchStamp && searchStamp.length) {
       uploadGeneratedStampUrl = searchStamp[0].url;
     }
+    console.log('uploadGeneratedStampUrl : ', uploadGeneratedStampUrl);
   }
 
   stempType.value = 'stamp';
@@ -673,19 +671,19 @@ const getAuditDetail = async () => {
 
         if (approval) {
           const approvedStr = approval.data.approved ? '결재함' : '반려함';
-          console.log('approvedStr : ', approvedStr);
-          console.log('approval : ', approval);
 
-          let stampFile;
+		  console.log({approval})
 
-          // 도장 파일 가져오기
-          if(approval.data.approved === 'approve') {
-          stampFile = await skapi.getFile(approval.data.stamp, {
-            dataType: 'endpoint'
-          });
-        } else {
-            stampFile = null;
-        }
+		  let stampFile;
+
+		  // 도장 파일 가져오기
+		  if(approval.data.approved === 'approve') {
+			stampFile = await skapi.getFile(approval.data.stamp, {
+				dataType: 'endpoint'
+			});
+		  } else {
+			stampFile = null;
+		  }
 
           approvalUserList.push({
             user_id: userId,
@@ -721,7 +719,6 @@ const getAuditDetail = async () => {
 
     // 전체 결재자 리스트
     auditorList.value = newAuditUserList;
-		console.log('auditorList.value : ', auditorList.value);
 
     // auditorList 결재, 합의 순서대로
     auditorList.value.sort((a, b) => {
@@ -733,14 +730,6 @@ const getAuditDetail = async () => {
     // newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
     approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
     agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
-
-		console.log('approverList.value : ', approverList.value);
-		console.log('agreerList.value : ', agreerList.value);
-
-		// 결재자 중 반려자가 한명이라도 있으면 회수 실행
-		if (newAuditUserList.some((auditor) => auditor.approved === 'reject')) {
-			isCanceled.value = true;
-		}
   } catch (error) {
     getAuditDetailRunning.value = false;
     console.error(error);
@@ -749,7 +738,7 @@ const getAuditDetail = async () => {
 
 // 결재 하기
 const postApproval = async () => {
-  if (isPosting || isCanceled.value) return; // 중복 호출 방지
+  if (isPosting) return; // 중복 호출 방지
   isPosting = true;
 
   try {
@@ -758,16 +747,6 @@ const postApproval = async () => {
     const userId = user.user_id;
     const approved = approveAudit.value ? 'approve' : 'reject';
     const approvedDate = new Date().getTime();
-
-		// 반려일 경우 자동 회수 처리 추가
-		if (approved === 'reject') {
-			try {
-				// 반려로 인한 자동 회수 처리 (reason, isAutoCancel 파라미터 전달)
-				await canceledAudit('반려', true);
-			} catch (error) {
-				console.error('자동 회수 처리 중 오류:', error);
-			}
-		}
 
     if (approved === 'approve' && (!selectedStamp.value || !selectedStampComplete.value)) {
       alert('도장을 선택해주세요.');
@@ -789,7 +768,7 @@ const postApproval = async () => {
         access_group: 'authorized'
       },
       reference: auditId.value,
-      tags: [userId.replaceAll('-', '_')]
+      tags: [(userId).replaceAll('-', '_')]
     });
     console.log('결재 === postApproval === res : ', res);
 
@@ -857,8 +836,7 @@ const postApproval = async () => {
         console.log('결재알림기록 === postRecord === res : ', res);
       });
 
-    // window.alert('결재가 완료되었습니다.');
-		window.alert(approved === 'reject' ? '반려 처리되었으며, 결재가 자동으로 회수되었습니다.' : '결재가 완료되었습니다.');
+    window.alert('결재가 완료되었습니다.');
     closeModal();
     getAuditDetail();
   } catch (error) {
@@ -961,7 +939,7 @@ const previewAudit = () => {
 };
 
 // 결재 회수 함수
-const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
+const canceledAudit = async () => {
   console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
   console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
 
@@ -1011,7 +989,7 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   };
 
   let postRealtimeBody = {
-	text: isAutoCancel ? `결재가 반려되어 자동으로 회수되었습니다.` : `${user.name}님께서 결재를 회수했습니다.`,
+	text: `${user.name}님께서 결재를 회수했습니다.`,
 	type: 'audit',
 	id: auditId.value
 }
@@ -1025,8 +1003,7 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
     audit_info: {
       audit_type: 'canceled',
       to_audit: auditDoContent.value?.data?.to_audit,
-      audit_doc_id: auditId.value,
-			reason: reason  // 회수 사유
+      audit_doc_id: auditId.value
     }
   };
 
@@ -1034,42 +1011,39 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   try {
     const results = await Promise.all(
       allAuditors.map(async (auditor) => {
-				// 자기 자신에게는 알림을 보내지 않음 (반려자가 알림을 자기 자신에게 보내는 경우 방지)
-        if (isAutoCancel && auditor.replaceAll('_', '-') === user.user_id) {
-          return { auditor, skipped: true };
-        }
 
-			// 실시간 알림 전송
-			let realtimeResult;
-			
-			try {
+		let realtimeResult;
+		// 실시간 알림 전송
+		try {
+			realtimeResult = await skapi.postRealtime(
+			  postRealtimeData,
+			  auditor.replaceAll('_', '-'),
+			  {
+          title: '알림',
+          // body: JSON.stringify(postRealtimeBody)
+          body: `${user.name}님께서 결재를 회수했습니다.`,
+          config: {
+            always: true, // 무조건 알림 받기
+          },
+			  }
+			);
+		} catch (error) {
+			await skapi.closeRealtime();
+			skapi.connectRealtime(RealtimeCallback).finally(async()=>{
 				realtimeResult = await skapi.postRealtime(
-					postRealtimeData,
-					auditor.replaceAll('_', '-'),
-					{
-						title: '알림',
-						body: isAutoCancel ? `결재가 반려되어 자동으로 회수되었습니다.` : `${user.name}님께서 결재를 회수했습니다.`,
-						config: {
-							always: true, // 무조건 알림 받기
-						},
-					}
+				postRealtimeData,
+				auditor.replaceAll('_', '-'),
+				{
+					title: '알림',
+					// body: JSON.stringify(postRealtimeBody)
+					body: `${user.name}님께서 결재를 회수했습니다.`,
+          config: {
+            always: true, // 무조건 알림 받기
+          },
+				}
 				);
-			} catch (error) {
-				await skapi.closeRealtime();
-				skapi.connectRealtime(RealtimeCallback).finally(async()=>{
-					realtimeResult = await skapi.postRealtime(
-					postRealtimeData,
-					auditor.replaceAll('_', '-'),
-					{
-						title: '알림',
-						body: isAutoCancel ? `결재가 반려되어 자동으로 회수되었습니다.` : `${user.name}님께서 결재를 회수했습니다.`,
-						config: {
-							always: true, // 무조건 알림 받기
-						},
-					}
-					);
-				});
-			}
+			});
+		}
 
         // 알림 기록 저장
         const recordResult = await skapi.postRecord(postRecordData, {
@@ -1090,41 +1064,6 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
     console.log('결재회수 알림 전송 완료:', results);
   } catch (error) {
     console.error('결재회수 알림 전송 중 오류:', error);
-  }
-
-	// 자동 회수 경우 결재요청자한테도 알림 전송
-  if (isAutoCancel) {
-    try {
-      const senderUserId = auditDoContent.value?.user_id;
-      // 결재 요청자가 현재 사용자(반려자)와 다른 경우에만 알림 전송
-      if (senderUserId && senderUserId !== user.user_id) {
-        // 실시간 알림 전송
-        const realtimeResult = await skapi.postRealtime(
-          postRealtimeData,
-          senderUserId,
-          {
-            title: '알림',
-            body: `${user.name}님이 결재를 반려하여 문서가 자동으로 회수되었습니다.`,
-            config: {
-              always: true, // 무조건 알림 받기
-            },
-          }
-        );
-        
-        // 알림 기록 저장
-        const recordResult = await skapi.postRecord(postRecordData, {
-          readonly: true,
-          table: {
-            name: `realtime:${senderUserId.replaceAll('-', '_')}`,
-            access_group: 'authorized'
-          }
-        });
-        
-        console.log('요청자 자동 회수 알림 전송 완료:', { senderUserId, realtimeResult, recordResult });
-      }
-    } catch (error) {
-      console.error('요청자 자동 회수 알림 전송 중 오류:', error);
-    }
   }
 
   window.alert('결재가 회수되었습니다.');

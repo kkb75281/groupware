@@ -1,4 +1,4 @@
-import { Reactive, reactive, type Ref, ref, watch } from "vue";
+import { type Reactive, reactive, type Ref, ref, watch } from "vue";
 import { skapi } from "@/main";
 import { user } from "@/user";
 import { getUserInfo } from "@/employee";
@@ -60,7 +60,7 @@ export const readAudit: Ref<{
 		send_auditors?: [];
 		approval?: string;
 	}
-}> = ref({
+} & Record<string, any>> = ref({
 	noti_id: '',
 	noti_type: '',
 	send_date: 0, // 결재 알람 보낸 시간

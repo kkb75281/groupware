@@ -39,7 +39,7 @@ const props = defineProps({
 	}
 });
 
-let checkedUsers = ref<{}>([]);
+const checkedUsers = ref([]);
 
 // 모든 부서와 멤버의 체크박스 상태를 초기화하는 함수 추가
 function resetAllCheckStatus() {

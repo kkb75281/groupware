@@ -103,12 +103,12 @@ export async function getAuditList() {
 
             if (approval.user_id === user.user_id) {
               oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
-              audit_doc.my_state = oa_has_audited_str;
+              (audit_doc as any).my_state = oa_has_audited_str;
             }
           });
 
           if (!oa_has_audited_str) {
-            audit_doc.my_state = auditCanceled ? '회수됨' : '대기중';
+            (audit_doc as any).my_state = auditCanceled ? '회수됨' : '대기중';
           }
         });
 
