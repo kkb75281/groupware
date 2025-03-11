@@ -3,7 +3,7 @@
     template(v-if="step < 4")
         router-link.logo(to="/")
             svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-groups-fill")
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-password")
             
     template(v-if="step === 3")
         h2.title 비밀번호 변경 완료
@@ -151,8 +151,8 @@ let changePassword = async () => {
         margin-bottom: 1rem;
 
         svg {
-			width: 2.5rem;
-			height: 2.5rem;
+			width: 2rem;
+			height: 2rem;
 		}
     }
 

@@ -3,7 +3,7 @@ nav#navbar(ref="navbar")
     .navbar-wrap
         .logo
             router-link.img-logo(to="/")
-                img(src="/icon-192.png" style="width: 2rem;")
+                img(src="/img_fgworks_logo.png")
             button.btn-close(@click="toggleNavbarFold")
                 .icon
                     svg
@@ -353,15 +353,17 @@ watch(() => route.fullPath, (nv) => {
         flex-wrap: nowrap;
         align-items: center;
         justify-content: space-between;
-        padding: 0 20px;
+        padding: 1rem 20px 0;
         margin-bottom: 30px;
         cursor: pointer;
+       
+        a {
+            padding: 0 16px;
+        }
 
         .img-logo {
-            // width: 2.5rem;
-            // height: 2.5rem;
-            padding: 0 16px;
-
+            width: 12rem;
+            
             svg {
                 width: 2rem;
                 height: 2rem;

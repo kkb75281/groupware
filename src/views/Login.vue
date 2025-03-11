@@ -4,9 +4,7 @@
 	.overlay(v-if="loading")
 		Loading
 
-	img.logo(src="/icon-192.png" style="width: 2rem;")
-
-	h2.title Groupware
+	img.logo(src="/img_fgworks_logo.png" style="width: 12rem;")
 
 	hr
 
@@ -210,30 +208,15 @@
 		max-width: 500px;
 		margin: 0 auto;
 		padding: 0 1rem;
-
 		height: 100vh;
 		min-height: calc(100vh - 4.7244rem);
 		display: flex;
 		justify-content: center;
 		position: relative;
 		flex-direction: column;
-		// top: 2.3622rem;
 
 		.logo {
 			display: block;
-			margin-bottom: 0.5rem;
-
-			svg {
-				width: 3rem;
-				height: 3rem;
-			}
-		}
-
-		.title {
-			font-size: 1.5rem;
-			// margin-bottom: 1.5rem;
-			// padding-bottom: 1.5rem;
-			// border-bottom: 1px solid var(--gray-color-400);
 		}
 
 		.input-wrap {
