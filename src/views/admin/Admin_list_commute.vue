@@ -78,7 +78,6 @@ hr
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { ref, computed, onMounted, watch, nextTick } from "vue";
-import type { Ref } from 'vue';
 import { skapi } from "@/main";
 import { loading, divisionNameList, getDivisionData } from "@/division";
 import { user, makeSafe } from '@/user';
