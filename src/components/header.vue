@@ -12,7 +12,7 @@ header#header
 
 	button.btn-profile(type="button" ref="btnProfile" @click="openProfile")
 		span.user-name {{ user.name }}
-		span.hello 님, 안녕하세요!
+		span.hello
 		.thumbnail
 			template(v-if="profileImage")
 				img(:src="profileImage" alt="img-profile")

@@ -22,24 +22,24 @@ export async function checkNotificationPermission() {
 	onlyUserGesture.value = false;
 
 	if (Notification.permission === "granted") {
-		// console.log("알림이 허용되어 있습니다.");
+		console.log("알림이 허용되어 있습니다.");
 		console.log("hererererere")
 		onlyUserGesture.value = false;
 	} else if (Notification.permission === "denied") {
-		// console.log("알림이 차단되어 있습니다.");
+		console.log("알림이 차단되어 있습니다.");
 		onlyUserGesture.value = false;
 	} else if (Notification.permission === "default") {
-		// console.log("알림 권한이 아직 설정되지 않았습니다.");
+		console.log("알림 권한이 아직 설정되지 않았습니다.");
 		function isSafari() {
 			const userAgent = navigator.userAgent;
 			return /^((?!chrome|android).)*safari/i.test(userAgent);
 		}
 
 		if (isSafari()) {
-			// console.log("현재 브라우저는 Safari입니다.");
+			console.log("현재 브라우저는 Safari입니다.");
 			onlyUserGesture.value = true;
 		} else {
-			// console.log("현재 브라우저는 Safari가 아닙니다.");
+			console.log("현재 브라우저는 Safari가 아닙니다.");
 			setNotificationPermission();
 		}
 	}
@@ -396,14 +396,14 @@ export async function subscribeNotification() {
 	}
 
 	if (!("serviceWorker" in navigator)) {
-		// console.error("Service workers are not supported in this browser.");
+		console.error("Service workers are not supported in this browser.");
 		serviceWorkerRegistMsg.value = "배너, 배지 기능을 지원하지 않는 브라우저입니다.";
 		return;
 	} else {
 		serviceWorkerRegistMsg.value = "";
 		navigator.serviceWorker.getRegistrations().then(registrations => {
 			registrations.forEach(registration => {
-				// console.log('Service Worker Script URL:', registration.active?.scriptURL);
+				console.log('Service Worker Script URL:', registration.active?.scriptURL);
 			});
 		});
 	}
@@ -435,7 +435,7 @@ export async function subscribeNotification() {
 		})
 		.then((sub) => sub.toJSON()); // Convert to plain object
 
-	// console.log("Subscription object:", subscription); // Debugging
+	console.log("Subscription object:", subscription); // Debugging
 	// window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
 
 	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
