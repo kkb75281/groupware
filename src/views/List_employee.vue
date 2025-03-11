@@ -242,7 +242,6 @@ import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { divisionNameList } from '@/division'
 import { getEmpDivisionPosition, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
-// import type { Ref } from 'vue';
 
 import Loading from '@/components/loading.vue';
 
@@ -339,14 +338,14 @@ watch(searchValue, (nv) => {
 
 async function arrangeEmpDivisionPosition(li) {
     // console.log({li})
-    let list = await Promise.all(li.map((l: any) => {
+    let list = await Promise.all(li.map((l) => {
         if(l) {
             return getEmpDivisionPosition(l).catch(err => err)
         }
         return null;
     }));
     let toReturn = [];
-    list.forEach((l: any) => {
+    list.forEach((l) => {
         if (l) {
             toReturn.push(l);
         }
