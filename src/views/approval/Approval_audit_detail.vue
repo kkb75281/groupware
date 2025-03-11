@@ -237,21 +237,34 @@ const isCanceled = ref(false); // 결재 회수 여부
 const getAuditDetailRunning = ref(false);
 const customRows = ref([]);
 
+// 반려됨 상태 확인
+const isRejected = computed(() => {
+  // 모든 결재자가 결재를 완료했고, 그 중 반려자가 있는 경우
+  const allAudited = auditorList.value.every((auditor) => auditor.approved);
+  const hasRejector = auditorList.value.some((auditor) => auditor.approved === 'reject');
+  
+  return allAudited && hasRejector;
+});
+
 // 결재 회수 가능 여부 확인
 const isCancelPossible = computed(() => {
   console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
 
-  // 모든 결재자가 결재를 완료한 경우 회수 불가능 & 반려자가 한명이라도 있는 경우 회수 가능
-	  if (auditorList.value.every((auditor) => auditor.approved)) {
+  // 모든 결재자가 결재를 완료한 경우
+  if (auditorList.value.every((auditor) => auditor.approved)) {
     console.log('모두 결재 완료!!');
+    
+    // 모든 결재자가 결재를 완료했고 반려자가 있는 경우 회수 불가
+    if (auditorList.value.some((auditor) => auditor.approved === 'reject')) {
+      console.log('반려자가 있고 모두 결재 완료!!');
+      return false;
+    }
+    
     return false;
-  } else if(auditorList.value.some((auditor) => auditor.approved === 'reject')) {
-		console.log('반려자가 있음!!');
-		return true;
-	} else {
-		console.log('결재 진행중!!');
-		return true;
-	}
+  } else {
+    console.log('결재 진행중!!');
+    return true;
+  }
 
   // if (auditorList.value.every((auditor) => auditor.approved)) {
   //   console.log('모두 결재 완료!!');
@@ -721,7 +734,7 @@ const getAuditDetail = async () => {
 
     // 전체 결재자 리스트
     auditorList.value = newAuditUserList;
-		console.log('auditorList.value : ', auditorList.value);
+		// console.log('auditorList.value : ', auditorList.value);
 
     // auditorList 결재, 합의 순서대로
     auditorList.value.sort((a, b) => {
@@ -734,13 +747,44 @@ const getAuditDetail = async () => {
     approverList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'approver');
     agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreer');
 
-		console.log('approverList.value : ', approverList.value);
-		console.log('agreerList.value : ', agreerList.value);
+		// console.log('approverList.value : ', approverList.value);
+		// console.log('agreerList.value : ', agreerList.value);
 
-		// 결재자 중 반려자가 한명이라도 있으면 회수 실행
-		if (newAuditUserList.some((auditor) => auditor.approved === 'reject')) {
-			isCanceled.value = true;
-		}
+    // 모든 결재자가 결재를 완료했는지 확인
+    const allAudited = auditorList.value.every((auditor) => auditor.approved);
+    
+    // 반려자가 있는지 확인
+    const hasRejector = auditorList.value.some((auditor) => auditor.approved === 'reject');
+    
+    //마지막 결재자가 반려했는지 확인 (가장 마지막으로 결재한 사람)
+    let isLastRejector = false;
+    
+    if (hasRejector && allAudited && auditorList.value.length > 0) {
+      // 결재 시간 기준으로 정렬
+      const sortedAuditors = [...auditorList.value].sort((a, b) => {
+        return (b.date || 0) - (a.date || 0);
+      });
+      
+      // 가장 마지막에 결재한 사람 찾기
+      const lastAuditor = sortedAuditors[0];
+      
+      // 마지막 결재자가 반려했는지 확인
+      if (lastAuditor && lastAuditor.approved === 'reject') {
+        isLastRejector = true;
+      }
+    }
+    
+    // 회수 상태 결정
+    // - 모든 결재자가 결재를 완료했고, 마지막 결재자가 반려했으면 회수하지 않음 (반려 상태)
+    // - 결재 도중 반려자가 있으면 회수 상태
+    if (hasRejector && !allAudited) {
+      isCanceled.value = true; // 결재 도중 반려 - 회수 처리
+    } else if (hasRejector && allAudited && !isLastRejector) {
+      isCanceled.value = true; // 마지막 결재자가 아닌 사람이 반려 - 회수 처리
+    } else {
+      // 마지막 결재자가 반려했거나 모두 승인 - 회수 안함
+      isCanceled.value = isCanceled.value; // 기존 회수 상태 유지 (수동 회수만 반영)
+    }
   } catch (error) {
     getAuditDetailRunning.value = false;
     console.error(error);
@@ -760,14 +804,43 @@ const postApproval = async () => {
     const approvedDate = new Date().getTime();
 
 		// 반려일 경우 자동 회수 처리 추가
-		if (approved === 'reject') {
-			try {
-				// 반려로 인한 자동 회수 처리 (reason, isAutoCancel 파라미터 전달)
-				await canceledAudit('반려', true);
-			} catch (error) {
-				console.error('자동 회수 처리 중 오류:', error);
-			}
-		}
+		// if (approved === 'reject') {
+		// 	try {
+		// 		// 반려로 인한 자동 회수 처리 (reason, isAutoCancel 파라미터 전달)
+		// 		await canceledAudit('반려', true);
+		// 	} catch (error) {
+		// 		console.error('자동 회수 처리 중 오류:', error);
+		// 	}
+		// }
+
+    // 반려 시 자동 회수 처리를 위한 조건 검사
+    if (approved === 'reject') {
+      // 현재 모든 결재자 정보 가져오기
+      const auditors = JSON.parse(auditDoContent.value.data.auditors);
+      const allApprovers = [...(auditors.approvers || []), ...(auditors.agreers || [])];
+      
+      // 현재까지 결재한 사람 수 (자신 제외)
+      const currentApprovals = await skapi.getRecords({
+        table: {
+          name: 'audit_approval',
+          access_group: 'authorized',
+        },
+        reference: auditId.value,
+      });
+      
+      // 자신의 결재로 모든 결재자가 결재를 완료하는지 확인
+      const willCompleteWithMyApproval = currentApprovals.list.length + 1 >= allApprovers.length;
+      
+      // 모든 결재자가 결재를 완료하지 않는 경우만 자동 회수 처리
+      if (!willCompleteWithMyApproval) {
+        try {
+          // 반려로 인한 자동 회수 처리 (reason, isAutoCancel 파라미터 전달)
+          await canceledAudit('반려', true);
+        } catch (error) {
+          console.error('자동 회수 처리 중 오류:', error);
+        }
+      }
+    }
 
     if (approved === 'approve' && (!selectedStamp.value || !selectedStampComplete.value)) {
       alert('도장을 선택해주세요.');
@@ -858,7 +931,8 @@ const postApproval = async () => {
       });
 
     // window.alert('결재가 완료되었습니다.');
-		window.alert(approved === 'reject' ? '반려 처리되었으며, 결재가 자동으로 회수되었습니다.' : '결재가 완료되었습니다.');
+		// window.alert(approved === 'reject' ? '반려 처리되었으며, 결재가 자동으로 회수되었습니다.' : '결재가 완료되었습니다.');
+    window.alert(approved === 'reject' ? '반려 처리되었습니다.' : '결재가 완료되었습니다.');
     closeModal();
     getAuditDetail();
   } catch (error) {

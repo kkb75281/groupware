@@ -73,15 +73,52 @@ export async function getAuditList() {
         // 반려 여부 확인
         const isRejected = approvals.find((approval) => approval.data.approved === 'reject');
 
-        // 결재요청자가 직접 회수 or 결재자 중 반려자가 있을 경우 회수로 처리
-        const auditCanceled = isCanceled || isRejected;
+        // 모든 결재자가 결재를 완료했는지 확인
+        const auditors = JSON.parse(audit_doc.data.auditors);
+        const allApprovers = [...(auditors.approvers || []), ...(auditors.agreers || [])];
+        const allApproved = allApprovers.length > 0 && allApprovers.length === approvals.length;
+
+        // 모든 결재자가 결재를 완료한 상태에서 가장 마지막에 결재한 사람이 반려했는지 확인
+        let isLastRejector = false;
         
+        if (isRejected && allApproved) {
+          const sortedApprovals = [...approvals].sort((a, b) => {
+            return (b.data.date || 0) - (a.data.date || 0);
+          });
+          
+          // 가장 마지막에 결재한 사람 찾기
+          const lastApproval = sortedApprovals[0];
+          
+          if (lastApproval && lastApproval.data.approved === 'reject') {
+            isLastRejector = true;
+          }
+        }
+        
+        // 반려 or 회수 구분
+        let documentStatus = '';
+
+        if (isCanceled) {
+          documentStatus = '회수됨'; // 결재요청자가 직접 회수한 경우
+        } else if (isRejected && !allApproved) {
+          documentStatus = '회수됨'; // 결재 진행 중에 반려자가 있는 경우
+        } else if (allApproved && isLastRejector) {
+          documentStatus = '반려됨'; // 모든 결재자가 결재를 완료하고 마지막 결재자가 반려한 경우
+        } else if (allApproved) {
+          documentStatus = '완료됨';
+        } else {
+          documentStatus = '진행중';
+        }
+        
+        // 결재자가 반려했지만 마지막 결재자가 아닌 경우에만 자동 회수
+        const shouldAutoCancel = isRejected && !allApproved;
+        
+        // 회수된 문서인지 체크
+        const auditCanceled = isCanceled || shouldAutoCancel;
 
         // 결재자 목록에서 각 결재자 ID 가져오기
-        const auditors = audit_doc.tags.map((a) => a.replaceAll('_', '-'));
+        const auditorTags = audit_doc.tags.map((a) => a.replaceAll('_', '-'));
         
-
-        const auditors_type = auditors.reduce((acc, item) => {
+        const auditors_type = auditorTags.reduce((acc, item) => {
           const [key, value] = item.split(':');
 
           if (!acc[key]) acc[key] = [];
@@ -89,11 +126,10 @@ export async function getAuditList() {
 
           return acc;
         }, {});
-        
 
         let has_approved_data = true;
 
-        auditors.forEach((auditor) => {
+        auditorTags.forEach((auditor) => {
           let oa_has_audited_str = null;          
 
           approvals.forEach((approval) => {
@@ -108,7 +144,8 @@ export async function getAuditList() {
           });
 
           if (!oa_has_audited_str) {
-            (audit_doc as any).my_state = auditCanceled ? '회수됨' : '대기중';
+            // (audit_doc as any).my_state = auditCanceled ? '회수됨' : '대기중';
+            (audit_doc as any).my_state = auditCanceled ? '회수됨' : (allApproved && isLastRejector ? '반려됨' : '대기중');
           }
         });
 
@@ -116,7 +153,10 @@ export async function getAuditList() {
           ...audit_doc,
           approved: has_approved_data,
           draftUserId: list.user_id,
-          isCanceled: auditCanceled, // 회수 여부 추가
+          isCanceled: auditCanceled, // 회수 여부
+          isRejected: allApproved && isLastRejector, // 반려 여부
+          shouldAutoCancel: shouldAutoCancel, // 자동 회수 여부
+          documentStatus: documentStatus, // 문서 상태
         };
       })
     );
@@ -133,11 +173,10 @@ export async function getAuditList() {
       ...auditor,
       user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId),
     }));
-    console.log('newAuditUserList : ', newAuditUserList);
+    // console.log('newAuditUserList : ', newAuditUserList);
 
     auditList.value = newAuditUserList;
 
-    
   } catch (err) {
     auditListRunning.value = false;
     console.error({ err });
@@ -192,9 +231,48 @@ export async function getSendAuditList() {
 
         const isRejected = approvals.some((approval) => approval.data.approved === 'reject');
 
+        // 모든 결재자가 결재를 완료했는지 확인
+        const auditors = JSON.parse(audit.data.auditors);
+        const allApprovers = [...(auditors.approvers || []), ...(auditors.agreers || [])];
+        const allApproved = allApprovers.length > 0 && allApprovers.length === approvals.length;
+        
+        // 마지막 결재자가 반려했는지 확인
+        let isLastRejector = false;
+                
+        if (isRejected && allApproved) {
+          // 모든 결재자가 결재를 완료한 상태에서 반려자가 있는지 확인
+          // 마지막 결재자가 반려했는지 확인
+          const lastApprovalIndex = approvals.length - 1;
+          const lastApproval = approvals[lastApprovalIndex];
+          
+          if (lastApproval && lastApproval.data.approved === 'reject') {
+            isLastRejector = true;
+          }
+        }
+
+        // 자동 회수 여부 결정
+        const shouldAutoCancel = isRejected && !allApproved;
+
+        // 문서 상태 결정
+        let documentStatus = '';
+        if (isCanceled) {
+          documentStatus = '회수됨';
+        } else if (isRejected && !allApproved) {
+          documentStatus = '회수됨'; // 결재 진행 중에 반려자가 있는 경우
+        } else if (allApproved && isLastRejector) {
+          documentStatus = '반려됨'; // 모든 결재자가 결재를 완료하고 마지막 결재자가 반려한 경우
+        } else if (allApproved) {
+          documentStatus = '완료됨';
+        } else {
+          documentStatus = '진행중';
+        }
+
         return {
           ...audit,
-          isCanceled: isCanceled || isRejected, // 회수 여부 저장
+          isCanceled: isCanceled, // 회수 여부
+          isRejected: allApproved && isRejected, // 반려 여부 (마지막 결재자가 반려한 경우)
+          shouldAutoCancel: shouldAutoCancel, // 자동 회수 여부
+          documentStatus: documentStatus, // 문서 상태
         };
       })
     );

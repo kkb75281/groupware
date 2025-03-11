@@ -46,8 +46,10 @@ hr
 						td {{ sendAuditList.length - index }}
 						td.left
 							.audit-title {{ audit.data.to_audit }}
-						td
+						//- td
 							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
+						td
+							span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
 						td.drafter(v-show="isDesktop") {{ user.name }}
 
 </template>
@@ -153,6 +155,11 @@ onUnmounted(() => {
         color: var(--warning-color-400);
         border-color: var(--warning-color-400);
     }
+
+	&.canceled {
+		color: var(--gray-color-300);
+		border-color: var(--gray-color-300);
+	}
 }
 
 .table-wrap {
