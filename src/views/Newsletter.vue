@@ -54,7 +54,7 @@ hr
 </template>
 
 <script setup>
-import { type Ref, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { newsletterList, getNewsletterList } from '@/notifications'
 import { convertTimestampToDateMillis } from "@/utils/time";
