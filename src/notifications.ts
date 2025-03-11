@@ -23,6 +23,7 @@ export async function checkNotificationPermission() {
 
 	if (Notification.permission === "granted") {
 		// console.log("알림이 허용되어 있습니다.");
+		console.log("hererererere")
 		onlyUserGesture.value = false;
 	} else if (Notification.permission === "denied") {
 		// console.log("알림이 차단되어 있습니다.");
