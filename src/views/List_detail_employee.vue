@@ -67,7 +67,7 @@ hr
 			p.label 주소
 			input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
 
-		.input-wrap.upload-file
+		.input-wrap.upload-file(v-if="access_group > 98")
 			p.label(style="margin-bottom: 0;") 기타자료
 			template(v-if="!disabled")
 				.btn-upload-file
@@ -158,8 +158,10 @@ getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l
 // 부서 목록 가져오기
 getDivisionNames();
 
-// 추가자료 가져오기    
+// 추가자료 가져오기
 let getAdditionalData = () => {
+    if (user.access_group < 99) return;
+
 	skapi.getRecords({
 		table: {
 			name: 'emp_additional_data',

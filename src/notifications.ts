@@ -435,19 +435,7 @@ export async function subscribeNotification() {
 			.subscribe({
 				userVisibleOnly: true,
 				applicationServerKey: urlBase64ToUint8Array(vapid),
-			}).then((sub) => sub.toJSON())
-	
-			
-			// .subscribe({
-			// 	userVisibleOnly: true,
-			// 	applicationServerKey: urlBase64ToUint8Array(vapid),
-			// })
-			// .then((sub) => sub.toJSON())
-			// .catch(async(err) => {
-			// 	await unsubscribeNotification();
-	
-	
-			// }); // Convert to plain object
+			}).then((sub) => sub.toJSON()) // Convert to plain object
 	
 		console.log("Subscription object:", subscription); // Debugging
 
@@ -457,8 +445,8 @@ export async function subscribeNotification() {
 		await unsubscribeNotification();
 		return subscribeNotification();
 	}
-	// window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
 
+	// window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
 	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
 
 	let user_local_data = {
