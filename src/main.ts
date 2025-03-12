@@ -270,7 +270,8 @@ export async function loginCheck(profile: any) {
 	}
 
 	if (!profile) {
-		// console.log('로그아웃 처리');
+		console.log('로그아웃 처리');
+		await unsubscribeNotification();
 		skapi.closeRealtime();
 
 		realtimes.value = [];
