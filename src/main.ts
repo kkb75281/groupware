@@ -63,7 +63,7 @@ function handleVisibilityChange() {
 		// isTabVisible = false;
 		skapi.closeRealtime();
 		if (emailCheckInterval) {
-			emailCheckInterval.clearInterval();
+			clearInterval(emailCheckInterval);
 			emailCheckInterval = null;
 		}
 	}
@@ -271,9 +271,7 @@ export async function loginCheck(profile: any) {
 
 	if (!profile) {
 		console.log('로그아웃 처리');
-		unsubscribeNotification().then(res => {
-			console.log('unsubscribeNotification : ', res);
-		});
+		unsubscribeNotification();
 		skapi.closeRealtime();
 
 		realtimes.value = [];
@@ -282,7 +280,8 @@ export async function loginCheck(profile: any) {
 		localStorage.removeItem('refreshToken');
 
 		if (emailCheckInterval) {
-			emailCheckInterval.clearInterval();
+			// emailCheckInterval.clearInterval();
+			clearInterval(emailCheckInterval);
 			emailCheckInterval = null;
 		}
 	}
