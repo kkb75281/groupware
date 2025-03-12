@@ -428,14 +428,35 @@ export async function subscribeNotification() {
 	const registration = await navigator.serviceWorker.register(`/wrk.${serviceID}.js`);
 	await navigator.serviceWorker.ready;
 
-	const subscription = await registration.pushManager
-		.subscribe({
-			userVisibleOnly: true,
-			applicationServerKey: urlBase64ToUint8Array(vapid),
-		})
-		.then((sub) => sub.toJSON()); // Convert to plain object
+	let subscription;
 
-	console.log("Subscription object:", subscription); // Debugging
+	try {
+		subscription = await registration.pushManager
+			.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: urlBase64ToUint8Array(vapid),
+			}).then((sub) => sub.toJSON())
+	
+			
+			// .subscribe({
+			// 	userVisibleOnly: true,
+			// 	applicationServerKey: urlBase64ToUint8Array(vapid),
+			// })
+			// .then((sub) => sub.toJSON())
+			// .catch(async(err) => {
+			// 	await unsubscribeNotification();
+	
+	
+			// }); // Convert to plain object
+	
+		console.log("Subscription object:", subscription); // Debugging
+
+	}
+	catch (err) {
+		// console.error("Error subscribing:", err);
+		await unsubscribeNotification();
+		return subscribeNotification();
+	}
 	// window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
 
 	const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
