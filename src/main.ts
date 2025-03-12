@@ -32,14 +32,14 @@ let emailCheckInterval: any = null;
 
 function handleVisibilityChange() {
 	if (document.visibilityState === 'visible') {
-		console.log('탭이 활성화되었습니다.');
+		// console.log('탭이 활성화되었습니다.');
 		// isTabVisible = true;
 
 		// 뱃지 초기화
 		if ('clearAppBadge' in navigator) {
 			navigator.clearAppBadge().then(() => {
 				resetBadgeCount();
-				console.log('뱃지 초기화 완료');
+				// console.log('뱃지 초기화 완료');
 			}).catch((error) => {
 				console.error('Failed to clear app badge:', error);
 			});
@@ -49,7 +49,7 @@ function handleVisibilityChange() {
 
 		if (!realtimeIsConnected && user.user_id) {
 			// 실시간 연결이 끊어진 경우 + 유저 로그인이 있는 경우 다시 연결
-			console.log('다시 연결합니다.');
+			// console.log('다시 연결합니다.');
 			skapi.connectRealtime(RealtimeCallback);
 		}
 		if (user.user_id && !emailCheckInterval && localStorage.getItem('refreshToken')) {
@@ -59,7 +59,7 @@ function handleVisibilityChange() {
 			}, 10000);
 		}
 	} else {
-		console.log('탭이 비활성화되었습니다.');
+		// console.log('탭이 비활성화되었습니다.');
 		// isTabVisible = false;
 		skapi.closeRealtime();
 		if (emailCheckInterval) {
@@ -270,7 +270,7 @@ export async function loginCheck(profile: any) {
 	}
 
 	if (!profile) {
-		console.log('로그아웃 처리');
+		// console.log('로그아웃 처리');
 		unsubscribeNotification();
 		skapi.closeRealtime();
 
@@ -280,7 +280,6 @@ export async function loginCheck(profile: any) {
 		localStorage.removeItem('refreshToken');
 
 		if (emailCheckInterval) {
-			// emailCheckInterval.clearInterval();
 			clearInterval(emailCheckInterval);
 			emailCheckInterval = null;
 		}

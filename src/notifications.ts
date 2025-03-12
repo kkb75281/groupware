@@ -464,6 +464,13 @@ export async function subscribeNotification() {
 }
 
 export async function unsubscribeNotification() {
+	// 서비스 워커 지원 여부 확인
+	if (!("serviceWorker" in navigator)) {
+		console.log("Service workers are not supported in this browser");
+		window.localStorage.removeItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`);
+		return;
+	}
+	
 	const registration = await navigator.serviceWorker.ready;
 	const subscription = await registration.pushManager.getSubscription();
 
