@@ -232,17 +232,11 @@ const router = createRouter({
 							name: 'edit-worktime',
 							component: () => import('@/views/admin/Admin_edit_worktime.vue'), // Admin_edit_worktime,
 						},
-						// {
-						//   path: 'list-employee',
-						//   name: 'list-employee',
-						//   component: () => import('@/views/List_employee.vue'), // List_employee,
-						// },
-						// {
-						//   path: '/detail-employee/:userId',
-						//   name: 'detail-employee',
-						//   component: () => import('@/views/List_detail_employee.vue'), // List_detail_employee,
-						//   props: true,
-						// },
+						{
+							path: 'list-form',
+							name: 'list-form',
+							component: () => import('@/views/admin/Admin_list_form.vue'),  // 결재양식 관리,
+						},
 					],
 				},
 				{

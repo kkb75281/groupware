@@ -212,6 +212,11 @@ const menuList = computed(() => [
                     name: 'list-commute',
                     to: '/admin/list-commute',
                     text: '근태 관리',
+                },
+                {
+                    name: 'list-form',
+                    to: '/admin/list-form',
+                    text: '결재 양식 관리',
                 }
             ]
         }
