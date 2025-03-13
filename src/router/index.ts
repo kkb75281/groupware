@@ -235,7 +235,12 @@ const router = createRouter({
 						{
 							path: 'list-form',
 							name: 'list-form',
-							component: () => import('@/views/admin/Admin_list_form.vue'),  // 결재양식 관리,
+							component: () => import('@/views/admin/Admin_list_form.vue'),  // 마스터가 올린 결재 양식 리스트,
+						},
+						{
+							path: 'form-detail',
+							name: 'form-detail',
+							component: () => import('@/views/admin/Admin_form_detail.vue'),  // 마스터가 올린 결재 양식 리스트 상세,
 						},
 					],
 				},

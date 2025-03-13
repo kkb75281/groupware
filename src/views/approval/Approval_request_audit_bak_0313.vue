@@ -243,7 +243,7 @@ template(v-if="step > 1")
 
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { skapi, mainPageLoading, RealtimeCallback } from "@/main";
 import { user, makeSafe, verifiedEmail } from "@/user";
 import { divisionNameList } from "@/division";
@@ -253,15 +253,6 @@ import Wysiwyg from '@/components/wysiwyg.vue';
 
 const router = useRouter();
 const route = useRoute();
-
-// 결재 작성 페이지의 script 부분에서
-const isTemplateMode = ref(route.query.mode === 'template');
-console.log('isTemplateMode : ', isTemplateMode.value);
-
-// 페이지 제목 변경
-const pageTitle = computed(() => {
-  return isTemplateMode.value ? '결재 양식 등록' : '결재 작성';
-});
 
 const isModalOpen = ref(false);
 const isRowModalOpen = ref(false); // 작성란 추가 모달

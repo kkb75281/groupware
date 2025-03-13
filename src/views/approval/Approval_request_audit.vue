@@ -1,6 +1,6 @@
 <template lang="pug">
 .title
-	h1 결재 작성
+	h1 {{ pageTitle }}
 
 hr
 
@@ -18,16 +18,9 @@ template(v-if="step > 1")
 	.form-wrap
 		form#_el_request_form(@submit.prevent="requestAudit")
 			#printArea
-				//- input(:value="auditTitle" type="hidden" required name="to_audit" hidden)
-
 				.title
 					.input-wrap.input-title
-						//- input#to_audit(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
 						input#to_audit(v-model="auditTitle" type="text" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
-					//- h2(style="text-align:center" :style="{color: !auditTitle ? '#ddd' : 'black', fontWeight: !auditTitle ? '400' : 'bold'}") {{ auditTitle || "결재 제목을 입력해주세요." }}
-					//- .icon(v-if="!showBackStep" @click="showBackStep = !showBackStep")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
 
 				.table-wrap
 					.tb-overflow
@@ -43,11 +36,20 @@ template(v-if="step > 1")
 								tr.pc(v-show="isDesktop")
 									th 작성 일자
 									td
-										.input-wrap
-											input#inp_date(type="date" name="inp_date" v-model="dateValue")
+										template(v-if="isTemplateMode")
+											.input-wrap
+												input#inp_date(type="text" name="inp_date" readonly)
+
+										template(v-else)
+											.input-wrap
+												input#inp_date(type="date" name="inp_date" v-model="dateValue")
 									th 기안자
 									td
-										span.drafter {{ user.name }}
+										template(v-if="isTemplateMode")
+											span.drafter
+										
+										template(v-else)
+											span.drafter {{ user.name }}
 
 								//- 모바일 경우 레이아웃
 								tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
@@ -64,7 +66,7 @@ template(v-if="step > 1")
 								tr(v-if="selectedAuditors.approvers.length === 0 && selectedAuditors.agreers.length === 0 && selectedAuditors.receivers.length === 0" style="height: 119px;")
 									th.essential 결재 라인
 									td.left(colspan="3")
-										span.empty(@click="openModal") 이곳을 눌러 [ 결재/합의/수신참조 ] 라인을 추가해주세요.
+										span.empty(@click="openModal" :style="{ cursor: isTemplateMode ? 'default' : 'pointer' }") 이곳을 눌러 [ 결재/합의/수신참조 ] 라인을 추가해주세요.
 
 								tr.approval(v-if="selectedAuditors.approvers.length > 0")
 									th 결재
@@ -163,11 +165,13 @@ template(v-if="step > 1")
 													li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
 			.button-wrap
-				//- button.btn.outline.bg-gray.btn-print(type="button" @click="previewAudit")
-					.icon(style="padding: 0;")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
-				button.btn(type="submit") 결재요청
+				template(v-if="isTemplateMode")
+					button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/admin/list-form')") 취소
+					button.btn(type="button" @click="saveDocForm") 저장
+
+				template(v-else)
+					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1") 취소
+					button.btn(type="submit") 결재요청
 
 //- Modal - 작성란 추가
 #modal.modal.row-title(v-if="isRowModalOpen" @click="closeRowModal")
@@ -239,11 +243,13 @@ template(v-if="step > 1")
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
 			button.btn.btn-save(type="submit" @click="saveAuditor") 저장
 
+//- 테스트용 삭제 버튼 (추후 삭제)
+//- button.btn.sm(@click="testDelete") delete
 </template>
 
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { skapi, mainPageLoading, RealtimeCallback } from "@/main";
 import { user, makeSafe, verifiedEmail } from "@/user";
 import { divisionNameList } from "@/division";
@@ -253,6 +259,14 @@ import Wysiwyg from '@/components/wysiwyg.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+// 결재 양식 관리 > 등록 경로인지 확인
+const isTemplateMode = ref(route.query.mode === 'template');
+
+// 페이지 제목 변경
+const pageTitle = computed(() => {
+  return isTemplateMode.value ? '결재 양식 등록' : '결재 작성';
+});
 
 const isModalOpen = ref(false);
 const isRowModalOpen = ref(false); // 작성란 추가 모달
@@ -313,14 +327,31 @@ const disabled = ref(false);
 const editorContent = ref('');
 const editorIsReady = ref(false);
 
+// 테스트용 삭제 함수 (추후 삭제)
+// const testDelete = async () => {
+// 	const res = await skapi.deleteRecords({
+// 		table: {
+// 			name: 'audit_form',
+// 			access_group: 1
+// 		},
+// 		record_id: 'UfI1mJ2aX0gD2Bqp',
+// 	});
+
+// 	console.log('=== testDelete === res : ', res);
+// 	console.log('결재 양식 삭제완');
+// }
+
 watch(auditTitle, (nv, ov) => {
 	if(nv) {
 		step.value = 2;
 	}
-})
+});
 
 // 결재라인 모달 열기
 const openModal = () => {
+	// isTemplateMode 경우에는 결재라인 선택 불가
+	if(isTemplateMode.value) return;
+
 	// selectedAuditors 에 있는 모든 유저를 selectedUsers에 추가
 	selectedUsers.value = [];
 	for (const key in selectedAuditors.value) {
@@ -708,9 +739,6 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors) => {
 
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (auditId, userId) => {
-	
-	
-	
     try {
         // 권한 부여
         await grantAuditorAccess({
@@ -825,6 +853,46 @@ const requestAudit = async (e) => {
 		mainPageLoading.value = false;
 	}
 };
+
+// 결재 양식 저장
+const saveDocForm = async () => {
+	console.log('결재 양식 저장');
+
+	try {
+		// 첨부파일 업로드
+        const filebox = document.querySelector('input[name="additional_data"]');
+		const formData = new FormData();
+
+		formData.append('form_title', auditTitle.value);
+		formData.append('form_content', editorContent.value);
+		formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
+
+        if (filebox && filebox.files.length) {
+            Array.from(filebox.files).forEach(file => {
+                formData.append('form_data', file);
+            });
+        }
+	
+		const options = {
+			table: {
+				name: 'audit_form',
+				access_group: 1
+			},
+			index: {
+				name: 'form_title', // 결재 양식 제목. 제목별 검색을 위한 인덱싱
+				value: auditTitle.value.replaceAll(".", "_")
+			},
+		};
+	
+		const res = await skapi.postRecord(formData, options);
+		console.log('=== saveDocForm === res : ', res);
+
+		alert('결재 양식이 저장되었습니다.');
+		router.push('/admin/list-form');
+	} catch (error) {
+		console.error('결재 양식 저장 중 오류 발생: ', error);
+	}
+}
 
 const dateValue = ref(new Date().toISOString().substring(0, 10));
 
@@ -1184,6 +1252,7 @@ onUnmounted(() => {
 		flex: none;
 		width: 2rem;
 		height: 2rem;
+		cursor: pointer;
 		
 		.icon {
 			padding: 0;
@@ -1361,7 +1430,6 @@ onUnmounted(() => {
     font-size: 0.875rem;
     line-height: 1.3;
     color: var(--gray-color-400);
-    cursor: pointer;
 }
 
 .btn {

@@ -15,8 +15,8 @@ hr
                     svg(:class="{'rotate' : loading}")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
                 button.btn.outline.warning(:disabled="!Object.keys(selectedList).length || loading" @click="deleteDocForm") 삭제
-                //- button.btn.outline(:disabled="loading" @click="router.push('/approval/request-audit')") 등록
                 button.btn.outline(:disabled="loading" @click="router.push('/approval/request-audit?mode=template')") 등록
+
     .tb-overflow
         table.table#docForm_list
             colgroup
@@ -37,26 +37,26 @@ hr
                     tr.loading(style="border-bottom: none;")
                         td(colspan="3" style="padding: 0; height: initial;")
                             Loading#loading
-                //- template(v-else-if="Object.keys(divisions).length === 0")
+
+                template(v-else-if="Object.keys(docFormList).length === 0")
                     tr
                         td(colspan="3") 데이터가 없습니다.
-                //- template(v-else)
-                    tr(v-for="(division, keys, index) in divisions" :key="division.record_id")
+                
+                template(v-else)
+                    tr(v-for="(docForm, index) in docFormList" :key="docForm.record_id")
                         td 
                             label.checkbox
-                                input(type="checkbox" name="checkbox" :checked="Object.keys(selectedList).includes(division.record_id)" @click="toggleSelect(division.record_id, division.data.division_name)")
+                                input(type="checkbox" name="checkbox" :checked="Object.keys(selectedList).includes(docForm.record_id)" @click="toggleSelect(docForm.record_id, docForm.data.form_title)")
                                 span.label-checkbox
-                        td.list-num {{ index + 1 }}
-                        td.left 
-                            router-link.go-detail(:to="{ name: 'edit-divisions', query: { record_id: division.record_id } }")
-                                .img-wrap
-                                    img(v-if="division.bin && division.bin.division_logo" :src="division.bin['division_logo'][0].url")
-                                span {{ division.data.division_name }}
+                        td.list-num {{ docFormList.length - index }}
+                        td.left
+                            router-link.go-detail(:to="{ name: 'form-detail', query: { record_id: docForm.record_id } }")
+                                span {{ docForm.data.form_title }}
 </template>
 
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { skapi } from "@/main";
 import Loading from "@/components/loading.vue";
 
@@ -71,25 +71,31 @@ const route = useRoute();
 //     - 만약 아예 새로운 양식으로 결재요청을 하고 싶은 경우엔 ‘새 양식 작성’ 버튼 클릭해서 결재요청하게
 
 const loading = ref(false);
-const selectedList = ref({});
 const searchValue = ref('');
-// const isAllSelected = computed(() => {
-//     let keys = Object.keys(divisions.value);
-//     return (
-//         keys.length > 0 &&
-//         keys.every((key) => Object.keys(selectedList.value).includes(key))
-//     );
-// });
+const selectedList = ref({});
+const docFormList = ref([]); // 결재 양식 리스트
+const formTitle = ref(''); // 검색한 결재 양식 제목
 
-// const toggleSelectAll = () => {
-//     if (isAllSelected.value) {
-//         selectedList.value = {};
-//     } else {
-//         for (let key in divisions.value) {
-//             selectedList.value[key] = divisions.value[key].data.division_name;
-//         }
-//     }
-// };
+const isAllSelected = computed(() => {
+    if (docFormList.value.length === 0) return false;
+
+    return docFormList.value.every(docForm => 
+        Object.keys(selectedList.value).includes(docForm.record_id)
+    );
+});
+
+const toggleSelectAll = () => {
+    if (isAllSelected.value) {
+        selectedList.value = {};
+    } else {
+        const newSelectedList = {};
+
+        docFormList.value.forEach(docForm => {
+            newSelectedList[docForm.record_id] = docForm.data.form_title;
+        });
+        selectedList.value = newSelectedList;
+    }
+};
 
 const toggleSelect = (id, name) => {
     if (selectedList.value[id]) {
@@ -99,9 +105,100 @@ const toggleSelect = (id, name) => {
     }
 };
 
+// 새로고침
 const refresh = () => {
-
+    getDocForm();
 };
+
+// 결재 양식 저장한 리스트 가져오기
+const getDocForm = async () => {
+    console.log('결재 양식 가져오기');
+
+    const query = {
+        table: {
+            name: 'audit_form',
+            access_group: 1
+        },
+    }
+
+    const fetchOptions = {
+        ascending: false, // 최신순
+    }
+
+    const res = await skapi.getRecords(query, fetchOptions);
+
+    docFormList.value = res.list;
+
+    return res;
+}
+
+// 결재 양식 검색
+const searchDocForm = async () => {
+    console.log('결재 양식 검색');
+    loading.value = true;
+
+    const res = await skapi.getRecords({
+        table: {
+            name: 'audit_form',
+            access_group: 1
+        },
+        index: {
+            name: 'form_title', // 결재 양식 제목으로 검색
+            value: formTitle.value,
+            condition: '>='
+        },
+    });
+
+    if (res.list.length > 0) {
+        docFormList.value = res.list;
+    } else {
+        docFormList.value = [];
+    }
+
+    if (!searchValue.value) {
+        getDocForm();
+    }
+
+    loading.value = false;
+}
+
+// 결재 양식 삭제
+const deleteDocForm = async () => {
+    console.log('결재 양식 삭제');
+
+    if(!Object.keys(selectedList.value).length) {
+        alert('삭제할 결재 양식을 선택해주세요.');
+        loading.value = false;
+        return;
+    }
+
+    loading.value = true;
+
+    const deleteList = Object.keys(selectedList.value);
+    let isSuccess = [];
+    let isFail = [];
+
+    // Promise.all 사용하여 비동기 처리
+    await Promise.all(deleteList.map((record_id) => {
+        try {
+            // skapi.deleteRecords({
+            //     record_id: record_id
+            // }).then(res => {
+            //     console.log('결재 양식 삭제 결과 : ', res);
+            // });
+        } catch (error) {
+            alert('결재 양식 삭제에 실패하였습니다.');
+            throw error;
+        }
+    }));
+
+    selectedList.value = {}; // 삭제 버튼 비활성화
+    loading.value = false;
+}
+
+onMounted(() => {
+    getDocForm();
+});
 </script>
 
 <style scoped lang="less">
