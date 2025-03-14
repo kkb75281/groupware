@@ -46,7 +46,7 @@ hr
 
 					tr
 						th.essential 제목
-							.add-btn(@click="isRowModalOpen = true")
+							.add-btn
 								.icon
 									svg
 										use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
@@ -199,7 +199,7 @@ onMounted(() => {
         border-radius: 50%;
         transform: translateX(-50%);
         z-index: 10;
-        cursor: pointer;
+        cursor: default;
 
         .icon {
           padding: 0;
@@ -211,9 +211,9 @@ onMounted(() => {
           }
         }
 
-        &:hover {
-          background-color: var(--primary-color-50);
-        }
+		&:hover {
+			background-color: #fff;
+		}
       }
     }
 

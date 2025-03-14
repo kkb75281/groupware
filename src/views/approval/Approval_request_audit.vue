@@ -4,17 +4,26 @@
 
 hr
 
-//- template(v-if="step > 0 && showBackStep")
-	p.label.essential 결재 양식명
-	.input-wrap
-		//- input(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" :value="auditTitle" type="text" placeholder="ex) 시말서, 휴가신청서" required)
-		select(@change="(e) => {auditTitle = e.target.value; showBackStep = false}" v-model="auditTitle" required)
-			option(value="" disabled selected) 결재 양식을 선택해주세요.
-			option(v-for="form in auditForms" :key="form.record_id" :value="form.index.value") {{ form.index.value }}
+template(v-if="step === 1 && showBackStep && !isTemplateMode")
+	.top-wrap
+		p.desc 결재 양식 선택 후 결재 작성이 진행됩니다. 결재 양식을 먼저 선택해주세요.
+		button.btn.outline.btn-new(type="button" @click="step = 2") 새로 작성
 
-	hr
+	.item-wrap
+		p.label 기본 결재 양식
+		.selected-wrap
+			select(name="masterForms" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) 기본 결재 양식을 선택해주세요.
+				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-template(v-if="step > 1")
+	.item-wrap
+		p.label 나의 양식
+		.selected-wrap
+			select(name="myForms" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
+				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
+
+template(v-if="step === 2")
 	.form-wrap
 		form#_el_request_form(@submit.prevent="requestAudit")
 			#printArea
@@ -164,6 +173,7 @@ template(v-if="step > 1")
 												ul.upload-file-list
 													li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
+
 			.button-wrap
 				template(v-if="isTemplateMode")
 					button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/admin/list-form')") 취소
@@ -171,6 +181,7 @@ template(v-if="step > 1")
 
 				template(v-else)
 					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1") 취소
+					button.btn.outline.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
 					button.btn(type="submit") 결재요청
 
 //- Modal - 작성란 추가
@@ -283,32 +294,11 @@ const selectedAuditors = ref({
     agreers: [],    // 합의
     receivers: []   // 수신참조
 });
-const auditForms = ref([
-	{
-		record_id: "1",
-		index: {
-			value: "휴가신청서"
-		},
-	},
-	{
-		record_id: "2",
-		index: {
-			value: "시말서"
-		},
-	},
-	{
-		record_id: "3",
-		index: {
-			value: "업무보고서"
-		},
-	},
-	{
-		record_id: "4",
-		index: {
-			value: "기타"
-		},
-	}
-]); // 결재 양식 목록
+
+const masterForms = ref({}); // 기본 결재 양식
+const myForms = ref({}); // 나의 결재 양식
+const selectedForm = ref([]); // 선택된 결재 양식
+
 const backupSelected = ref(null);	// 선택된 결재자 백업
 const same_division_auditors = ref({});	// 동일 부서 직원 목록
 let send_auditors_arr = [];
@@ -319,7 +309,7 @@ const removeFileList = ref([]);
 const fileNames = ref([]);
 
 const addRows = ref([]);
-const step = ref(2);
+let step = ref(1);
 const auditTitle = ref("");
 const disabled = ref(false);
 
@@ -757,7 +747,6 @@ const postAuditDocRecordId = async (auditId, userId) => {
     }
 };
 
-
 // 결재 요청
 const requestAudit = async (e) => {
     e.preventDefault();
@@ -854,7 +843,7 @@ const requestAudit = async (e) => {
 	}
 };
 
-// 결재 양식 저장
+// 기존 결재 양식 저장 (마스터가 저장한 결재 양식)
 const saveDocForm = async () => {
 	console.log('결재 양식 저장');
 
@@ -894,18 +883,171 @@ const saveDocForm = async () => {
 	}
 }
 
+// 내 결재 양식 저장
+const saveMyDocForm = async () => {
+	console.log('본인 결재 양식 저장');
+
+	// 결재 제목이 없을 경우 저장 불가
+	if (!auditTitle.value) {
+		alert('결재 제목을 입력해주세요.');
+		return;
+	}
+
+	try {
+		// 첨부파일 업로드
+		const filebox = document.querySelector('input[name="additional_data"]');
+		const formData = new FormData();
+
+		formData.append('form_title', auditTitle.value);
+		formData.append('form_content', editorContent.value);
+		formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
+
+		// 결재자 정보 저장
+		const auditorData = {
+		approvers: selectedAuditors.value.approvers.map(user => ({
+			user_id: user.data.user_id,
+			name: user.index.value,
+			position: user.index.name.split('.')[1],
+			division: user.index.name.split('.')[0]
+		})),
+		agreers: selectedAuditors.value.agreers.map(user => ({
+			user_id: user.data.user_id,
+			name: user.index.value,
+			position: user.index.name.split('.')[1],
+			division: user.index.name.split('.')[0]
+		})),
+		receivers: selectedAuditors.value.receivers.map(user => ({
+			user_id: user.data.user_id,
+			name: user.index.value,
+			position: user.index.name.split('.')[1],
+			division: user.index.name.split('.')[0]
+		}))
+		};
+
+		formData.append('auditors', JSON.stringify(auditorData));
+
+		if (filebox && filebox.files.length) {
+			Array.from(filebox.files).forEach(file => {
+				formData.append('form_data', file);
+			});
+		}
+	
+		const options = {
+			table: {
+				name: 'my_audit_form',
+				access_group: 'private'
+			},
+			index: {
+				name: 'form_title', // 제목별 검색을 위한 인덱싱
+				value: auditTitle.value.replaceAll(".", "_")
+			},
+		};
+	
+		const res = await skapi.postRecord(formData, options);
+		console.log('=== saveMyDocForm === res : ', res);
+
+		alert('결재 양식이 저장되었습니다.');
+	} catch (error) {
+		console.error('결재 양식 저장 중 오류 발생: ', error);
+		alert('결재 양식 저장 중 오류가 발생했습니다.');
+	}
+}
+
+// 마스터가 저장한 결재 양식 가져오기
+const getDocForm = async () => {
+	try {
+		const res = await skapi.getRecords({
+			table: {
+				name: 'audit_form',
+				access_group: 1
+			},
+		});
+
+		for(let l of res.list) {
+			masterForms.value[l.record_id] = l;
+		}
+
+		return res;
+	} catch (error) {
+		console.error('결재 양식 가져오기 중 오류 발생: ', error);
+	}
+}
+
+// 내 결재 양식 가져오기
+const getMyDocForm = async () => {
+	try {
+		const res = await skapi.getRecords({
+			table: {
+				name: 'my_audit_form',
+				access_group: 'private'
+			}
+		});
+		
+		for(let l of res.list) {
+			myForms.value[l.record_id] = l;
+		}
+
+		return res;
+	} catch (error) {
+		console.error('결재 양식 가져오기 중 오류 발생: ', error);
+	}
+}
+
+// 결재자 정보 변환 함수
+const convertAuditorFormat = (auditors) => {
+  return auditors.map(auditor => ({
+    data: { user_id: auditor.user_id },
+    index: {
+      value: auditor.name,
+      name: `${auditor.division}.${auditor.position}`
+    }
+  }));
+};
+
+const selDocForm = (e) => {
+	selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
+	console.log('selectedForm : ', selectedForm.value);
+	step.value = 2;
+
+	auditTitle.value = selectedForm.value.data.form_title;
+	editorContent.value = selectedForm.value.data.form_content;
+	
+	// 결재자
+	const auditors = JSON.parse(selectedForm.value.data.auditors);
+	
+	selectedAuditors.value = {
+		approvers: convertAuditorFormat(auditors.approvers),
+		agreers: convertAuditorFormat(auditors.agreers),
+		receivers: convertAuditorFormat(auditors.receivers)
+	};
+
+    // 첨부파일이 있는 경우
+    if (selectedForm.value.bin.form_data) {
+        uploadedFile.value = selectedForm.value.bin.form_data;
+		console.log('uploadedFile : ', uploadedFile.value);
+
+        // 파일 URL과 파일명 저장
+        fileNames.value = uploadedFile.value.map(file => ({
+            name: file.filename,
+            // url: file.url
+        }));
+    }
+}
+
 const dateValue = ref(new Date().toISOString().substring(0, 10));
 
 const updateScreenSize = () => {
-  isDesktop.value = window.innerWidth > 768;
+  	isDesktop.value = window.innerWidth > 768;
 };
 
 onMounted(() => {
-  window.addEventListener('resize', updateScreenSize);
+	window.addEventListener('resize', updateScreenSize);
+	getDocForm();
+	getMyDocForm();
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateScreenSize);
+  	window.removeEventListener('resize', updateScreenSize);
 });
 </script>
 
@@ -1494,6 +1636,45 @@ onUnmounted(() => {
 .select-approver {
 	.table {
 		min-width: 23rem;
+	}
+}
+
+.top-wrap {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 3rem;
+}
+
+.item-wrap {
+	box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+	border-radius: 1rem;
+	padding: 1.25rem;
+	margin-bottom: 3rem;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+}
+
+.desc {
+	font-size: 1rem;
+	color: var(--warning-color-500);
+	line-height: 1.2;
+	word-break: keep-all;
+
+	&.essential {
+		&::after {
+			content: '*';
+			display: inline-block;
+			width: 0.5rem;
+			height: 0.5rem;
+			font-size: 1rem;
+			font-weight: 700;
+			color: #fb9804;
+			margin-left: 0.25rem;
+		}
 	}
 }
 

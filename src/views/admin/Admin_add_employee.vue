@@ -17,7 +17,7 @@ hr
 
 	br
 
-	label.devcheckbox
+	//- label.devcheckbox
 		input(type="checkbox" name="devcheckbox" v-model="devEmpMode")
 		span.label-checkbox 개발용직원(+계정)
 
