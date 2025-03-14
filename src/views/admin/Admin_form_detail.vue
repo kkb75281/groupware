@@ -70,7 +70,7 @@ hr
 											li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
 
 	.button-wrap
-		button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/admin/list-form')") 이전
+		button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/admin/list-form')") 목록
 </template>
 
 <script setup>

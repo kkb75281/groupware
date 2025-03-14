@@ -98,10 +98,14 @@ const toggleSelectAll = () => {
 };
 
 const toggleSelect = (id, name) => {
+    console.log('=== toggleSelect === id : ', id);
+    console.log('=== toggleSelect === name : ', name);
     if (selectedList.value[id]) {
         delete selectedList.value[id];
+        console.log('AA 확인');
     } else {
         selectedList.value[id] = name;
+        console.log('BB 확인');
     }
 };
 
@@ -112,7 +116,7 @@ const refresh = () => {
 
 // 결재 양식 저장한 리스트 가져오기
 const getDocForm = async () => {
-    console.log('결재 양식 가져오기');
+    loading.value = true;
 
     const query = {
         table: {
@@ -126,15 +130,15 @@ const getDocForm = async () => {
     }
 
     const res = await skapi.getRecords(query, fetchOptions);
-
     docFormList.value = res.list;
+    console.log('=== getDocForm === docFormList.value : ', docFormList.value);
 
+    loading.value = false;
     return res;
 }
 
 // 결재 양식 검색
 const searchDocForm = async () => {
-    console.log('결재 양식 검색');
     loading.value = true;
 
     const res = await skapi.getRecords({
@@ -144,7 +148,7 @@ const searchDocForm = async () => {
         },
         index: {
             name: 'form_title', // 결재 양식 제목으로 검색
-            value: formTitle.value,
+            value: searchValue.value,
             condition: '>='
         },
     });
@@ -165,6 +169,7 @@ const searchDocForm = async () => {
 // 결재 양식 삭제
 const deleteDocForm = async () => {
     console.log('결재 양식 삭제');
+    loading.value = true;
 
     if(!Object.keys(selectedList.value).length) {
         alert('삭제할 결재 양식을 선택해주세요.');
@@ -172,28 +177,40 @@ const deleteDocForm = async () => {
         return;
     }
 
-    loading.value = true;
-
     const deleteList = Object.keys(selectedList.value);
+    console.log('=== deleteDocForm === deleteList : ', deleteList);
+
     let isSuccess = [];
     let isFail = [];
 
-    // Promise.all 사용하여 비동기 처리
     await Promise.all(deleteList.map((record_id) => {
-        try {
-            // skapi.deleteRecords({
-            //     record_id: record_id
-            // }).then(res => {
-            //     console.log('결재 양식 삭제 결과 : ', res);
-            // });
-        } catch (error) {
-            alert('결재 양식 삭제에 실패하였습니다.');
-            throw error;
-        }
+        return skapi.deleteRecords({
+            record_id: record_id
+        }).then(res => {
+            console.log('결재 양식 삭제 성공 : ', res);
+            isSuccess.push(res);
+            console.log('isSuccess : ', isSuccess);
+            
+            // 삭제 성공 시 해당 결재 양식 리스트에서 제거
+            docFormList.value = docFormList.value.filter(docForm => docForm.record_id !== record_id);
+
+            alert("결재 양식이 삭제되었습니다.");
+        }).catch(err => {
+            console.log('결재 양식 삭제 실패 : ', err);
+            isFail.push(err);
+            console.log('isFail : ', isFail);
+            alert("부서 삭제에 실패하였습니다. 관리자에게 문의해주세요.");
+            throw err;
+        });
     }));
+
+    console.log('isSuccess : ', isSuccess);
+    console.log('isFail : ', isFail);
 
     selectedList.value = {}; // 삭제 버튼 비활성화
     loading.value = false;
+
+    console.log('CC 삭제완료');
 }
 
 onMounted(() => {
