@@ -129,7 +129,7 @@ const getDocForm = async () => {
 
     const res = await skapi.getRecords(query, fetchOptions);
     docFormList.value = res.list;
-    console.log('=== getDocForm === docFormList.value : ', docFormList.value);
+    // console.log('=== getDocForm === docFormList.value : ', docFormList.value);
 
     loading.value = false;
     return res;
@@ -152,7 +152,7 @@ const searchDocForm = async () => {
     });
 
     if (res.list.length > 0) {
-        docFormList.value = res.list;
+        docFormList.value = res.list.sort((a, b) => b.data.form_title.localeCompare(a.data.form_title));
     } else {
         docFormList.value = [];
     }
@@ -211,26 +211,9 @@ onMounted(() => {
 </script>
 
 <style scoped lang="less">
-#divisions_list > a > * {
-    vertical-align: middle;
-}
-
-.division-logo {
-    width: 2rem;
-    height: 2rem;
-    object-fit: contain;
-}
-
 .table-wrap {
     position: relative;
     margin-top: 3rem;
-
-    // #loading {
-    //     position: absolute;
-    //     top: 126px;
-    //     left: 50%;
-    //     transform: translateX(-50%);
-    // }
 }
 
 .go-detail {
@@ -241,21 +224,6 @@ onMounted(() => {
 
     span {
         white-space: nowrap;
-    }
-}
-
-.img-wrap {
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 1px solid var(--gray-color-300);
-    border-radius: 50%;
-
-    img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
     }
 }
 </style>

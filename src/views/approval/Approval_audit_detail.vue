@@ -13,6 +13,11 @@ Loading#loading(v-if="getAuditDetailRunning")
 			.title
 				h2 {{ auditDoContent?.index?.value }}
 
+			.reject-setting
+				template(v-if="senderUser.user_id === user.user_id")
+					p.text(v-if="rejectSetting") ※ 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.
+					p.text(v-else) ※ 결재 도중 반려시 해당 결재서류 회수합니다.
+
 			.table-wrap
 				.tb-overflow
 					table.table#tb-auditRequest
@@ -236,6 +241,7 @@ const makeSignComplete = ref(false);
 const isCanceled = ref(false); // 결재 회수 여부
 const getAuditDetailRunning = ref(false);
 const customRows = ref([]);
+const rejectSetting = ref(true); // 반려 설정 관련 체크박스
 
 // 반려됨 상태 확인
 const isRejected = computed(() => {
@@ -576,6 +582,7 @@ const getAuditDetail = async () => {
     receivers: []
   };
   isCanceled.value = false;
+	rejectSetting.value = true;
 
   if (!auditId.value) {
     getAuditDetailRunning.value = false;
@@ -593,8 +600,7 @@ const getAuditDetail = async () => {
 
     if (auditDoc) {
       auditDoContent.value = auditDoc;
-      
-      // 추가된 코드: custom_rows 데이터 추출
+    
       if (auditDoc.data.custom_rows) {
         try {
           customRows.value = JSON.parse(auditDoc.data.custom_rows);
@@ -602,6 +608,13 @@ const getAuditDetail = async () => {
           console.error('Custom rows parsing error:', e);
           customRows.value = [];
         }
+      }
+
+			// 반려 설정 관련 체크박스
+			if (auditDoc.data.reject_setting !== undefined) {
+        rejectSetting.value = auditDoc.data.reject_setting === 'true' || auditDoc.data.reject_setting === true;
+      } else {
+        rejectSetting.value = true;
       }
     }
 
@@ -614,7 +627,15 @@ const getAuditDetail = async () => {
       })
       .then((res) => {
         if (res.list && res.list.length) {
-          isCanceled.value = true;
+          // 수동 회수 또는 자동 회수 중 rejectSetting이 false인 경우만 실제 회수 상태로 설정
+					const cancelRecord = res.list[0];
+					const isAutoCancel = cancelRecord.data?.auto_cancel === true;
+					
+					if (!isAutoCancel || (isAutoCancel && !rejectSetting.value)) {
+						isCanceled.value = true;
+					} else {
+						isCanceled.value = false;
+					}
         } else {
           isCanceled.value = false;
         }
@@ -774,17 +795,29 @@ const getAuditDetail = async () => {
       }
     }
     
-    // 회수 상태 결정
-    // - 모든 결재자가 결재를 완료했고, 마지막 결재자가 반려했으면 회수하지 않음 (반려 상태)
-    // - 결재 도중 반려자가 있으면 회수 상태
-    if (hasRejector && !allAudited) {
-      isCanceled.value = true; // 결재 도중 반려 - 회수 처리
-    } else if (hasRejector && allAudited && !isLastRejector) {
-      isCanceled.value = true; // 마지막 결재자가 아닌 사람이 반려 - 회수 처리
-    } else {
-      // 마지막 결재자가 반려했거나 모두 승인 - 회수 안함
-      isCanceled.value = isCanceled.value; // 기존 회수 상태 유지 (수동 회수만 반영)
+    // // 회수 상태 결정
+    // // - 모든 결재자가 결재를 완료했고, 마지막 결재자가 반려했으면 회수하지 않음 (반려 상태)
+    // // - 결재 도중 반려자가 있으면 회수 상태
+    // if (hasRejector && !allAudited) {
+    //   isCanceled.value = true; // 결재 도중 반려 - 회수 처리
+    // } else if (hasRejector && allAudited && !isLastRejector) {
+    //   isCanceled.value = true; // 마지막 결재자가 아닌 사람이 반려 - 회수 처리
+    // } else {
+    //   // 마지막 결재자가 반려했거나 모두 승인 - 회수 안함
+    //   isCanceled.value = isCanceled.value; // 기존 회수 상태 유지 (수동 회수만 반영)
+    // }
+
+		// 자동 회수 관련 로직 업데이트
+    if (hasRejector && !allAudited && !rejectSetting.value) {
+      // rejectSetting이 false이고 반려된 결재가 있는 경우 회수 상태로 설정
+      isCanceled.value = true;
+    } else if (hasRejector && allAudited && !isLastRejector && !rejectSetting.value) {
+      // 마지막 결재자가 아닌 사람이 반려하고 rejectSetting이 false인 경우 회수 처리
+      isCanceled.value = true;
+    } else if (rejectSetting.value) {
+      // rejectSetting이 true이면 반려가 있어도 회수 처리하지 않음 (기존 회수 상태만 유지)
     }
+
   } catch (error) {
     getAuditDetailRunning.value = false;
     console.error(error);
@@ -803,36 +836,10 @@ const postApproval = async () => {
     const approved = approveAudit.value ? 'approve' : 'reject';
     const approvedDate = new Date().getTime();
 
-		// 반려일 경우 자동 회수 처리 추가
-		// if (approved === 'reject') {
-		// 	try {
-		// 		// 반려로 인한 자동 회수 처리 (reason, isAutoCancel 파라미터 전달)
-		// 		await canceledAudit('반려', true);
-		// 	} catch (error) {
-		// 		console.error('자동 회수 처리 중 오류:', error);
-		// 	}
-		// }
-
-    // 반려 시 자동 회수 처리를 위한 조건 검사
+		// 반려 시 체크박스 설정에 따른 자동 회수 처리
     if (approved === 'reject') {
-      // 현재 모든 결재자 정보 가져오기
-      const auditors = JSON.parse(auditDoContent.value.data.auditors);
-      const allApprovers = [...(auditors.approvers || []), ...(auditors.agreers || [])];
-      
-      // 현재까지 결재한 사람 수 (자신 제외)
-      const currentApprovals = await skapi.getRecords({
-        table: {
-          name: 'audit_approval',
-          access_group: 'authorized',
-        },
-        reference: auditId.value,
-      });
-      
-      // 자신의 결재로 모든 결재자가 결재를 완료하는지 확인
-      const willCompleteWithMyApproval = currentApprovals.list.length + 1 >= allApprovers.length;
-      
-      // 모든 결재자가 결재를 완료하지 않는 경우만 자동 회수 처리
-      if (!willCompleteWithMyApproval) {
+      // 체크 해제된 경우(rejectSetting이 false)에만 자동 회수 진행
+      if (!rejectSetting.value) {
         try {
           // 반려로 인한 자동 회수 처리 (reason, isAutoCancel 파라미터 전달)
           await canceledAudit('반려', true);
@@ -840,7 +847,37 @@ const postApproval = async () => {
           console.error('자동 회수 처리 중 오류:', error);
         }
       }
+      // 체크된 경우(rejectSetting이 true)에는 회수하지 않고 계속 진행
     }
+
+    // 반려 시 자동 회수 처리를 위한 조건 검사
+    // if (approved === 'reject') {
+    //   // 현재 모든 결재자 정보 가져오기
+    //   const auditors = JSON.parse(auditDoContent.value.data.auditors);
+    //   const allApprovers = [...(auditors.approvers || []), ...(auditors.agreers || [])];
+      
+    //   // 현재까지 결재한 사람 수 (자신 제외)
+    //   const currentApprovals = await skapi.getRecords({
+    //     table: {
+    //       name: 'audit_approval',
+    //       access_group: 'authorized',
+    //     },
+    //     reference: auditId.value,
+    //   });
+      
+    //   // 자신의 결재로 모든 결재자가 결재를 완료하는지 확인
+    //   const willCompleteWithMyApproval = currentApprovals.list.length + 1 >= allApprovers.length;
+      
+    //   // 모든 결재자가 결재를 완료하지 않는 경우만 자동 회수 처리
+    //   if (!willCompleteWithMyApproval) {
+    //     try {
+    //       // 반려로 인한 자동 회수 처리 (reason, isAutoCancel 파라미터 전달)
+    //       await canceledAudit('반려', true);
+    //     } catch (error) {
+    //       console.error('자동 회수 처리 중 오류:', error);
+    //     }
+    //   }
+    // }
 
     if (approved === 'approve' && (!selectedStamp.value || !selectedStampComplete.value)) {
       alert('도장을 선택해주세요.');
@@ -930,9 +967,20 @@ const postApproval = async () => {
         console.log('결재알림기록 === postRecord === res : ', res);
       });
 
-    // window.alert('결재가 완료되었습니다.');
-		// window.alert(approved === 'reject' ? '반려 처리되었으며, 결재가 자동으로 회수되었습니다.' : '결재가 완료되었습니다.');
-    window.alert(approved === 'reject' ? '반려 처리되었습니다.' : '결재가 완료되었습니다.');
+		// 결과 메시지 표시
+    let resultMessage = '';
+
+    if (approved === 'reject') {
+      if (!rejectSetting.value) {
+        resultMessage = '반려 처리되었으며, 결재가 자동으로 회수되었습니다.';
+      } else {
+        resultMessage = '반려 처리되었습니다. 다른 결재자의 결재는 계속 진행됩니다.';
+      }
+    } else {
+      resultMessage = '결재가 완료되었습니다.';
+    }
+
+    window.alert(resultMessage);
     closeModal();
     getAuditDetail();
   } catch (error) {
@@ -1036,13 +1084,13 @@ const previewAudit = () => {
 
 // 결재 회수 함수
 const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
-  console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
-  console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
+  // console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
+  // console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
 
   const auditors = auditDoContent.value.data.auditors;
   const parsedAuditors = JSON.parse(auditors);
-  console.log('결재회수 === canceledAudit === auditors : ', auditors);
-  console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
+  // console.log('결재회수 === canceledAudit === auditors : ', auditors);
+  // console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
 
   // 각 배열에서 ID만 추출
   const approverIds = parsedAuditors.approvers;
@@ -1051,7 +1099,10 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
 
   // // 결재자 ID 배열 생성
   const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
-  console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
+  // console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
+
+	// 결재 회수 알림 메시지
+	const alertMessage = isAutoCancel ? (rejectSetting.value ? `반려 처리되었습니다. 다른 결재자의 결재는 계속 진행됩니다.` : `결재가 반려되어 자동으로 회수되었습니다.`): `${user.name}님께서 결재를 회수했습니다.`;
 
   // 결재 회수 레코드 저장
   try {
@@ -1064,7 +1115,7 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
     };
 
     const res = await skapi.postRecord(null, option);
-    console.log('결재회수 === postRecord === res : ', res);
+    // console.log('결재회수 === postRecord === res : ', res);
   } catch (error) {
     console.error(error);
   }
@@ -1085,7 +1136,7 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   };
 
   let postRealtimeBody = {
-	text: isAutoCancel ? `결재가 반려되어 자동으로 회수되었습니다.` : `${user.name}님께서 결재를 회수했습니다.`,
+	text: alertMessage,
 	type: 'audit',
 	id: auditId.value
 }
@@ -1122,7 +1173,7 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
 					auditor.replaceAll('_', '-'),
 					{
 						title: '알림',
-						body: isAutoCancel ? `결재가 반려되어 자동으로 회수되었습니다.` : `${user.name}님께서 결재를 회수했습니다.`,
+						body: alertMessage,
 						config: {
 							always: true, // 무조건 알림 받기
 						},
@@ -1136,7 +1187,7 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
 					auditor.replaceAll('_', '-'),
 					{
 						title: '알림',
-						body: isAutoCancel ? `결재가 반려되어 자동으로 회수되었습니다.` : `${user.name}님께서 결재를 회수했습니다.`,
+						body: alertMessage,
 						config: {
 							always: true, // 무조건 알림 받기
 						},
@@ -1202,8 +1253,22 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   }
 
   window.alert('결재가 회수되었습니다.');
-  disabled.value = true; // 회수 버튼 비활성화
-  isCanceled.value = true; // 회수 여부 변경
+  // 수동 회수가 아닌 자동 회수이고, rejectSetting이 true인 경우에는 
+  // 알림만 보내고 실제 회수 상태로 변경하지 않음
+  if (isAutoCancel && rejectSetting.value) {
+    // 회수하지 않고 알림만 보냄
+    console.log('반려 설정에 따라 실제 회수 처리하지 않음 (다른 결재자 결재 계속 진행)');
+    return;
+  }
+
+  // 그 외의 경우 (수동 회수 또는 rejectSetting이 false인 자동 회수) - 실제 회수 처리
+  if (!isAutoCancel || (isAutoCancel && !rejectSetting.value)) {
+    if (!isAutoCancel) { // 수동 회수인 경우에만 알림 표시
+      window.alert('결재가 회수되었습니다.');
+    }
+    disabled.value = true; // 회수 버튼 비활성화
+    isCanceled.value = true; // 회수 여부 변경
+  }
 
   await nextTick();
 };
@@ -1804,6 +1869,13 @@ onUnmounted(() => {
   padding: 0;
 }
 
+.reject-setting {
+	margin-bottom: 0.5rem;
+	text-align: right;
+	font-size: 0.9rem;
+	color: var(--warning-color-500);
+}
+
 @media print {
   #main,
   .wrap {
@@ -1922,6 +1994,10 @@ onUnmounted(() => {
         }
     }
   }
+
+	.reject-setting {
+		text-align: left;
+	}
 }
 
 @media (max-width: 682px) {

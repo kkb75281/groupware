@@ -69,6 +69,11 @@ hr
 										template(v-if="uploadedFile.length === 0")
 											li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
 
+	.reject-setting
+		label.checkbox
+			input#setReject(type="checkbox" name="checkbox" v-model="rejectSetting")
+			span.label-checkbox 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.<br>(미체크 : 결재 도중 반려시 해당 결재서류 회수)
+
 	.button-wrap
 		button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/admin/list-form')") 목록
 </template>
@@ -88,6 +93,7 @@ const docFormCont = ref({}); // 결재 양식 내용
 const formRecordId = ref(''); // 결재 양식 record_id
 const uploadedFile = ref([]); // 첨부 파일 목록
 const addRows = ref([]);
+const rejectSetting = ref(true); // 반려 설정 관련 체크박스
 
 // 결재 양식 상세 조회
 const getDocFormDetail = async () => {
@@ -101,6 +107,13 @@ const getDocFormDetail = async () => {
 
 		docFormCont.value = formDetail.list[0];
 		console.log('=== getDocFormDetail === docFormCont : ', docFormCont.value.bin);
+
+		// 체크박스 상태 가져오기
+		if (docFormCont.value.data.reject_setting !== undefined) {
+			rejectSetting.value = docFormCont.value.data.reject_setting === 'true' || docFormCont.value.data.reject_setting === true;
+		} else {
+			rejectSetting.value = true; // 기본값 true로
+		}
 
 		// 첨부 파일 목록 가져오기
 		if (Object.keys(docFormCont.value.bin).length && docFormCont.value.bin.form_data.length) {
@@ -248,7 +261,52 @@ onMounted(() => {
     color: var(--gray-color-400);
 }
 
+.reject-setting {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 2rem;
+
+	.checkbox {
+		text-align: right;
+
+			input[type='checkbox']:checked ~ .label-checkbox::before {
+				border-color: var(--warning-color-500);
+				background-color: var(--warning-color-500);
+			}
+
+		.label-checkbox {
+			display: inline-block;
+			line-height: 1.4;
+			color: var(--warning-color-500);
+			word-break: keep-all;
+
+			&::before {
+				position: relative;
+				top: 3px;
+				width: 0.9rem;
+				height: 0.9rem;
+			}
+		}
+	}
+}
+
 .button-wrap {
-  margin-top: 3rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+	.reject-setting {
+		.checkbox {
+			.label-checkbox {
+				font-size: 0.875rem;
+
+				&::before {
+					width: 0.875rem;
+					height: 0.875rem;
+					top: 2px;
+				}
+			}
+		}
+	}
 }
 </style>

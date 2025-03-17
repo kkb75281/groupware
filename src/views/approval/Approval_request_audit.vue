@@ -7,7 +7,7 @@ hr
 template(v-if="step === 1 && showBackStep && !isTemplateMode")
 	.top-wrap
 		p.desc 결재 양식 선택 후 결재 작성이 진행됩니다. 결재 양식을 먼저 선택해주세요.
-		button.btn.outline.btn-new(type="button" @click="step = 2") 새로 작성
+		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새로 작성
 
 	.item-wrap
 		p.label 기본 결재 양식
@@ -23,7 +23,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
 				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-template(v-if="step === 2")
+template(v-if="step === 2 || isTemplateMode")
 	.form-wrap
 		form#_el_request_form(@submit.prevent="requestAudit")
 			#printArea
@@ -171,8 +171,16 @@ template(v-if="step === 2")
 													label.btn.sm.outline.btn-upload(for="file") 파일 올리기
 
 												ul.upload-file-list
-													li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+													template(v-if="uploadedFile.length > 0 && isFormSelected")
+														li.file-item(v-for="(file, index) in uploadedFile" :key="index" style="border: none; padding: 0;")
+															a.file-name(:href="file.url" download target="_blank") {{ file.filename }}
+													template(v-else)
+														li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
+			.reject-setting
+				label.checkbox
+					input#setReject(type="checkbox" name="checkbox" v-model="rejectSetting")
+					span.label-checkbox 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.<br>(미체크 : 결재 도중 반려시 해당 결재서류 회수)
 
 			.button-wrap
 				template(v-if="isTemplateMode")
@@ -298,6 +306,8 @@ const selectedAuditors = ref({
 const masterForms = ref({}); // 기본 결재 양식
 const myForms = ref({}); // 나의 결재 양식
 const selectedForm = ref([]); // 선택된 결재 양식
+const isFormSelected = ref(false); // 양식이 선택되었는지 여부
+const rejectSetting = ref(true); // 반려 설정 관련 체크박스
 
 const backupSelected = ref(null);	// 선택된 결재자 백업
 const same_division_auditors = ref({});	// 동일 부서 직원 목록
@@ -324,7 +334,7 @@ const editorIsReady = ref(false);
 // 			name: 'audit_form',
 // 			access_group: 1
 // 		},
-// 		record_id: 'UfI1mJ2aX0gD2Bqp',
+// 		record_id: 'UfgTfIUTBrkx2Bqp',
 // 	});
 
 // 	console.log('=== testDelete === res : ', res);
@@ -585,6 +595,7 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 		additionalFormData.append('to_audit', to_audit);
         additionalFormData.append('auditors', JSON.stringify(send_auditors_data));
         additionalFormData.append('to_audit_content', to_audit_content);
+		additionalFormData.append('reject_setting', rejectSetting.value);
 
 		// 추가 행 데이터
 		additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
@@ -609,6 +620,9 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
                 prevent_multiple_referencing: true, // 중복 결재 방지
             },
             tags: send_auditors_arr, // 결재, 합의, 수신참조 태그를 각각 구분,
+			data: {
+				reject_setting: rejectSetting.value,
+			}
         };
 
         const res = await skapi.postRecord(additionalFormData, options);
@@ -760,6 +774,8 @@ const requestAudit = async (e) => {
     try {
         const formData = new FormData(e.target);
 		formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
+		formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
+
         const formValues = Object.fromEntries(formData.entries());
 
         if (!formValues) return;
@@ -787,7 +803,9 @@ const requestAudit = async (e) => {
             to_audit, 
             to_audit_content,
             // roles: getAllSelectedUserIds() // ID 목록만 전달
+			reject_setting: rejectSetting.value, // 반려 설정 관련 체크박스 값 전달
         });
+		console.log('=== requestAudit === auditDoc : ', auditDoc);
 
         const auditId = auditDoc.record_id;
 
@@ -855,6 +873,7 @@ const saveDocForm = async () => {
 		formData.append('form_title', auditTitle.value);
 		formData.append('form_content', editorContent.value);
 		formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
+		formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
 
         if (filebox && filebox.files.length) {
             Array.from(filebox.files).forEach(file => {
@@ -900,7 +919,8 @@ const saveMyDocForm = async () => {
 
 		formData.append('form_title', auditTitle.value);
 		formData.append('form_content', editorContent.value);
-		formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
+		formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
+		formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
 
 		// 결재자 정보 저장
 		const auditorData = {
@@ -924,7 +944,7 @@ const saveMyDocForm = async () => {
 		}))
 		};
 
-		formData.append('auditors', JSON.stringify(auditorData));
+		formData.append('auditors', JSON.stringify(auditorData ?? []));
 
 		if (filebox && filebox.files.length) {
 			Array.from(filebox.files).forEach(file => {
@@ -1004,34 +1024,84 @@ const convertAuditorFormat = (auditors) => {
   }));
 };
 
+// 결재 양식 선택
 const selDocForm = (e) => {
 	selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
 	console.log('selectedForm : ', selectedForm.value);
 	step.value = 2;
+	isFormSelected.value = true;
 
 	auditTitle.value = selectedForm.value.data.form_title;
 	editorContent.value = selectedForm.value.data.form_content;
 	
 	// 결재자
-	const auditors = JSON.parse(selectedForm.value.data.auditors);
-	
-	selectedAuditors.value = {
-		approvers: convertAuditorFormat(auditors.approvers),
-		agreers: convertAuditorFormat(auditors.agreers),
-		receivers: convertAuditorFormat(auditors.receivers)
-	};
+	if (selectedForm.value.data.auditors) {
+		const auditors = JSON.parse(selectedForm.value.data.auditors);
+
+		if (auditors) {
+			selectedAuditors.value = {
+				approvers: convertAuditorFormat(auditors.approvers || []),
+				agreers: convertAuditorFormat(auditors.agreers || []),
+				receivers: convertAuditorFormat(auditors.receivers || [])
+			};
+		}
+	} else {
+		selectedAuditors.value = {
+			approvers: [],
+			agreers: [],
+			receivers: []
+		};
+	}
+
+	// 추가 행 데이터
+	if (selectedForm.value.data.custom_rows) {
+		addRows.value = JSON.parse(selectedForm.value.data.custom_rows);
+	} else {
+		addRows.value = [];
+	}
 
     // 첨부파일이 있는 경우
     if (selectedForm.value.bin.form_data) {
         uploadedFile.value = selectedForm.value.bin.form_data;
-		console.log('uploadedFile : ', uploadedFile.value);
+    } else {
+		uploadedFile.value = [];
+		fileNames.value = [];
+	}
 
-        // 파일 URL과 파일명 저장
-        fileNames.value = uploadedFile.value.map(file => ({
-            name: file.filename,
-            // url: file.url
-        }));
+	// 체크박스 설정 불러오기
+    if (selectedForm.value.data.reject_setting !== undefined) {
+        rejectSetting.value = selectedForm.value.data.reject_setting === 'true' || selectedForm.value.data.reject_setting === true;
+    } else {
+        rejectSetting.value = true;
     }
+}
+
+// 새로운 결재 양식 작성
+const newWriteAudit = () => {
+	step.value = 2;
+
+	auditTitle.value = '';
+	editorContent.value = '';
+	selectedAuditors.value = {
+		approvers: [],
+		agreers: [],
+		receivers: []
+	};
+	addRows.value = [];
+	uploadedFile.value = [];
+	fileNames.value = [];
+	rejectSetting.value = true;
+
+	// 결재라인 select option '결재'로 초기화
+	selectedUsers.value.forEach(user => {
+		user.role = 'approvers';
+	});
+
+	// 결재자 선택 모달 체크박스 초기화
+	selectedUsers.value = [];
+	selectedAuditors.value.approvers = [];
+	selectedAuditors.value.agreers = [];
+	selectedAuditors.value.receivers = [];	
 }
 
 const dateValue = ref(new Date().toISOString().substring(0, 10));
@@ -1413,7 +1483,7 @@ onUnmounted(() => {
 }
 
 .button-wrap {
-    margin-top: 2rem;
+    margin-top: 1rem;
 }
 
 .btn {
@@ -1593,9 +1663,22 @@ onUnmounted(() => {
 
 	.file-name {
 		text-align: left;
+		display: inline-block;
 
 		&:first-of-type {
 			margin-top: 16px;
+		}
+	}
+
+	.file-item {
+		.file-name {
+			margin-top: 0;
+		}
+
+		&:first-of-type {
+			.file-name {
+				margin-top: 16px;
+			}
 		}
 	}
 }
@@ -1643,15 +1726,16 @@ onUnmounted(() => {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	gap: 1rem;
+	gap: 2rem 1rem;
 	margin-bottom: 3rem;
+	flex-wrap: wrap;
 }
 
 .item-wrap {
 	box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
 	border-radius: 1rem;
 	padding: 1.25rem;
-	margin-bottom: 3rem;
+	margin-bottom: 2rem;
 
 	&:last-child {
 		margin-bottom: 0;
@@ -1678,6 +1762,35 @@ onUnmounted(() => {
 	}
 }
 
+.reject-setting {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 2rem;
+
+	.checkbox {
+		text-align: right;
+
+			input[type='checkbox']:checked ~ .label-checkbox::before {
+				border-color: var(--warning-color-500);
+				background-color: var(--warning-color-500);
+			}
+
+		.label-checkbox {
+			display: inline-block;
+			line-height: 1.4;
+			color: var(--warning-color-500);
+			word-break: keep-all;
+
+			&::before {
+				position: relative;
+				top: 3px;
+				width: 0.9rem;
+				height: 0.9rem;
+			}
+		}
+	}
+}
+
 @media (max-width: 768px) {
     .approver-wrap {
         grid-template-columns: repeat(5, 1fr);
@@ -1692,11 +1805,35 @@ onUnmounted(() => {
 	}
 
 	.input-title {
+		margin-bottom: 2rem;
+
 		input {
 			font-size: 1.5rem;
 
 			&::placeholder {
 				font-size: 1.5rem;
+			}
+		}
+	}
+
+	.top-wrap {
+		margin-bottom: 2rem;
+
+		.btn-new {
+			margin-left: auto;
+		}
+	}
+
+	.reject-setting {
+		.checkbox {
+			.label-checkbox {
+				font-size: 0.875rem;
+
+				&::before {
+					width: 0.875rem;
+					height: 0.875rem;
+					top: 2px;
+				}
 			}
 		}
 	}
