@@ -334,7 +334,7 @@ const editorIsReady = ref(false);
 // 			name: 'audit_form',
 // 			access_group: 1
 // 		},
-// 		record_id: 'UfgTfIUTBrkx2Bqp',
+// 		record_id: 'UfPGLV82o5YH2Bqp',
 // 	});
 
 // 	console.log('=== testDelete === res : ', res);
@@ -608,6 +608,17 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
             });
         }
 
+		// 만약 첨부파일이 있는 결재 양식 선택시
+		if(uploadedFile.value.length) {
+			uploadedFile.value.forEach(async (file) => {
+				uploadedFile.value = await skapi.getFile(file, {
+					dataType: 'endpoint'
+				});
+				additionalFormData.append('additional_data', uploadedFile.value);
+			});
+		}
+		console.log('BB == uploadedFile.value : ', uploadedFile.value);
+
         const options = {
             readonly: true, // 결재 올리면 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
             table: {
@@ -628,6 +639,7 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
         };
 
         const res = await skapi.postRecord(additionalFormData, options);
+		console.log('=== postAuditDoc === res : ', res);
 
         return res;
     } catch (error) {
@@ -1027,7 +1039,7 @@ const convertAuditorFormat = (auditors) => {
 };
 
 // 결재 양식 선택
-const selDocForm = (e) => {
+const selDocForm = async (e) => {
 	selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
 	console.log('selectedForm : ', selectedForm.value);
 	step.value = 2;
@@ -1065,6 +1077,7 @@ const selDocForm = (e) => {
     // 첨부파일이 있는 경우
     if (selectedForm.value.bin.form_data) {
         uploadedFile.value = selectedForm.value.bin.form_data;
+		console.log('=== selDocForm === uploadedFile.value : ', uploadedFile.value);
     } else {
 		uploadedFile.value = [];
 		fileNames.value = [];
@@ -1772,10 +1785,10 @@ onUnmounted(() => {
 	.checkbox {
 		text-align: right;
 
-			input[type='checkbox']:checked ~ .label-checkbox::before {
-				border-color: var(--warning-color-500);
-				background-color: var(--warning-color-500);
-			}
+		input[type='checkbox']:checked ~ .label-checkbox::before {
+			border-color: var(--warning-color-500);
+			background-color: var(--warning-color-500);
+		}
 
 		.label-checkbox {
 			display: inline-block;
@@ -1788,6 +1801,7 @@ onUnmounted(() => {
 				top: 3px;
 				width: 0.9rem;
 				height: 0.9rem;
+				border: 1px solid var(--warning-color-500);
 			}
 		}
 	}

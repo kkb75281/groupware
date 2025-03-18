@@ -974,7 +974,7 @@ const postApproval = async () => {
       if (!rejectSetting.value) {
         resultMessage = '반려 처리되었으며, 결재가 자동으로 회수되었습니다.';
       } else {
-        resultMessage = '반려 처리되었습니다. 다른 결재자의 결재는 계속 진행됩니다.';
+        resultMessage = '반려 처리되었습니다.';
       }
     } else {
       resultMessage = '결재가 완료되었습니다.';
@@ -1102,7 +1102,7 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   // console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
 
 	// 결재 회수 알림 메시지
-	const alertMessage = isAutoCancel ? (rejectSetting.value ? `반려 처리되었습니다. 다른 결재자의 결재는 계속 진행됩니다.` : `결재가 반려되어 자동으로 회수되었습니다.`): `${user.name}님께서 결재를 회수했습니다.`;
+	const alertMessage = isAutoCancel ? (rejectSetting.value ? `반려 처리되었습니다.` : `결재가 반려되어 자동으로 회수되었습니다.`): `${user.name}님께서 결재를 회수했습니다.`;
 
   // 결재 회수 레코드 저장
   try {
@@ -1252,20 +1252,17 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
     }
   }
 
-  window.alert('결재가 회수되었습니다.');
-  // 수동 회수가 아닌 자동 회수이고, rejectSetting이 true인 경우에는 
-  // 알림만 보내고 실제 회수 상태로 변경하지 않음
+  // 수동 회수가 아닌 자동 회수이고, rejectSetting이 true인 경우에는 알림만 보내고 실제 회수 상태로 변경하지 않음
   if (isAutoCancel && rejectSetting.value) {
-    // 회수하지 않고 알림만 보냄
-    console.log('반려 설정에 따라 실제 회수 처리하지 않음 (다른 결재자 결재 계속 진행)');
     return;
   }
 
-  // 그 외의 경우 (수동 회수 또는 rejectSetting이 false인 자동 회수) - 실제 회수 처리
+  // 수동 회수 or rejectSetting이 false인 자동 회수 (실제 회수 처리됨)
   if (!isAutoCancel || (isAutoCancel && !rejectSetting.value)) {
     if (!isAutoCancel) { // 수동 회수인 경우에만 알림 표시
       window.alert('결재가 회수되었습니다.');
     }
+		
     disabled.value = true; // 회수 버튼 비활성화
     isCanceled.value = true; // 회수 여부 변경
   }

@@ -116,7 +116,7 @@ const getDocFormDetail = async () => {
 		}
 
 		// 첨부 파일 목록 가져오기
-		if (Object.keys(docFormCont.value.bin).length && docFormCont.value.bin.form_data.length) {
+		if (Object.keys(docFormCont.value.bin)?.length && docFormCont.value.bin?.form_data?.length) {
 			const fileList = [];
 			const form_data = docFormCont.value.bin.form_data;
 
@@ -268,11 +268,12 @@ onMounted(() => {
 
 	.checkbox {
 		text-align: right;
+		pointer-events: none;
 
-			input[type='checkbox']:checked ~ .label-checkbox::before {
-				border-color: var(--warning-color-500);
-				background-color: var(--warning-color-500);
-			}
+		input[type='checkbox']:checked ~ .label-checkbox::before {
+			border-color: var(--warning-color-500);
+			background-color: var(--warning-color-500);
+		}
 
 		.label-checkbox {
 			display: inline-block;
