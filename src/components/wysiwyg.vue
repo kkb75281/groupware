@@ -85,12 +85,13 @@
 </template>
 
 <script setup>
-	import { onMounted, onBeforeUnmount } from 'vue';
+	import { onMounted, onBeforeUnmount, nextTick } from 'vue';
 	import { Wysiwyg4All } from 'wysiwyg4all';
 	import 'wysiwyg4all/css';
 
 	// 이벤트 emit 방식으로 에디터 내용을 실시간으로 부모 컴포넌트로 전달
 	const emit = defineEmits(['update:content', 'editor-ready']);
+	const props = defineProps(['savedContent']);
 	let wysiwyg = null;
 
 	const handleCommand = (command) => {
@@ -122,6 +123,21 @@
 				return c;
 			}
 		});
+		// savedContent가 있는 경우 에디터에 내용 로드
+		if (props.savedContent) {
+        	const editorElement = document.getElementById('myeditor');
+			
+			if (!editorElement) {
+				console.error('Editor element not found!');
+				return;
+			}
+
+			if (props.savedContent) {
+				nextTick(() => {
+					editorElement.innerHTML = props.savedContent;
+				})
+			}
+    	}
 		emit('editor-ready', true);
 	});
 
@@ -131,6 +147,10 @@
 
 	defineExpose({
 		getContent: () => wysiwyg.export() || '',
+		// getContent: () => {
+		// 	const editorElement = document.getElementById('myeditor');
+		// 	return editorElement?.innerHTML || '';
+		// },
 	});
 </script>
 

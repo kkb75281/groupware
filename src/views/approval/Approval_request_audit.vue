@@ -158,7 +158,7 @@ template(v-if="step === 2 || isTemplateMode")
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
 											//- Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
-											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData")
+											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -548,11 +548,13 @@ const removeAuditor = (user, type) => {
 // 에디터 준비
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
+  console.log('=== handleEditorReady === editorIsReady : ', editorIsReady.value);
 };
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
 	editorContent.value = content;
+	console.log('=== exportWysiwygData === editorContent : ', editorContent.value);
 };
 
 // 업로드 파일 삭제
