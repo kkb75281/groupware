@@ -610,14 +610,29 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 
 		// 만약 첨부파일이 있는 결재 양식 선택시
 		if(uploadedFile.value.length) {
-			uploadedFile.value.forEach(async (file) => {
-				uploadedFile.value = await skapi.getFile(file, {
+			for (const file of uploadedFile.value) {
+				console.log('Processing file:', file);
+
+				// 파일 데이터를 서버에서 가져옴
+				const fileData = await skapi.getFile(file.url, {
 					dataType: 'endpoint'
 				});
-				additionalFormData.append('additional_data', uploadedFile.value);
-			});
+
+				// 가져온 파일 데이터를 Blob으로 변환
+				const blob = await fetch(fileData.url).then(res => res.blob());
+
+				// Blob에 원래 파일 이름을 붙여 File 객체 생성
+				const fileObject = new File([blob], file.filename, { type: blob.type });
+
+				// FormData에 추가
+				additionalFormData.append('additional_data', fileObject);
+			}
 		}
-		console.log('BB == uploadedFile.value : ', uploadedFile.value);
+		// console.log('BB == uploadedFile.value : ', uploadedFile.value);
+
+		// for (const x of additionalFormData.entries()) {
+		// 	console.log(x);
+		// };
 
         const options = {
             readonly: true, // 결재 올리면 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
