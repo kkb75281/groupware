@@ -141,6 +141,11 @@ const router = createRouter({
 							component: () => import('@/views/approval/Approval_audit_list.vue'),
 						},
 						{
+							path: 'audit-list-favorite',
+							name: 'audit-list-favorite',
+							component: () => import('@/views/approval/Approval_audit_list.vue'), // 즐겨찾기한 결재 리스트
+						},
+						{
 							path: 'audit-detail/:auditId',
 							name: 'audit-detail',
 							component: () => import('@/views/approval/Approval_audit_detail.vue'),

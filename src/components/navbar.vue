@@ -148,6 +148,11 @@ const menuList = computed(() => [
                     to: '/approval/audit-reference',
                     text: '수신참조',
                 },
+                {
+                    name: 'audit-list-favorite',
+                    to: '/approval/audit-list-favorite',
+                    text: '중요메일',
+                },
             ]
         }
     },

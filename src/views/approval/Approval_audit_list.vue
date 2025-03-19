@@ -1,5 +1,6 @@
 <template lang="pug">
-h1.title {{ currentPage === 'audit-list' ? '결재 수신함' : '수신참조' }}
+//- h1.title {{ currentPage === 'audit-list' ? '결재 수신함' : '수신참조' }}
+h1.title {{ currentPage === 'audit-list' ? '결재 수신함' : currentPage === 'audit-reference' ? '수신참조' : currentPage === 'audit-list-favorite' ? '중요 결재' : '' }}
 
 hr
 
@@ -23,7 +24,7 @@ hr
 	table.table#tb-auditList
 		colgroup
 			col(v-show="isDesktop" style="width: 3rem")
-			col(style="width: 2rem")
+			col(style="width: 3rem")
 			col
 			template(v-if="currentPage === 'audit-list'")
 				col(:style="{ width: isDesktop ? '12%' : '24%' }")
@@ -46,25 +47,25 @@ hr
 						Loading#loading
 			template(v-else-if="!filterAuditList || !filterAuditList.length")
 				tr.nohover
-					td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : '수신참조 목록이 없습니다.' }}
+					td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : currentPage === 'audit-reference' ? '수신참조 목록이 없습니다.' : currentPage === 'audit-list-favorite' ? '지정하신 중요 결재가 없습니다.' : '' }}
 			template(v-else)
 				tr(v-for="(audit, index) of filterAuditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
 					td(v-show="isDesktop") {{ filterAuditList.length - index }}
-					td
+					td.td-icon
 						.icon-wrap
-							//- .icon-favorite
-								template(v-if="!isAuditRead(audit)")
+							.icon-favorite(@click.stop="toggleFavoriteAudit(audit)")
+								template(v-if="favoriteAuditList.includes(audit.record_id)")
 									.icon
 										svg
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
+											use(xlink:href="@/assets/icon/material-icon.svg#icon-star-fill")
 								template(v-else)
 									.icon
 										svg
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-star-full")
+											use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
 							.icon-read
 								template(v-if="isAuditRead(audit)")
 									.icon
-										svg(style="fill: var(--gray-color-300)")
+										svg
 											use(xlink:href="@/assets/icon/material-icon.svg#icon-read-mail")
 								template(v-else)
 									.icon
@@ -96,15 +97,24 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
-const isDesktop = ref(window.innerWidth > 768);
+const isDesktop = ref(window.innerWidth > 768); // 반응형
+const favoriteAudit = ref(false); // 중요 결재 지정 여부
+const favoriteAuditList = ref([]); // 중요 결재 리스트
 
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
 
-// 현재 페이지가 결재 수신함인지 수신참조인지 구분
+// 현재 페이지 구분
 const currentPage = computed(() => {
-	return route.path.includes('audit-list') ? 'audit-list' : 'reference';
+  if (route.path.includes('audit-list-favorite')) {
+    return 'audit-list-favorite'; // 즐겨찾기한 결재 리스트
+  } else if (route.path.includes('audit-reference')) {
+    return 'audit-reference'; // 수신참조
+  } else if (route.path.includes('audit-list')) {
+    return 'audit-list'; // 결재 수신함
+  }
+  return ''; // 기본값
 });
 
 const filterAuditList = computed(() => {
@@ -123,6 +133,18 @@ const filterAuditList = computed(() => {
 		}
 	});
 });
+
+// 중요 결재 리스트
+const toggleFavoriteAudit = (audit) => {
+	console.log('audit : ', audit);
+	favoriteAudit.value = !favoriteAudit.value;
+
+	if (favoriteAudit.value) {
+		favoriteAuditList.value.push(audit.record_id);
+	} else {
+		favoriteAuditList.value = favoriteAuditList.value.filter(fav => fav !== audit.record_id);
+	}
+};
 
 // 결재 문서 읽음 여부 확인
 const isAuditRead = (audit) => {
@@ -219,20 +241,31 @@ onUnmounted(() => {
 	}
 }
 
+.td-icon {
+	padding: 0;
+}
+
 .icon-wrap {
 	display: flex;
-	justify-content: center;
 	align-items: center;
+	gap: 0.35rem;
 
 	.icon {
 		svg {
 			width: 1.05rem;
 			height: 1.05rem;
+			fill: var(--gray-color-300);
 		}
 	}
 }
 
 .icon {
 	padding: 0;
+}
+
+@media (max-width: 768px) {
+	.td-icon {
+		padding: 0.5rem;
+	}
 }
 </style>

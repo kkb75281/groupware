@@ -218,7 +218,7 @@ template(v-if="step === 2 || isTemplateMode")
 			//- .reject-setting
 				label.checkbox
 					input#setReject(type="checkbox" name="checkbox" v-model="rejectSetting")
-					span.label-checkbox 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.<br>(미체크 : 결재 도중 반려시 해당 결재서류 회수)
+					span.label-checkbox 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.<br>(미체크 경우, 결재 도중 반려시 해당 결재서류 회수)
 
 			.button-wrap
 				template(v-if="isTemplateMode")

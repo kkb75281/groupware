@@ -47,6 +47,18 @@ ul.card-wrap
 				.icon
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+	li.card
+		router-link.router(to="/approval/audit-list-favorite")
+			.icon.img
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
+			h4.name 중요메일
+			.btn-wrap
+				p.btn-go 바로가기
+				.icon
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
 <script setup>
