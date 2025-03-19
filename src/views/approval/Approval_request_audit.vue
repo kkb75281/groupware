@@ -5,8 +5,8 @@
 hr
 
 template(v-if="step === 1 && showBackStep && !isTemplateMode")
-	div(style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;")
-		.selected-wrap(style="flex-grow: 1;")
+	.item-wrap
+		.selected-wrap
 			p.label 카테고리 선택
 			select(name="selCategory" @change="(e) => {formCategory = e.target.value}")
 				//- option(disabled selected) 카테고리 선택
@@ -14,7 +14,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				option(value="master") 일반 결재 양식
 				option(value="mine") 나의 결재 양식
 			
-		.selected-wrap(style="flex-grow: 1;")
+		.selected-wrap
 			p.label 결재 양식 선택
 			select(v-if="formCategory === 'master'" name="masterForms" @change="(e) => selDocForm(e)")
 				option(value="" disabled selected) 기본 결재 양식을 선택해주세요.
@@ -28,22 +28,16 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				option(value="" disabled selected) 결재 양식을 선택해주세요.
 				//- option(v-for="form in masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-	br
+	.item
+		p.label 결재 옵션
+		.label-wrap
+			label.radio-button(style="margin-right: 1rem;")
+				input(type="radio" name="radio" value="true" v-model="rejectSetting")
+				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 진행
 
-	p 결재 옵션
-
-	br
-
-	.label-wrap(style="border: 1px solid var(--gray-color-200); padding: 0.6rem 0.8rem; border-radius: 0.5rem;")
-		label.radio-button(style="margin-right: 1rem;")
-			input(type="radio" name="radio" value="true" v-model="rejectSetting")
-			span.label-radio(style="font-size: 0.8rem") '반대'해도 결재 진행
-
-		label.radio-button
-			input(type="radio" name="radio" value="false" v-model="rejectSetting")
-			span.label-radio(style="font-size: 0.8rem") '반대'하면 결재 중단 (반려와 동일하게 처리)
-
-	br
+			label.radio-button
+				input(type="radio" name="radio" value="false" v-model="rejectSetting")
+				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 중단
 
 	.button-wrap
 		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새로 작성
@@ -1598,7 +1592,7 @@ onUnmounted(() => {
 }
 
 .button-wrap {
-    margin-top: 1rem;
+    margin-top: 3rem;
 }
 
 .btn {
@@ -1837,24 +1831,44 @@ onUnmounted(() => {
 	}
 }
 
-.top-wrap {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 2rem 1rem;
-	margin-bottom: 3rem;
-	flex-wrap: wrap;
-}
+// .top-wrap {
+// 	display: flex;
+// 	justify-content: space-between;
+// 	align-items: center;
+// 	gap: 2rem 1rem;
+// 	margin-bottom: 3rem;
+// 	flex-wrap: wrap;
+// }
 
 .item-wrap {
-	box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
-	border-radius: 1rem;
-	padding: 1.25rem;
-	margin-bottom: 2rem;
+	// box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+	// border-radius: 1rem;
+	// padding: 1.25rem;
+
+	display: flex; 
+	justify-content: space-between; 
+	align-items: center; 
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+	flex-wrap: wrap;
 
 	&:last-child {
 		margin-bottom: 0;
 	}
+
+	.selected-wrap {
+		flex: 1;
+	}
+}
+
+.label-wrap {
+	border: 1px solid var(--gray-color-200); 
+	padding: 0.6rem 0.8rem; 
+	border-radius: 0.5rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
 }
 
 .desc {
@@ -1951,6 +1965,15 @@ onUnmounted(() => {
 					top: 2px;
 				}
 			}
+		}
+	}
+
+	.item-wrap {
+		display: block;
+		margin-bottom: 1rem;
+
+		.selected-wrap {
+			margin-bottom: 1rem;
 		}
 	}
 }
