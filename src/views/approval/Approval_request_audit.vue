@@ -232,7 +232,7 @@ template(v-if="step === 2 || isTemplateMode")
 					button.btn(type="button" @click="saveDocForm") 저장
 
 				template(v-else)
-					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; rejectSetting = true") 취소
+					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = true") 취소
 					button.btn.outline.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
 					button.btn(type="submit") 결재요청
 
