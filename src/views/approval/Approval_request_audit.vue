@@ -909,6 +909,26 @@ const saveDocForm = async () => {
                 formData.append('form_data', file);
             });
         }
+
+		if(uploadedFile.value.length) {
+			for (const file of uploadedFile.value) {
+				console.log('Processing file:', file);
+
+				// 파일 데이터를 서버에서 가져옴
+				const fileData = await skapi.getFile(file.url, {
+					dataType: 'endpoint'
+				});
+
+				// 가져온 파일 데이터를 Blob으로 변환
+				const blob = await fetch(fileData.url).then(res => res.blob());
+
+				// Blob에 원래 파일 이름을 붙여 File 객체 생성
+				const fileObject = new File([blob], file.filename, { type: blob.type });
+
+				// FormData에 추가
+				formData.append('form_data', fileObject);
+			}
+		}
 	
 		const options = {
 			table: {
@@ -979,6 +999,26 @@ const saveMyDocForm = async () => {
 			Array.from(filebox.files).forEach(file => {
 				formData.append('form_data', file);
 			});
+		}
+
+		if(uploadedFile.value.length) {
+			for (const file of uploadedFile.value) {
+				console.log('Processing file:', file);
+
+				// 파일 데이터를 서버에서 가져옴
+				const fileData = await skapi.getFile(file.url, {
+					dataType: 'endpoint'
+				});
+
+				// 가져온 파일 데이터를 Blob으로 변환
+				const blob = await fetch(fileData.url).then(res => res.blob());
+
+				// Blob에 원래 파일 이름을 붙여 File 객체 생성
+				const fileObject = new File([blob], file.filename, { type: blob.type });
+
+				// FormData에 추가
+				formData.append('form_data', fileObject);
+			}
 		}
 	
 		const options = {
