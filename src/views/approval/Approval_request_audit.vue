@@ -5,18 +5,62 @@
 hr
 
 template(v-if="step === 1 && showBackStep && !isTemplateMode")
-	.top-wrap
+	div(style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;")
+		.selected-wrap(style="flex-grow: 1;")
+			p.label 카테고리 선택
+			select(name="selCategory" @change="(e) => {formCategory = e.target.value}")
+				//- option(disabled selected) 카테고리 선택
+				//- option(value="bookmark") 즐겨찾기
+				option(value="master") 일반 결재 양식
+				option(value="mine") 나의 결재 양식
+			
+		.selected-wrap(style="flex-grow: 1;")
+			p.label 결재 양식 선택
+			select(v-if="formCategory === 'master'" name="masterForms" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) 기본 결재 양식을 선택해주세요.
+				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
+
+			select(v-else-if="formCategory === 'mine'" name="myForms" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
+				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
+
+			select(v-else)
+				option(value="" disabled selected) 결재 양식을 선택해주세요.
+				//- option(v-for="form in masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
+
+	br
+
+	p 결재 옵션
+
+	br
+
+	.label-wrap(style="border: 1px solid var(--gray-color-200); padding: 0.6rem 0.8rem; border-radius: 0.5rem;")
+		label.radio-button(style="margin-right: 1rem;")
+			input(type="radio" name="radio" value="true" v-model="rejectSetting")
+			span.label-radio(style="font-size: 0.8rem") '반대'해도 결재 진행
+
+		label.radio-button
+			input(type="radio" name="radio" value="false" v-model="rejectSetting")
+			span.label-radio(style="font-size: 0.8rem") '반대'하면 결재 중단 (반려와 동일하게 처리)
+
+	br
+
+	.button-wrap
+		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새로 작성
+		button.btn.btn-next(type="button" @click="step = 2") 다음
+
+	//- .top-wrap
 		p.desc 결재 양식 선택 후 결재 작성이 진행됩니다. 결재 양식을 먼저 선택해주세요.
 		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새로 작성
 
-	.item-wrap
+	//- .item-wrap
 		p.label 기본 결재 양식
 		.selected-wrap
 			select(name="masterForms" @change="(e) => selDocForm(e)")
 				option(value="" disabled selected) 기본 결재 양식을 선택해주세요.
 				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-	.item-wrap
+	//- .item-wrap
 		p.label 나의 양식
 		.selected-wrap
 			select(name="myForms" @change="(e) => selDocForm(e)")
@@ -177,7 +221,7 @@ template(v-if="step === 2 || isTemplateMode")
 													template(v-else)
 														li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
-			.reject-setting
+			//- .reject-setting
 				label.checkbox
 					input#setReject(type="checkbox" name="checkbox" v-model="rejectSetting")
 					span.label-checkbox 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.<br>(미체크 : 결재 도중 반려시 해당 결재서류 회수)
@@ -188,7 +232,7 @@ template(v-if="step === 2 || isTemplateMode")
 					button.btn(type="button" @click="saveDocForm") 저장
 
 				template(v-else)
-					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1") 취소
+					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; rejectSetting = true") 취소
 					button.btn.outline.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
 					button.btn(type="submit") 결재요청
 
@@ -303,6 +347,7 @@ const selectedAuditors = ref({
     receivers: []   // 수신참조
 });
 
+const formCategory = ref('master'); // 결재 양식 카테고리
 const masterForms = ref({}); // 기본 결재 양식
 const myForms = ref({}); // 나의 결재 양식
 const selectedForm = ref([]); // 선택된 결재 양식
@@ -341,11 +386,11 @@ const editorIsReady = ref(false);
 // 	console.log('결재 양식 삭제완');
 // }
 
-watch(auditTitle, (nv, ov) => {
-	if(nv) {
-		step.value = 2;
-	}
-});
+// watch(auditTitle, (nv, ov) => {
+// 	if(nv) {
+// 		step.value = 2;
+// 	}
+// });
 
 // 결재라인 모달 열기
 const openModal = () => {
@@ -1097,7 +1142,7 @@ const convertAuditorFormat = (auditors) => {
 const selDocForm = async (e) => {
 	selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
 	console.log('selectedForm : ', selectedForm.value);
-	step.value = 2;
+	// step.value = 2;
 	isFormSelected.value = true;
 
 	auditTitle.value = selectedForm.value.data.form_title;
