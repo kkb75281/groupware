@@ -22,8 +22,7 @@ hr
 .tb-overflow
 	table.table#tb-auditList
 		colgroup
-			col(v-show="isDesktop" style="width: 3rem")
-			col(style="width: 2rem")
+			col(style="width: 3rem")
 			col
 			template(v-if="currentPage === 'audit-list'")
 				col(:style="{ width: isDesktop ? '12%' : '24%' }")
@@ -31,8 +30,7 @@ hr
 			col(v-show="isDesktop" style="width: 10%")
 		thead
 			tr
-				th(v-show="isDesktop" scope="col") NO
-				th(scope="col") 
+				th(scope="col") NO
 				th.left(scope="col") 결재 사안
 				template(v-if="currentPage === 'audit-list'")
 					th(scope="col") 나의 현황
@@ -49,27 +47,7 @@ hr
 					td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : '수신참조 목록이 없습니다.' }}
 			template(v-else)
 				tr(v-for="(audit, index) of filterAuditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
-					td(v-show="isDesktop") {{ filterAuditList.length - index }}
-					td
-						.icon-wrap
-							//- .icon-favorite
-								template(v-if="!isAuditRead(audit)")
-									.icon
-										svg
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
-								template(v-else)
-									.icon
-										svg
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-star-full")
-							.icon-read
-								template(v-if="isAuditRead(audit)")
-									.icon
-										svg(style="fill: var(--gray-color-300)")
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-read-mail")
-								template(v-else)
-									.icon
-										svg(style="fill: var(--gray-color-500)")
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+					td {{ filterAuditList.length - index }}
 					td.left
 						.audit-title {{ audit.data.to_audit }}
 					template(v-if="currentPage === 'audit-list'")
@@ -122,17 +100,9 @@ const filterAuditList = computed(() => {
 			return auditors.receivers?.includes(user.user_id.replaceAll('-', '_'));
 		}
 	});
-});
+	});
 
-// 결재 문서 읽음 여부 확인
-const isAuditRead = (audit) => {
-	const auditNoti = realtimes.value.find(rt => rt.audit_info?.audit_doc_id === audit.record_id);
-	if (!auditNoti) return false;
-	
-	return Object.keys(readList.value).includes(auditNoti.noti_id);
-};
-
-const showAuditDoc = (e, audit) => {
+	const showAuditDoc = (e, audit) => {
 	// if(audit.isCanceled) return;
 
 	const searchCurrentAuditNoti = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id)[0];
@@ -217,22 +187,5 @@ onUnmounted(() => {
 		color: var(--gray-color-300);
 		border-color: var(--gray-color-300);
 	}
-}
-
-.icon-wrap {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-
-	.icon {
-		svg {
-			width: 1.05rem;
-			height: 1.05rem;
-		}
-	}
-}
-
-.icon {
-	padding: 0;
 }
 </style>
