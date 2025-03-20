@@ -1191,6 +1191,7 @@ const newWriteAudit = () => {
 
 	auditTitle.value = '';
 	editorContent.value = '';
+	selectedForm.value = [];
 	selectedAuditors.value = {
 		approvers: [],
 		agreers: [],
