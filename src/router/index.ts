@@ -155,6 +155,11 @@ const router = createRouter({
 							name: 'audit-detail-reference',
 							component: () => import('@/views/approval/Approval_audit_detail.vue'),
 						},
+						{
+							path: 'audit-detail-favorite/:auditId',
+							name: 'audit-detail-favorite', 
+							component: () => import('@/views/approval/Approval_audit_detail.vue')
+						},
 					],
 				},
 				{

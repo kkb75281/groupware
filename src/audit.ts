@@ -292,5 +292,11 @@ export const goToAuditDetail = (e: any, auditId: any, router: any) => {
   // 수신참조 경우
   if (router.currentRoute.value.name === 'audit-reference') {
     router.push({ name: 'audit-detail-reference', params: { auditId } });
+  } else if (router.currentRoute.value.name === 'audit-list-favorite') {
+    router.push({ name: 'audit-detail-favorite', params: { auditId } });
+  }
+
+  if (e.target.closest('.icon-favorite') || e.target.closest('.icon-read')) {
+    return;
   }
 };

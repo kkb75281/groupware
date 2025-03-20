@@ -346,6 +346,10 @@ const goToPrev = () => {
     // 수신참조
   } else if (route.path.includes('audit-detail-reference')) {
     router.push('/approval/audit-reference');
+    
+    // 중요 결재함
+  } else if (route.path.includes('audit-detail-favorite')) {
+    router.push('/approval/audit-list-favorite');
 
     // 결재 수신함
   } else {

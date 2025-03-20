@@ -5,91 +5,72 @@ h1.title {{ currentPage === 'audit-list' ? '결재 수신함' : currentPage === 
 hr
 
 .table-wrap
-//- .tb-head-wrap
-	.input-wrap.search
-		input(type="text" name="" placeholder="회원명, 직급, 아이디 검색")
-		button.btn-search(type="button")
-
-	.input-wrap
-		select
-			option(value="") 10개
-			option(value="") 20개
-			option(value="") 30개
-
-	.tb-toolbar
-		.btn-wrap
-			button.btn.outline.md(type="button") 등록
-
-.tb-overflow
-	table.table#tb-auditList
-		colgroup
-			col(v-show="isDesktop" style="width: 3rem")
-			col(style="width: 3rem")
-			col
-			template(v-if="currentPage === 'audit-list'")
-				col(:style="{ width: isDesktop ? '12%' : '24%' }")
-			col(v-show="isDesktop" style="width: 12%")
-			col(v-show="isDesktop" style="width: 10%")
-		thead
-			tr
-				th(v-show="isDesktop" scope="col") NO
-				th(scope="col") 
-				th.left(scope="col") 결재 사안
+	.tb-overflow
+		table.table#tb-auditList
+			colgroup
+				col(v-show="isDesktop" style="width: 3rem")
+				col(style="width: 3rem")
+				col
 				template(v-if="currentPage === 'audit-list'")
-					th(scope="col") 나의 현황
-				th(v-show="isDesktop" scope="col") 결재 현황
-				th(v-show="isDesktop" scope="col") 기안자
-
-		tbody
-			template(v-if="auditListRunning")
-				tr.nohover.loading(style="border-bottom: unset;")
-					td(colspan="6")
-						Loading#loading
-			template(v-else-if="!filterAuditList || !filterAuditList.length")
-				tr.nohover
-					td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : currentPage === 'audit-reference' ? '수신참조 목록이 없습니다.' : currentPage === 'audit-list-favorite' ? '지정하신 중요 결재가 없습니다.' : '' }}
-			template(v-else)
-				tr(v-for="(audit, index) of filterAuditList" :key="audit.user_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
-					td(v-show="isDesktop") {{ filterAuditList.length - index }}
-					td.td-icon
-						.icon-wrap
-							.icon-favorite(@click.stop="toggleFavoriteAudit(audit)")
-								template(v-if="favoriteAuditList.length && favoriteAuditList.includes(audit.record_id)")
-									.icon
-										svg
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-star-fill")
-								template(v-else)
-									.icon
-										svg
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
-							.icon-read
-								template(v-if="isAuditRead(audit)")
-									.icon
-										svg
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-read-mail")
-								template(v-else)
-									.icon
-										svg(style="fill: var(--gray-color-500)")
-											use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-					td.left
-						.audit-title {{ audit.data.to_audit }}
+					col(:style="{ width: isDesktop ? '12%' : '24%' }")
+				col(v-show="isDesktop" style="width: 12%")
+				col(v-show="isDesktop" style="width: 10%")
+			thead
+				tr
+					th(v-show="isDesktop" scope="col") NO
+					th(scope="col") 
+					th.left(scope="col") 결재 사안
 					template(v-if="currentPage === 'audit-list'")
-						td
-							span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함', canceled: audit.my_state === '회수됨' }") {{ audit.my_state }}
-					//- td(v-show="isDesktop")
-						span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)), canceled: audit.isCanceled }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
-					td(v-show="isDesktop")
-						span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
-					td.drafter(v-show="isDesktop") {{ audit.user_info?.name }}
+						th(scope="col") 나의 현황
+					th(v-show="isDesktop" scope="col") 결재 현황
+					th(v-show="isDesktop" scope="col") 기안자
 
-//- 테스트용 삭제 버튼 (추후 삭제)
-//- button.btn.sm(@click="testDelete") delete
-
+			tbody
+				template(v-if="auditListRunning")
+					tr.nohover.loading(style="border-bottom: unset;")
+						td(colspan="6")
+							Loading#loading
+				template(v-else-if="!filterAuditList || !filterAuditList.length")
+					tr.nohover
+						td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : currentPage === 'audit-reference' ? '수신참조 목록이 없습니다.' : currentPage === 'audit-list-favorite' ? '지정하신 중요 결재가 없습니다.' : '' }}
+				template(v-else)
+					tr(v-for="(audit, index) of filterAuditList" :key="audit.record_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
+						td(v-show="isDesktop") {{ filterAuditList.length - index }}
+						td.td-icon
+							.icon-wrap
+								.icon-favorite(@click.stop="toggleFavoriteAudit(audit)")
+									template(v-if="favoriteAuditList.length && favoriteAuditList.includes(audit.record_id)")
+										.icon
+											svg(style="fill: rgb(255 191 79)")
+												use(xlink:href="@/assets/icon/material-icon.svg#icon-star-fill")
+									template(v-else)
+										.icon
+											svg
+												use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
+								.icon-read
+									template(v-if="isAuditRead(audit)")
+										.icon
+											svg
+												use(xlink:href="@/assets/icon/material-icon.svg#icon-read-mail")
+									template(v-else)
+										.icon
+											svg(style="fill: var(--gray-color-500)")
+												use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+						td.left
+							.audit-title {{ audit.data.to_audit }}
+						template(v-if="currentPage === 'audit-list'")
+							td
+								span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함', canceled: audit.my_state === '회수됨' }") {{ audit.my_state }}
+						//- td(v-show="isDesktop")
+							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)), canceled: audit.isCanceled }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
+						td(v-show="isDesktop")
+							span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
+						td.drafter(v-show="isDesktop") {{ audit.user_info?.name }}
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
 import { auditList, auditListRunning, getAuditList, goToAuditDetail } from '@/audit';
@@ -109,20 +90,6 @@ const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
 
-// 테스트용 삭제 함수 (추후 삭제)
-// const testDelete = async () => {
-// 	const res = await skapi.deleteRecords({
-// 		table: {
-// 			name: 'audit_favorite_' + makeSafe(user.user_id),
-// 			access_group: 'private',
-// 		},
-// 		record_id: 'UfrlByQaRNK7ps8x',
-// 	});
-
-// 	console.log('=== testDelete === res : ', res);
-// 	console.log('결재 양식 삭제완');
-// }
-
 // 현재 페이지 구분
 const currentPage = computed(() => {
   if (route.path.includes('audit-list-favorite')) {
@@ -139,6 +106,12 @@ const filterAuditList = computed(() => {
 	if (!auditList.value) return [];
 
 	return auditList.value.filter(audit => {
+		// 즐겨찾기 페이지인 경우, 즐겨찾기한 결재들만 표시
+		if (currentPage.value === 'audit-list-favorite') {
+			return Array.isArray(favoriteAuditList.value) && 
+                   favoriteAuditList.value.includes(audit.record_id);
+		}
+
 		const auditors = JSON.parse(audit.data.auditors);
 
 		if (currentPage.value === 'audit-list') {
@@ -153,64 +126,6 @@ const filterAuditList = computed(() => {
 });
 
 // 중요 결재 저장/해제
-// const toggleFavoriteAudit = async (audit) => {
-// 	if (favoriteAudit.value) return;
-// 	favoriteAudit.value = true;
-
-// 	try {
-// 		const isFavorite = favoriteAuditList.value.includes(audit.record_id) ? true : false;
-// 		console.log('isFavorite : ', isFavorite);
-
-// 		const data = {
-// 			// audit_title: audit.data.to_audit,
-// 			// audit_id: audit.record_id,
-// 			list: favoriteAuditList.value,
-// 		}
-
-// 		const config = {
-// 			table: {
-// 				name: 'audit_favorite_' + makeSafe(user.user_id),
-// 				access_group: 'private',
-// 			},
-// 		}
-
-// 		if (isFavorite) {
-// 			console.log('중요 결재 해제 완료');
-// 			// 중요 결재 목록에 포함되어 있었으므로 제거
-// 			favoriteAuditList.value = favoriteAuditList.value.filter(id => id !== audit.record_id);
-// 			console.log('AA == favoriteAuditList.value : ', favoriteAuditList.value);
-
-// 			// const deleteFavoriteAudit = await skapi.postRecord(data, config);
-// 			// console.log('deleteFavoriteAudit : ', deleteFavoriteAudit);
-			
-// 			// favoriteAuditList.value = deleteFavoriteAudit;
-// 			// console.log('삭제 확인 == favoriteAuditList.value : ', favoriteAuditList.value);
-
-// 			// return deleteFavoriteAudit;
-// 		} else {
-// 			console.log('중요 결재 저장');
-// 			// 중요 결재 목록에 없었으므로 추가
-// 			favoriteAuditList.value.push(audit.record_id);
-// 			console.log('BB == favoriteAuditList.value : ', favoriteAuditList.value);
-// 		}
-
-// 		const saveFavoriteAudit = await skapi.postRecord(data, config);
-// 		console.log('saveFavoriteAudit : ', saveFavoriteAudit);
-
-// 		favoriteAuditList.value = saveFavoriteAudit;
-// 		console.log('저장 확인 == favoriteAuditList.value : ', favoriteAuditList.value);
-
-// 		return saveFavoriteAudit;
-// 	} catch (err) {
-// 		console.log('err : ', err);
-// 		console.error('중요 결재 저장/해제 실패');
-// 	} finally {
-// 		favoriteAudit.value = false;
-// 	}
-
-// 	console.log('favoriteAuditList.value : ', favoriteAuditList.value);
-// }
-
 const toggleFavoriteAudit = async (audit) => {
     if (favoriteAudit.value) return;
     favoriteAudit.value = true;
@@ -218,18 +133,16 @@ const toggleFavoriteAudit = async (audit) => {
     try {
         // 현재 audit.record_id가 즐겨찾기에 포함되어 있는지 확인
         const isFavorite = Array.isArray(favoriteAuditList.value) && favoriteAuditList.value.includes(audit.record_id);
-        console.log('isFavorite : ', isFavorite);
 
         if (isFavorite) {
-            console.log('중요 결재 해제 완료');
             // 중요 결재 목록에서 제거
             favoriteAuditList.value = favoriteAuditList.value.filter(id => id !== audit.record_id);
-            console.log('AA == favoriteAuditList.value : ', favoriteAuditList.value);
+            // console.log('AA == favoriteAuditList.value : ', favoriteAuditList.value);
         } else {
             console.log('중요 결재 저장');
             // 중요 결재 목록에 추가
             favoriteAuditList.value.push(audit.record_id);
-            console.log('BB == favoriteAuditList.value : ', favoriteAuditList.value);
+            // console.log('BB == favoriteAuditList.value : ', favoriteAuditList.value);
         }
 
 		const data = {
@@ -249,7 +162,7 @@ const toggleFavoriteAudit = async (audit) => {
 
         // 서버에 데이터 저장
         const saveFavoriteAudit = await skapi.postRecord(data, config);
-        console.log('saveFavoriteAudit : ', saveFavoriteAudit);
+        // console.log('saveFavoriteAudit : ', saveFavoriteAudit);
 
         // 반환된 데이터가 배열인지 확인하고, 배열로 변환
         if (saveFavoriteAudit && Array.isArray(saveFavoriteAudit.data.list)) {
@@ -259,11 +172,14 @@ const toggleFavoriteAudit = async (audit) => {
             console.error('잘못된 데이터 형식: 배열이 아닙니다.');
             throw new Error('잘못된 데이터 형식');
         }
+        // console.log('저장 확인 == favoriteAuditList.value : ', favoriteAuditList.value);
 
-        console.log('저장 확인 == favoriteAuditList.value : ', favoriteAuditList.value);
+		// 즐겨찾기한 결재 목록 업데이트 (바로 사라지도록)
+		// await getFavoriteAuditList();
+
         return saveFavoriteAudit.data.list;
     } catch (err) {
-        console.log('err : ', err);
+        // console.log('err : ', err);
         console.error('중요 결재 저장/해제 실패');
     } finally {
         favoriteAudit.value = false;
@@ -290,11 +206,13 @@ const getFavoriteAuditList = async () => {
 		});
 		console.log('=== getFavoriteAuditList === res : ', res.list);
 
-		favoriteAuditId.value = res.list[0].record_id;
-		favoriteAuditList.value = res.list[0].data.list;
-
-		// favoriteAuditList.value = res.list.map(favorite => favorite.data.audit_id);
-		// console.log('중요결재 목록 업데이트 == favoriteAuditList.value : ', favoriteAuditList.value);
+		if (res.list && res.list.length > 0) {
+            favoriteAuditId.value = res.list[0].record_id;
+            favoriteAuditList.value = res.list[0].data.list || [];
+        } else {
+			favoriteAuditId.value = '';
+			favoriteAuditList.value = [];
+		}
 
 		return res;
 	} catch {
@@ -320,7 +238,18 @@ const showAuditDoc = (e, audit) => {
 		readNoti(searchCurrentAuditNoti);
 	}
 
-	goToAuditDetail(e, audit.record_id, router);
+	// 현재 페이지 정보를 포함하여 상세 페이지로 이동
+	let targetPath = '';
+
+	if (currentPage.value === 'audit-list-favorite') {
+		targetPath = `/approval/audit-detail-favorite/${audit.record_id}`;
+	} else if (currentPage.value === 'audit-reference') {
+		targetPath = `/approval/audit-detail-reference/${audit.record_id}`;
+	} else {
+		targetPath = `/approval/audit-detail/${audit.record_id}`;
+	}
+
+	goToAuditDetail(e, audit.record_id, router, targetPath);
 }
 
 onMounted(async () => {
