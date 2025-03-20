@@ -82,13 +82,16 @@ hr
 						span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
 					td.drafter(v-show="isDesktop") {{ audit.user_info?.name }}
 
+//- 테스트용 삭제 버튼 (추후 삭제)
+//- button.btn.sm(@click="testDelete") delete
+
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { skapi } from '@/main';
-import { user } from '@/user';
+import { user, makeSafe } from '@/user';
 import { auditList, auditListRunning, getAuditList, goToAuditDetail } from '@/audit';
 import { readList, realtimes, readNoti } from '@/notifications';
 
@@ -104,6 +107,20 @@ const favoriteAuditList = ref([]); // 중요 결재 리스트
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
+
+// 테스트용 삭제 함수 (추후 삭제)
+// const testDelete = async () => {
+// 	const res = await skapi.deleteRecords({
+// 		table: {
+// 			name: 'audit_favorite_' + makeSafe(user.user_id),
+// 			access_group: 'private',
+// 		},
+// 		record_id: 'UfrlByQaRNK7ps8x',
+// 	});
+
+// 	console.log('=== testDelete === res : ', res);
+// 	console.log('결재 양식 삭제완');
+// }
 
 // 현재 페이지 구분
 const currentPage = computed(() => {
@@ -134,17 +151,89 @@ const filterAuditList = computed(() => {
 	});
 });
 
-// 중요 결재 리스트
-const toggleFavoriteAudit = (audit) => {
-	console.log('audit : ', audit);
-	favoriteAudit.value = !favoriteAudit.value;
+// 중요 결재 저장/해제
+const toggleFavoriteAudit = async (audit) => {
+	if (favoriteAudit.value) return;
+	favoriteAudit.value = true;
 
-	if (favoriteAudit.value) {
-		favoriteAuditList.value.push(audit.record_id);
-	} else {
-		favoriteAuditList.value = favoriteAuditList.value.filter(fav => fav !== audit.record_id);
+	try {
+		const isFavorite = favoriteAuditList.value.includes(audit.record_id);
+		console.log('isFavorite : ', isFavorite);
+
+		const data = {
+			audit_title: audit.data.to_audit,
+			audit_id: audit.record_id,
+		}
+
+		const config = {
+			table: {
+				name: 'audit_favorite_' + makeSafe(user.user_id),
+				access_group: 'private',
+			},
+		}
+
+		if (isFavorite) {
+			console.log('중요 결재 해제 완료');
+			// 중요 결재 목록에 포함되어 있었으므로 제거
+			favoriteAuditList.value = favoriteAuditList.value.filter(id => id !== audit.record_id);
+			console.log('AA == favoriteAuditList.value : ', favoriteAuditList.value);
+
+			const deleteFavoriteAudit = await skapi.postRecord(data, config);
+			console.log('deleteFavoriteAudit : ', deleteFavoriteAudit);
+			
+			favoriteAuditList.value = deleteFavoriteAudit;
+			console.log('삭제 확인 == favoriteAuditList.value : ', favoriteAuditList.value);
+
+			return deleteFavoriteAudit;
+		} else {
+			console.log('중요 결재 저장');
+			// 중요 결재 목록에 없었으므로 추가
+			favoriteAuditList.value.push(audit.record_id);
+			console.log('BB == favoriteAuditList.value : ', favoriteAuditList.value);
+
+			const saveFavoriteAudit = await skapi.postRecord(data, config);
+			console.log('saveFavoriteAudit : ', saveFavoriteAudit);
+
+			favoriteAuditList.value = saveFavoriteAudit;
+			console.log('저장 확인 == favoriteAuditList.value : ', favoriteAuditList.value);
+
+			return saveFavoriteAudit;
+		}
+	} catch {
+		console.error('중요 결재 저장/해제 실패');
+	} finally {
+		favoriteAudit.value = false;
 	}
-};
+}
+
+// 중요 결재 리스트 가져오기
+const getFavoriteAuditList = async () => {
+	if (!auditList.value) return;
+
+	try {
+		const query = {
+			table: {
+				name: 'audit_favorite_' + makeSafe(user.user_id),
+				access_group: 'private',
+			},
+		}
+
+		const res = await skapi.getRecords({
+			table: {
+				name: 'audit_favorite_' + makeSafe(user.user_id),
+				access_group: 'private',
+			},
+		});
+		console.log('=== getFavoriteAuditList === res : ', res.list);
+
+		favoriteAuditList.value = res.list.map(favorite => favorite.data.audit_id);
+		console.log('중요결재 목록 업데이트 == favoriteAuditList.value : ', favoriteAuditList.value);
+
+		return res;
+	} catch {
+		console.error('중요 결재 리스트 가져오기 실패');
+	}
+}
 
 // 결재 문서 읽음 여부 확인
 const isAuditRead = (audit) => {
@@ -168,7 +257,8 @@ const showAuditDoc = (e, audit) => {
 }
 
 onMounted(async () => {
-	await getAuditList();
+	await getAuditList(); // 결재 리스트
+	await getFavoriteAuditList(); // 중요 결재 리스트
 	window.addEventListener('resize', updateScreenSize);
 });
 
