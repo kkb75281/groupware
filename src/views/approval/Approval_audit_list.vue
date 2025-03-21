@@ -138,19 +138,15 @@ const toggleFavoriteAudit = async (audit) => {
 			console.log('중요 결재 제거');
             // 중요 결재 목록에서 제거
             favoriteAuditList.value = favoriteAuditList.value.filter(id => id !== audit.record_id);
-            // console.log('AA == favoriteAuditList.value : ', favoriteAuditList.value);
         } else {
             console.log('중요 결재 저장');
             // 중요 결재 목록에 추가
             favoriteAuditList.value.push(audit.record_id);
-            // console.log('BB == favoriteAuditList.value : ', favoriteAuditList.value);
         }
 
 		const data = {
             list: favoriteAuditList.value,
         };
-
-		console.log('저장하는 데이터 : ', favoriteAuditList.value);
 
         const config = {
             table: {
@@ -163,24 +159,8 @@ const toggleFavoriteAudit = async (audit) => {
 			config.record_id = favoriteAuditId.value;
 		}
 
-		console.log('data:', data)
-
         // 서버에 데이터 저장
         const saveFavoriteAudit = await skapi.postRecord(data, config);
-        // console.log('saveFavoriteAudit : ', saveFavoriteAudit.data.list);
-
-        // // 반환된 데이터가 배열인지 확인하고, 배열로 변환
-        // if (saveFavoriteAudit && Array.isArray(saveFavoriteAudit.data.list)) {
-        //     // 반환된 객체에 list 속성이 배열인 경우
-        //     favoriteAuditList.value = saveFavoriteAudit.data.list;
-        // } else {
-        //     console.error('잘못된 데이터 형식: 배열이 아닙니다.');
-        //     throw new Error('잘못된 데이터 형식');
-        // }
-        // console.log('저장 확인 == favoriteAuditList.value : ', favoriteAuditList.value);
-
-		// 즐겨찾기한 결재 목록 업데이트 (바로 사라지도록)
-		// await getFavoriteAuditList();
 
         return saveFavoriteAudit.data.list;
     } catch (err) {
