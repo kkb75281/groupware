@@ -22,8 +22,10 @@ export async function getAuditList() {
       },
       {
         ascending: false, // 최신순
+        limit: 100
       }
     );
+    console.log({audits})
   } catch (err) {
     auditListRunning.value = false;
     console.error({ err });
