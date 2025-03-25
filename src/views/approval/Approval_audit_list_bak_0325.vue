@@ -47,7 +47,7 @@ hr
 										.icon
 											svg
 												use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
-								.icon-read
+								.icon-read(style="cursor: default;")
 									template(v-if="isAuditRead(audit)")
 										.icon
 											svg
@@ -66,6 +66,9 @@ hr
 						td(v-show="isDesktop")
 							span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
 						td.drafter(v-show="isDesktop") {{ audit.user_info?.name }}
+
+//- button.btn.sm(@click="testDelete") delete
+
 </template>
 
 <script setup>
@@ -85,10 +88,24 @@ const isDesktop = ref(window.innerWidth > 768); // 반응형
 const favoriteAudit = ref(false); // 중요 결재 지정 여부
 const favoriteAuditList = ref([]); // 중요 결재 리스트
 const favoriteAuditId = ref(''); // 중요 결재 리스트 레코드 아이디
+const favoriteAuditRecords = ref([]); // 중요 결재 레코드 전체 목록
 
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
+
+// const testDelete = async () => {
+// 	const res = await skapi.deleteRecords({
+// 		table: {
+// 			name: 'audit_favorite_' + makeSafe(user.user_id),
+// 			access_group: 'private',
+// 		},
+// 		record_id: 'UgKGuf7zC6UHg8CP',
+// 	});
+
+// 	console.log('=== testDelete === res : ', res);
+// 	console.log('결재 양식 삭제완');
+// }
 
 // 현재 페이지 구분
 const currentPage = computed(() => {
@@ -132,53 +149,53 @@ const toggleFavoriteAudit = async (audit) => {
 
     try {
         // 현재 audit.record_id가 즐겨찾기에 포함되어 있는지 확인
-        const isFavorite = Array.isArray(favoriteAuditList.value) && favoriteAuditList.value.includes(audit.record_id);
+        const favoriteRecord = favoriteAuditRecords.value.find(record => record.data.auditId === audit.record_id);
+        
+        const isFavorite = !!favoriteRecord;
+        // console.log('isFavorite : ', isFavorite);
 
         if (isFavorite) {
-			console.log('중요 결재 제거');
-            // 중요 결재 목록에서 제거
+            // console.log('중요 결재 해제');
+            // 중요 결재 해제
+            await skapi.deleteRecords({
+                table: {
+                    name: 'audit_favorite_' + makeSafe(user.user_id),
+                    access_group: 'private',
+                },
+                record_id: favoriteRecord.record_id,
+            });
+            
+            // UI 업데이트
+            favoriteAuditRecords.value = favoriteAuditRecords.value.filter(record => record.record_id !== favoriteRecord.record_id);
             favoriteAuditList.value = favoriteAuditList.value.filter(id => id !== audit.record_id);
         } else {
-            console.log('중요 결재 저장');
-            // 중요 결재 목록에 추가
+            // console.log('중요 결재 저장');
+            // 중요 결재 저장
+            const data = {
+                auditId: audit.record_id,
+                // auditTitle: audit.data.to_audit,
+            };
+
+            const config = {
+                table: {
+                    name: 'audit_favorite_' + makeSafe(user.user_id),
+                    access_group: 'private',
+                }
+            };
+
+			// console.log('data : ', data);
+			// console.log('config : ', config);
+
+            const saveFavoriteAudit = await skapi.postRecord(data, config);
+            // console.log('saveFavoriteAudit : ', saveFavoriteAudit);
+
+            // UI 업데이트
+            favoriteAuditRecords.value.push(saveFavoriteAudit);
             favoriteAuditList.value.push(audit.record_id);
         }
 
-		const data = {
-            list: favoriteAuditList.value,
-        };
-
-        const config = {
-            table: {
-                name: 'audit_favorite_' + makeSafe(user.user_id),
-                access_group: 'private',
-            },
-        };
-
-		if(favoriteAuditId.value) {
-			config.record_id = favoriteAuditId.value;
-		}
-
-		console.log('data : ', data);
-
-        // 서버에 데이터 저장
-        const saveFavoriteAudit = await skapi.postRecord(data, config);
-		console.log('saveFavoriteAudit : ', JSON.parse(JSON.stringify(saveFavoriteAudit)));
-
-		// 반환된 데이터가 배열인지 확인하고, 배열로 변환
-        // if (saveFavoriteAudit && Array.isArray(saveFavoriteAudit.data.list)) {
-        //     // 반환된 객체에 list 속성이 배열인 경우
-        //     favoriteAuditList.value = saveFavoriteAudit.data.list;
-        // } else {
-        //     console.error('잘못된 데이터 형식: 배열이 아닙니다.');
-        //     throw new Error('잘못된 데이터 형식');
-        // }
-        // console.log('저장 확인 == favoriteAuditList.value : ', favoriteAuditList.value);
-
-        return saveFavoriteAudit.data.list;
     } catch (err) {
-        // console.log('err : ', err);
-        console.error('중요 결재 저장/해제 실패');
+        console.error('중요 결재 저장/해제 실패:', err);
     } finally {
         favoriteAudit.value = false;
     }
@@ -186,37 +203,28 @@ const toggleFavoriteAudit = async (audit) => {
 
 // 중요 결재 리스트 가져오기
 const getFavoriteAuditList = async () => {
-	if (!auditList.value) return;
+    try {
+        const res = await skapi.getRecords({
+            table: {
+                name: 'audit_favorite_' + makeSafe(user.user_id),
+                access_group: 'private',
+            },
+        });
+        // console.log('=== getFavoriteAuditList === res : ', res.list);
 
-	try {
-		const query = {
-			table: {
-				name: 'audit_favorite_' + makeSafe(user.user_id),
-				access_group: 'private',
-			},
-		}
+        // 전체 레코드 목록 저장
+        favoriteAuditRecords.value = res.list || [];
+        
+        // 즐겨찾기 ID 목록 추출
+        favoriteAuditList.value = favoriteAuditRecords.value.map(record => record.data.auditId);
 
-		const res = await skapi.getRecords({
-			table: {
-				name: 'audit_favorite_' + makeSafe(user.user_id),
-				access_group: 'private',
-			},
-		});
-		console.log('=== getFavoriteAuditList === res : ', res.list);
-
-		if (res.list && res.list.length > 0) {
-            favoriteAuditId.value = res.list[0].record_id;
-            favoriteAuditList.value = res.list[0].data.list || [];
-        } else {
-			favoriteAuditId.value = '';
-			favoriteAuditList.value = [];
-		}
-
-		return res;
-	} catch {
-		console.error('중요 결재 리스트 가져오기 실패');
-	}
-}
+        return res;
+    } catch (err) {
+        console.error('중요 결재 리스트 가져오기 실패:', err);
+        favoriteAuditRecords.value = [];
+        favoriteAuditList.value = [];
+    }
+};
 
 // 결재 문서 읽음 여부 확인
 const isAuditRead = (audit) => {
@@ -251,7 +259,7 @@ const showAuditDoc = (e, audit) => {
 }
 
 onMounted(async () => {
-	await getAuditList(); // 결재 리스트
+	// await getAuditList(); // 결재 리스트
 	await getFavoriteAuditList(); // 중요 결재 리스트
 	window.addEventListener('resize', updateScreenSize);
 });

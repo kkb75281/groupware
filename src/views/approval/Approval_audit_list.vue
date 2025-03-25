@@ -1,5 +1,4 @@
 <template lang="pug">
-//- h1.title {{ currentPage === 'audit-list' ? '결재 수신함' : '수신참조' }}
 h1.title {{ currentPage === 'audit-list' ? '결재 수신함' : currentPage === 'audit-reference' ? '수신참조' : currentPage === 'audit-list-favorite' ? '중요 결재' : '' }}
 
 hr
@@ -47,7 +46,7 @@ hr
 										.icon
 											svg
 												use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
-								.icon-read
+								.icon-read(style="cursor: default;")
 									template(v-if="isAuditRead(audit)")
 										.icon
 											svg
@@ -66,17 +65,14 @@ hr
 						td(v-show="isDesktop")
 							span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
 						td.drafter(v-show="isDesktop") {{ audit.user_info?.name }}
-
-//- button.btn.sm(@click="testDelete") delete
-
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { skapi } from '@/main';
 import { user, makeSafe } from '@/user';
-import { auditList, auditListRunning, getAuditList, goToAuditDetail } from '@/audit';
+import { auditList, auditListRunning, auditReferenceList, auditReferenceListRunning, getAuditList, getAuditReferenceList, goToAuditDetail } from '@/audit';
 import { readList, realtimes, readNoti } from '@/notifications';
 
 import Loading from '@/components/loading.vue';
@@ -94,19 +90,6 @@ const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
 
-const testDelete = async () => {
-	const res = await skapi.deleteRecords({
-		table: {
-			name: 'audit_favorite_' + makeSafe(user.user_id),
-			access_group: 'private',
-		},
-		record_id: 'UgKGuf7zC6UHg8CP',
-	});
-
-	console.log('=== testDelete === res : ', res);
-	console.log('결재 양식 삭제완');
-}
-
 // 현재 페이지 구분
 const currentPage = computed(() => {
   if (route.path.includes('audit-list-favorite')) {
@@ -120,26 +103,38 @@ const currentPage = computed(() => {
 });
 
 const filterAuditList = computed(() => {
-	if (!auditList.value) return [];
+	// 즐겨찾기 페이지인 경우
+	if (currentPage.value === 'audit-list-favorite') {
+		const allAudits = [...auditList.value, ...auditReferenceList.value];
+		return allAudits.filter(audit => Array.isArray(favoriteAuditList.value) && favoriteAuditList.value.includes(audit.record_id));
+	} 
+	else if (currentPage.value === 'audit-reference') {
+		return auditReferenceList.value; // 수신참조 페이지인 경우
+	} 
+	else {
+		return auditList.value; // 결재 수신함 페이지인 경우
+	}
 
-	return auditList.value.filter(audit => {
-		// 즐겨찾기 페이지인 경우, 즐겨찾기한 결재들만 표시
-		if (currentPage.value === 'audit-list-favorite') {
-			return Array.isArray(favoriteAuditList.value) && 
-                   favoriteAuditList.value.includes(audit.record_id);
-		}
+	// if (!auditList.value) return [];
 
-		const auditors = JSON.parse(audit.data.auditors);
+	// return auditList.value.filter(audit => {
+	// 	// 즐겨찾기 페이지인 경우, 즐겨찾기한 결재들만 표시
+	// 	if (currentPage.value === 'audit-list-favorite') {
+	// 		return Array.isArray(favoriteAuditList.value) && 
+    //                favoriteAuditList.value.includes(audit.record_id);
+	// 	}
 
-		if (currentPage.value === 'audit-list') {
-			// 결재 수신함: approvers나 agreers에 포함된 문서
-			return auditors.approvers?.includes(user.user_id.replaceAll('-', '_')) || 
-			auditors.agreers?.includes(user.user_id.replaceAll('-', '_'));
-		} else {
-			// 수신참조함: receivers에 포함된 문서
-			return auditors.receivers?.includes(user.user_id.replaceAll('-', '_'));
-		}
-	});
+	// 	const auditors = JSON.parse(audit.data.auditors);
+
+	// 	if (currentPage.value === 'audit-list') {
+	// 		// 결재 수신함: approvers나 agreers에 포함된 문서
+	// 		return auditors.approvers?.includes(user.user_id.replaceAll('-', '_')) || 
+	// 		auditors.agreers?.includes(user.user_id.replaceAll('-', '_'));
+	// 	} else {
+	// 		// 수신참조함: receivers에 포함된 문서
+	// 		return auditors.receivers?.includes(user.user_id.replaceAll('-', '_'));
+	// 	}
+	// });
 });
 
 // 중요 결재 저장/해제
@@ -210,7 +205,7 @@ const getFavoriteAuditList = async () => {
                 access_group: 'private',
             },
         });
-        console.log('=== getFavoriteAuditList === res : ', res.list);
+        // console.log('=== getFavoriteAuditList === res : ', res.list);
 
         // 전체 레코드 목록 저장
         favoriteAuditRecords.value = res.list || [];
@@ -235,32 +230,36 @@ const isAuditRead = (audit) => {
 };
 
 const showAuditDoc = (e, audit) => {
-	// if(audit.isCanceled) return;
+  const searchCurrentAuditNoti = realtimes.value.find(rt => rt.audit_info?.audit_doc_id === audit.record_id);
+  
+  if (searchCurrentAuditNoti && !Object.keys(readList.value).includes(searchCurrentAuditNoti.noti_id)) {
+    readNoti(searchCurrentAuditNoti);
+  }
 
-	const searchCurrentAuditNoti = realtimes.value.filter(rt => rt.audit_info.audit_doc_id === audit.record_id)[0];
-	const checkCurrentAuditNotiRead = Object.keys(readList.value).includes(searchCurrentAuditNoti.noti_id);
+  if (e.target.closest('.icon-favorite') || e.target.closest('.icon-read')) {
+    return;
+  }
+  
+  goToAuditDetail(e, audit.record_id, router);
+};
 
-	if(!checkCurrentAuditNotiRead) {
-		readNoti(searchCurrentAuditNoti);
-	}
-
-	// 현재 페이지 정보를 포함하여 상세 페이지로 이동
-	let targetPath = '';
-
-	if (currentPage.value === 'audit-list-favorite') {
-		targetPath = `/approval/audit-detail-favorite/${audit.record_id}`;
-	} else if (currentPage.value === 'audit-reference') {
-		targetPath = `/approval/audit-detail-reference/${audit.record_id}`;
-	} else {
-		targetPath = `/approval/audit-detail/${audit.record_id}`;
-	}
-
-	goToAuditDetail(e, audit.record_id, router, targetPath);
+// 현재 페이지에 따라 필요한 데이터 로드
+const loadPageData = async () => {
+  await getFavoriteAuditList();
+  
+  if (currentPage.value === 'audit-reference') {
+    await getAuditReferenceList();
+  } else if (currentPage.value === 'audit-list') {
+    await getAuditList();
+  } else if (currentPage.value === 'audit-list-favorite') {
+    // 즐겨찾기 페이지는 모든 데이터가 필요함
+    await Promise.all([getAuditList(), getAuditReferenceList()]);
+  }
 }
 
 onMounted(async () => {
-	await getAuditList(); // 결재 리스트
-	await getFavoriteAuditList(); // 중요 결재 리스트
+	await loadPageData();
+	// await getFavoriteAuditList(); // 중요 결재 리스트
 	window.addEventListener('resize', updateScreenSize);
 });
 

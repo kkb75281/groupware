@@ -587,13 +587,13 @@ const removeAuditor = (user, type) => {
 // 에디터 준비
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
-//   console.log('=== handleEditorReady === editorIsReady : ', editorIsReady.value);
+  console.log('=== handleEditorReady === editorIsReady : ', editorIsReady.value);
 };
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
 	editorContent.value = content;
-	// console.log('=== exportWysiwygData === editorContent : ', editorContent.value);
+	console.log('=== exportWysiwygData === editorContent : ', editorContent.value);
 };
 
 // 업로드 파일 삭제
@@ -650,7 +650,7 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 		// 만약 첨부파일이 있는 결재 양식 선택시
 		if(uploadedFile.value.length) {
 			for (const file of uploadedFile.value) {
-				// console.log('Processing file:', file);
+				console.log('Processing file:', file);
 
 				// 파일 데이터를 서버에서 가져옴
 				const fileData = await skapi.getFile(file.url, {
@@ -710,7 +710,7 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 };
 
 // 결재 요청을 생성하고 알림을 보내는 함수
-const createAuditRequest = async ({ audit_id, auditor_id, role }, send_auditors) => {
+const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors, roleInfo.role) => {
     if (!audit_id || !auditor_id) return;
 
 	// 결재 요청
@@ -730,10 +730,12 @@ const createAuditRequest = async ({ audit_id, auditor_id, role }, send_auditors)
             tags: [audit_id],
 			index: {
 				name: 'type',
-				value: role,
+				// value: 'agreer' | 'approver' | 'receiver',
+				value: roleInfo.role,
 			},
         }
     );
+	console.log('=== createAuditRequest === res : ', res);
 
     skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
@@ -814,7 +816,7 @@ const createAuditRequest = async ({ audit_id, auditor_id, role }, send_auditors)
 };
 
 // 결재 요청 Alarm
-const postAuditDocRecordId = async (auditId, userId, role) => {
+const postAuditDocRecordId = async (auditId, userId ) => {
     try {
         // 권한 부여
         await grantAuditorAccess({
@@ -825,8 +827,7 @@ const postAuditDocRecordId = async (auditId, userId, role) => {
 		// 알림 전송
 		return createAuditRequest({
             audit_id: auditId,
-            auditor_id: userId,
-			role: role
+            auditor_id: userId
         }, send_auditors_arr);
     } catch (error) {
         console.error(error);
@@ -878,6 +879,7 @@ const requestAudit = async (e) => {
             // roles: getAllSelectedUserIds() // ID 목록만 전달
 			reject_setting: rejectSetting.value, // 반려 설정 관련 체크박스 값 전달
         });
+		console.log('=== requestAudit === auditDoc : ', auditDoc);
 
         const auditId = auditDoc.record_id;
 
@@ -906,7 +908,7 @@ const requestAudit = async (e) => {
 		];
 
 		const res = await Promise.all(processRoles.map(roleInfo => 
-			postAuditDocRecordId(auditId, roleInfo.userId, roleInfo.role)
+			postAuditDocRecordId(auditId, roleInfo.userId)
 		));
 
 		// 결재라인 select option '결재'로 초기화
@@ -935,7 +937,7 @@ const requestAudit = async (e) => {
 
 // 기존 결재 양식 저장 (마스터가 저장한 결재 양식)
 const saveDocForm = async () => {
-	// console.log('결재 양식 저장');
+	console.log('결재 양식 저장');
 
 	try {
 		// 첨부파일 업로드
@@ -955,7 +957,7 @@ const saveDocForm = async () => {
 
 		if(uploadedFile.value.length) {
 			for (const file of uploadedFile.value) {
-				// console.log('Processing file:', file);
+				console.log('Processing file:', file);
 
 				// 파일 데이터를 서버에서 가져옴
 				const fileData = await skapi.getFile(file.url, {
@@ -985,7 +987,7 @@ const saveDocForm = async () => {
 		};
 	
 		const res = await skapi.postRecord(formData, options);
-		// console.log('=== saveDocForm === res : ', res);
+		console.log('=== saveDocForm === res : ', res);
 
 		alert('결재 양식이 저장되었습니다.');
 		router.push('/admin/list-form');
@@ -996,7 +998,7 @@ const saveDocForm = async () => {
 
 // 내 결재 양식 저장
 const saveMyDocForm = async () => {
-	// console.log('본인 결재 양식 저장');
+	console.log('본인 결재 양식 저장');
 
 	// 결재 제목이 없을 경우 저장 불가
 	if (!auditTitle.value) {
@@ -1046,7 +1048,7 @@ const saveMyDocForm = async () => {
 
 		if(uploadedFile.value.length) {
 			for (const file of uploadedFile.value) {
-				// console.log('Processing file:', file);
+				console.log('Processing file:', file);
 
 				// 파일 데이터를 서버에서 가져옴
 				const fileData = await skapi.getFile(file.url, {
@@ -1139,7 +1141,7 @@ const convertAuditorFormat = (auditors) => {
 // 결재 양식 선택
 const selDocForm = async (e) => {
 	selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
-	// console.log('selectedForm : ', selectedForm.value);
+	console.log('selectedForm : ', selectedForm.value);
 	// step.value = 2;
 	isFormSelected.value = true;
 
@@ -1175,7 +1177,7 @@ const selDocForm = async (e) => {
     // 첨부파일이 있는 경우
     if (selectedForm.value.bin.form_data) {
         uploadedFile.value = selectedForm.value.bin.form_data;
-		// console.log('=== selDocForm === uploadedFile.value : ', uploadedFile.value);
+		console.log('=== selDocForm === uploadedFile.value : ', uploadedFile.value);
     } else {
 		uploadedFile.value = [];
 		fileNames.value = [];

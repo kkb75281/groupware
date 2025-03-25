@@ -3,120 +3,43 @@ import { skapi } from '@/main';
 import { user } from '@/user';
 import { getUserInfo } from '@/employee';
 
-export const auditList = ref([]); // 결재 수신함
+export const auditList = ref([]);
 export const auditListRunning = ref(false);
-export const auditReferenceList = ref([]); // 수신참조
-export const auditReferenceListRunning = ref(false);
 
-// 결재 수신함 가져오기 (결재자, 합의자)
 export async function getAuditList() {
+  let audits, auditDocs;
   auditListRunning.value = true;
 
   try {
-    // 내가 결재자(approver)로 지정된 결재 요청건 가져오기
-    const approverAudits = await skapi.getRecords(
+    // 내가 받은 결재 요청건 가져오기
+    audits = await skapi.getRecords(
       {
         table: {
           name: 'audit_request',
           access_group: 'authorized',
         },
         reference: `audit:${user.user_id}`,
-        index: {
-          name: 'type',
-          value: 'approver'
-        }
       },
       {
         ascending: false, // 최신순
+        limit: 4
       }
     );
-
-    // 내가 합의자(agreer)로 지정된 결재 요청건 가져오기
-    const agreerAudits = await skapi.getRecords(
-      {
-        table: {
-          name: 'audit_request',
-          access_group: 'authorized',
-        },
-        reference: `audit:${user.user_id}`,
-        index: {
-          name: 'type',
-          value: 'agreer'
-        }
-      },
-      {
-        ascending: false, // 최신순
-      }
-    );
-
-    // 결재자와 합의자 목록 합치기
-    const combinedAudits = {
-      list: [...approverAudits.list, ...agreerAudits.list]
-    };
-    
-    // 날짜 내림차순 정렬 후 최대 4개만 선택
-    combinedAudits.list.sort((a, b) => {
-      return (b.uploaded || 0) - (a.uploaded || 0);
-    });
-    combinedAudits.list = combinedAudits.list.slice(0, 50);
-    
-    // 공통 처리 함수 호출 (isReference = false는 결재 수신함)
-    await processAuditData(combinedAudits, false);
-
+    console.log({audits})
   } catch (err) {
     auditListRunning.value = false;
     console.error({ err });
   }
-}
-
-// 수신참조 목록 가져오기
-export async function getAuditReferenceList() {
-  auditReferenceListRunning.value = true;
 
   try {
-    // 내가 수신참조자로 지정된 결재 요청건 가져오기
-    const receiverAudits = await skapi.getRecords(
-      {
-        table: {
-          name: 'audit_request',
-          access_group: 'authorized',
-        },
-        reference: `audit:${user.user_id}`,
-        index: {
-          name: 'type',
-          value: 'receiver'
-        }
-      },
-      {
-        ascending: false, // 최신순
-        limit: 2,         // 최대 n개 가져오기
-        // fetchMore: true   // 더보기
-      }
-    );
-
-    // 공통 처리 함수 호출 (isReference = true는 수신참조)
-    await processAuditData(receiverAudits, true);
-
-  } catch (err) {
-    auditReferenceListRunning.value = false;
-    console.error({ err });
-  }
-}
-
-// 결재 문서 처리 (공통)
-async function processAuditData(auditRequests, isReference = false) {
-  const resultList = ref([]);
-  const loadingState = isReference ? auditReferenceListRunning : auditListRunning;
-  
-  try {
-    if (!auditRequests.list || auditRequests.list.length === 0) {
-      loadingState.value = false;
-      return [];
+    if (!audits.list.length) {
+      auditListRunning.value = false;
+      return;
     }
 
     // 내가 받은 결재 요청건의 결재 서류 가져오기
-    const auditDocs = await Promise.all(
-      auditRequests.list.map(async (list) => {
+    auditDocs = await Promise.all(
+      audits.list.map(async (list) => {
         if (!list.data.audit_id) return;
 
         // 결재 서류 가져오기
@@ -125,8 +48,6 @@ async function processAuditData(auditRequests, isReference = false) {
             record_id: list.data.audit_id,
           })
         ).list[0];
-
-        if (!audit_doc) return;
 
         // 회수된 결재 서류 가져오기
         const canceledAudit = await skapi.getRecords({
@@ -219,12 +140,13 @@ async function processAuditData(auditRequests, isReference = false) {
 
             if (approval.user_id === user.user_id) {
               oa_has_audited_str = approval.data.approved === 'approve' ? '결재함' : '반려함';
-              audit_doc.my_state = oa_has_audited_str;
+              (audit_doc as any).my_state = oa_has_audited_str;
             }
           });
 
           if (!oa_has_audited_str) {
-            audit_doc.my_state = auditCanceled ? '회수됨' : (allApproved && isLastRejector ? '반려됨' : '대기중');
+            // (audit_doc as any).my_state = auditCanceled ? '회수됨' : '대기중';
+            (audit_doc as any).my_state = auditCanceled ? '회수됨' : (allApproved && isLastRejector ? '반려됨' : '대기중');
           }
         });
 
@@ -239,36 +161,29 @@ async function processAuditData(auditRequests, isReference = false) {
         };
       })
     );
+  } catch (err) {
+    auditListRunning.value = false;
+    console.error({ err });
+  }
 
-    // null/undefined 값 제거
-    const filteredDocs = auditDocs.filter(doc => doc !== undefined);
-    
-    // 사용자 정보 추가
-    const userList = await Promise.all(
-      filteredDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId))
-    );
-    
+  try {
+    const userList = await Promise.all(auditDocs.map(async (auditor) => await getUserInfo(auditor.draftUserId)));
     const userInfoList = userList.map((user) => user.list[0]).filter((user) => user);
 
-    const newAuditUserList = filteredDocs.map((auditor) => ({
+    const newAuditUserList = auditDocs.map((auditor) => ({
       ...auditor,
       user_info: userInfoList.find((user) => user.user_id === auditor.draftUserId),
     }));
+    // console.log('newAuditUserList : ', newAuditUserList);
 
-    // 결과를 수신참조 여부에 따라 다른 변수에 저장
-    if (isReference) {
-      auditReferenceList.value = newAuditUserList;
-    } else {
-      auditList.value = newAuditUserList;
-    }
+    auditList.value = newAuditUserList;
 
-    return newAuditUserList;
   } catch (err) {
+    auditListRunning.value = false;
     console.error({ err });
-    return [];
-  } finally {
-    loadingState.value = false;
   }
+
+  auditListRunning.value = false;
 }
 
 export const sendAuditList = ref([]);
@@ -289,7 +204,6 @@ export async function getSendAuditList() {
       },
       {
         ascending: false, // 최신순
-        // limit: 10, // 최대 n개 가져오기
       }
     );
 
