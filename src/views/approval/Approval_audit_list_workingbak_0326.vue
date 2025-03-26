@@ -66,18 +66,7 @@ hr
 							span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
 						td.drafter(v-show="isDesktop") {{ audit.user_info?.name }}
 
-//- Pagination(:totalItems="totalItems" :itemsPerPage="itemsPerPage" v-model:currentPageNum="currentPageNum")
-.pagination
-	button.btn-prev.icon(type="button" @click="changePage(currentPageNum - 1)" :disabled="currentPageNum === 1" :class="{'nonClickable': fetching || currentPage <= 1 }")
-		svg
-			use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
-		| Prev
-
-	button.btn-num(type="button" v-for="page in totalPages" :key="page" :class="{ active: page === currentPageNum }" @click="changePage(page)") {{ page }}
-
-	button.btn-next.icon(type="button" @click="changePage(currentPageNum + 1)" :disabled="currentPageNum === totalPages") Next
-		svg
-			use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+Pagination(:totalItems="totalItems" :itemsPerPage="itemsPerPage" v-model:currentPageNum="currentPageNum")
 </template>
 
 <script setup>
@@ -89,7 +78,7 @@ import { auditList, auditListRunning, auditReferenceList, auditReferenceListRunn
 import { readList, realtimes, readNoti } from '@/notifications';
 
 import Loading from '@/components/loading.vue';
-import Pager from '@/components/pager.ts';
+import Pagination from '@/components/pagination.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -99,6 +88,33 @@ const favoriteAudit = ref(false); // 중요 결재 지정 여부
 const favoriteAuditList = ref([]); // 중요 결재 리스트
 const favoriteAuditId = ref(''); // 중요 결재 리스트 레코드 아이디
 const favoriteAuditRecords = ref([]); // 중요 결재 레코드 전체 목록
+
+const allItems = ref([]); // 전체 데이터를 불러오는 게 아니라 특정 페이지 데이터만 저장
+const itemsPerPage = ref(5); // 한 페이지당 개수
+const currentPageNum = ref(1); // 현재 페이지 번호
+const totalItems = ref(0); // 전체 데이터 개수
+
+// 데이터 가져오기
+const fetchData = async () => {
+	try {
+		await getAuditList();
+		await getAuditReferenceList();
+
+		// 전체 데이터 저장
+		allItems.value = [...auditList.value, ...auditReferenceList.value];
+		totalItems.value = allItems.value.length;
+
+		console.log('allItems : ', allItems.value);
+		console.log('totalItems : ', totalItems.value);
+	} catch (err) {
+		console.error('데이터 가져오기 실패:', err);
+	}
+};
+
+// 페이지 변경 시
+watch(currentPageNum, async () => {
+	await fetchData();
+});
 
 // 화면 크기 변경 시
 const updateScreenSize = () => {

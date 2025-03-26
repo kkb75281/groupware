@@ -90,7 +90,7 @@ export async function getAuditReferenceList() {
       {
         ascending: false, // 최신순
         limit: 2,         // 최대 n개 가져오기
-        // fetchMore: true   // 더보기
+        fetchMore: true   // 추가 데이터 요청 가능 여부
       }
     );
 
@@ -290,6 +290,7 @@ export async function getSendAuditList() {
       {
         ascending: false, // 최신순
         // limit: 10, // 최대 n개 가져오기
+        // fetchMore: true, // 추가 데이터 요청 가능 여부
       }
     );
 
