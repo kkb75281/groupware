@@ -34,7 +34,7 @@ hr
 					th(v-show="isDesktop" scope="col") 기안자
 
 			tbody
-				template(v-if="sendAuditListRunning")
+				template(v-if="fetching")
 					tr.nohover.loading
 						td(colspan="5")
 							Loading#loading
@@ -43,37 +43,55 @@ hr
 						td(colspan="5") 결재 목록이 없습니다.
 				template(v-else)
 					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
-						td {{ sendAuditList.length - index }}
+						td {{ index + 1 + (10 * (currentPage - 1)) }}
 						td.left
 							.audit-title {{ audit.data.to_audit }}
-						//- td
-							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
 						td
 							span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
 						td.drafter(v-show="isDesktop") {{ user.name }}
 
+.pagination
+	button.btn-prev.icon(type="button" @click="currentPage--;" :class="{'nonClickable': fetching || currentPage <= 1 }")
+		svg
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
+		| Prev
+
+	button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': fetching || endOfList && currentPage >= maxPage }") Next
+		svg
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
 import { sendAuditList, sendAuditListRunning, getSendAuditList, goToAuditDetail } from '@/audit';
 import { readList, realtimes, readNoti } from '@/notifications';
 
 import Loading from '@/components/loading.vue';
+import Pager from '@/components/pager';
 
 const router = useRouter();
 const route = useRoute();
 
 const isDesktop = ref(window.innerWidth > 768);
 
+let pager = null;
+
+const searchFor = ref('uploaded'); // 'uploaded' or 'to_audit'
+
+const fetching = ref(false); // 데이터를 가져오는 중인지 여부
+const maxPage = ref(0); // 최대 페이지 수
+const currentPage = ref(1); // 현재 페이지
+const endOfList = ref(false); // 리스트의 끝에 도달했는지 여부
+const ascending = ref(false); // 오름차순 정렬 여부
+
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
 
-let showSendAuditDoc = (e, audit) => {
+const showSendAuditDoc = (e, audit) => {
 	let searchCurrentAuditNotis = realtimes.value.filter(rt => rt?.audit_info?.audit_doc_id === audit.record_id);
 
 	// 읽지 않은 알람만 필터링
@@ -89,8 +107,78 @@ let showSendAuditDoc = (e, audit) => {
 	goToAuditDetail(e, audit.record_id, router)
 }
 
+const listDisplay = ref([]);
+
+const getPage = async(refresh = false) => {
+	if(refresh) {
+        endOfList.value = false;
+    }
+
+	if (refresh && searchFor.value) {
+        pager = await Pager.init({
+            id: 'record_id',
+            resultsPerPage: 10,
+            sortBy: searchFor.value,
+            order: ascending.value ? 'asc' : 'desc',
+        });
+    }
+
+ 	if (!refresh && maxPage.value >= currentPage.value || endOfList.value) {
+        // if is not refresh and has page data
+        sendAuditList.value = pager.getPage(currentPage.value).list;
+		console.log('sendAuditList : ', sendAuditList.value);
+        return;
+    }
+
+	else if (!endOfList.value || refresh) {
+        // if page data needs to be fetched
+        fetching.value = true;
+
+        // fetch from server
+        // let fetchedData = await skapi.getNewsletters(callParams.value.params, Object.assign({ fetchMore: !refresh }, callParams.value.options));
+		let fetchOptions = Object.assign({ fetchMore: !refresh }, { limit: 10, ascending: false })
+		let fetchedData = await getSendAuditList(fetchOptions);
+		console.log('fetchedData : ', fetchedData);
+
+        // save endOfList status
+        endOfList.value = fetchedData.endOfList;
+
+        // insert data in pager
+        if (fetchedData.list.length > 0) {
+            await pager.insertItems(fetchedData.list);
+        }
+
+		console.log('pager : ', pager);
+		console.log('currentPage : ', currentPage.value);
+
+        // get page from pager
+        let disp = pager.getPage(currentPage.value);
+		console.log('disp : ', disp);
+
+        // set maxpage
+        maxPage.value = disp.maxPage;
+
+        // render data
+        sendAuditList.value = disp.list;
+        fetching.value = false;
+    }
+
+}
+
+watch(currentPage, (n, o) => {	
+    if (
+        n !== o &&
+        n > 0 &&
+        (n <= maxPage.value || (n > maxPage.value && !endOfList.value))
+    ) {
+        getPage();
+    } else {
+        currentPage.value = o;
+    }
+});
+
 onMounted(async () => {
-	await getSendAuditList();
+	getPage(true);
 
 	const auditors = sendAuditList.value[0]?.data?.auditors ? JSON.parse(sendAuditList.value[0]?.data?.auditors) : null;
 
