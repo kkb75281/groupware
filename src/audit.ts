@@ -59,6 +59,7 @@ export async function getAuditList() {
       return (b.uploaded || 0) - (a.uploaded || 0);
     });
     combinedAudits.list = combinedAudits.list.slice(0, 50);
+    console.log('combinedAudits', combinedAudits.list);
     
     // 공통 처리 함수 호출 (isReference = false는 결재 수신함)
     await processAuditData(combinedAudits, false);
@@ -93,6 +94,7 @@ export async function getAuditReferenceList() {
         fetchMore: true   // 추가 데이터 요청 가능 여부
       }
     );
+    console.log('receiverAudits', receiverAudits.list);
 
     // 공통 처리 함수 호출 (isReference = true는 수신참조)
     await processAuditData(receiverAudits, true);
@@ -274,8 +276,20 @@ async function processAuditData(auditRequests, isReference = false) {
 export const sendAuditList = ref([]);
 export const sendAuditListRunning = ref(false);
 
-export async function getSendAuditList() {
-  sendAuditListRunning.value = true;
+export async function getSendAuditList(fetchOptions: {}) {
+  // let options = {
+  //   limit: 3,
+  //   ascending: false // 최신순
+  // };
+
+  // if (fetchOptions) {
+  //   options = {
+  //     ...options,
+  //     ...fetchOptions
+  //   };
+  // }
+  
+  // sendAuditListRunning.value = true;
 
   try {
     // 내가 올린 결재 서류 가져오기
@@ -287,12 +301,9 @@ export async function getSendAuditList() {
         },
         reference: user.user_id, // 본인 아이디 참조해야 가지고 와짐
       },
-      {
-        ascending: false, // 최신순
-        // limit: 10, // 최대 n개 가져오기
-        // fetchMore: true, // 추가 데이터 요청 가능 여부
-      }
+      fetchOptions
     );
+    console.log('audits', audits);
 
     const auditDocs = await Promise.all(
       audits.list.map(async (audit) => {
@@ -365,13 +376,18 @@ export async function getSendAuditList() {
       })
     );
 
-    sendAuditList.value = auditDocs;
+    // sendAuditList.value = auditDocs;
+
+    return {
+      list: Object.values(auditDocs),
+      endOfList: audits.endOfList,
+    };
   } catch (err) {
-    sendAuditListRunning.value = false;
+    // sendAuditListRunning.value = false;
     console.error({ err });
   }
 
-  sendAuditListRunning.value = false;
+  // sendAuditListRunning.value = false;
 }
 
 export const goToAuditDetail = (e: any, auditId: any, router: any) => {

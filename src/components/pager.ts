@@ -34,6 +34,11 @@ export default class Pager {
         let startIndex = (page - 1) * this.resultsPerPage;
         let result = this.map.slice(startIndex, startIndex + this.resultsPerPage);
 
+        console.log({page});
+        console.log({startIndex});
+        console.log({result});
+        console.log(this.map);
+        
         return {
             list: result.map((target: string) => this.list[target.split('􏿿')[1]]),
             maxPage: Math.ceil(this.map.length / this.resultsPerPage)
@@ -51,13 +56,27 @@ export default class Pager {
             items = [items]
         }
 
+        items = JSON.parse(JSON.stringify(items));
+
         return new Promise((res) => {
             this.worker.onmessage = (event: any) => {
+                console.log(event.data);
                 this.map = event.data;
                 res("Insert Successful");
             };
 
             this.worker.postMessage({
+                method: 'insert',
+                list: this.list,
+                map: this.map,
+                id: this.id,
+                sortBy: this.sortBy,
+                order: this.order,
+                items: items,
+                withinRange: withinRange
+            });
+
+            console.log({
                 method: 'insert',
                 list: this.list,
                 map: this.map,
