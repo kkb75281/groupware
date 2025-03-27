@@ -9,7 +9,7 @@ export const auditReferenceList = ref([]); // 수신참조
 export const auditReferenceListRunning = ref(false);
 
 // 결재 수신함 가져오기 (결재자, 합의자)
-export async function getAuditList() {
+export async function getAuditList(fetchOptions: {}) {
   auditListRunning.value = true;
 
   try {
@@ -26,9 +26,7 @@ export async function getAuditList() {
           value: 'approver'
         }
       },
-      {
-        ascending: false, // 최신순
-      }
+      fetchOptions
     );
 
     // 내가 합의자(agreer)로 지정된 결재 요청건 가져오기
@@ -44,9 +42,7 @@ export async function getAuditList() {
           value: 'agreer'
         }
       },
-      {
-        ascending: false, // 최신순
-      }
+      fetchOptions
     );
 
     // 결재자와 합의자 목록 합치기
@@ -54,11 +50,11 @@ export async function getAuditList() {
       list: [...approverAudits.list, ...agreerAudits.list]
     };
     
-    // 날짜 내림차순 정렬 후 최대 4개만 선택
+    // 날짜 내림차순 정렬 후 최대 n개만 선택
     combinedAudits.list.sort((a, b) => {
       return (b.uploaded || 0) - (a.uploaded || 0);
     });
-    combinedAudits.list = combinedAudits.list.slice(0, 50);
+    combinedAudits.list = combinedAudits.list;
     console.log('combinedAudits', combinedAudits.list);
     
     // 공통 처리 함수 호출 (isReference = false는 결재 수신함)
@@ -71,7 +67,7 @@ export async function getAuditList() {
 }
 
 // 수신참조 목록 가져오기
-export async function getAuditReferenceList() {
+export async function getAuditReferenceList(fetchOptions: {}) {
   auditReferenceListRunning.value = true;
 
   try {
@@ -90,11 +86,9 @@ export async function getAuditReferenceList() {
       },
       {
         ascending: false, // 최신순
-        limit: 2,         // 최대 n개 가져오기
-        fetchMore: true   // 추가 데이터 요청 가능 여부
       }
     );
-    console.log('receiverAudits', receiverAudits.list);
+    console.log('수신참조 목록 : ', receiverAudits.list);
 
     // 공통 처리 함수 호출 (isReference = true는 수신참조)
     await processAuditData(receiverAudits, true);
@@ -276,19 +270,7 @@ async function processAuditData(auditRequests, isReference = false) {
 export const sendAuditList = ref([]);
 export const sendAuditListRunning = ref(false);
 
-export async function getSendAuditList(fetchOptions: {}) {
-  // let options = {
-  //   limit: 3,
-  //   ascending: false // 최신순
-  // };
-
-  // if (fetchOptions) {
-  //   options = {
-  //     ...options,
-  //     ...fetchOptions
-  //   };
-  // }
-  
+export async function getSendAuditList(fetchOptions: {}) {  
   // sendAuditListRunning.value = true;
 
   try {
@@ -303,7 +285,6 @@ export async function getSendAuditList(fetchOptions: {}) {
       },
       fetchOptions
     );
-    console.log('audits', audits);
 
     const auditDocs = await Promise.all(
       audits.list.map(async (audit) => {

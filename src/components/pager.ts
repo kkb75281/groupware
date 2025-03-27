@@ -4,7 +4,7 @@ export default class Pager {
     order: 'asc' | 'desc' = 'asc';
     map: any[] = [];
     list: { [key: string]: any } = {};
-    resultsPerPage = 10;
+    resultsPerPage = 2;
     worker: any;
 
     constructor(
@@ -16,7 +16,7 @@ export default class Pager {
             resultsPerPage?: number; // how many items per page
         }
     ) {
-        let { id, sortBy, order = 'asc', resultsPerPage = 10 } = options;
+        let { id, sortBy, order = 'asc', resultsPerPage = 2 } = options;
         if (!id || typeof id !== 'string') {
             throw 'id is required';
         }

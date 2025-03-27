@@ -1,5 +1,5 @@
 <template lang="pug">
-h1.title {{ currentPage === 'audit-list' ? '결재 수신함' : currentPage === 'audit-reference' ? '수신참조' : currentPage === 'audit-list-favorite' ? '중요 결재' : '' }}
+h1.title {{ isCurrentPage === 'audit-list' ? '결재 수신함' : isCurrentPage === 'audit-reference' ? '수신참조' : isCurrentPage === 'audit-list-favorite' ? '중요 결재' : '' }}
 
 hr
 
@@ -10,7 +10,7 @@ hr
 				col(v-show="isDesktop" style="width: 3rem")
 				col(style="width: 3rem")
 				col
-				template(v-if="currentPage === 'audit-list'")
+				template(v-if="isCurrentPage === 'audit-list'")
 					col(:style="{ width: isDesktop ? '12%' : '24%' }")
 				col(v-show="isDesktop" style="width: 12%")
 				col(v-show="isDesktop" style="width: 10%")
@@ -19,7 +19,7 @@ hr
 					th(v-show="isDesktop" scope="col") NO
 					th(scope="col") 
 					th.left(scope="col") 결재 사안
-					template(v-if="currentPage === 'audit-list'")
+					template(v-if="isCurrentPage === 'audit-list'")
 						th(scope="col") 나의 현황
 					th(v-show="isDesktop" scope="col") 결재 현황
 					th(v-show="isDesktop" scope="col") 기안자
@@ -31,7 +31,7 @@ hr
 							Loading#loading
 				template(v-else-if="!filterAuditList || !filterAuditList.length")
 					tr.nohover
-						td(colspan="6") {{ currentPage === 'audit-list' ? '결재 목록이 없습니다.' : currentPage === 'audit-reference' ? '수신참조 목록이 없습니다.' : currentPage === 'audit-list-favorite' ? '지정하신 중요 결재가 없습니다.' : '' }}
+						td(colspan="6") {{ isCurrentPage === 'audit-list' ? '결재 목록이 없습니다.' : isCurrentPage === 'audit-reference' ? '수신참조 목록이 없습니다.' : isCurrentPage === 'audit-list-favorite' ? '지정하신 중요 결재가 없습니다.' : '' }}
 				template(v-else)
 					tr(v-for="(audit, index) of filterAuditList" :key="audit.record_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
 						td(v-show="isDesktop") {{ filterAuditList.length - index }}
@@ -57,7 +57,7 @@ hr
 												use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
 						td.left
 							.audit-title {{ audit.data.to_audit }}
-						template(v-if="currentPage === 'audit-list'")
+						template(v-if="isCurrentPage === 'audit-list'")
 							td
 								span.audit-state(:class="{ approve: audit.my_state === '결재함', reject: audit.my_state === '반려함', canceled: audit.my_state === '회수됨' }") {{ audit.my_state }}
 						//- td(v-show="isDesktop")
@@ -66,16 +66,13 @@ hr
 							span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
 						td.drafter(v-show="isDesktop") {{ audit.user_info?.name }}
 
-//- Pagination(:totalItems="totalItems" :itemsPerPage="itemsPerPage" v-model:currentPageNum="currentPageNum")
 .pagination
-	button.btn-prev.icon(type="button" @click="changePage(currentPageNum - 1)" :disabled="currentPageNum === 1" :class="{'nonClickable': fetching || currentPage <= 1 }")
+	button.btn-prev.icon(type="button" @click="currentPage--;" :class="{'nonClickable': fetching || currentPage <= 1 }")
 		svg
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
 		| Prev
 
-	button.btn-num(type="button" v-for="page in totalPages" :key="page" :class="{ active: page === currentPageNum }" @click="changePage(page)") {{ page }}
-
-	button.btn-next.icon(type="button" @click="changePage(currentPageNum + 1)" :disabled="currentPageNum === totalPages") Next
+	button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': fetching || endOfList && currentPage >= maxPage }") Next
 		svg
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
@@ -89,7 +86,7 @@ import { auditList, auditListRunning, auditReferenceList, auditReferenceListRunn
 import { readList, realtimes, readNoti } from '@/notifications';
 
 import Loading from '@/components/loading.vue';
-import Pager from '@/components/pager.ts';
+import Pager from '@/components/pager';
 
 const router = useRouter();
 const route = useRoute();
@@ -100,13 +97,28 @@ const favoriteAuditList = ref([]); // 중요 결재 리스트
 const favoriteAuditId = ref(''); // 중요 결재 리스트 레코드 아이디
 const favoriteAuditRecords = ref([]); // 중요 결재 레코드 전체 목록
 
+let pager = null;
+
+const searchFor = ref('uploaded'); // 'uploaded' or 'to_audit'
+
+const fetching = ref(false); // 데이터를 가져오는 중인지 여부
+const maxPage = ref(0); // 최대 페이지 수
+const currentPage = ref(1); // 현재 페이지
+const endOfList = ref(false); // 리스트의 끝에 도달했는지 여부
+const ascending = ref(false); // 오름차순 정렬 여부
+
+// 한 페이지당 결과 수
+const getResultsPerPage = computed(() => {
+  return isCurrentPage.value === 'audit-list-favorite' ? 10 : 10; // 필요에 따라 페이지별로 다르게 설정 가능
+});
+
 // 화면 크기 변경 시
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
 
 // 현재 페이지 구분
-const currentPage = computed(() => {
+const isCurrentPage = computed(() => {
   if (route.path.includes('audit-list-favorite')) {
     return 'audit-list-favorite'; // 즐겨찾기한 결재 리스트
   } else if (route.path.includes('audit-reference')) {
@@ -117,19 +129,54 @@ const currentPage = computed(() => {
   return ''; // 기본값
 });
 
-const filterAuditList = computed(() => {
-	// 즐겨찾기 페이지인 경우
-	if (currentPage.value === 'audit-list-favorite') {
-		const allAudits = [...auditList.value, ...auditReferenceList.value];
-		return allAudits.filter(audit => Array.isArray(favoriteAuditList.value) && favoriteAuditList.value.includes(audit.record_id));
-	} 
-	else if (currentPage.value === 'audit-reference') {
-		return auditReferenceList.value; // 수신참조 페이지인 경우
-	} 
-	else {
-		return auditList.value; // 결재 수신함 페이지인 경우
-	}
+// 현재 페이지에 해당하는 상태 객체 가져오기
+const getCurrentPageState = computed(() => {
+  if (isCurrentPage.value === 'audit-list-favorite') {
+    return favoriteAuditPageState.value;
+  } else if (isCurrentPage.value === 'audit-reference') {
+    return auditReferencePageState.value;
+  } else {
+    return auditListPageState.value;
+  }
 });
+
+// 현재 페이지에 표시할 결재 목록
+const filterAuditList = computed(() => {
+  if (isCurrentPage.value === 'audit-list-favorite') {
+    return favoriteAuditList.value;
+  } else if (isCurrentPage.value === 'audit-reference') {
+    return auditReferenceList.value;
+  } else {
+    return auditList.value;
+  }
+});
+
+// currentPage 변경 감지
+watch(() => getCurrentPageState.value.currentPage, async (newPage, oldPage) => {
+  if (newPage !== oldPage && 
+      newPage > 0 && 
+      (newPage <= getCurrentPageState.value.maxPage || 
+       (newPage > getCurrentPageState.value.maxPage && !getCurrentPageState.value.endOfList))) {
+    await loadCurrentPageData();
+  } else if (newPage !== oldPage) {
+    // 유효하지 않은 페이지로 변경 시 이전 값으로 복원
+    getCurrentPageState.value.currentPage = oldPage;
+  }
+});
+
+// const filterAuditList = computed(() => {
+// 	// 즐겨찾기 페이지인 경우
+// 	if (isCurrentPage.value === 'audit-list-favorite') {
+// 		const allAudits = [...auditList.value, ...auditReferenceList.value];
+// 		return allAudits.filter(audit => Array.isArray(favoriteAuditList.value) && favoriteAuditList.value.includes(audit.record_id));
+// 	} 
+// 	else if (isCurrentPage.value === 'audit-reference') {
+// 		return auditReferenceList.value; // 수신참조 페이지인 경우
+// 	} 
+// 	else {
+// 		return auditList.value; // 결재 수신함 페이지인 경우
+// 	}
+// });
 
 // 중요 결재 저장/해제
 const toggleFavoriteAudit = async (audit) => {
@@ -238,23 +285,47 @@ const showAuditDoc = (e, audit) => {
   goToAuditDetail(e, audit.record_id, router);
 };
 
-// 현재 페이지에 따라 필요한 데이터 로드
-const loadPageData = async () => {
-  await getFavoriteAuditList();
-  
-  if (currentPage.value === 'audit-reference') {
-    await getAuditReferenceList();
-  } else if (currentPage.value === 'audit-list') {
-    await getAuditList();
-  } else if (currentPage.value === 'audit-list-favorite') {
-    // 즐겨찾기 페이지는 모든 데이터가 필요함
-    await Promise.all([getAuditList(), getAuditReferenceList()]);
+// 현재 페이지에 따라 페이지네이션된 데이터 로드
+const loadCurrentPageData = async (refresh = false) => {
+  if (isCurrentPage.value === 'audit-list-favorite') {
+    await getFavoriteAuditPage(refresh, { limit: getResultsPerPage.value }, favoriteIds.value);
+  } else if (isCurrentPage.value === 'audit-reference') {
+    await getAuditReferencePage(refresh, { limit: getResultsPerPage.value });
+  } else if (isCurrentPage.value === 'audit-list') {
+    await getAuditListPage(refresh, { limit: getResultsPerPage.value });
   }
-}
+};
+
+// 페이지 변경 감지 및 다시 로드
+watch(() => route.path, async (newPath, oldPath) => {
+  if (newPath !== oldPath) {
+    // 페이지 전환 시 현재 페이지 번호 초기화
+    auditListPageState.value.currentPage = 1;
+    auditReferencePageState.value.currentPage = 1;
+    favoriteAuditPageState.value.currentPage = 1;
+    
+    await getFavoriteAuditIds();
+    await loadCurrentPageData(true);
+  }
+}, { immediate: true });
+
+// // 현재 페이지에 따라 필요한 데이터 로드
+// const loadPageData = async () => {
+//   await getFavoriteAuditList();
+  
+//   if (isCurrentPage.value === 'audit-reference') {
+//     await getAuditReferenceList();
+//   } else if (isCurrentPage.value === 'audit-list') {
+//     await getAuditList();
+//   } else if (isCurrentPage.value === 'audit-list-favorite') {
+//     // 즐겨찾기 페이지는 모든 데이터가 필요함
+//     await Promise.all([getAuditList(), getAuditReferenceList()]);
+//   }
+// }
 
 onMounted(async () => {
-	await loadPageData();
-	await fetchData();
+	await getFavoriteAuditIds();
+	await loadCurrentPageData(true);
 	window.addEventListener('resize', updateScreenSize);
 });
 
