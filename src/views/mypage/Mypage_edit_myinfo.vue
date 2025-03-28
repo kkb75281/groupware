@@ -43,7 +43,7 @@ hr
 
 		.input-wrap
 			p.label.essential 이메일
-			input(v-model="user.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(verifiedEmail || disabled) && !onlyEmail" required)
+			input(v-model="user.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(googleAccountCheck || verifiedEmail || disabled) && !onlyEmail" required)
 
 		template(v-if="verifiedEmail && !onlyEmail")
 			button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
@@ -167,6 +167,8 @@ import CropImage from "@/components/crop_image.vue";
 
 const router = useRouter();
 const route = useRoute();
+
+const googleAccountCheck = ref(localStorage.getItem('accessToken') ? true : false);
 
 let optionsBtn = ref(null);
 let getFileInfo = ref(null);
