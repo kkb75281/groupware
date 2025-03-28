@@ -710,7 +710,7 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 };
 
 // 결재 요청을 생성하고 알림을 보내는 함수
-const createAuditRequest = async ({ audit_id, auditor_id, role }, send_auditors) => {
+const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, send_auditors) => {
     if (!audit_id || !auditor_id) return;
 
 	// 결재 요청
@@ -718,20 +718,21 @@ const createAuditRequest = async ({ audit_id, auditor_id, role }, send_auditors)
         {
             audit_id,
             auditor: auditor_id,
+			audit_title,
         },
         {
             unique_id: `audit_request:${audit_id}:${auditor_id}`,
             readonly: true,
             table: {
-                name: "audit_request",
+                name: `audit_request_${role}`,
                 access_group: "authorized",
             },
             reference: `audit:${auditor_id}`,
             tags: [audit_id],
 			index: {
-				name: 'type',
-				value: role,
-			},
+				name: 'audit_title',
+				value: audit_title.replaceAll(".", "_"),
+			}
         }
     );
 
@@ -814,19 +815,21 @@ const createAuditRequest = async ({ audit_id, auditor_id, role }, send_auditors)
 };
 
 // 결재 요청 Alarm
-const postAuditDocRecordId = async (auditId, userId, role) => {
+const postAuditDocRecordId = async (auditId, auditTitle, userId, role) => {
     try {
         // 권한 부여
         await grantAuditorAccess({
             audit_id: auditId,
-            auditor_id: userId
+            auditor_id: userId,
+			audit_title: auditTitle
         });
 
 		// 알림 전송
 		return createAuditRequest({
             audit_id: auditId,
             auditor_id: userId,
-			role: role
+			role: role,
+			audit_title: auditTitle
         }, send_auditors_arr);
     } catch (error) {
         console.error(error);
@@ -879,7 +882,8 @@ const requestAudit = async (e) => {
 			reject_setting: rejectSetting.value, // 반려 설정 관련 체크박스 값 전달
         });
 
-        const auditId = auditDoc.record_id;
+        const auditId = auditDoc.record_id; // 결재 문서 ID
+		const auditTitle = to_audit; // 결재 제목
 
         // 각 역할별 권한 부여 및 알림 전송
         const processRoles = [
@@ -906,7 +910,7 @@ const requestAudit = async (e) => {
 		];
 
 		const res = await Promise.all(processRoles.map(roleInfo => 
-			postAuditDocRecordId(auditId, roleInfo.userId, roleInfo.role)
+			postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
 		));
 
 		// 결재라인 select option '결재'로 초기화

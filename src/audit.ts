@@ -17,14 +17,10 @@ export async function getAuditList(fetchOptions: {}) {
     const approverAudits = await skapi.getRecords(
       {
         table: {
-          name: 'audit_request',
+          name: 'audit_request_approver',
           access_group: 'authorized',
         },
         reference: `audit:${user.user_id}`,
-        index: {
-          name: 'type',
-          value: 'approver'
-        }
       },
       fetchOptions
     );
@@ -33,14 +29,10 @@ export async function getAuditList(fetchOptions: {}) {
     const agreerAudits = await skapi.getRecords(
       {
         table: {
-          name: 'audit_request',
+          name: 'audit_request_agreer',
           access_group: 'authorized',
         },
         reference: `audit:${user.user_id}`,
-        index: {
-          name: 'type',
-          value: 'agreer'
-        }
       },
       fetchOptions
     );
@@ -75,14 +67,10 @@ export async function getAuditReferenceList(fetchOptions: {}) {
     const receiverAudits = await skapi.getRecords(
       {
         table: {
-          name: 'audit_request',
+          name: 'audit_request_receiver',
           access_group: 'authorized',
         },
         reference: `audit:${user.user_id}`,
-        index: {
-          name: 'type',
-          value: 'receiver'
-        }
       },
       {
         ascending: false, // 최신순
