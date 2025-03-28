@@ -68,10 +68,11 @@ hr
 
 		.input-wrap
 			p.label 전화번호
-			input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="예) +821012345678" :disabled="verifiedEmail || disabled")
-			//- label.checkbox.public(:class="{'disabled': disabled}")
-			//- 	input(v-model="user.phone_number_public" type="checkbox" name="phone_number_public" checked hidden :disabled="disabled")
-			//- 	span.label-checkbox 공개여부
+			.item-wrap.tel
+				.select-wrap(@click="showLocale = !showLocale")
+					input.selectbox#searchInput(type="text" placeholder="국가코드를 선택하세요." v-model="searchValue" name="locale" readonly)
+					Locale(v-model="searchValue" :showLocale="showLocale" @close="showLocale=false" @select-country="handleCountrySelect")
+				input(v-model="user.phone_number" type="tel" name="phone_number" placeholder="예) 01012345678" :disabled="verifiedEmail || disabled")
 
 		br
 
@@ -164,6 +165,8 @@ import {
 } from "@/components/crop_image";
 
 import CropImage from "@/components/crop_image.vue";
+import Locale from '@/components/locale.vue';
+import { Countries } from '@/components/countries';
 
 const router = useRouter();
 const route = useRoute();
@@ -188,6 +191,9 @@ let onlyEmail = ref(false);
 let showOptions = ref(false);
 let fileNames = ref([]);
 let stampNames = ref([]);
+let showLocale = ref(false); // 전화번호 국가 코드 선택창
+let searchValue = ref(''); // 전화번호 국가 코드 검색어
+let selectedCountryCode = ref('');
 
 function makeSafe(str) {
 	return str
@@ -365,6 +371,12 @@ let cancelEdit = () => {
 	router.push("/mypage");
 };
 
+// 국가코드 변경 시 처리 함수
+const handleCountrySelect = (country) => {
+  searchValue.value = country.key;
+  selectedCountryCode.value = country.dialCode;
+};
+
 let registerMypage = async (e) => {
 	// e.preventDefault();
 
@@ -429,6 +441,38 @@ let registerMypage = async (e) => {
 
 	// 이름 변경
 	user.name = e.target.name.value;
+
+	// 전화번호에 국가코드 추가하기
+	if (user.phone_number && selectedCountryCode.value) {
+		if (searchValue.value) {
+			user.locale = searchValue.value;
+			console.log('user.locale : ', user.locale);
+		}
+
+		// 기존 번호에서 선행 0 제거 (한국식 번호의 경우)
+		let formattedNumber = user.phone_number;
+
+		if (formattedNumber.startsWith('0')) {
+			formattedNumber = formattedNumber.substring(1);
+			console.log('formattedNumber : ', formattedNumber);
+		}
+		
+		// 국가코드 추가
+		user.phone_number = selectedCountryCode.value + formattedNumber;
+		console.log('user.phone_number : ', user.phone_number);
+	} else {
+		// 기존 번호에서 국가코드 제거
+		let formattedNumber = user.phone_number;
+
+		// 국가코드가 포함된 번호인 경우
+		if (formattedNumber.startsWith('+')) {
+			formattedNumber = formattedNumber.substring(4);
+			console.log('formattedNumber : ', formattedNumber);
+		}
+
+		user.phone_number = formattedNumber;
+		console.log('user.phone_number : ', user.phone_number);
+	}
 
 	// const files = document.querySelector('input[name="additional_data"]').files;
 	let filebox = document.querySelector("input[name=additional_data]");
@@ -750,6 +794,32 @@ onUnmounted(() => {
 		.stamp-item {
 			text-align: center;
 			margin-top: 8px;
+		}
+	}
+}
+
+.item-wrap {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+}
+
+.tel {
+	.select-wrap {
+		position: relative;
+		
+		.selectbox {
+			width: 12rem;
+			padding-right: 2.25rem;
+			vertical-align: middle;
+			background-repeat: no-repeat;
+			background-size: 1.25rem 1.25rem;
+			background-position: center right 0.5rem;
+			background-image: url('@/assets/img/icon_arrow_bottom.svg');
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			cursor: pointer;
 		}
 	}
 }
