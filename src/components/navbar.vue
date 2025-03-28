@@ -63,7 +63,8 @@ const handleLinkClick = (to) => {
 
     if (route.path === to) {
         // 해당 메뉴에 active 클래스 추가
-        activeMenu.value = to.split('/')[1];
+        // '/' 경로인 경우 직접 'home'으로 설정
+        activeMenu.value = to === '/' ? 'home' : to.split('/')[1];
     }
 };
 
@@ -289,13 +290,12 @@ onUnmounted(() => {
     window.removeEventListener('click', checkNavbarClose);
 });
 
-// route watch 함수는 이전과 동일
 watch(() => route.fullPath, (nv) => {
     let currentPath = nv.split('/');
     let currentPathName = currentPath[currentPath.length - 1];
     let currentFullPath = nv.replace(/^\//, '');
     
-    currentPathName === '' ? currentPathName = 'home' : currentPathName;
+    currentPathName = currentPathName === '' ? 'home' : currentPathName; // 빈 문자열이면 'home'으로 설정(값을 재할당하도록 수정)
     
     if(closeNavbar.value.includes(currentPathName) && isOpen.value) {
         isOpen.value = false;
@@ -332,6 +332,11 @@ watch(() => route.fullPath, (nv) => {
             activeMenu.value = menu.name;
             return;
         }
+    }
+
+    // 홈페이지(/)로 이동했을 때 activeMenu를 'home'으로 명시적 설정
+    if (nv === '/') {
+        activeMenu.value = 'home';
     }
 }, { immediate: true });
 </script>
