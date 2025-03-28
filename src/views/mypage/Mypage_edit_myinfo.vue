@@ -36,13 +36,13 @@ hr
 		br
 
 		.input-wrap
-			p.label.essential 이름
+			p.label 이름
 			input(:value="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="verifiedEmail || disabled" required)
 		
 		br
 
 		.input-wrap
-			p.label.essential 이메일
+			p.label 이메일
 			input(v-model="user.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(googleAccountCheck || verifiedEmail || disabled) && !onlyEmail" required)
 
 		template(v-if="verifiedEmail && !onlyEmail")
