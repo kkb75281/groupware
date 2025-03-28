@@ -46,8 +46,6 @@ hr
 						td {{ index + 1 + (10 * (currentPage - 1)) }}
 						td.left
 							.audit-title {{ audit.data.to_audit }}
-						//- td
-							span.audit-state(:class="{ approve: audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) }") {{ audit.isCanceled ? '회수됨' : (audit.referenced_count === ((JSON.parse(audit.data.auditors).approvers?.length || 0) + (JSON.parse(audit.data.auditors).agreers?.length || 0)) ? '완료됨' : '진행중') }}
 						td
 							span.audit-state(:class="{ approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }") {{ audit.documentStatus }}
 						td.drafter(v-show="isDesktop") {{ user.name }}
@@ -78,8 +76,6 @@ const router = useRouter();
 const route = useRoute();
 
 const isDesktop = ref(window.innerWidth > 768);
-// const currentPageNum = ref(1);
-// const totalPages = ref(0);
 
 let pager = null;
 
@@ -169,11 +165,7 @@ const getPage = async(refresh = false) => {
 
 }
 
-watch(currentPage, (n, o) => {
-	console.log('currentPage : ', currentPage.value);
-	console.log('n : ', n);
-	console.log('o : ', o);
-	
+watch(currentPage, (n, o) => {	
     if (
         n !== o &&
         n > 0 &&
@@ -186,7 +178,6 @@ watch(currentPage, (n, o) => {
 });
 
 onMounted(async () => {
-	// await getSendAuditList();
 	getPage(true);
 
 	const auditors = sendAuditList.value[0]?.data?.auditors ? JSON.parse(sendAuditList.value[0]?.data?.auditors) : null;
