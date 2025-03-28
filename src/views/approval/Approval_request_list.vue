@@ -79,13 +79,14 @@ const isDesktop = ref(window.innerWidth > 768);
 
 let pager = null;
 
-const searchFor = ref('uploaded'); // 'uploaded' or 'to_audit'
+const searchFor = ref('uploaded'); // 검색 'uploaded' or 'to_audit'
 
 const fetching = ref(false); // 데이터를 가져오는 중인지 여부
 const maxPage = ref(0); // 최대 페이지 수
 const currentPage = ref(1); // 현재 페이지
 const endOfList = ref(false); // 리스트의 끝에 도달했는지 여부
 const ascending = ref(false); // 오름차순 정렬 여부
+const listDisplay = ref([]); // 리스트 표시
 
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
@@ -107,8 +108,7 @@ const showSendAuditDoc = (e, audit) => {
 	goToAuditDetail(e, audit.record_id, router)
 }
 
-const listDisplay = ref([]);
-
+// pagination
 const getPage = async(refresh = false) => {
 	if(refresh) {
         endOfList.value = false;

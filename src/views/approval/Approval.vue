@@ -53,7 +53,7 @@ ul.card-wrap
 			.icon.img
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
-			h4.name 중요메일
+			h4.name 종요결재
 			.btn-wrap
 				p.btn-go 바로가기
 				.icon

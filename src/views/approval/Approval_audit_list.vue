@@ -99,18 +99,14 @@ const favoriteAuditRecords = ref([]); // 중요 결재 레코드 전체 목록
 
 let pager = null;
 
-const searchFor = ref('uploaded'); // 'uploaded' or 'to_audit'
+const searchFor = ref('uploaded'); // 검색 'uploaded' or 'to_audit'
 
 const fetching = ref(false); // 데이터를 가져오는 중인지 여부
 const maxPage = ref(0); // 최대 페이지 수
 const currentPage = ref(1); // 현재 페이지
 const endOfList = ref(false); // 리스트의 끝에 도달했는지 여부
 const ascending = ref(false); // 오름차순 정렬 여부
-
-// 한 페이지당 결과 수
-const getResultsPerPage = computed(() => {
-  return isCurrentPage.value === 'audit-list-favorite' ? 10 : 10; // 필요에 따라 페이지별로 다르게 설정 가능
-});
+const listDisplay = ref([]); // 리스트 표시
 
 // 화면 크기 변경 시
 const updateScreenSize = () => {
@@ -129,54 +125,46 @@ const isCurrentPage = computed(() => {
   return ''; // 기본값
 });
 
-// 현재 페이지에 해당하는 상태 객체 가져오기
-const getCurrentPageState = computed(() => {
-  if (isCurrentPage.value === 'audit-list-favorite') {
-    return favoriteAuditPageState.value;
-  } else if (isCurrentPage.value === 'audit-reference') {
-    return auditReferencePageState.value;
-  } else {
-    return auditListPageState.value;
-  }
-});
-
-// 현재 페이지에 표시할 결재 목록
+// 결재 리스트 화면별로 필터링
 const filterAuditList = computed(() => {
-  if (isCurrentPage.value === 'audit-list-favorite') {
-    return favoriteAuditList.value;
-  } else if (isCurrentPage.value === 'audit-reference') {
-    return auditReferenceList.value;
-  } else {
-    return auditList.value;
-  }
+	// 즐겨찾기 페이지인 경우
+	if (isCurrentPage.value === 'audit-list-favorite') {
+		const allAudits = [...auditList.value, ...auditReferenceList.value];
+		return allAudits.filter(audit => Array.isArray(favoriteAuditList.value) && favoriteAuditList.value.includes(audit.record_id));
+	} 
+	else if (isCurrentPage.value === 'audit-reference') {
+		return auditReferenceList.value; // 수신참조 페이지인 경우
+	} 
+	else {
+		return auditList.value; // 결재 수신함 페이지인 경우
+	}
 });
 
-// currentPage 변경 감지
-watch(() => getCurrentPageState.value.currentPage, async (newPage, oldPage) => {
-  if (newPage !== oldPage && 
-      newPage > 0 && 
-      (newPage <= getCurrentPageState.value.maxPage || 
-       (newPage > getCurrentPageState.value.maxPage && !getCurrentPageState.value.endOfList))) {
-    await loadCurrentPageData();
-  } else if (newPage !== oldPage) {
-    // 유효하지 않은 페이지로 변경 시 이전 값으로 복원
-    getCurrentPageState.value.currentPage = oldPage;
-  }
-});
+// pagination
+const getPage = async(refresh = false) => {
+	if (refresh) {
+		endOfList.value = false;
+	}
 
-// const filterAuditList = computed(() => {
-// 	// 즐겨찾기 페이지인 경우
-// 	if (isCurrentPage.value === 'audit-list-favorite') {
-// 		const allAudits = [...auditList.value, ...auditReferenceList.value];
-// 		return allAudits.filter(audit => Array.isArray(favoriteAuditList.value) && favoriteAuditList.value.includes(audit.record_id));
-// 	} 
-// 	else if (isCurrentPage.value === 'audit-reference') {
-// 		return auditReferenceList.value; // 수신참조 페이지인 경우
-// 	} 
-// 	else {
-// 		return auditList.value; // 결재 수신함 페이지인 경우
-// 	}
-// });
+	if (refresh && searchFor.value) {
+		pager = await Pager.init({
+			id: 'record_id',
+			resultsPerPage: 10,
+			sortBy: searchFor.value,
+			order: ascending.value ? 'asc' : 'desc',
+		});
+	}
+
+	if (!refresh && maxPage.value >= currentPage.value || endOfList.value) {
+		// if is not refresh and has page data
+		listDisplay.value = pager.getPage(currentPage.value).list;
+		return;
+	}
+
+	else if (!endOfList.value || refresh) {
+		listDisplay.value = await pager.getPage(currentPage.value).list;
+	}
+}
 
 // 중요 결재 저장/해제
 const toggleFavoriteAudit = async (audit) => {
@@ -285,31 +273,7 @@ const showAuditDoc = (e, audit) => {
   goToAuditDetail(e, audit.record_id, router);
 };
 
-// 현재 페이지에 따라 페이지네이션된 데이터 로드
-const loadCurrentPageData = async (refresh = false) => {
-  if (isCurrentPage.value === 'audit-list-favorite') {
-    await getFavoriteAuditPage(refresh, { limit: getResultsPerPage.value }, favoriteIds.value);
-  } else if (isCurrentPage.value === 'audit-reference') {
-    await getAuditReferencePage(refresh, { limit: getResultsPerPage.value });
-  } else if (isCurrentPage.value === 'audit-list') {
-    await getAuditListPage(refresh, { limit: getResultsPerPage.value });
-  }
-};
-
-// 페이지 변경 감지 및 다시 로드
-watch(() => route.path, async (newPath, oldPath) => {
-  if (newPath !== oldPath) {
-    // 페이지 전환 시 현재 페이지 번호 초기화
-    auditListPageState.value.currentPage = 1;
-    auditReferencePageState.value.currentPage = 1;
-    favoriteAuditPageState.value.currentPage = 1;
-    
-    await getFavoriteAuditIds();
-    await loadCurrentPageData(true);
-  }
-}, { immediate: true });
-
-// // 현재 페이지에 따라 필요한 데이터 로드
+// 현재 페이지에 따라 필요한 데이터 로드
 // const loadPageData = async () => {
 //   await getFavoriteAuditList();
   
@@ -324,8 +288,9 @@ watch(() => route.path, async (newPath, oldPath) => {
 // }
 
 onMounted(async () => {
-	await getFavoriteAuditIds();
-	await loadCurrentPageData(true);
+	// await loadPageData();
+	await getAuditReferenceList();
+	await getFavoriteAuditList();
 	window.addEventListener('resize', updateScreenSize);
 });
 

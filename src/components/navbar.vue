@@ -136,12 +136,12 @@ const menuList = computed(() => [
                 {
                     name: 'audit-list',
                     to: '/approval/audit-list',
-                    text: '수신함',
+                    text: '결재 수신함',
                 },
                 {
                     name: 'request-list',
                     to: '/approval/request-list',
-                    text: '발신함',
+                    text: '결재 발신함',
                 },
                 {
                     name: 'audit-reference',
@@ -151,7 +151,7 @@ const menuList = computed(() => [
                 {
                     name: 'audit-list-favorite',
                     to: '/approval/audit-list-favorite',
-                    text: '중요메일',
+                    text: '중요 결재',
                 },
             ]
         }

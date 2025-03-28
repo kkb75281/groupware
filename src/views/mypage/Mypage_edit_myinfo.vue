@@ -1,6 +1,6 @@
 <template lang="pug">
 .title
-h1 회원 정보 수정
+	h1 회원 정보 수정
 
 hr
 
@@ -144,15 +144,15 @@ hr
 
 	CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
-	</template>
+</template>
 
-	<script setup>
-	import { useRoute, useRouter } from "vue-router";
-	import { ref, onMounted, onUnmounted, nextTick } from "vue";
-	import { skapi, mainPageLoading } from "@/main";
-	import { user, profileImage, verifiedEmail } from "@/user";
-	import { divisionNameList } from "@/division";
-	import {
+<script setup>
+import { useRoute, useRouter } from "vue-router";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
+import { skapi, mainPageLoading } from "@/main";
+import { user, profileImage, verifiedEmail } from "@/user";
+import { divisionNameList } from "@/division";
+import {
 	openCropModal,
 	croppedImages,
 	uploadSrc,
@@ -161,41 +161,41 @@ hr
 	openCropImageDialog,
 	closeCropImageDialog,
 	setCroppedImage,
-	} from "@/components/crop_image";
+} from "@/components/crop_image";
 
-	import CropImage from "@/components/crop_image.vue";
+import CropImage from "@/components/crop_image.vue";
 
-	const router = useRouter();
-	const route = useRoute();
+const router = useRouter();
+const route = useRoute();
 
-	let optionsBtn = ref(null);
-	let getFileInfo = ref(null);
-	let userPosition = ref(null);
-	let uploadedFile = ref([]);
-	let uploadedStamp = ref([]);
-	let backupUploadFile = ref([]);
-	let removeFileList = ref([]);
-	let originUserProfile = {};
-	let access_group = {
+let optionsBtn = ref(null);
+let getFileInfo = ref(null);
+let userPosition = ref(null);
+let uploadedFile = ref([]);
+let uploadedStamp = ref([]);
+let backupUploadFile = ref([]);
+let removeFileList = ref([]);
+let originUserProfile = {};
+let access_group = {
 	1: "직원",
 	98: "관리자",
 	99: "마스터",
-	};
-	let disabled = ref(false);
-	let onlyEmail = ref(false);
-	let showOptions = ref(false);
-	let fileNames = ref([]);
-	let stampNames = ref([]);
+};
+let disabled = ref(false);
+let onlyEmail = ref(false);
+let showOptions = ref(false);
+let fileNames = ref([]);
+let stampNames = ref([]);
 
-	function makeSafe(str) {
+function makeSafe(str) {
 	return str
 		.replaceAll(".", "_")
 		.replaceAll("+", "_")
 		.replaceAll("@", "_")
 		.replaceAll("-", "_");
-	}
+}
 
-	let getUserDivision = async () => {
+let getUserDivision = async () => {
 	// // 부서 이름 가져오기
 	// await skapi.getRecords({
 	//     unique_id: '[division_name_list]',
@@ -240,56 +240,56 @@ hr
 				userPosition.value = divisionNameList.value[emp_dvs];
 			}
 		});
-	};
-	getUserDivision();
+};
+getUserDivision();
 
-	// user additional data 가져오기
-	// 추가자료 업로드 한 것 가져오기
-	const getAdditionalData = () => {
+// user additional data 가져오기
+// 추가자료 업로드 한 것 가져오기
+const getAdditionalData = () => {
 	skapi
-		.getRecords({
-			table: {
-				name: "emp_additional_data",
-				access_group: 99,
-			},
-			reference: "[emp_additional_data]" + makeSafe(user.user_id),
-		})
-		.then((res) => {
-			let fileList = [];
+	.getRecords({
+		table: {
+			name: "emp_additional_data",
+			access_group: 99,
+		},
+		reference: "[emp_additional_data]" + makeSafe(user.user_id),
+	})
+	.then((res) => {
+		let fileList = [];
 
-			if (res.list.length === 0) {
-				fileList = [];
-				uploadedFile.value = fileList;
-			} else {
-				res.list.forEach((item) => {
-					if (item.bin.additional_data && item.bin.additional_data.length > 0) {
-						function getFileUserId(str) {
-							if (!str) return "";
-							return str.split("/")[3];
-						}
-
-						const result = item.bin.additional_data.map((el) => ({
-							...el,
-							user_id: getFileUserId(el.path),
-							record_id: item.record_id,
-						}));
-
-						fileList.push(...result);
+		if (res.list.length === 0) {
+			fileList = [];
+			uploadedFile.value = fileList;
+		} else {
+			res.list.forEach((item) => {
+				if (item.bin.additional_data && item.bin.additional_data.length > 0) {
+					function getFileUserId(str) {
+						if (!str) return "";
+						return str.split("/")[3];
 					}
-				});
-				uploadedFile.value = fileList;
-			}
-		})
-		.catch((err) => {
-			console.log("== getRecords == err : ", err);
-		});
-	};
 
-	if (user && !user.approved.includes("by_master")) {
+					const result = item.bin.additional_data.map((el) => ({
+						...el,
+						user_id: getFileUserId(el.path),
+						record_id: item.record_id,
+					}));
+
+					fileList.push(...result);
+				}
+			});
+			uploadedFile.value = fileList;
+		}
+	})
+	.catch((err) => {
+		console.log("== getRecords == err : ", err);
+	});
+};
+
+if (user && !user.approved.includes("by_master")) {
 	getAdditionalData();
-	}
+}
 
-	let getProfileImage = async () => {
+let getProfileImage = async () => {
 	try {
 		let res = await skapi.getFile(user.picture, {
 			dataType: "endpoint",
@@ -301,50 +301,50 @@ hr
 		window.alert("프로필 사진을 불러오는데 실패했습니다.");
 		throw err;
 	}
-	};
+};
 
-	let sendEmail = async () => {
+let sendEmail = async () => {
 	try {
 		await skapi.verifyEmail();
 	} catch (err) {
 		window.alert(err.message);
 	}
 	router.push("/verification");
-	};
+};
 
-	let profile_pic_input = ref(null);
+let profile_pic_input = ref(null);
 
-	let selectFile = () => {
+let selectFile = () => {
 	showOptions.value = false;
 	profile_pic_input.value.click();
-	};
+};
 
-	let setToDefault = () => {
+let setToDefault = () => {
 	showOptions.value = false;
 	uploadSrc.value.profile_pic = null;
 	profile_pic.value = "";
-	};
+};
 
-	let closeOptions = (e) => {
+let closeOptions = (e) => {
 	if (showOptions.value && !optionsBtn.value.contains(e.target)) {
 		showOptions.value = false;
 	}
-	};
+};
 
-	// let startEdit = () => {
-	//     for (let k in originUserProfile) {
-	//         delete originUserProfile[k];
-	//     }
+// let startEdit = () => {
+//     for (let k in originUserProfile) {
+//         delete originUserProfile[k];
+//     }
 
-	//     for (let k in user) {
-	//         originUserProfile[k] = user[k];
-	//     }
+//     for (let k in user) {
+//         originUserProfile[k] = user[k];
+//     }
 
-	//     fileNames.value = [];
-	//     backupUploadFile.value = [...uploadedFile.value];
-	// }
+//     fileNames.value = [];
+//     backupUploadFile.value = [...uploadedFile.value];
+// }
 
-	let cancelEdit = () => {
+let cancelEdit = () => {
 	// for (let k in user) {
 	//     delete user[k];
 	// }
@@ -361,10 +361,10 @@ hr
 	removeFileList.value = [];
 	uploadedFile.value = [...backupUploadFile.value];
 	router.push("/mypage");
-	};
+};
 
-	let registerMypage = async (e) => {
-	e.preventDefault();
+let registerMypage = async (e) => {
+	// e.preventDefault();
 
 	mainPageLoading.value = true;
 	disabled.value = true;
@@ -425,6 +425,9 @@ hr
 		);
 	}
 
+	// 이름 변경
+	user.name = e.target.name.value;
+
 	// const files = document.querySelector('input[name="additional_data"]').files;
 	let filebox = document.querySelector("input[name=additional_data]");
 
@@ -474,27 +477,27 @@ hr
 	onlyEmail.value = false;
 	disabled.value = false;
 	mainPageLoading.value = false;
-	};
+};
 
-	// 업로드 파일 삭제
-	let removeFile = (item) => {
+// 업로드 파일 삭제
+let removeFile = (item) => {
 	removeFileList.value.push(item.record_id);
-	};
+};
 
-	let cancelRemoveFile = (item) => {
+let cancelRemoveFile = (item) => {
 	removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
-	};
+};
 
-	// 파일 추가시 파일명 표시
-	let updateFileList = (e) => {
+// 파일 추가시 파일명 표시
+let updateFileList = (e) => {
 	let target = e.target;
 
 	if (target.files) {
 		fileNames.value = Array.from(target.files).map((file) => file.name);
 	}
-	};
+};
 
-	onMounted(async () => {
+onMounted(async () => {
 	document.addEventListener("click", closeOptions);
 
 	resetCropImage();
@@ -518,15 +521,15 @@ hr
 				console.log("== getFile == err : ", err);
 			});
 	}
-	});
+});
 
-	onUnmounted(() => {
+onUnmounted(() => {
 	document.removeEventListener("click", closeOptions);
-	});
-	</script>
+});
+</script>
 
-	<style scoped lang="less">
-	.title {
+<style scoped lang="less">
+.title {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: end;
@@ -536,13 +539,13 @@ hr
 		color: var(--gray-color-400);
 		line-height: 1.4;
 	}
-	}
+}
 
-	.checkbox.disabled {
+.checkbox.disabled {
 	opacity: 0.5;
-	}
+}
 
-	#_el_pictureForm {
+#_el_pictureForm {
 	text-align: center;
 
 	.image {
@@ -643,25 +646,25 @@ hr
 			left: 0;
 		}
 	}
-	}
+}
 
-	// #position {
-	// 	text-align: center;
-	// 	font-size: 0.9rem;
-	// 	font-weight: 500;
-	// 	color: var(--gray-color-500);
-	// }
+// #position {
+// 	text-align: center;
+// 	font-size: 0.9rem;
+// 	font-weight: 500;
+// 	color: var(--gray-color-500);
+// }
 
-	#position {
+#position {
 	input {
 		pointer-events: none;
 		background-color: var(--gray-color-100);
 		color: var(--gray-color-500);
 		cursor: default;
 	}
-	}
+}
 
-	.checkbox.public {
+.checkbox.public {
 	position: absolute;
 	top: 2px;
 	right: 0;
@@ -675,9 +678,9 @@ hr
 			height: 0.8rem;
 		}
 	}
-	}
+}
 
-	.input-wrap {
+.input-wrap {
 	&.upload-file {
 		.btn-upload-file {
 			display: flex;
@@ -705,9 +708,9 @@ hr
 			}
 		}
 	}
-	}
+}
 
-	#upload-stamp-img {
+#upload-stamp-img {
 	width: 100px;
 	height: 100px;
 	border-radius: 30%;
@@ -732,10 +735,10 @@ hr
 		position: absolute;
 		top: 0;
 		left: 0;
-	}
-	}
+	}		
+}
 
-	#_el_myinfoForm {
+#_el_myinfoForm {
 	.upload-stamp-list {
 		display: flex;
 		flex-wrap: wrap;
@@ -747,9 +750,9 @@ hr
 			margin-top: 8px;
 		}
 	}
-	}
+}
 
-	@media (max-width: 682px) {
+@media (max-width: 682px) {
 	.input-wrap {
 		&.upload-file {
 			.btn-upload-file {
@@ -772,5 +775,5 @@ hr
 		&.upload-stamp {
 		}
 	}
-	}
-	</style>
+}
+</style>

@@ -735,6 +735,7 @@ const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, s
 			}
         }
     );
+	console.log('=== createAuditRequest === res : ', res);
 
     skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
