@@ -16,12 +16,12 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 			
 		.selected-wrap
 			p.label 결재 양식 선택
-			select(v-if="formCategory === 'master'" name="masterForms" @change="(e) => selDocForm(e)")
-				option(value="" disabled selected) 기본 결재 양식을 선택해주세요.
+			select(v-if="formCategory === 'master'" name="masterForms" :disabled="!masterForms.length" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) {{ masterForms.length ? "기본 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
 				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-			select(v-else-if="formCategory === 'mine'" name="myForms" @change="(e) => selDocForm(e)")
-				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
+			select(v-else-if="formCategory === 'mine'" name="myForms" :disabled="!myForms.length" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) {{ myForms.length ? "나의 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
 				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
 			select(v-else)
@@ -40,8 +40,8 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 중단
 
 	.button-wrap
-		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새로 작성
-		button.btn.btn-next(type="button" @click="step = 2") 다음
+		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새 양식 생성
+		button.btn.btn-next(type="button" :disabled="!selectedForm.length" @click="step = 2") 다음
 
 	//- .top-wrap
 		p.desc 결재 양식 선택 후 결재 작성이 진행됩니다. 결재 양식을 먼저 선택해주세요.
