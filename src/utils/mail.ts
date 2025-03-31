@@ -1,4 +1,6 @@
 import { refreshAccessToken } from "../main";
+import { user } from "../user";
+
 async function fetchGmailEmails(accessToken: any) {
     if (!accessToken) {
         console.error('액세스 토큰이 없어 이메일을 가져올 수 없습니다.');
@@ -171,6 +173,13 @@ function openGmailAppOrWeb(link:string | null, show = false) {
 		// gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
 		// gmailAppUrlAndroid = `intent://#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
 		gmailWebUrl = `https://mail.google.com/mail/u/0/#inbox`;
+	}
+
+	const googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
+
+	if(googleAccountCheck) {
+		const encodedEmail = encodeURIComponent(user.email);
+        gmailWebUrl = gmailWebUrl.replace('/u/0/', `/u/${encodedEmail}/`);
 	}
 
     try {
