@@ -55,6 +55,7 @@ let navbar = ref(null);
 let activeMenu = ref(null);
 // let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const googleAccountCheck = computed(() => !!localStorage.getItem('accessToken'));
+const encodedEmail = encodeURIComponent(user.email);
 
 const handleLinkClick = (to) => {
     if (route.path === to || route.path.startsWith(to) || isSubMenuPath(to)) {
@@ -115,7 +116,7 @@ const menuList = computed(() => [
     {
         show: googleAccountCheck.value,
         name: 'email',
-        to: 'https://mail.google.com/mail/u/0/#inbox',
+        to: `https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`,
         icon: '#icon-mail',
         text: '이메일',
         isExternal: true  // 외부 링크 표시

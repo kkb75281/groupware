@@ -164,7 +164,9 @@ function openGmailAppOrWeb(link:string | null, show = false) {
 			// 특정 이메일 주소 메일 작성하는 경우
 			gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
 			gmailAppUrlAndroid = `mailto:${link}`;
-			gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${link}`;
+			// gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${link}`;
+			gmailWebUrl = `https://mail.google.com/mail/u/${encodeURIComponent(user.email)}/?view=cm&fs=1&to=${encodeURIComponent(link)}&authuser=${encodeURIComponent(user.email)}&login_hint=${encodeURIComponent(user.email)}`;
+			// const gmailWebUrl = `https://mail.google.com/mail/u/${encodeURIComponent(email)}/?view=cm&fs=1&to=${encodeURIComponent(toEmail)}&authuser=${encodeURIComponent(email)}&login_hint=${encodeURIComponent(email)}`;
 		}
 	} else {
 		// 기본 Gmail 앱 메일함 열기
@@ -179,8 +181,11 @@ function openGmailAppOrWeb(link:string | null, show = false) {
 
 	if(googleAccountCheck) {
 		const encodedEmail = encodeURIComponent(user.email);
-        gmailWebUrl = gmailWebUrl.replace('/u/0/', `/u/${encodedEmail}/`);
+        gmailWebUrl = `https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`;
 	}
+
+	console.log('googleAccountCheck : ', googleAccountCheck);
+	console.log('gmailWebUrl : ', gmailWebUrl);
 
     try {
         if (!show && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
