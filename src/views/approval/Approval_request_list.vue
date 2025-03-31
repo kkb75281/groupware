@@ -109,7 +109,7 @@ const showSendAuditDoc = (e, audit) => {
 }
 
 // pagination
-const getPage = async(refresh = false) => {
+const getPage = async(refresh = false) => {	
 	if(refresh) {
         endOfList.value = false;
     }
@@ -124,21 +124,14 @@ const getPage = async(refresh = false) => {
     }
 
  	if (!refresh && maxPage.value >= currentPage.value || endOfList.value) {
-        // if is not refresh and has page data
         sendAuditList.value = pager.getPage(currentPage.value).list;
-		console.log('sendAuditList : ', sendAuditList.value);
         return;
-    }
-
-	else if (!endOfList.value || refresh) {
-        // if page data needs to be fetched
+    } else if (!endOfList.value || refresh) {
         fetching.value = true;
 
         // fetch from server
-        // let fetchedData = await skapi.getNewsletters(callParams.value.params, Object.assign({ fetchMore: !refresh }, callParams.value.options));
 		let fetchOptions = Object.assign({ fetchMore: !refresh }, { limit: 10, ascending: false })
 		let fetchedData = await getSendAuditList(fetchOptions);
-		console.log('fetchedData : ', fetchedData);
 
         // save endOfList status
         endOfList.value = fetchedData.endOfList;
@@ -148,12 +141,8 @@ const getPage = async(refresh = false) => {
             await pager.insertItems(fetchedData.list);
         }
 
-		console.log('pager : ', pager);
-		console.log('currentPage : ', currentPage.value);
-
         // get page from pager
         let disp = pager.getPage(currentPage.value);
-		console.log('disp : ', disp);
 
         // set maxpage
         maxPage.value = disp.maxPage;

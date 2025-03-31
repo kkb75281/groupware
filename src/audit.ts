@@ -39,17 +39,18 @@ export async function getAuditList(fetchOptions: {}) {
     );
     console.log('agreerAudits : ', agreerAudits);
 
-    // 결재자와 합의자 목록 합치기
+    // 결재자와 합의자 목록 합치기 (endOfList 체크 필요)
     const combinedAudits = {
-      list: [...approverAudits.list, ...agreerAudits.list]
+      list: [...approverAudits.list, ...agreerAudits.list],
+      endOfList: approverAudits.endOfList || agreerAudits.endOfList,
     };
     
     // 날짜 내림차순 정렬 후 최대 n개만 선택
     combinedAudits.list.sort((a, b) => {
       return (b.uploaded || 0) - (a.uploaded || 0);
     });
-    combinedAudits.list = combinedAudits.list;
-    console.log('combinedAudits', combinedAudits.list);
+    combinedAudits.list = combinedAudits.list;    
+    console.log('combinedAudits : ', combinedAudits);
     
     // 공통 처리 함수 호출 (isReference = false는 결재 수신함)
     await processAuditData(combinedAudits, false);

@@ -142,9 +142,7 @@ const filterAuditList = computed(() => {
 
 // pagination
 const getPage = async(refresh = false) => {
-	console.log('=== getPage ===');
-
-	if(refresh) {
+	if (refresh) {
 		endOfList.value = false;
 	}
 
@@ -156,23 +154,16 @@ const getPage = async(refresh = false) => {
 			order: ascending.value ? 'asc' : 'desc',
 		});
 	}
-	console.log('확인!')
 
 	if (!refresh && maxPage.value >= currentPage.value || endOfList.value) {
-		console.log('== AA ==');
+		// if is not refresh and has page data
 		listDisplay.value = pager.getPage(currentPage.value).list;
-		console.log('=== listDisplay.value ===', listDisplay.value);
 		return;
-	} else if (!endOfList.value || refresh) {
-		console.log('== BB ==');
-		fetching.value = true;
-
-		// fetch from server
-		let fetchOption = Object.assign({fetchMore: !refresh}, {limit: 10, ascending: false});
-		let fetchData = await getAuditList(fetchOption);
-		console.log('=== fetchData ===', fetchData);
 	}
 
+	else if (!endOfList.value || refresh) {
+		listDisplay.value = await pager.getPage(currentPage.value).list;
+	}
 }
 
 // 중요 결재 저장/해제
@@ -297,8 +288,6 @@ const showAuditDoc = (e, audit) => {
 // }
 
 onMounted(async () => {
-	getPage(true);
-
 	// await loadPageData();
 	await getAuditReferenceList();
 	await getFavoriteAuditList();
