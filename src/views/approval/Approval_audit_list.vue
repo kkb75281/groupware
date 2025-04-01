@@ -1,5 +1,5 @@
 <template lang="pug">
-h1.title {{ isCurrentPage === 'audit-list' ? '결재 수신함' : isCurrentPage === 'audit-reference' ? '수신참조' : isCurrentPage === 'audit-list-favorite' ? '중요 결재' : '' }}
+h1.title {{ isCurrentPage === 'audit-list' ? '결재 수신함' : isCurrentPage === 'audit-reference' ? '수신 참조함' : isCurrentPage === 'audit-list-favorite' ? '중요 결재함' : '' }}
 
 hr
 

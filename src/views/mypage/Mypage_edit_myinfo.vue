@@ -449,7 +449,7 @@ let registerMypage = async (e) => {
 	// 전화번호에 국가코드 추가하기
 	if (showPhoneNumber.value) {
 		if (showPhoneNumber.value.startsWith("+")) { // 코드 수정 전 번호를 저장하신 분들
-			alert("전화번호에는 국가번호를 제외하고 입력해주세요.");
+			alert("전화번호에는 국가코드를 제외하고 입력해주세요.");
 			disabled.value = false;
 			mainPageLoading.value = false;
 			return;

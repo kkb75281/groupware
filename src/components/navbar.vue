@@ -148,12 +148,12 @@ const menuList = computed(() => [
                 {
                     name: 'audit-reference',
                     to: '/approval/audit-reference',
-                    text: '수신참조',
+                    text: '수신 참조함',
                 },
                 {
                     name: 'audit-list-favorite',
                     to: '/approval/audit-list-favorite',
-                    text: '중요 결재',
+                    text: '중요 결재함',
                 },
             ]
         }
@@ -185,7 +185,7 @@ const menuList = computed(() => [
                 {
                     name: 'record-commute',
                     to: '/mypage/record-commute',
-                    text: '근태 관리',
+                    text: '출퇴근 관리',
                 },
                 {
                     show: !googleAccountCheck.value, // 구글 로그인 시 비밀번호 변경 메뉴 숨기기

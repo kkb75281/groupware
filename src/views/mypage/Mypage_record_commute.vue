@@ -1,6 +1,6 @@
 <template lang="pug">
 div(style="display: flex; gap: 1rem")
-	h1.title 출퇴근 기록
+	h1.title 출퇴근 관리
 
 hr
 
