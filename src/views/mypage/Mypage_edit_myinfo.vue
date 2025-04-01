@@ -448,6 +448,13 @@ let registerMypage = async (e) => {
 
 	// 전화번호에 국가코드 추가하기
 	if (showPhoneNumber.value) {
+		if (showPhoneNumber.value.startsWith("+")) { // 코드 수정 전 번호를 저장하신 분들
+			alert("전화번호에는 국가번호를 제외하고 입력해주세요.");
+			disabled.value = false;
+			mainPageLoading.value = false;
+			return;
+		}
+
 		if (selectedCountry.value.key) {
 			console.log({selectedCountry : selectedCountry.value});
 
@@ -586,11 +593,16 @@ onMounted(async () => {
 
 	if (user.phone_number) {
 		let misc = JSON.parse(user.misc || "{}");
-		selectedCountry.value = misc.country;
+		
+		if(misc?.country) {
+			selectedCountry.value = misc.country;
 
-		console.log(selectedCountry.value)
-		let dialCodeLength = selectedCountry.value.dialCode.replace(/\s+/g, "").length;
-		showPhoneNumber.value = '010' + user.phone_number.slice(dialCodeLength).slice(2);
+			let dialCodeLength = selectedCountry.value.dialCode.replace(/\s+/g, "").length;
+
+			showPhoneNumber.value = '010' + user.phone_number.slice(dialCodeLength).slice(2);
+		} else {
+			showPhoneNumber.value = user.phone_number; // 코드 수정 전 번호를 저장하신 분들
+		}
 	}
 
 	console.log(user)
