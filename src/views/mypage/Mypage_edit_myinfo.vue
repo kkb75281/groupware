@@ -554,23 +554,6 @@ let updateFileList = (e) => {
 };
 
 onMounted(async () => {
-	if(!phoneNumber.value) {
-		phoneNumber.value = user.phone_number;
-
-		let localNum = JSON.parse(user.misc).dialCode;
-
-		let regex = new RegExp(`^\\${localNum}10`);
-		phoneNumber.value = phoneNumber.value.replace(regex, '');
-
-		// 맨 앞에 '0' 추가
-		phoneNumber.value = `010${phoneNumber.value}`;
-		console.log('=== onMounted === phoneNumber : ', phoneNumber.value);
-	}
-
-	if(!localNumber.value) {
-		let newMisc = JSON.parse(user.misc);
-		localNumber.value = newMisc.locale;
-	}
 	console.log('=== onMounted === user : ', user);
 
 	document.addEventListener("click", closeOptions);
