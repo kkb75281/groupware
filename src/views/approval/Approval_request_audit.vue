@@ -41,7 +41,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 
 	.button-wrap
 		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새 양식 생성
-		button.btn.btn-next(type="button" :disabled="!selectedForm.length" @click="step = 2") 다음
+		button.btn.btn-next(type="button" :disabled="!isFormSelected" @click="step = 2") 다음
 
 	//- .top-wrap
 		p.desc 결재 양식 선택 후 결재 작성이 진행됩니다. 결재 양식을 먼저 선택해주세요.
@@ -342,8 +342,8 @@ const selectedAuditors = ref({
 });
 
 const formCategory = ref('master'); // 결재 양식 카테고리
-const masterForms = ref({}); // 기본 결재 양식
-const myForms = ref({}); // 나의 결재 양식
+const masterForms = ref([]); // 기본 결재 양식
+const myForms = ref([]); // 나의 결재 양식
 const selectedForm = ref([]); // 선택된 결재 양식
 const isFormSelected = ref(false); // 양식이 선택되었는지 여부
 const rejectSetting = ref(true); // 반려 설정 관련 체크박스
@@ -1100,9 +1100,10 @@ const getDocForm = async () => {
 			},
 		});
 
-		for(let l of res.list) {
-			masterForms.value[l.record_id] = l;
-		}
+		// for(let l of res.list) {
+		// 	masterForms.value[l.record_id] = l;
+		// }
+		masterForms.value = res.list || [];
 
 		return res;
 	} catch (error) {
@@ -1121,9 +1122,10 @@ const getMyDocForm = async () => {
 		});
 		// console.log('=== getMyDocForm === res : ', res);
 		
-		for(let l of res.list) {
-			myForms.value[l.record_id] = l;
-		}
+		// for(let l of res.list) {
+		// 	myForms.value[l.record_id] = l;
+		// }
+		myForms.value = res.list || [];
 
 		return res;
 	} catch (error) {
@@ -1144,55 +1146,73 @@ const convertAuditorFormat = (auditors) => {
 
 // 결재 양식 선택
 const selDocForm = async (e) => {
-	selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
-	// console.log('selectedForm : ', selectedForm.value);
-	// step.value = 2;
-	isFormSelected.value = true;
+	console.log('== selDocForm 클릭 ==');
+	console.log('=== selDocForm === e.target.value : ', e.target.value);
 
-	auditTitle.value = selectedForm.value.data.form_title;
-	editorContent.value = selectedForm.value.data.form_content;
+	// 선택된 record_id로 양식 찾기 
+	let selectedFormId = e.target.value;
+
+	// 카테고리에 따라 적절한 목록에서 양식 찾기
+	if (formCategory.value === 'master') {
+		selectedForm.value = masterForms.value.find(form => form.record_id === selectedFormId);
+	} else if (formCategory.value === 'mine') {
+		selectedForm.value = myForms.value.find(form => form.record_id === selectedFormId);
+	}
+	console.log('selectedForm : ', selectedForm.value);
 	
-	// 결재자
-	if (selectedForm.value.data.auditors) {
-		const auditors = JSON.parse(selectedForm.value.data.auditors);
 
-		if (auditors) {
+	// selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
+	// isFormSelected.value = true;
+
+	isFormSelected.value = !!selectedForm.value;
+
+	// 선택된 양식이 있으면 데이터 채우기
+	if (selectedForm.value) {
+		auditTitle.value = selectedForm.value.data.form_title;
+		editorContent.value = selectedForm.value.data.form_content;
+		
+		// 결재자
+		if (selectedForm.value.data.auditors) {
+			const auditors = JSON.parse(selectedForm.value.data.auditors);
+
+			if (auditors) {
+				selectedAuditors.value = {
+					approvers: convertAuditorFormat(auditors.approvers || []),
+					agreers: convertAuditorFormat(auditors.agreers || []),
+					receivers: convertAuditorFormat(auditors.receivers || [])
+				};
+			}
+		} else {
 			selectedAuditors.value = {
-				approvers: convertAuditorFormat(auditors.approvers || []),
-				agreers: convertAuditorFormat(auditors.agreers || []),
-				receivers: convertAuditorFormat(auditors.receivers || [])
+				approvers: [],
+				agreers: [],
+				receivers: []
 			};
 		}
-	} else {
-		selectedAuditors.value = {
-			approvers: [],
-			agreers: [],
-			receivers: []
-		};
-	}
 
-	// 추가 행 데이터
-	if (selectedForm.value.data.custom_rows) {
-		addRows.value = JSON.parse(selectedForm.value.data.custom_rows);
-	} else {
-		addRows.value = [];
-	}
+		// 추가 행 데이터
+		if (selectedForm.value.data.custom_rows) {
+			addRows.value = JSON.parse(selectedForm.value.data.custom_rows);
+		} else {
+			addRows.value = [];
+		}
 
-    // 첨부파일이 있는 경우
-    if (selectedForm.value.bin.form_data) {
-        uploadedFile.value = selectedForm.value.bin.form_data;
-		// console.log('=== selDocForm === uploadedFile.value : ', uploadedFile.value);
-    } else {
-		uploadedFile.value = [];
-		fileNames.value = [];
-	}
+		// 첨부파일이 있는 경우
+		if (selectedForm.value.bin.form_data) {
+			uploadedFile.value = selectedForm.value.bin.form_data;
+			// console.log('=== selDocForm === uploadedFile.value : ', uploadedFile.value);
+		} else {
+			uploadedFile.value = [];
+			fileNames.value = [];
+		}
 
-	// 체크박스 설정 불러오기
-    if (selectedForm.value.data.reject_setting !== undefined) {
-        rejectSetting.value = selectedForm.value.data.reject_setting === 'true' || selectedForm.value.data.reject_setting === true;
-    } else {
-        rejectSetting.value = true;
-    }
+		// 체크박스 설정 불러오기
+		if (selectedForm.value.data.reject_setting !== undefined) {
+			rejectSetting.value = selectedForm.value.data.reject_setting === 'true' || selectedForm.value.data.reject_setting === true;
+		} else {
+			rejectSetting.value = true;
+		}
+	}
 }
 
 // 새로운 결재 양식 작성
