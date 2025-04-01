@@ -442,8 +442,9 @@ let registerMypage = async (e) => {
 		);
 	}
 
-	// 이름 변경
-	user.name = e.target.name.value;
+	user.name = e.target.name.value; // 이름 변경
+	user.birthdate = e.target.birthdate.value; // 생년월일 변경
+	user.address = e.target.address.value; // 주소 변경
 
 	// 전화번호에 국가코드 추가하기
 	if (showPhoneNumber.value) {
@@ -578,6 +579,9 @@ onMounted(async () => {
 			.catch((err) => {
 				console.log("== getFile == err : ", err);
 			});
+	} else {
+		uploadSrc.value.profile_pic = null;
+		getFileInfo.value = null;
 	}
 
 	if (user.phone_number) {
