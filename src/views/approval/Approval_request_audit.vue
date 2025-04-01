@@ -1119,6 +1119,7 @@ const getMyDocForm = async () => {
 				access_group: 'private'
 			}
 		});
+		// console.log('=== getMyDocForm === res : ', res);
 		
 		for(let l of res.list) {
 			myForms.value[l.record_id] = l;

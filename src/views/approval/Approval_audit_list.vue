@@ -34,7 +34,7 @@ hr
 						td(colspan="6") {{ isCurrentPage === 'audit-list' ? '결재 목록이 없습니다.' : isCurrentPage === 'audit-reference' ? '수신참조 목록이 없습니다.' : isCurrentPage === 'audit-list-favorite' ? '지정하신 중요 결재가 없습니다.' : '' }}
 				template(v-else)
 					tr(v-for="(audit, index) of filterAuditList" :key="audit.record_id" @click.stop="(e) => showAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
-						td(v-show="isDesktop") {{ filterAuditList.length - index }}
+						td(v-show="isDesktop") {{ index + 1 + (10 * (currentPage - 1)) }}
 						td.td-icon
 							.icon-wrap
 								.icon-favorite(@click.stop="toggleFavoriteAudit(audit)")
@@ -106,7 +106,7 @@ const maxPage = ref(0); // 최대 페이지 수
 const currentPage = ref(1); // 현재 페이지
 const endOfList = ref(false); // 리스트의 끝에 도달했는지 여부
 const ascending = ref(false); // 오름차순 정렬 여부
-const listDisplay = ref([]); // 리스트 표시
+const disp = ref({ list: [], maxPage: 1 }); // 페이지 데이터 저장
 
 // 화면 크기 변경 시
 const updateScreenSize = () => {
@@ -126,54 +126,7 @@ const isCurrentPage = computed(() => {
 });
 
 // 결재 리스트 화면별로 필터링
-const filterAuditList = computed(() => {
-	// 즐겨찾기 페이지인 경우
-	if (isCurrentPage.value === 'audit-list-favorite') {
-		const allAudits = [...auditList.value, ...auditReferenceList.value];
-		return allAudits.filter(audit => Array.isArray(favoriteAuditList.value) && favoriteAuditList.value.includes(audit.record_id));
-	} 
-	else if (isCurrentPage.value === 'audit-reference') {
-		return auditReferenceList.value; // 수신참조 페이지인 경우
-	} 
-	else {
-		return auditList.value; // 결재 수신함 페이지인 경우
-	}
-});
-
-// pagination
-const getPage = async(refresh = false) => {
-	console.log('=== getPage ===');
-
-	if(refresh) {
-		endOfList.value = false;
-	}
-
-	if (refresh && searchFor.value) {
-		pager = await Pager.init({
-			id: 'record_id',
-			resultsPerPage: 10,
-			sortBy: searchFor.value,
-			order: ascending.value ? 'asc' : 'desc',
-		});
-	}
-	console.log('확인!')
-
-	if (!refresh && maxPage.value >= currentPage.value || endOfList.value) {
-		console.log('== AA ==');
-		listDisplay.value = pager.getPage(currentPage.value).list;
-		console.log('=== listDisplay.value ===', listDisplay.value);
-		return;
-	} else if (!endOfList.value || refresh) {
-		console.log('== BB ==');
-		fetching.value = true;
-
-		// fetch from server
-		let fetchOption = Object.assign({fetchMore: !refresh}, {limit: 10, ascending: false});
-		let fetchData = await getAuditList(fetchOption);
-		console.log('=== fetchData ===', fetchData);
-	}
-
-}
+const filterAuditList = computed(() => disp.value.list);
 
 // 중요 결재 저장/해제
 const toggleFavoriteAudit = async (audit) => {
@@ -201,6 +154,26 @@ const toggleFavoriteAudit = async (audit) => {
             // UI 업데이트
             favoriteAuditRecords.value = favoriteAuditRecords.value.filter(record => record.record_id !== favoriteRecord.record_id);
             favoriteAuditList.value = favoriteAuditList.value.filter(id => id !== audit.record_id);
+
+			// 현재 페이지가 중요 결재 페이지인 경우 화면에서 즉시 제거
+            if (isCurrentPage.value === 'audit-list-favorite' && pager) {
+                // 페이저의 deleteItem 메소드를 사용하여 항목 제거
+                await pager.deleteItem(audit.record_id);
+                
+                // 현재 페이지 데이터 업데이트
+                disp.value = pager.getPage(currentPage.value);
+                
+                // 현재 페이지의 항목이 없는 경우 처리
+                if (disp.value.list.length === 0 && currentPage.value > 1) {
+                    currentPage.value--;
+                } else if (disp.value.list.length === 0 && maxPage.value === 0) {
+                    // 데이터가 더 이상 없는 경우 처리
+                    disp.value = { list: [], maxPage: 0 };
+                }
+                
+                // 최대 페이지 업데이트
+                maxPage.value = disp.value.maxPage;
+            }
         } else {
             // console.log('중요 결재 저장');
             // 중요 결재 저장
@@ -235,29 +208,88 @@ const toggleFavoriteAudit = async (audit) => {
 };
 
 // 중요 결재 리스트 가져오기
-const getFavoriteAuditList = async () => {
+const getFavoriteAuditList = async (fetchOptions) => {
     try {
-        const res = await skapi.getRecords({
+        const favoriteRes = await skapi.getRecords({
             table: {
                 name: 'audit_favorite_' + makeSafe(user.user_id),
                 access_group: 'private',
             },
+            fetchOptions
         });
-        // console.log('=== getFavoriteAuditList === res : ', res.list);
-
+        
         // 전체 레코드 목록 저장
-        favoriteAuditRecords.value = res.list || [];
+        favoriteAuditRecords.value = favoriteRes.list || [];
         
         // 즐겨찾기 ID 목록 추출
         favoriteAuditList.value = favoriteAuditRecords.value.map(record => record.data.auditId);
-
-        return res;
+        
+        if (!favoriteAuditList.value.length) {
+            // 즐겨찾기 항목이 없으면 빈 목록 반환
+            return {
+                list: [],
+                endOfList: true
+            };
+        }
+        
+        if (auditList.value.length === 0) {
+            await getAuditList({});
+        }
+        
+        if (auditReferenceList.value.length === 0) {
+            await getAuditReferenceList({});
+        }
+        
+        const allAudits = [...auditList.value, ...auditReferenceList.value];
+        const favoriteAudits = allAudits.filter(audit => favoriteAuditList.value.includes(audit.record_id));
+        
+        favoriteAudits.sort((a, b) => {
+            return (b.uploaded || 0) - (a.uploaded || 0);
+        });
+        
+        return {
+            list: favoriteAudits,
+            endOfList: true // 이미 모든 데이터를 가져왔으므로 항상 true
+        };
     } catch (err) {
         console.error('중요 결재 리스트 가져오기 실패:', err);
         favoriteAuditRecords.value = [];
         favoriteAuditList.value = [];
+        return {
+            list: [],
+            endOfList: true
+        };
     }
 };
+
+// const getFavoriteAuditList = async (fetchOptions) => {
+//     try {
+//         const res = await skapi.getRecords({
+//             table: {
+//                 name: 'audit_favorite_' + makeSafe(user.user_id),
+//                 access_group: 'private',
+//             },
+// 			fetchOptions
+//         });
+//         console.log('=== getFavoriteAuditList === res : ', res);
+
+//         // 전체 레코드 목록 저장
+//         favoriteAuditRecords.value = res.list || [];
+        
+//         // 즐겨찾기 ID 목록 추출
+//         favoriteAuditList.value = favoriteAuditRecords.value.map(record => record.data.auditId);
+
+// 		return {
+// 			list: Object.values(res.list),
+// 			endOfList: res.endOfList,
+// 		};
+
+//     } catch (err) {
+//         console.error('중요 결재 리스트 가져오기 실패:', err);
+//         favoriteAuditRecords.value = [];
+//         favoriteAuditList.value = [];
+//     }
+// };
 
 // 결재 문서 읽음 여부 확인
 const isAuditRead = (audit) => {
@@ -282,27 +314,102 @@ const showAuditDoc = (e, audit) => {
   goToAuditDetail(e, audit.record_id, router);
 };
 
-// 현재 페이지에 따라 필요한 데이터 로드
-// const loadPageData = async () => {
-//   await getFavoriteAuditList();
+// 초기 데이터 로드 및 페이저 초기화
+const getPage = async (refresh = false) => {
+  	fetching.value = true;
+
+	if(refresh) {
+        endOfList.value = false;
+    }
   
-//   if (isCurrentPage.value === 'audit-reference') {
-//     await getAuditReferenceList();
-//   } else if (isCurrentPage.value === 'audit-list') {
-//     await getAuditList();
-//   } else if (isCurrentPage.value === 'audit-list-favorite') {
-//     // 즐겨찾기 페이지는 모든 데이터가 필요함
-//     await Promise.all([getAuditList(), getAuditReferenceList()]);
-//   }
-// }
+	try {
+		// 중요 결재 목록 가져오기
+		await getFavoriteAuditList();
+		
+		// 페이저 초기화
+		if (refresh || !pager) {
+		pager = await Pager.init({
+			id: 'record_id',
+			resultsPerPage: 10,
+			sortBy: searchFor.value,
+			order: ascending.value ? 'asc' : 'desc',
+		});
+		}
+		
+		// 현재 페이지에 따라 데이터 로드
+		let fetchedData;
+		const fetchOptions = { fetchMore: !refresh, limit: 10, ascending: false };
+		
+		if (isCurrentPage.value === 'audit-reference') {
+			// console.log('수신참조 페이지');
+			// 수신참조 페이지
+			fetchedData = await getAuditReferenceList(fetchOptions) || [];
+			// console.log('수신참조 fetchedData : ', fetchedData);
+		} else if (isCurrentPage.value === 'audit-list') {
+			// console.log('결재 수신함 페이지');
+			// 결재 수신함 페이지
+			fetchedData = await getAuditList(fetchOptions || []);
+			// console.log('결재 수신함 fetchedData : ', fetchedData);
+		} else if (isCurrentPage.value === 'audit-list-favorite') {
+			// console.log('즐겨찾기 페이지');
+			
+			// 먼저 기본 결재 데이터를 로드 (첫 로드 시 또는 refresh 시에만)
+			if (refresh || auditList.value.length === 0 || auditReferenceList.value.length === 0) {
+				// 병렬로 모든 결재 데이터 로드
+				await Promise.all([
+					getAuditList({}), 
+					getAuditReferenceList({})
+				]);
+			}
+			
+			// 즐겨찾기 목록 가져오기
+			fetchedData = await getFavoriteAuditList(fetchOptions);
+			// console.log('즐겨찾기 fetchedData : ', fetchedData);
+		}
+
+		// endOfList 상태 저장
+		endOfList.value = fetchedData && fetchedData.endOfList || false;
+		// console.log('endOfList.value : ', endOfList.value);
+		
+		// 페이저에 데이터 삽입
+		if (Array.isArray(fetchedData.list) && fetchedData.list.length > 0) {
+			await pager.insertItems(fetchedData.list);
+		}
+			
+		// 페이지 데이터 가져오기
+		disp.value = pager.getPage(currentPage.value);
+		// console.log('disp : ', disp.value);
+
+		// 최대 페이지 설정
+		maxPage.value = disp.value.maxPage;
+		// console.log('maxPage : ', maxPage.value);
+	} catch (error) {
+		console.error('데이터 초기화 실패:', error);
+	} finally {
+		fetching.value = false;
+	}
+};
+
+// 페이지 변경 시 
+watch(currentPage, (n, o) => {
+	if (n !== o && 
+		n > 0 && 
+		(n <= maxPage.value || (n > maxPage.value && !endOfList.value))
+	) {
+		getPage();
+	} else {
+		currentPage.value = o;
+	}
+});
+
+watch(() => route.path, () => {
+	currentPage.value = 1;
+	getPage(true);
+});
 
 onMounted(async () => {
-	getPage(true);
-
-	// await loadPageData();
-	await getAuditReferenceList();
-	await getFavoriteAuditList();
 	window.addEventListener('resize', updateScreenSize);
+	await getPage(true);
 });
 
 onUnmounted(() => {

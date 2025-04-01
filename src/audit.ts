@@ -24,7 +24,7 @@ export async function getAuditList(fetchOptions: {}) {
       },
       fetchOptions
     );
-    console.log('approverAudits : ', approverAudits);
+    // console.log('approverAudits : ', approverAudits);
 
     // 내가 합의자(agreer)로 지정된 결재 요청건 가져오기
     const agreerAudits = await skapi.getRecords(
@@ -37,7 +37,7 @@ export async function getAuditList(fetchOptions: {}) {
       },
       fetchOptions
     );
-    console.log('agreerAudits : ', agreerAudits);
+    // console.log('agreerAudits : ', agreerAudits);
 
     // 결재자와 합의자 목록 합치기 (endOfList 체크 필요)
     const combinedAudits = {
@@ -50,11 +50,16 @@ export async function getAuditList(fetchOptions: {}) {
       return (b.uploaded || 0) - (a.uploaded || 0);
     });
     combinedAudits.list = combinedAudits.list;    
-    console.log('combinedAudits : ', combinedAudits);
+    // console.log('combinedAudits : ', combinedAudits);
     
     // 공통 처리 함수 호출 (isReference = false는 결재 수신함)
-    await processAuditData(combinedAudits, false);
+    const res = await processAuditData(combinedAudits, false);
+    combinedAudits.list = res;
 
+    return {
+      list: Object.values(combinedAudits.list),
+      endOfList: combinedAudits.endOfList,
+    };
   } catch (err) {
     auditListRunning.value = false;
     console.error({ err });
@@ -75,15 +80,18 @@ export async function getAuditReferenceList(fetchOptions: {}) {
         },
         reference: `audit:${user.user_id}`,
       },
-      {
-        ascending: false, // 최신순
-      }
+      fetchOptions
     );
-    console.log('receiverAudits : ', receiverAudits.list);
+    // console.log('receiverAudits : ', receiverAudits);
 
     // 공통 처리 함수 호출 (isReference = true는 수신참조)
-    await processAuditData(receiverAudits, true);
+    const res = await processAuditData(receiverAudits, true);
+    receiverAudits.list = res;
 
+    return {
+      list: Object.values(receiverAudits.list),
+      endOfList: receiverAudits.endOfList,
+    };
   } catch (err) {
     auditReferenceListRunning.value = false;
     console.error({ err });
