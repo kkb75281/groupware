@@ -10,7 +10,7 @@ hr
 			.image
 				img#profile-img(:src="currentEmp?.picture" alt="profile image")
 
-			.util-wrap
+			//- .util-wrap
 				.util-btn(:class="{'disabled' : !currentEmp?.phone_number}")
 					a.click-btn(:href="'tel:' + currentEmp?.phone_number" style="display: block;")
 						svg
@@ -54,6 +54,9 @@ hr
 		.input-wrap
 			p.label 이메일
 			input(type="email" name="email" :value="currentEmp?.email || '-' " placeholder="예) user@email.com" disabled)
+			.icon(v-if="currentEmp?.email" @click="copy(currentEmp?.email)")
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-file-copy-fill")
 
 		.input-wrap
 			p.label 생년월일
@@ -62,6 +65,10 @@ hr
 		.input-wrap
 			p.label 전화번호
 			input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
+			.icon(v-if="currentEmp?.phone_number")
+				a(:href="'tel:' + currentEmp?.phone_number")
+					svg
+						use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
 
 		.input-wrap
 			p.label 주소
@@ -248,6 +255,17 @@ let sendMail = async (mail) => {
     openGmailAppOrWeb(maillink);
 }
 
+let copy = (text) => {
+    let doc = document.createElement('textarea');
+    doc.textContent = text;
+    document.body.append(doc);
+    doc.select();
+    document.execCommand('copy');
+    doc.remove();
+
+	alert('이메일이 복사되었습니다.');
+}
+
 // 파일 업로드 리스트 업데이트
 let updateFileList = (e) => {
 	let target = e.target;
@@ -412,6 +430,7 @@ onMounted(async () => {
 		justify-content: center;
 	}
 	.input-wrap {
+		position: relative;
 		margin-top: 16px;
 
 		input {
@@ -434,6 +453,25 @@ onMounted(async () => {
 
 		select {
 			border-color: var(--primary-color-400);
+		}
+
+		.icon {
+			position: absolute;
+			bottom: 12px;
+			right: 0px;
+			cursor: pointer;
+
+			&:hover {
+				svg {
+					transform: scale(1.1);
+				}
+			}
+
+			svg {
+				width: 1.2rem;
+				height: 1.2rem;
+				fill: var(--primary-color-400-dark);
+			}
 		}
 	}
 
