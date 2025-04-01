@@ -70,10 +70,9 @@ hr
 			p.label 전화번호
 			.item-wrap.tel
 				.select-wrap(@click="showLocale = !showLocale")
-					input.selectbox#searchInput(type="text" placeholder="국가코드를 선택하세요." v-model="localNumber" name="locale" readonly)
-					Locale(v-model="localNumber" :showLocale="showLocale" @close="showLocale=false" @select-country="handleCountrySelect")
-				input(:value="phoneNumber" type="tel" placeholder="예) 01012345678" :disabled="verifiedEmail || disabled")
-				input(type="tel" name="phone_number" hidden)
+					input.selectbox(type="text" placeholder="국가코드를 선택하세요." v-model="selectedCountry.key" name="locale" readonly :disabled="verifiedEmail || disabled")
+					Locale(v-model="selectedCountry.key" :showLocale="showLocale" @close="showLocale=false" @select-country="handleCountrySelect")
+				input(v-model="showPhoneNumber" type="tel" name="phone_number" placeholder="예) 01012345678" :disabled="verifiedEmail || disabled")
 
 		br
 
@@ -193,10 +192,11 @@ let showOptions = ref(false);
 let fileNames = ref([]);
 let stampNames = ref([]);
 let showLocale = ref(false); // 전화번호 국가 코드 선택창
-let searchValue = ref(''); // 전화번호 국가 코드 검색어
-let selectedCountryCode = ref('');
-let localNumber = ref('');
-let phoneNumber = ref('');
+let selectedCountry = ref({
+	key: '', // 국가코드
+	dialCode: '', // 국가번호
+});
+let showPhoneNumber = ref(''); // 포맷된 전화번호
 
 function makeSafe(str) {
 	return str
@@ -376,18 +376,13 @@ let cancelEdit = () => {
 
 // 국가코드 변경 시 처리 함수
 const handleCountrySelect = (country) => {
-	console.log('country : ', country);
-	searchValue.value = country.key;
-	selectedCountryCode.value = country.dialCode;
+	selectedCountry.value.key = country.key;
+	selectedCountry.value.dialCode = country.dialCode;
 };
 
 let oldNumber = '';
 
 let registerMypage = async (e) => {
-	// e.preventDefault();
-
-	let newMisc = JSON.parse(user.misc || '{}');
-
 	mainPageLoading.value = true;
 	disabled.value = true;
 
@@ -450,59 +445,33 @@ let registerMypage = async (e) => {
 	// 이름 변경
 	user.name = e.target.name.value;
 
-	// 이메일 변경
-	if (e.target.email.value !== user.email) {
-		user.email = e.target.email.value;
+	// 전화번호에 국가코드 추가하기
+	if (showPhoneNumber.value) {
+		if (selectedCountry.value.key) {
+			console.log({selectedCountry : selectedCountry.value});
+
+			let formattedNumber = showPhoneNumber.value;
+
+			if (formattedNumber.startsWith('0')) {
+				formattedNumber = formattedNumber.substring(1);
+				console.log('formattedNumber : ', formattedNumber);
+			}
+
+			// 국가 코드 추가
+            const fullPhoneNumber = selectedCountry.value.dialCode.replace(/\s+/g, "") + formattedNumber;
+
+            // 폼 데이터 업데이트
+            showPhoneNumber.value = fullPhoneNumber;
+
+			console.log('showPhoneNumber.value', showPhoneNumber.value);
+		} else {
+			alert("전화번호 국가코드를 선택해주세요.");
+			disabled.value = false;
+			mainPageLoading.value = false;
+			return;
+		}
 	}
 
-	// 생년월일 변경
-	user.birthdate = e.target.birthdate.value;
-
-	// 주소 변경
-	user.address = e.target.address.value;
-
-	// 전화번호 변경
-	phoneNumber.value = e.target.phone_number.value;
-
-	// phoneNumber 있는데 searchValue.value 선택 안했을 경우 선택하라고 알림창 띄우기	
-	if (phoneNumber.value && !localNumber.value) {
-		window.alert('국가 코드를 선택해주세요.');
-		mainPageLoading.value = false;
-		disabled.value = false;
-		return;
-	}
-
-	// 국가코드 저장
-	if (searchValue.value) {
-		newMisc.locale = searchValue.value;
-		newMisc.dialCode = selectedCountryCode.value;
-
-		skapi.updateProfile({ misc: JSON.stringify(newMisc) }).catch((err) => err);
-
-		localNumber.value = newMisc.locale;
-	}
-
-	if(!selectedCountryCode.value) {
-		selectedCountryCode.value = newMisc.dialCode;
-	}
-
-	
-	// phoneNumber.value = selectedCountryCode.value + phoneNumber.value.substring(1);
-	// // user.phone_number = "+821034749879" 
-	// // console.log('user.phone_number : ', user.phone_number);
-	// console.log('phoneNumber : ', phoneNumber.value);
-
-	// // phoneNumber.value = user.phone_number;
-
-	
-	// console.log('formInput : ', formInput);
-	let formInput = document.querySelector('input[name="phone_number"]');
-	formInput.value = selectedCountryCode.value + phoneNumber.value.substring(1);
-
-	// console.log('formInput : ', formInput.value);
-
-	
-	// 첨부파일 업로드
 	// const files = document.querySelector('input[name="additional_data"]').files;
 	let filebox = document.querySelector("input[name=additional_data]");
 
@@ -543,20 +512,20 @@ let registerMypage = async (e) => {
 		});
 	}
 
+	console.log({e})
+
 	// 프로필 정보를 업데이트
 	await skapi.updateProfile(e).finally(() => {
-		phoneNumber.value = user.phone_number;
-
-		let localNum = JSON.parse(user.misc).dialCode;
-
-		let regex = new RegExp(`^\\${localNum}10`);
-		phoneNumber.value = phoneNumber.value.replace(regex, '');
-
-		// 맨 앞에 '0' 추가
-		phoneNumber.value = `010${phoneNumber.value}`;
+		let dialCodeLength = selectedCountry.value.dialCode.replace(/\s+/g, "").length;
+		showPhoneNumber.value = '010' + user.phone_number.slice(dialCodeLength).slice(2);
 	});
 
-	console.log('AA == user : ', user);
+	// misc 국가코드 관련 정보 추가
+	let misc = JSON.parse(user.misc || '{}');
+	misc.country = selectedCountry.value;
+	await skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => err);
+
+	console.log({user})
 
 	getAdditionalData();
 
@@ -627,6 +596,17 @@ onMounted(async () => {
 				console.log("== getFile == err : ", err);
 			});
 	}
+
+	if (user.phone_number) {
+		let misc = JSON.parse(user.misc || "{}");
+		selectedCountry.value = misc.country;
+
+		console.log(selectedCountry.value)
+		let dialCodeLength = selectedCountry.value.dialCode.replace(/\s+/g, "").length;
+		showPhoneNumber.value = '010' + user.phone_number.slice(dialCodeLength).slice(2);
+	}
+
+	console.log(user)
 });
 
 onUnmounted(() => {
