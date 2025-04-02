@@ -56,8 +56,9 @@
 	import { useRoute, useRouter } from 'vue-router';
 	import { user } from '@/user';
 	import { skapi } from "@/main";
-	import { ref, onMounted } from 'vue';
+	import { ref, onMounted, onUnmounted } from 'vue';
 	import Loading from '@/components/loading.vue';
+import { sortAndDeduplicateDiagnostics } from 'typescript';
 
 	const router = useRouter();
 	const route = useRoute();
@@ -175,7 +176,14 @@
 		return { access_token, refresh_token, expires_in };
 	}
 
+	const handlePopState = () => {
+		loading.value = false;
+		console.log('popstate');
+	};
+
 	onMounted(async () => {
+		window.addEventListener('popstate', handlePopState);
+
 		const urlParams = new URLSearchParams(window.location.search);
 		const authorizationCode = urlParams.get('code');
 
@@ -200,6 +208,10 @@
 				loading.value = false;
 			}
 		}
+	});
+
+	onUnmounted(() => {
+		window.removeEventListener('popstate', handlePopState);
 	});
 </script>
 

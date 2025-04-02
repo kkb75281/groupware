@@ -8,7 +8,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 	.item-wrap
 		.selected-wrap
 			p.label 카테고리 선택
-			select(name="selCategory" @change="(e) => {formCategory = e.target.value}")
+			select(name="selCategory" @change="(e) => {formCategory = e.target.value; selectedForm = []; isFormSelected = false;}")
 				//- option(disabled selected) 카테고리 선택
 				//- option(value="bookmark") 즐겨찾기
 				option(value="master") 일반 결재 양식

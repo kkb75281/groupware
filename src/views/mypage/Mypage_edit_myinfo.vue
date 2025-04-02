@@ -37,13 +37,13 @@ hr
 
 		.input-wrap
 			p.label 이름
-			input(:value="user.name" type="text" name="name" placeholder="이름을 입력해주세요." :disabled="verifiedEmail || disabled" required)
+			input(v-model="editUserProfile.name" type="text" name="name" placeholder="이름을 입력해주세요." :key="'name-input'" :disabled="verifiedEmail || disabled" required)
 		
 		br
 
 		.input-wrap
 			p.label 이메일
-			input(:value="user.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(googleAccountCheck || verifiedEmail || disabled) && !onlyEmail" required)
+			input(v-model="editUserProfile.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(googleAccountCheck || verifiedEmail || disabled) && !onlyEmail" required)
 
 		template(v-if="verifiedEmail && !onlyEmail")
 			button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
@@ -59,9 +59,9 @@ hr
 
 		.input-wrap
 			p.label 생년월일
-			input(:value="user.birthdate" type="date" name="birthdate" :disabled="verifiedEmail || disabled")
+			input(v-model="editUserProfile.birthdate" type="date" name="birthdate" :disabled="verifiedEmail || disabled")
 			label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
-				input(v-model="user.birthdate_public" type="checkbox" name="birthdate_public" checked hidden :disabled="verifiedEmail || disabled")
+				input(:checked="editUserProfile.birthdate_public" @change = "editUserProfile.birthdate_public = !editUserProfile.birthdate_public" type="checkbox" name="birthdate_public" hidden :disabled="verifiedEmail || disabled")
 				span.label-checkbox 공개여부
 
 		br
@@ -78,9 +78,9 @@ hr
 
 		.input-wrap
 			p.label 주소
-			input(:value="user.address" type="text" name="address" placeholder="예) 서울시 마포구" :disabled="verifiedEmail || disabled")
+			input(v-model="editUserProfile.address" type="text" name="address" placeholder="예) 서울시 마포구" :disabled="verifiedEmail || disabled")
 			label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
-				input(v-model="user.address_public" type="checkbox" name="address_public" checked hidden :disabled="verifiedEmail || disabled")
+				input(v-model="editUserProfile.address_public" type="checkbox" name="address_public" checked hidden :disabled="verifiedEmail || disabled")
 				span.label-checkbox 공개여부
 
 		br
@@ -180,7 +180,7 @@ let uploadedFile = ref([]);
 let uploadedStamp = ref([]);
 let backupUploadFile = ref([]);
 let removeFileList = ref([]);
-let originUserProfile = {};
+// let originUserProfile = {};
 let access_group = {
 	1: "직원",
 	98: "관리자",
@@ -197,6 +197,26 @@ let selectedCountry = ref({
 	dialCode: '', // 국가번호
 });
 let showPhoneNumber = ref(''); // 포맷된 전화번호
+let originUserProfile = {
+	name: user.name,
+	email: user.email,
+	birthdate: user.birthdate,
+	address: user.address,
+	phone_number: user.phone_number,
+	birthdate_public: user.birthdate_public,
+	address_public: user.address_public,
+	phone_number_public: user.phone_number_public,
+};
+let editUserProfile = ref({
+	name: user.name,
+	email: user.email,
+	birthdate: user.birthdate,
+	address: user.address,
+	phone_number: user.phone_number,
+	birthdate_public: user.birthdate_public,
+	address_public: user.address_public,
+	phone_number_public: user.phone_number_public,
+});
 
 function makeSafe(str) {
 	return str
@@ -363,6 +383,16 @@ let cancelEdit = () => {
 	// for (let k in originUserProfile) {
 	//     user[k] = originUserProfile[k];
 	// }
+	editUserProfile.value = {
+		name: originUserProfile.name,
+		email: originUserProfile.email,
+		birthdate: originUserProfile.birthdate,
+		address: originUserProfile.address,
+		phone_number: originUserProfile.phone_number,
+		birthdate_public: originUserProfile.birthdate_public,
+		address_public: originUserProfile.address_public,
+		phone_number_public: originUserProfile.phone_number_public,
+	}
 
 	if (verifiedEmail.value && onlyEmail.value) {
 		onlyEmail.value = false;
@@ -442,9 +472,9 @@ let registerMypage = async (e) => {
 		);
 	}
 
-	user.name = e.target.name.value; // 이름 변경
-	user.birthdate = e.target.birthdate.value; // 생년월일 변경
-	user.address = e.target.address.value; // 주소 변경
+	// user.name = e.target.name.value; // 이름 변경
+	// user.birthdate = e.target.birthdate.value; // 생년월일 변경
+	// user.address = e.target.address.value; // 주소 변경
 
 	// 전화번호에 국가코드 추가하기
 	if (showPhoneNumber.value) {
@@ -523,7 +553,22 @@ let registerMypage = async (e) => {
 	console.log({e})
 
 	// 프로필 정보를 업데이트
-	await skapi.updateProfile(e).finally(() => {
+	await skapi.updateProfile(e).catch(() => {
+		window.alert("프로필 정보를 업데이트하는데 실패했습니다.");
+		editUserProfile.value = {
+			name: originUserProfile.name,
+			email: originUserProfile.email,
+			birthdate: originUserProfile.birthdate,
+			address: originUserProfile.address,
+			phone_number: originUserProfile.phone_number,
+			birthdate_public: originUserProfile.birthdate_public,
+			address_public: originUserProfile.address_public,
+			phone_number_public: originUserProfile.phone_number_public,
+		}
+		disabled.value = false;
+		mainPageLoading.value = false;
+		return;
+	}).finally(() => {
 		let dialCodeLength = selectedCountry.value.dialCode.replace(/\s+/g, "").length;
 		showPhoneNumber.value = '010' + user.phone_number.slice(dialCodeLength).slice(2);
 	});
