@@ -7,7 +7,6 @@ hr
 .itembox
 	.title-wrap(style="margin-bottom: 0;")
 		h3.title 오늘의 출퇴근 기록을 남겨주세요.
-		//- button.btns.sm.outline(@click="router.push('/commute-view-calendar')") 출퇴근 기록 캘린더
 	span.today 
 		.icon
 			svg
@@ -17,7 +16,7 @@ hr
 .itembox-wrap
 	.itembox
 		span.time 출근 : #[span.value {{ extractTimeFromDateTime(timeRecords.startTime) }}]
-		button.btn.btn-work(@click="startWork") 출근
+		button.btn.btn-work(@click="startWork" :class="{'disabled': commuted}") 출근
 
 	.itembox
 		span.time 퇴근 : #[span.value {{ extractTimeFromDateTime(timeRecords.endTime) }}]
@@ -132,6 +131,7 @@ const maxHour = 16; // 퇴근 기록 가능한 최대 시간
 const commuteRecords = ref([]); // 출퇴근 기록
 const timeRecords = ref(initWorkFormat); // 출퇴근 시간 기록
 const monthlyWorkTime = ref(''); // 한 달 총 근무시간
+const commuted = ref(false); // 출근 가능 여부
 
 let commuteStorage = []; // 직원별 출퇴근 정보 저장소
 
@@ -649,18 +649,29 @@ watch(commuteRecords, (newVal) => {
 });
 
 onMounted(async () => {
-  console.log('출퇴근 기록 페이지');
+  // console.log('출퇴근 기록 페이지');
   timeRecords.value.date = getDate();
 
   try {
     // 마스터가 설정한 부서별 근무시간 가져오기
     const getWorkTimes = await getWorkTime();
-    console.log('=== getWorkTimes ===', getWorkTimes);
+    // console.log('=== getWorkTimes ===', getWorkTimes);
+
+    // 현재 시간이 마스터가 정한 출근 시간 범위 내인지 체크
+    const currentTimestamp = convertToTimestamp(`${getDate()} ${getTime()}`);
+    commuted.value = !(masterStartTime.minTimestamp <= currentTimestamp && 
+                       currentTimestamp <= masterStartTime.maxTimestamp);
 
     // DB에서 기록 조회
     const res = await fetchCommuteRecords();
     if (res.list && Array.isArray(res.list)) {
       commuteStorage = [...res.list].sort((a, b) => b.uploaded - a.uploaded); // uploaded(레코드 최초 생성순) 기준으로 정렬해야 함.
+      
+      // 오늘 이미 출근했는지 확인
+      const todayRecord = commuteStorage.find(record => record.data.date === getDate() && record.data.startTime);
+      if (todayRecord) {
+        commuted.value = true; // 이미 출근했으면 버튼 비활성화
+      }
     } else {
       commuteStorage = [];
     }
@@ -735,6 +746,12 @@ onMounted(async () => {
   .btn-work {
     width: 100%;
     margin-top: 1.5rem;
+
+    &.disabled {
+      background-color: var(--primary-color-200);
+      border: 1px solid var(--primary-color-200);
+      cursor: default;
+    }
   }
 
   .title-wrap {
