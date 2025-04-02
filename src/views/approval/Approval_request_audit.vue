@@ -394,6 +394,9 @@ const openModal = () => {
 	// selectedAuditors 에 있는 모든 유저를 selectedUsers에 추가
 	selectedUsers.value = [];
 	for (const key in selectedAuditors.value) {
+		console.log('key : ', key);
+		console.log('selectedAuditors.value[key] : ', selectedAuditors.value[key]);
+		console.log('selectedAuditors.value : ', selectedAuditors.value);
 		selectedUsers.value.push(...selectedAuditors.value[key]);
 	}
 
@@ -1134,14 +1137,16 @@ const getMyDocForm = async () => {
 }
 
 // 결재자 정보 변환 함수
-const convertAuditorFormat = (auditors) => {
-  return auditors.map(auditor => ({
-    data: { user_id: auditor.user_id },
-    index: {
-      value: auditor.name,
-      name: `${auditor.division}.${auditor.position}`
-    }
-  }));
+const convertAuditorFormat = (auditors, role) => {
+	console.log('auditors : ', auditors);
+	return auditors.map(auditor => ({
+		data: { user_id: auditor.user_id },
+		index: {
+			value: auditor.name,
+			name: `${auditor.division}.${auditor.position}`
+		},
+		role: role,
+	}));
 };
 
 // 결재 양식 선택
@@ -1159,6 +1164,7 @@ const selDocForm = async (e) => {
 		selectedForm.value = myForms.value.find(form => form.record_id === selectedFormId);
 	}
 	console.log('selectedForm : ', selectedForm.value);
+	console.log('selectedForm : ', JSON.parse(selectedForm.value.data.auditors));
 	
 
 	// selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
@@ -1177,9 +1183,9 @@ const selDocForm = async (e) => {
 
 			if (auditors) {
 				selectedAuditors.value = {
-					approvers: convertAuditorFormat(auditors.approvers || []),
-					agreers: convertAuditorFormat(auditors.agreers || []),
-					receivers: convertAuditorFormat(auditors.receivers || [])
+					approvers: convertAuditorFormat(auditors.approvers || [], 'approvers'),
+					agreers: convertAuditorFormat(auditors.agreers || [], 'agreers'),
+					receivers: convertAuditorFormat(auditors.receivers || [], 'receivers')
 				};
 			}
 		} else {
