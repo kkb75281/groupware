@@ -69,7 +69,14 @@ function resetAllCheckStatus() {
 
 onMounted(() => {
 	excludeCurrentUser.value = props.excludeCurrentUser;
-	getOrganigram();
+});
+
+watch(excludeCurrentUser, (nv, ov) => {
+	if(!ov || ov && nv !== ov) {
+		getOrganigram(true);
+	} else {
+		getOrganigram();
+	}
 });
 
 function onDepartmentCheck(obj) {
