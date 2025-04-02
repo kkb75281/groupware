@@ -34,7 +34,7 @@ const config = {
                     short_name: "FG WORKS",
                     start_url: "/",
                     display: "standalone",
-                    theme_color: "#ffffff",
+                    theme_color: "#DEE1E6",
                     background_color: "#ffffff",
                     icons: [
                         // {

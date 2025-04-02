@@ -658,7 +658,7 @@ let cancelInvite = (employee_info) => {
 
     let positionTable = {
         table: {
-            name: 'emp_division',
+            name: 'emp_division' + safeUserId,
             access_group: 1
         },
         index: {
@@ -740,7 +740,7 @@ let registerEmp = async(e) => {
     if(selectedEmpOriginal.division !== selectedEmpTags.value.emp_dvs || selectedEmpOriginal.position !== selectedEmpTags.value.emp_pst) {
         skapi.postRecord(null, {
             table: {
-                name: 'emp_division',
+                name: 'emp_division' + user_id_safe,
                 access_group: 1
             },
             tags: ["[emp_pst]" + selectedEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + selectedEmpTags.value.emp_dvs]

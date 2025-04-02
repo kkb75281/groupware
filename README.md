@@ -254,9 +254,8 @@
 
 ```javascript
 {
-    unique_id: "[emp_division]" + user_id_safe,
     table: {
-        name: 'emp_division',
+        name: 'emp_division' + user_id_safe,
         access_group: 1
     },
     tags: tag_data // "[emp_pst]" + 직책, "[emp_id]" + user_id_safe, "[emp_dvs]" + 부서

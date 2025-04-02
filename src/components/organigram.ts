@@ -1,6 +1,7 @@
 import { type Ref, ref } from 'vue';
 import { skapi } from '@/main';
 import { user } from '@/user';
+import { getUserInfo } from '@/employee';
 import { divisions, divisionNameList, getDivisionData, getDivisionDataRunning, getDivisionNamesRunning } from '@/division';
 
 export type Organigram = {
@@ -121,9 +122,29 @@ async function addDepartment(path: string[], division: string | null, currentLev
     // approved 상태인 직원만 필터링
     const filteredMembers = searchDepartmentMembers.list.filter((member) => approvedIdsSet.has(member.data.user_id));
 
+	console.log('=== filteredMembers ===', filteredMembers);
+
+	const filteredMembersInfo = await Promise.all(
+		filteredMembers.map(async (member) => {
+			let uif = await getUserInfo(member.data.user_id);
+			console.log('=== uif ===', uif.list[0]);
+
+			return {
+				...member,
+				index: {
+					name: member.index.name,
+					value: uif.list[0].name,
+				},
+			};
+		})
+	);
+
+	console.log('=== filteredMembersInfo ===', filteredMembersInfo);
+
     // excludeCurrentUser가 true일 때만 현재 사용자 제외
     // department.members = excludeCurrentUser.value ? departmentMembers.filter((data) => data.data.user_id !== user.user_id) : departmentMembers;
-    department.members = excludeCurrentUser.value ? filteredMembers.filter((data) => data.data.user_id !== user.user_id) : filteredMembers;
+    // department.members = excludeCurrentUser.value ? filteredMembers.filter((data) => data.data.user_id !== user.user_id) : filteredMembers;
+    department.members = excludeCurrentUser.value ? filteredMembersInfo.filter((data) => data.data.user_id !== user.user_id) : filteredMembersInfo;
 
     // 멤버 수 업데이트
     department.total = department.members.length + department.subDepartments.reduce((sum, subDept) => sum + subDept.total, 0);

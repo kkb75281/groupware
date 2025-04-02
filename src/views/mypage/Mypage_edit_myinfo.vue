@@ -37,7 +37,7 @@ hr
 
 		.input-wrap
 			p.label 이름
-			input(v-model="editUserProfile.name" type="text" name="name" placeholder="이름을 입력해주세요." :key="'name-input'" :disabled="verifiedEmail || disabled" required)
+			input(v-model="editUserProfile.name" type="text" name="name" placeholder="이름을 입력해주세요." :key="'name-input'" disabled required)
 		
 		br
 

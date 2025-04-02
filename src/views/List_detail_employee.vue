@@ -49,7 +49,7 @@ hr
 			
 		.input-wrap
 			p.label 이름
-			input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." disabled)
+			input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." :readonly="disabled" disabled required)
 
 		.input-wrap
 			p.label 이메일
@@ -316,7 +316,7 @@ let registerEmp = async(e) => {
 	if(currentEmpOriginal.division !== currentEmpTags.value.emp_dvs || currentEmpOriginal.position !== currentEmpTags.value.emp_pst) {
 		skapi.postRecord(null, {
 			table: {
-				name: 'emp_division',
+				name: 'emp_division' + user_id_safe,
 				access_group: 1
 			},
 			tags: ["[emp_pst]" + currentEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + currentEmpTags.value.emp_dvs]
