@@ -13,11 +13,11 @@ ul.card-wrap
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
 	li.card
-		router-link.router(to="/approval/audit-list")
+		router-link.router(to="/approval/request-list")
 			.icon.img
 				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-inbox")
-			h4.name 결재 수신함
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-outbox")
+			h4.name 결재 발신함
 			.btn-wrap
 				p.btn-go 바로가기
 				.icon
@@ -25,11 +25,11 @@ ul.card-wrap
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
 	li.card
-		router-link.router(to="/approval/request-list")
+		router-link.router(to="/approval/audit-list")
 			.icon.img
 				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-outbox")
-			h4.name 결재 발신함
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-inbox")
+			h4.name 결재 수신함
 			.btn-wrap
 				p.btn-go 바로가기
 				.icon

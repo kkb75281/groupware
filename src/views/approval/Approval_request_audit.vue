@@ -299,9 +299,6 @@ template(v-if="step === 2 || isTemplateMode")
 		.modal-footer
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
 			button.btn.btn-save(type="submit" @click="saveAuditor") 저장
-
-//- 테스트용 삭제 버튼 (추후 삭제)
-//- button.btn.sm(@click="testDelete") delete
 </template>
 
 <script setup>
@@ -310,6 +307,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { skapi, mainPageLoading, RealtimeCallback } from "@/main";
 import { user, makeSafe, verifiedEmail } from "@/user";
 import { divisionNameList } from "@/division";
+import { organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram'
 
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
@@ -330,9 +328,7 @@ const isRowModalOpen = ref(false); // 작성란 추가 모달
 const showBackStep = ref(true);
 const isDesktop = ref(window.innerWidth > 768);
 
-// const modalType = ref(''); // 결재라인 모달 타입 구분
 const selectedUsers = ref([]); // 조직도에서 선택된 직원
-// const tableUsers = ref([]); // 모달 내 우측 테이블에 표시될 직원 목록
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
@@ -366,26 +362,6 @@ const disabled = ref(false);
 const editorContent = ref('');
 const editorIsReady = ref(false);
 
-// 테스트용 삭제 함수 (추후 삭제)
-// const testDelete = async () => {
-// 	const res = await skapi.deleteRecords({
-// 		table: {
-// 			name: 'audit_form',
-// 			access_group: 1
-// 		},
-// 		record_id: 'UfPGLV82o5YH2Bqp',
-// 	});
-
-// 	console.log('=== testDelete === res : ', res);
-// 	console.log('결재 양식 삭제완');
-// }
-
-// watch(auditTitle, (nv, ov) => {
-// 	if(nv) {
-// 		step.value = 2;
-// 	}
-// });
-
 // 결재라인 모달 열기
 const openModal = () => {
 	// isTemplateMode 경우에는 결재라인 선택 불가
@@ -394,9 +370,6 @@ const openModal = () => {
 	// selectedAuditors 에 있는 모든 유저를 selectedUsers에 추가
 	selectedUsers.value = [];
 	for (const key in selectedAuditors.value) {
-		console.log('key : ', key);
-		console.log('selectedAuditors.value[key] : ', selectedAuditors.value[key]);
-		console.log('selectedAuditors.value : ', selectedAuditors.value);
 		selectedUsers.value.push(...selectedAuditors.value[key]);
 	}
 
@@ -590,13 +563,11 @@ const removeAuditor = (user, type) => {
 // 에디터 준비
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
-//   console.log('=== handleEditorReady === editorIsReady : ', editorIsReady.value);
 };
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
 	editorContent.value = content;
-	// console.log('=== exportWysiwygData === editorContent : ', editorContent.value);
 };
 
 // 업로드 파일 삭제
@@ -670,11 +641,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 				additionalFormData.append('additional_data', fileObject);
 			}
 		}
-		// console.log('BB == uploadedFile.value : ', uploadedFile.value);
-
-		// for (const x of additionalFormData.entries()) {
-		// 	console.log(x);
-		// };
 
         const options = {
             readonly: true, // 결재 올리면 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
@@ -696,7 +662,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
         };
 
         const res = await skapi.postRecord(additionalFormData, options);
-		console.log('=== postAuditDoc === res : ', res);
 
         return res;
     } catch (error) {
@@ -738,7 +703,7 @@ const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, s
 			}
         }
     );
-	console.log('=== createAuditRequest === res : ', res);
+	// console.log('=== createAuditRequest === res : ', res);
 
     skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
@@ -943,8 +908,6 @@ const requestAudit = async (e) => {
 
 // 기존 결재 양식 저장 (마스터가 저장한 결재 양식)
 const saveDocForm = async () => {
-	// console.log('결재 양식 저장');
-
 	try {
 		// 첨부파일 업로드
         const filebox = document.querySelector('input[name="additional_data"]');
@@ -993,7 +956,6 @@ const saveDocForm = async () => {
 		};
 	
 		const res = await skapi.postRecord(formData, options);
-		// console.log('=== saveDocForm === res : ', res);
 
 		alert('결재 양식이 저장되었습니다.');
 		router.push('/admin/list-form');
@@ -1004,8 +966,6 @@ const saveDocForm = async () => {
 
 // 내 결재 양식 저장
 const saveMyDocForm = async () => {
-	// console.log('본인 결재 양식 저장');
-
 	// 결재 제목이 없을 경우 저장 불가
 	if (!auditTitle.value) {
 		alert('결재 제목을 입력해주세요.');
@@ -1084,7 +1044,6 @@ const saveMyDocForm = async () => {
 		};
 	
 		const res = await skapi.postRecord(formData, options);
-		console.log('=== saveMyDocForm === res : ', res);
 
 		alert('결재 양식이 저장되었습니다.');
 	} catch (error) {
@@ -1103,11 +1062,7 @@ const getDocForm = async () => {
 			},
 		});
 
-		// for(let l of res.list) {
-		// 	masterForms.value[l.record_id] = l;
-		// }
 		masterForms.value = res.list || [];
-
 		return res;
 	} catch (error) {
 		console.error('결재 양식 가져오기 중 오류 발생: ', error);
@@ -1123,13 +1078,8 @@ const getMyDocForm = async () => {
 				access_group: 'private'
 			}
 		});
-		// console.log('=== getMyDocForm === res : ', res);
-		
-		// for(let l of res.list) {
-		// 	myForms.value[l.record_id] = l;
-		// }
-		myForms.value = res.list || [];
 
+		myForms.value = res.list || [];
 		return res;
 	} catch (error) {
 		console.error('결재 양식 가져오기 중 오류 발생: ', error);
@@ -1151,9 +1101,6 @@ const convertAuditorFormat = (auditors, role) => {
 
 // 결재 양식 선택
 const selDocForm = async (e) => {
-	console.log('== selDocForm 클릭 ==');
-	console.log('=== selDocForm === e.target.value : ', e.target.value);
-
 	// 선택된 record_id로 양식 찾기 
 	let selectedFormId = e.target.value;
 
@@ -1163,9 +1110,6 @@ const selDocForm = async (e) => {
 	} else if (formCategory.value === 'mine') {
 		selectedForm.value = myForms.value.find(form => form.record_id === selectedFormId);
 	}	
-
-	// selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
-	// isFormSelected.value = true;
 
 	isFormSelected.value = !!selectedForm.value;
 
@@ -1203,7 +1147,6 @@ const selDocForm = async (e) => {
 		// 첨부파일이 있는 경우
 		if (selectedForm.value.bin.form_data) {
 			uploadedFile.value = selectedForm.value.bin.form_data;
-			// console.log('=== selDocForm === uploadedFile.value : ', uploadedFile.value);
 		} else {
 			uploadedFile.value = [];
 			fileNames.value = [];
