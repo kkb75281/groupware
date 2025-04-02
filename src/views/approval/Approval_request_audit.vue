@@ -1162,10 +1162,7 @@ const selDocForm = async (e) => {
 		selectedForm.value = masterForms.value.find(form => form.record_id === selectedFormId);
 	} else if (formCategory.value === 'mine') {
 		selectedForm.value = myForms.value.find(form => form.record_id === selectedFormId);
-	}
-	console.log('selectedForm : ', selectedForm.value);
-	console.log('selectedForm : ', JSON.parse(selectedForm.value.data.auditors));
-	
+	}	
 
 	// selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
 	// isFormSelected.value = true;

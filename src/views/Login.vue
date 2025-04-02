@@ -12,12 +12,12 @@
 		form(@submit.prevent="login")
 			.input-wrap
 				p.label 이메일
-				input(type="email" name="email" placeholder="이메일" :disabled="promiseRunning" required)
+				input(type="email" name="email" placeholder="이메일" :disabled="loading" required)
 
 			.input-wrap
 				p.label 비밀번호
 				.input
-					input(:type='showPassword ? "text" : "password"' name="password" placeholder="비밀번호" :disabled="promiseRunning" required)
+					input(:type='showPassword ? "text" : "password"' name="password" placeholder="비밀번호" :disabled="loading" required)
 					button.icon.icon-eye(type="button" @click="showPassword = !showPassword")
 						template(v-if="showPassword")
 							svg
@@ -56,7 +56,7 @@
 	import { useRoute, useRouter } from 'vue-router';
 	import { user } from '@/user';
 	import { skapi } from "@/main";
-	import { ref, onMounted, onUnmounted } from 'vue';
+	import { ref, onMounted, onUnmounted, watch } from 'vue';
 	import Loading from '@/components/loading.vue';
 
 	const router = useRouter();
@@ -66,7 +66,6 @@
 
 	let showPassword = ref(false);
 	let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위함
-	let promiseRunning = ref(false);
 	let loading = ref(false);
 
 	if (window.localStorage.getItem('remember') === 'true') {
@@ -82,7 +81,6 @@
 
 	let login = (e) => {
 		loading.value = true;
-		promiseRunning.value = true;
 
 		skapi.login(e).then((u) => {
 			console.log({ u });
@@ -106,7 +104,6 @@
 				alert(err.message);
 			}
 		}).finally(() => {
-			promiseRunning.value = false;
 			loading.value = false;
 		})
 	};
@@ -210,6 +207,10 @@
 	onUnmounted(() => {
 		window.removeEventListener('popstate', handlePopState);
 	});
+
+	watch(() => route.fullPath, () => {
+		loading.value = false;
+	}, { immediate: true });
 </script>
 
 <style scoped lang="less">
