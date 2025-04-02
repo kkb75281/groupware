@@ -1,55 +1,52 @@
 <template lang="pug">
-details(:class="{ 'disabled-department': isDepartmentDisabled }")
-  //- 상위 부서
-  summary(:class="{ 'disabled-summary': isDepartmentDisabled }")
-    label.checkbox(v-if="useCheckbox && department.total > 0")
-      input(
-        type="checkbox" 
-        name="checkbox" 
-        v-model="department.isChecked"
-		:checked="department.isChecked"
-        :disabled="isDepartmentDisabled"
-        @change="$emit('update-check', { type: 'department', target: department, isChecked: department.isChecked })" 
-        @click.stop
-      )
-      span.label-checkbox
-    .folder
-    span.name(:class="{ 'disabled-text': isDepartmentDisabled }") {{ department.name }} 
-    span.total {{ department.total }}
-  ul
-    //- 부서 구성원
-    li.member(
-      v-for="(member, index) in department.members" 
-      :key="index"
-      :class="{ 'disabled-member': isUserDisabled(member) }"
-    )
-      label.checkbox(v-if="useCheckbox")
-        input(
-          type="checkbox" 
-          name="checkbox" 
-          v-model="member.isChecked"
-		  :checked="member.isChecked"
-          :disabled="isUserDisabled(member)"
-          @change="$emit('update-check', { type: 'member', target: member, isChecked: member.isChecked })" 
-          @click.stop
+details
+    //- 상위 부서
+    summary
+        label.checkbox(v-if="useCheckbox && department.total > 0")
+            input(
+                type="checkbox" 
+                name="checkbox" 
+                v-model="department.isChecked"
+                :checked="department.isChecked"
+                @change="$emit('update-check', { type: 'department', target: department, isChecked: department.isChecked })" 
+                @click.stop
+            )
+            span.label-checkbox
+        .folder
+        span.name {{ department.name }} 
+        span.total {{ department.total }}
+    ul
+        //- 부서 구성원
+        li.member(
+            v-for="(member, index) in department.members" 
+            :key="index"
         )
-        span.label-checkbox
-      .icon
-        svg
-          use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
-      .name(:class="{ 'disabled-text': isUserDisabled(member) }") 
-        | {{ member.index.value + ' / ' + member.index.name.split('.')[1] }}
+            label.checkbox(v-if="useCheckbox")
+                input(
+                    type="checkbox" 
+                    name="checkbox" 
+                    v-model="member.isChecked"
+                    :checked="member.isChecked"
+                    @change="$emit('update-check', { type: 'member', target: member, isChecked: member.isChecked })" 
+                    @click.stop
+                )
+                span.label-checkbox
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
+            .name
+                | {{ member.index.value + ' / ' + member.index.name.split('.')[1] }}
 
-    //- 하위 부서
-    li(v-for="(sub, index) in department.subDepartments" :key="index")
-      Department(
-        :department="sub"
-        :modalType="modalType"
-        :selectedAuditors="selectedAuditors"
-		:useCheckbox="useCheckbox"
-        @update-check="$emit('update-check', $event)"
-        @click.stop
-      )
+        //- 하위 부서
+        li(v-for="(sub, index) in department.subDepartments" :key="index")
+            Department(
+                :department="sub"
+                :modalType="modalType"
+                :selectedAuditors="selectedAuditors"
+                :useCheckbox="useCheckbox"
+                @update-check="$emit('update-check', $event)"
+                @click.stop
+            )
 </template>
 
 <script setup>
@@ -69,18 +66,18 @@ const props = defineProps({
     required: false,
   },
   useCheckbox: {
-	type: Boolean,
-	default: false
+    type: Boolean,
+    default: false
   }
 });
 
 // 초기 체크 상태 설정
 const initializeCheckState = () => {
     // 현재 모달 타입의 선택된 사용자들 가져오기
-	const selectedUsers = [];
-	for (const key in props.selectedAuditors) {
-		selectedUsers.push(...props.selectedAuditors[key]);
-	}
+    const selectedUsers = [];
+    for (const key in props.selectedAuditors) {
+        selectedUsers.push(...props.selectedAuditors[key]);
+    }
     const selectedUserIds = selectedUsers.map(user => user.data.user_id);
 
     // 부서 멤버들의 체크 상태 설정
@@ -105,9 +102,9 @@ const isUserDisabled = (item) => {
   // 다른 역할들 체크
   let keys = [];
   for (const key in props.selectedAuditors) {
-	if(key !== item.role) {
-		keys.push(key);
-	}
+    if(key !== item.role) {
+        keys.push(key);
+    }
   }
 
   return isSelectedInOtherRoles(userId, keys);
