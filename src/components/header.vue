@@ -95,8 +95,8 @@ header#header
 				router-link.router(to="/" @click="closePopup")
 					.icon
 						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-dashboard")
-					p 대시보드
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-home")
+					p 홈
 
 			li
 				router-link.router(to="/approval" @click="closePopup")
