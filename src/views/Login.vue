@@ -58,7 +58,6 @@
 	import { skapi } from "@/main";
 	import { ref, onMounted, onUnmounted } from 'vue';
 	import Loading from '@/components/loading.vue';
-import { sortAndDeduplicateDiagnostics } from 'typescript';
 
 	const router = useRouter();
 	const route = useRoute();
@@ -68,8 +67,6 @@ import { sortAndDeduplicateDiagnostics } from 'typescript';
 	let showPassword = ref(false);
 	let remVal = ref(false); // dom 업데이트시 checkbox value 유지하기 위함
 	let promiseRunning = ref(false);
-	let error = ref(null);
-	let enableAccount = ref(false);
 	let loading = ref(false);
 
 	if (window.localStorage.getItem('remember') === 'true') {

@@ -262,35 +262,6 @@ const getFavoriteAuditList = async (fetchOptions) => {
     }
 };
 
-// const getFavoriteAuditList = async (fetchOptions) => {
-//     try {
-//         const res = await skapi.getRecords({
-//             table: {
-//                 name: 'audit_favorite_' + makeSafe(user.user_id),
-//                 access_group: 'private',
-//             },
-// 			fetchOptions
-//         });
-//         console.log('=== getFavoriteAuditList === res : ', res);
-
-//         // 전체 레코드 목록 저장
-//         favoriteAuditRecords.value = res.list || [];
-        
-//         // 즐겨찾기 ID 목록 추출
-//         favoriteAuditList.value = favoriteAuditRecords.value.map(record => record.data.auditId);
-
-// 		return {
-// 			list: Object.values(res.list),
-// 			endOfList: res.endOfList,
-// 		};
-
-//     } catch (err) {
-//         console.error('중요 결재 리스트 가져오기 실패:', err);
-//         favoriteAuditRecords.value = [];
-//         favoriteAuditList.value = [];
-//     }
-// };
-
 // 결재 문서 읽음 여부 확인
 const isAuditRead = (audit) => {
 	const auditNoti = realtimes.value.find(rt => rt.audit_info?.audit_doc_id === audit.record_id);

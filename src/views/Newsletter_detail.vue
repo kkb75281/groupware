@@ -21,7 +21,7 @@ template(v-else)
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { skapi } from '@/main';
-import { newsletterList, getNewsletterListRunning, getNewsletterList } from '@/notifications'
+import { newsletterList } from '@/notifications'
 import { convertTimestampToDateMillis } from "@/utils/time";
 
 import Loading from '../components/loading.vue';

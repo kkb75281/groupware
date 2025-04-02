@@ -111,28 +111,6 @@ hr
 					template(v-if="uploadedFile.length === 0")
 						li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
 
-		//- br
-		//- 
-		//- .input-wrap.upload-file
-			p.label 도장 관리
-			.file-wrap
-				//- .btn-upload-file
-					input#stamp(type="file" name="stamp_data" :disabled="verifiedEmail || disabled" hidden)
-					label.btn.outline.btn-upload(for="stamp") 파일 올리기
-					button.btn.outline.btn-upload(type="button" :disabled="verifiedEmail || disabled" @click="openStampDialog") 서명 올리기
-
-				//- ul.upload-stamp-list
-					li.stamp-item(v-for="(stamp, index) of uploadingStamp" :key="index")
-						img(:id="'stamp' + index" :src="stamp.url")
-						.stamp-name {{ stamp.name }}
-
-				ul.stamp-list
-					template(v-if="uploadedStamp.length > 0")
-						//- li.file-name(v-for="(file, index) in uploadedStamp" :key="index") {{ file.filename }}
-					template(v-else)
-						li.stamp-item
-							img#upload-stamp-img(:src="uploadingSrc.url" alt="stamp image")
-
 		br
 		br
 
@@ -149,7 +127,7 @@ hr
 
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { skapi, mainPageLoading } from "@/main";
 import { user, profileImage, verifiedEmail } from "@/user";
 import { divisionNameList } from "@/division";
@@ -362,27 +340,7 @@ let closeOptions = (e) => {
 	}
 };
 
-// let startEdit = () => {
-//     for (let k in originUserProfile) {
-//         delete originUserProfile[k];
-//     }
-
-//     for (let k in user) {
-//         originUserProfile[k] = user[k];
-//     }
-
-//     fileNames.value = [];
-//     backupUploadFile.value = [...uploadedFile.value];
-// }
-
 let cancelEdit = () => {
-	// for (let k in user) {
-	//     delete user[k];
-	// }
-
-	// for (let k in originUserProfile) {
-	//     user[k] = originUserProfile[k];
-	// }
 	editUserProfile.value = {
 		name: originUserProfile.name,
 		email: originUserProfile.email,
@@ -471,10 +429,6 @@ let registerMypage = async (e) => {
 			profile_pic_postParams
 		);
 	}
-
-	// user.name = e.target.name.value; // 이름 변경
-	// user.birthdate = e.target.birthdate.value; // 생년월일 변경
-	// user.address = e.target.address.value; // 주소 변경
 
 	// 전화번호에 국가코드 추가하기
 	if (showPhoneNumber.value) {

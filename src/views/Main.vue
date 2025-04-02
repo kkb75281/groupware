@@ -8,9 +8,8 @@ main#main
 </template>
 
 <script setup>
-import { onMounted, watch, ref, nextTick } from 'vue';
+import { watch, ref, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { updateEmails } from "@/notifications";
 import { mainPageLoading } from '@/main'
 
 import Header from '@/components/header.vue';
@@ -21,30 +20,12 @@ const router = useRouter();
 const route = useRoute();
 
 let mainWrap = ref(null);
-// let emailCheckInterval;
-
-// onMounted(async () => {
-// 	console.log('메인 페이지 onMounted');
-
-// 	if(localStorage.getItem('refreshToken')) {
-// 		await updateEmails();
-// 		// 10초마다 이메일 업데이트
-// 		emailCheckInterval = setInterval(() => {
-// 			console.log('10초마다 이메일 업데이트');
-// 			updateEmails();
-// 		}, 10000);
-// 	}
-// });
-
 
 watch(mainPageLoading, (nv) => {
 	if (nv) {
 		nextTick(() => {
 			const targetElement = document.querySelector('#loading');
 			let scrollLocation = document.documentElement.scrollTop;
-
-			// console.log('innerHeight',window.innerHeight);
-			// console.log('scrollLocation',scrollLocation);
 
 			targetElement.style.setProperty('--loading-top', `${(window.innerHeight - mainWrap.value.getBoundingClientRect().top + scrollLocation - 200) / 2}px`);
 		})
