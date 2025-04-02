@@ -523,8 +523,10 @@ let registerMypage = async (e) => {
 		mainPageLoading.value = false;
 		return;
 	}).finally(() => {
-		let dialCodeLength = selectedCountry.value.dialCode.replace(/\s+/g, "").length;
-		showPhoneNumber.value = '010' + user.phone_number.slice(dialCodeLength).slice(2);
+		if(user.phone_number) {
+			let dialCodeLength = selectedCountry.value.dialCode.replace(/\s+/g, "").length;
+			showPhoneNumber.value = '010' + user.phone_number.slice(dialCodeLength).slice(2);
+		}
 	});
 
 	// misc 국가코드 관련 정보 추가
