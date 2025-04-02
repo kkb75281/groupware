@@ -41,7 +41,7 @@ ul.card-wrap
 			.icon.img
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-tag")
-			h4.name 수신참조
+			h4.name 수신 참조함
 			.btn-wrap
 				p.btn-go 바로가기
 				.icon
@@ -53,7 +53,7 @@ ul.card-wrap
 			.icon.img
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-star")
-			h4.name 종요결재
+			h4.name 중요 결재함
 			.btn-wrap
 				p.btn-go 바로가기
 				.icon
