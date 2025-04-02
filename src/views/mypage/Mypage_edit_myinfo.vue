@@ -80,7 +80,7 @@ hr
 			p.label 주소
 			input(v-model="editUserProfile.address" type="text" name="address" placeholder="예) 서울시 마포구" :disabled="verifiedEmail || disabled")
 			label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
-				input(v-model="editUserProfile.address_public" type="checkbox" name="address_public" checked hidden :disabled="verifiedEmail || disabled")
+				input(:checked="editUserProfile.address_public" @change = "editUserProfile.address_public = !editUserProfile.address_public" type="checkbox" name="address_public" hidden :disabled="verifiedEmail || disabled")
 				span.label-checkbox 공개여부
 
 		br
