@@ -379,6 +379,11 @@ watch(() => route.fullPath, (nv) => {
 
         .img-logo {
             width: 12rem;
+            padding: 0 0 0 16px;
+
+            img {
+                width: calc(12rem - 16px);
+            }
             
             svg {
                 width: 2rem;
@@ -389,6 +394,12 @@ watch(() => route.fullPath, (nv) => {
 
     .btn-close {
         display: none;
+        position: relative;
+        top: 6px;
+
+        .icon {
+            padding: 0;
+        }
     }
 
     .menu-item {
@@ -521,9 +532,16 @@ watch(() => route.fullPath, (nv) => {
 }
 
 @media (max-width: 1200px)  {
+    #navbar {
+        .btn-close {
+            display: block;
+        }
+    }
+
     .open {
         #navbar {
             left: 0;
+            width: 100% !important;
         }
     }
 }
@@ -531,15 +549,7 @@ watch(() => route.fullPath, (nv) => {
 @media (max-width: 768px) {
     .open {
         #navbar {
-            width: 100% !important;
-
-            .btn-menu {
-                display: none;
-            }
-            
-            .btn-close {
-                display: block;
-            }
+            // width: 100% !important;
         }
     }
 }
