@@ -161,7 +161,7 @@ const getWorkTime = async () => {
     };
 
     const res = await skapi.getRecords(query);
-    console.log('=== getWorkTime === res : ', res);
+    // console.log('=== getWorkTime === res : ', res);
 		// console.log('divisionNameList : ', divisionNameList.value);
 
 		// 직원의 부서, 직급 정보 가져오기
@@ -179,7 +179,7 @@ const getWorkTime = async () => {
 				return workTime.data.division_startTime;
 			}
     });
-    console.log('=== getWorkTime === myDivisionWorkTime : ', myDivisionWorkTime);
+    // console.log('=== getWorkTime === myDivisionWorkTime : ', myDivisionWorkTime);
 
     if (myDivisionWorkTime) {
       // 마스터가 설정한 시간으로 업데이트
@@ -416,7 +416,7 @@ const endWork = async () => {
 
   // 마스터가 정한 퇴근시간 범위를 벗어날 경우
   if (!isEndWork) {
-    console.log('=== 마스터가 정한 퇴근시간 벗어남 === ');
+    // console.log('=== 마스터가 정한 퇴근시간 벗어남 === ');
 
     const maxTimeStr = new Date(maxEndTime).toLocaleTimeString();
     const lastCommute =
@@ -478,7 +478,7 @@ const endWork = async () => {
       };
 
       try {
-        console.log('=== II 확인 === ');
+        // console.log('=== II 확인 === ');
 
         const savedRecord = await saveCommuteRecord({
           ...data
@@ -572,7 +572,7 @@ function autoUpdateDesc (record) {
 const fetchCommuteRecords = async (userId = null, options = {}) => {
   try {
     if (!commuteStorage) {
-      console.log('No commute records found');
+      // console.log('No commute records found');
       return [];
     }
 
@@ -602,9 +602,6 @@ const onRecord = () => {
   // 만약 출퇴근 기록이 있다면
   if (commuteStorage.length > 0) {
     commuteRecords.value = commuteStorage;
-
-    console.log('=== timeRecords.value ===', timeRecords.value);
-
     timeRecords.value.startTime = commuteStorage[0].data.startTime;
     timeRecords.value.endTime = commuteStorage[0].data.endTime;
   } else {
@@ -630,9 +627,7 @@ watch(commuteRecords, (newVal) => {
 // 근무시간 계산
 watch(commuteRecords, (newVal) => {
   // 근무시간 계산
-  const validRecords = newVal.filter(
-    (record) => record.data && record.data.startTimeStamp && record.data.endTimeStamp
-  );
+  const validRecords = newVal.filter((record) => record.data && record.data.startTimeStamp && record.data.endTimeStamp);
 
   const totalMilliseconds = validRecords.reduce((total, record) => {
     const workTime = record.data.endTimeStamp - record.data.startTimeStamp;
@@ -649,18 +644,15 @@ watch(commuteRecords, (newVal) => {
 });
 
 onMounted(async () => {
-  // console.log('출퇴근 기록 페이지');
   timeRecords.value.date = getDate();
 
   try {
     // 마스터가 설정한 부서별 근무시간 가져오기
     const getWorkTimes = await getWorkTime();
-    // console.log('=== getWorkTimes ===', getWorkTimes);
 
     // 현재 시간이 마스터가 정한 출근 시간 범위 내인지 체크
     const currentTimestamp = convertToTimestamp(`${getDate()} ${getTime()}`);
-    commuted.value = !(masterStartTime.minTimestamp <= currentTimestamp && 
-                       currentTimestamp <= masterStartTime.maxTimestamp);
+    commuted.value = !(masterStartTime.minTimestamp <= currentTimestamp && currentTimestamp <= masterStartTime.maxTimestamp);
 
     // DB에서 기록 조회
     const res = await fetchCommuteRecords();

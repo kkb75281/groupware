@@ -120,8 +120,12 @@ template(v-if="step === 2 || isTemplateMode")
 									td.left(colspan="3" style="padding: 0; height: 119px;")
 										ul.approver-wrap
 											li.approver-list(v-for="(approver, index) in selectedAuditors.approvers" :key="approver.data.user_id")
-												span.num {{ selectedUsersOrder.indexOf(approver.data.user_id) + 1 }}
+												span.num {{ index + 1 }}
 												span.approver {{ approver.index.value }}
+													//- button.btn-remove(@click="removeAuditor(approver.data.user_id, 'approvers')")
+														.icon
+															svg
+																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 
 											li.approver-list(@click="openModal")
 												span.add-approver
@@ -134,8 +138,12 @@ template(v-if="step === 2 || isTemplateMode")
 									td.left(colspan="3" style="padding: 0; height: 119px;")
 										ul.approver-wrap
 											li.approver-list(v-for="(agreer, index) in selectedAuditors.agreers" :key="agreer.data.user_id")
-												span.num {{ selectedUsersOrder.indexOf(agreer.data.user_id) + 1 }}
+												span.num {{ index + 1 }}
 												span.approver {{ agreer.index.value }}
+													//- button.btn-remove(@click="removeAuditor(agreer.data.user_id, 'agreers')")
+														.icon
+															svg
+																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 
 											li.approver-list(@click="openModal")
 												span.add-approver
@@ -149,7 +157,10 @@ template(v-if="step === 2 || isTemplateMode")
 										ul.reference-wrap
 											li.reference-list(v-for="(receiver, index) in selectedAuditors.receivers" :key="receiver.data.user_id")
 												span.referencer {{ receiver.index.value }}
-
+													//- button.btn-remove(@click="removeAuditor(receiver.data.user_id, 'receivers')")
+														.icon
+															svg
+																use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 											li.reference-list(@click="openModal")
 												span.add-referencer
 													.icon
@@ -177,10 +188,14 @@ template(v-if="step === 2 || isTemplateMode")
 									td(colspan="3")
 										.input-wrap
 											input(type="text" v-model="auditTitle" placeholder="결재 제목을 입력해주세요.")
+										//- p.audit-title(:style="{color: !auditTitle ? '#ddd' : 'black'}") {{ auditTitle || "결재 제목을 입력해주세요." }}
+										//- .input-wrap
+										//- 	input#to_audit(type="text" placeholder="제목" required name="to_audit")
 								tr
 									th.essential 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
+											//- Wysiwyg(v-model:content="editorContent" @editor-ready="handleEditorReady")
 											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
@@ -251,47 +266,34 @@ template(v-if="step === 2 || isTemplateMode")
 						table.table#selected_auditors
 							colgroup
 								col(style="width: 8%")
-								col(style="width: 3%")
-								col(style="width: 34%")
+								col(style="width: 38%")
 								col(style="width: 15%")
 								col(style="width: 15%")
 								col(style="width: 30%")
-								col(style="width: 10%")
 							thead
 								tr
-									th 
-									th NO
+									th
 									th 타입
 									th 직급
 									th 이름
 									th 부서
-									th 정렬
 
 							tbody
-								tr(v-for="(user, index) in selectedUsers" :key="user.data.user_id")
+								tr(v-for="user in selectedUsers" :key="user.data.user_id")
 									td
 										button.btn-remove(@click="removeAuditor(user)")
 											.icon
 												svg
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-									td {{ index + 1 }}
 									td 
 										.input-wrap.user-role
-											select(v-model="user.role" @change="checkRole(user)")
+											select(v-model="user.role")
 												option(value="approvers" selected) 결재
 												option(value="agreers") 합의
 												option(value="receivers") 수신참조
 									td {{ user.index.name.split('.')[1] }}
 									td {{ user.index.value }}
 									td {{ divisionNameList[user.index.name.split('.')[0]] }}
-									td
-										.btn-wrap.btn-sort
-											button.btn-sort-up.icon(type="button" @click="moveUser(user, 'up')" :disabled="user.sortable === false")
-												svg
-													use(xlink:href="@/assets/icon/material-icon.svg#icon-sort-up")
-											button.btn-sort-down.icon(type="button" @click="moveUser(user, 'down')" :disabled="user.sortable === false")
-												svg
-													use(xlink:href="@/assets/icon/material-icon.svg#icon-sort-down")
 
 					span.empty(v-else) 선택된 결재자가 없습니다.
 		.modal-footer
@@ -313,19 +315,6 @@ import Wysiwyg from '@/components/wysiwyg.vue';
 const router = useRouter();
 const route = useRoute();
 
-// 결재 순서 지정
-	// 결재 요청시 순서 지정 (합의자가 먼저 진행 -> 다음 결재자 진행)
-		// 순서대로 한명 끝나면 다음 사람이 결재 진행할 수 있도록
-		// 알람도 순서대로 한명씩한테만 가게 (결재요청자한테는 결재완료될때마다 알림 전송 - 기존처럼 하면 됨)
-
-
-		// 결재자 선택 모달 ::
-			// 결재자 선택시 좌측에 순서 표시 (수신참조로 선택한 경우에는 맨아래로 가게 - 순서 포함X)
-			// 우측에는 sort 기능 버튼 넣어서 사용자가 순서 지정할 수 있게
-			// 사용자가 선택한 순서대로 결재, 합의에 숫자 표시되어야 함
-
-
-
 // 결재 양식 관리 > 등록 경로인지 확인
 const isTemplateMode = ref(route.query.mode === 'template');
 
@@ -340,7 +329,6 @@ const showBackStep = ref(true);
 const isDesktop = ref(window.innerWidth > 768);
 
 const selectedUsers = ref([]); // 조직도에서 선택된 직원
-const selectedUsersOrder = ref([]); // 결재자 순서
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
@@ -404,8 +392,8 @@ const closeModal = () => {
             receivers: [...backupSelected.value.receivers]
         };
     }
-
     backupSelected.value = null;
+
     isModalOpen.value = false;
 };
 
@@ -530,40 +518,14 @@ const getEmpDivision = async(userId) => {
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
     selectedUsers.value = users;
-	console.log('selectedUsers', selectedUsers.value);
 
-	// 선택된 유저들의 순서 저장
-	selectedUsersOrder.value = selectedUsers.value.map(user => user.data.user_id);
-	console.log('selectedUsersOrder', selectedUsersOrder.value);
-
+	// 선택된 유저들에게 role 정보가 없으면 추가
 	selectedUsers.value.forEach(user => {
-		// 선택된 유저들에게 role 정보가 없으면 추가
 		if(!user.role) {
 			user.role = 'approvers';
 		}
-
-		// 결재자 순서 정렬
-		if(user.sortable === undefined) {
-			user.sortable = true;
-		}
 	});
 };
-
-// 수신참조자로 선택되면 선택된 결재자에서 가장 아래로 이동
-const checkRole = (user) => {
-	console.log('== checkRole == user : ', user);
-	if(user.role === 'receivers') {
-		const index = selectedUsers.value.findIndex(u => u.data.user_id === user.data.user_id);
-		if (index !== -1) {
-			selectedUsers.value.splice(index, 1);
-			selectedUsers.value.push(user);
-		}
-
-		user.sortable = false;
-	} else {
-		user.sortable = true;
-	}
-}
 
 // 선택된 모든 결재자 ID 목록 가져오기
 const getAllSelectedUserIds = () => {
@@ -578,8 +540,6 @@ const getAllSelectedUserIds = () => {
 
 // 결재자 저장
 const saveAuditor = () => {
-	console.log('== saveAuditor == selectedUsersOrder : ', selectedUsersOrder.value);
-
 	selectedAuditors.value.agreers = [];
 	selectedAuditors.value.approvers = [];
 	selectedAuditors.value.receivers = [];
@@ -588,10 +548,9 @@ const saveAuditor = () => {
 	selectedUsers.value.forEach(user => {
 		selectedAuditors.value[user.role].push(user);
 	});
-	console.log('== saveAuditor == selectedAuditors', selectedAuditors.value);
 
 	backupSelected.value = null;
-	isModalOpen.value = false;
+    closeModal();
 };
 
 // 결재자 제거
@@ -629,7 +588,7 @@ let updateFileList = (e) => {
     }
 };
 
-// 결재 서류 레코드 생성 (결재자 순서 지정)
+// 결재 서류 레코드 생성
 const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 	const send_auditors_data = {
         approvers: selectedAuditors.value.approvers.map(user => user.data.user_id.replaceAll("-", "_")),
@@ -744,6 +703,7 @@ const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, s
 			}
         }
     );
+	// console.log('=== createAuditRequest === res : ', res);
 
     skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
@@ -1139,18 +1099,6 @@ const convertAuditorFormat = (auditors, role) => {
 	}));
 };
 
-// 결재자 순서 변경 버튼
-const moveUser = (user, direction) => {
-	const index = selectedUsers.value.findIndex(u => u.data.user_id === user.data.user_id);
-	if (index === -1) return;
-
-	if (direction === 'up' && index > 0) {
-		[selectedUsers.value[index], selectedUsers.value[index - 1]] = [selectedUsers.value[index - 1], selectedUsers.value[index]];
-	} else if (direction === 'down' && index < selectedUsers.value.length - 1) {
-		[selectedUsers.value[index], selectedUsers.value[index + 1]] = [selectedUsers.value[index + 1], selectedUsers.value[index]];
-	}
-};
-
 // 결재 양식 선택
 const selDocForm = async (e) => {
 	// 선택된 record_id로 양식 찾기 
@@ -1535,35 +1483,6 @@ onUnmounted(() => {
                 border-top: 1px solid var(--gray-color-300);
             }
         }
-
-		td {
-			.btn-sort {
-				display: flex;
-				align-items: center;
-				flex-wrap: nowrap;
-				gap: 4px;
-
-				.icon {
-					padding: 0;
-					border: 1px solid var(--gray-color-400);
-					border-radius: 6px;
-					width: 20px;
-					height: 20px;
-
-					svg {
-						width: 20px;
-						height: 20px;
-					}
-				}
-
-				button {
-					&:disabled {
-						opacity: 0.3;
-						cursor: default;
-					}
-				}
-			}
-		}
     }
 }
 
@@ -1784,6 +1703,10 @@ onUnmounted(() => {
 		overflow-y: auto;
 	}
 
+	.organigram-wrap {
+		// padding-right: 1.5rem;
+	}
+
 	.btn-remove {
 		.icon {
 			padding: 0;
@@ -1855,7 +1778,6 @@ onUnmounted(() => {
 
 .modal {
 	.modal-cont {
-		min-width: 40rem;
 		max-width: 100%;
 	}
 }
@@ -1882,11 +1804,24 @@ onUnmounted(() => {
 
 .select-approver {
 	.table {
-		min-width: 27rem;
+		min-width: 23rem;
 	}
 }
 
+// .top-wrap {
+// 	display: flex;
+// 	justify-content: space-between;
+// 	align-items: center;
+// 	gap: 2rem 1rem;
+// 	margin-bottom: 3rem;
+// 	flex-wrap: wrap;
+// }
+
 .item-wrap {
+	// box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+	// border-radius: 1rem;
+	// padding: 1.25rem;
+
 	display: flex; 
 	justify-content: space-between; 
 	align-items: center; 
@@ -2016,12 +1951,6 @@ onUnmounted(() => {
 
 		.selected-wrap {
 			margin-bottom: 1rem;
-		}
-	}
-
-	.modal {
-		.modal-cont {
-			min-width: calc(100% - 16px);
 		}
 	}
 }

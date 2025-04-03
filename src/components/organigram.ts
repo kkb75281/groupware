@@ -122,12 +122,10 @@ async function addDepartment(path: string[], division: string | null, currentLev
     // approved 상태인 직원만 필터링
     const filteredMembers = searchDepartmentMembers.list.filter((member) => approvedIdsSet.has(member.data.user_id));
 
-	console.log('=== filteredMembers ===', filteredMembers);
-
 	const filteredMembersInfo = await Promise.all(
 		filteredMembers.map(async (member) => {
 			let uif = await getUserInfo(member.data.user_id);
-			console.log('=== uif ===', uif.list[0]);
+			// console.log('=== uif ===', uif.list[0]);
 
 			return {
 				...member,
@@ -138,8 +136,6 @@ async function addDepartment(path: string[], division: string | null, currentLev
 			};
 		})
 	);
-
-	console.log('=== filteredMembersInfo ===', filteredMembersInfo);
 
     // excludeCurrentUser가 true일 때만 현재 사용자 제외
     // department.members = excludeCurrentUser.value ? departmentMembers.filter((data) => data.data.user_id !== user.user_id) : departmentMembers;
