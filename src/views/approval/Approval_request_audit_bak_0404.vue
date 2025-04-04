@@ -843,14 +843,7 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 };
 
 // 결재 요청을 생성하고 알림을 보내는 함수
-const createAuditRequest = async (
-  { audit_id, auditor_id, role, audit_title },
-  send_auditors,
-  isNotificationTarget = false
-) => {
-  console.log('send_auditors : ', send_auditors);
-  console.log('auditor_id : ', auditor_id);
-
+const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, send_auditors) => {
   if (!audit_id || !auditor_id) return;
 
   // 결재 요청
@@ -875,80 +868,25 @@ const createAuditRequest = async (
       }
     }
   );
-  console.log('res : ', res);
 
   skapi.grantPrivateRecordAccess({
     record_id: res.record_id,
     user_id: auditor_id
   });
 
-  //   // 결재자/합의자를 순서대로 정렬
-  //   const approversAndAgreers = [
-  //     ...selectedAuditors.value.approvers,
-  //     ...selectedAuditors.value.agreers
-  //   ].sort((a, b) => a.order - b.order);
-  //   console.log('approversAndAgreers : ', approversAndAgreers);
+  let to_audit = document.getElementById('to_audit').value;
 
-  //   // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
-  //   const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
-  //   console.log('sendFirstNoti : ', sendFirstNoti);
-
-  //   // Id만 추출
-  //   const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id.replaceAll('-', '_'));
-  //   console.log('sendFirstNotiId : ', sendFirstNotiId);
-
-  //   //sendFirstNotiId string으로 변환
-  //   const sendFirstNotiIdString = sendFirstNotiId.join(',');
-  //   console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
+  let postRealtimeBody = {
+    text: `${user.name}님께서 결재를 올렸습니다.`,
+    type: 'audit',
+    id: audit_id
+  };
 
   // 실시간 알림 보내기
-  if (isNotificationTarget) {
-    let to_audit = document.getElementById('to_audit').value;
-
-    let postRealtimeBody = {
-      text: `${user.name}님께서 결재를 올렸습니다.`,
-      type: 'audit',
-      id: audit_id
-    };
-
-    skapi
-      .postRealtime(
-        {
-          audit_request: {
-            noti_id: res.record_id,
-            noti_type: 'audit',
-            send_date: new Date().getTime(),
-            send_user: user.user_id,
-            audit_info: {
-              audit_type: 'request',
-              to_audit: to_audit,
-              audit_doc_id: audit_id,
-              audit_request_id: res.record_id,
-              send_auditors: send_auditors
-            }
-          }
-        },
-        auditor_id,
-        {
-          title: '[그룹웨어]',
-          // body: JSON.stringify(postRealtimeBody)
-          body: `${user.name}님께서 결재를 올렸습니다.`,
-          config: {
-            always: true // 무조건 알림 받기
-          }
-        }
-      )
-      .then((res) => {
-        console.log('실시간 알림 == res : ', res);
-      })
-      .catch(async (err) => {
-        console.error(err);
-      });
-
-    // 실시간 못 받을 경우 알림 기록 저장
-    skapi
-      .postRecord(
-        {
+  skapi
+    .postRealtime(
+      {
+        audit_request: {
           noti_id: res.record_id,
           noti_type: 'audit',
           send_date: new Date().getTime(),
@@ -960,31 +898,54 @@ const createAuditRequest = async (
             audit_request_id: res.record_id,
             send_auditors: send_auditors
           }
-        },
-        {
-          readonly: true,
-          table: {
-            name: `realtime:${auditor_id.replaceAll('-', '_')}`,
-            access_group: 'authorized'
-          }
         }
-      )
-      .then((res) => {
-        console.log('실시간 기록 == res : ', res);
-      });
-  }
+      },
+      auditor_id,
+      {
+        title: '[그룹웨어]',
+        // body: JSON.stringify(postRealtimeBody)
+        body: `${user.name}님께서 결재를 올렸습니다.`,
+        config: {
+          always: true // 무조건 알림 받기
+        }
+      }
+    )
+    .then((res) => {})
+    .catch(async (err) => {
+      console.error(err);
+    });
+
+  // 실시간 못 받을 경우 알림 기록 저장
+  skapi
+    .postRecord(
+      {
+        noti_id: res.record_id,
+        noti_type: 'audit',
+        send_date: new Date().getTime(),
+        send_user: user.user_id,
+        audit_info: {
+          audit_type: 'request',
+          to_audit: to_audit,
+          audit_doc_id: audit_id,
+          audit_request_id: res.record_id,
+          send_auditors: send_auditors
+        }
+      },
+      {
+        readonly: true,
+        table: {
+          name: `realtime:${auditor_id.replaceAll('-', '_')}`,
+          access_group: 'authorized'
+        }
+      }
+    )
+    .then((res) => {});
 
   return res;
 };
 
 // 결재 요청 Alarm
-const postAuditDocRecordId = async (
-  auditId,
-  auditTitle,
-  userId,
-  role,
-  isNotificationTarget = false
-) => {
+const postAuditDocRecordId = async (auditId, auditTitle, userId, role) => {
   try {
     // 권한 부여
     await grantAuditorAccess({
@@ -1001,8 +962,7 @@ const postAuditDocRecordId = async (
         role: role,
         audit_title: auditTitle
       },
-      send_auditors_arr,
-      isNotificationTarget
+      send_auditors_arr
     );
   } catch (error) {
     console.error(error);
@@ -1063,33 +1023,7 @@ const requestAudit = async (e) => {
     const auditId = auditDoc.record_id; // 결재 문서 ID
     const auditTitle = to_audit; // 결재 제목
 
-    // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
-    // 결재자/합의자를 순서대로 정렬
-    // const approversAndAgreers = [
-    //   ...selectedAuditors.value.approvers,
-    //   ...selectedAuditors.value.agreers
-    // ].sort((a, b) => a.order - b.order);
-    // console.log('approversAndAgreers : ', approversAndAgreers);
-
-    // // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
-    // const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
-    // console.log('sendFirstNoti : ', sendFirstNoti);
-
-    // // Id만 추출
-    // const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id);
-    // console.log('sendFirstNotiId : ', sendFirstNotiId);
-
-    // //sendFirstNotiId string으로 변환
-    // const sendFirstNotiIdString = sendFirstNotiId.join(',');
-    // console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
-
-    // const processRoles = sendFirstNoti.map((auditor) => ({
-    //   userId: auditor.data.user_id,
-    //   role: auditor.role,
-    //   order: auditor.order
-    // }));
-    // console.log('processRoles : ', processRoles);
-
+    // 각 역할별 권한 부여 및 알림 전송
     const processRoles = [
       // 결재
       ...selectedAuditors.value.approvers.map((auditor, index) => ({
@@ -1112,42 +1046,12 @@ const requestAudit = async (e) => {
         order: auditor.order
       }))
     ];
-    console.log('processRoles : ', processRoles);
 
-    // const res = await Promise.all(
-    //   processRoles.map((roleInfo) =>
-    //     postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
-    //   )
-    // );
-
-    // 결재자와 합의자를 순서대로 통합 정렬
-    const approversAndAgreers = [
-      ...selectedAuditors.value.approvers,
-      ...selectedAuditors.value.agreers
-    ].sort((a, b) => a.order - b.order);
-
-    // 통합된 목록에서 첫 번째 사람과 모든 수신참조자
-    const notificationTargets = [
-      // 첫 번째 결재/합의자 (전체 목록 중 첫 번째)
-      ...(approversAndAgreers.length > 0 ? [approversAndAgreers[0]] : []),
-      // 모든 수신참조자
-      ...selectedAuditors.value.receivers
-    ];
-
-    // 모든 결재자에게 문서 권한 및 요청 레코드 생성
     const res = await Promise.all(
-      processRoles.map((roleInfo, index) =>
-        postAuditDocRecordId(
-          auditId,
-          auditTitle,
-          roleInfo.userId,
-          roleInfo.role,
-          // 알림 대상인지 여부 확인
-          notificationTargets.some((target) => target.data.user_id === roleInfo.userId)
-        )
+      processRoles.map((roleInfo) =>
+        postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
       )
     );
-    console.log('promiseall : ', res);
 
     // 결재라인 select option '결재'로 초기화
     selectedUsers.value.forEach((user) => {

@@ -61,7 +61,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 														span.rejected 반려
 													template(v-else="!approver.approved || approver.approved === null")
 														template(v-if="approver.user_id === user.user_id")
-															button.btn.sm.outline.btn-approve(type="button" :disabled="isCanceled" @click="openModal(approver)") 결재
+															button.btn.sm.outline.btn-approve(type="button" :disabled="!isApprovalOrder || isCanceled" @click="openModal(approver)") 결재
 														template(v-else)
 															span.waitting 대기
 												span.approver {{ approver.user_info?.name || '알 수 없음' }}
@@ -81,7 +81,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 														span.rejected 반려
 													template(v-else="!agreer.approved || agreer.approved === null")
 														template(v-if="agreer.user_id === user.user_id")
-															button.btn.sm.outline.btn-approve(type="button" :disabled="!isApprovalOrder" @click="openModal(agreer)") 합의
+															button.btn.sm.outline.btn-approve(type="button" :disabled="!isApprovalOrder || isCanceled" @click="openModal(agreer)") 합의
 														template(v-else)
 															span.waitting 대기
 												span.approver {{ agreer.user_info?.name }}
@@ -259,23 +259,21 @@ const isApprovalOrder = computed(() => {
   if (auditorList.value.length === 0) return false;
 
   // 현재 사용자가 결재자 목록에 없으면 false 반환
-  const isMine = auditorList.value.find((auditor) => auditor.user_id === user.user_id);
-  if (!isMine) return false;
+  const currentUser = auditorList.value.find((auditor) => auditor.user_id === user.user_id);
+  if (!currentUser) return false;
 
-  // 현재 사용자의 순서 찾기
-  const myOrder = auditorList.value.find((auditor) => auditor.user_id === user.user_id).order;
+  // 결재 완료한 사람들 목록을 가져와서 order 순서가 낮은 사람들이 모두 결재했는지 확인
+  const lowerOrderAuditors = auditorList.value.filter(
+    (auditor) =>
+      auditor.order < currentUser.order &&
+      (auditor.approved_type === 'approvers' || auditor.approved_type === 'agreers')
+  );
 
-  // 내 앞 순서의 결재자들만 필터링
-  const previousAuditors = auditorList.value.filter((auditor) => auditor.order < myOrder);
+  // 자신보다 낮은 순서의 결재자가 없으면 결재 가능
+  if (lowerOrderAuditors.length === 0) return true;
 
-  // 앞 순서의 결재자가 없으면 내가 첫 번째 결재자이므로 true 반환
-  if (previousAuditors.length === 0) return true;
-
-  // 내 앞 순서의 결재자들이 모두 결재를 했는지 확인
-  // 결재했으면 approved 값이 null이 아님
-  const allPreviousApproved = previousAuditors.every((auditor) => auditor.approved !== null);
-
-  return allPreviousApproved;
+  // 자신보다 낮은 순서의 모든 결재자가 결재를 완료했는지 확인
+  return lowerOrderAuditors.every((auditor) => auditor.approved !== null);
 });
 
 // 결재 회수 가능 여부 확인
@@ -657,6 +655,8 @@ const getAuditDetail = async () => {
         }
       })
       .then((res) => {
+        console.log('=== getAuditDetail === res : ', res);
+
         if (res.list && res.list.length) {
           // 수동 회수 또는 자동 회수 중 rejectSetting이 false인 경우만 실제 회수 상태로 설정
           const cancelRecord = res.list[0];
@@ -893,35 +893,6 @@ const postApproval = async () => {
       // 체크된 경우(rejectSetting이 true)에는 회수하지 않고 계속 진행
     }
 
-    // 반려 시 자동 회수 처리를 위한 조건 검사
-    // if (approved === 'reject') {
-    //   // 현재 모든 결재자 정보 가져오기
-    //   const auditors = JSON.parse(auditDoContent.value.data.auditors);
-    //   const allApprovers = [...(auditors.approvers || []), ...(auditors.agreers || [])];
-
-    //   // 현재까지 결재한 사람 수 (자신 제외)
-    //   const currentApprovals = await skapi.getRecords({
-    //     table: {
-    //       name: 'audit_approval',
-    //       access_group: 'authorized',
-    //     },
-    //     reference: auditId.value,
-    //   });
-
-    //   // 자신의 결재로 모든 결재자가 결재를 완료하는지 확인
-    //   const willCompleteWithMyApproval = currentApprovals.list.length + 1 >= allApprovers.length;
-
-    //   // 모든 결재자가 결재를 완료하지 않는 경우만 자동 회수 처리
-    //   if (!willCompleteWithMyApproval) {
-    //     try {
-    //       // 반려로 인한 자동 회수 처리 (reason, isAutoCancel 파라미터 전달)
-    //       await canceledAudit('반려', true);
-    //     } catch (error) {
-    //       console.error('자동 회수 처리 중 오류:', error);
-    //     }
-    //   }
-    // }
-
     if (approved === 'approve' && (!selectedStamp.value || !selectedStampComplete.value)) {
       alert('도장을 선택해주세요.');
       isPosting = false;
@@ -944,8 +915,9 @@ const postApproval = async () => {
       reference: auditId.value,
       tags: [userId.replaceAll('-', '_')]
     });
-    console.log('결재 === postApproval === res : ', res);
+    console.log('결재요청 === postApproval === res : ', res);
 
+    // 기안자에게 결재 알림
     let postRealtimeBody = {
       text: `${user.name}님께서 결재를 ${approveAudit.value ? '승인' : '반려'}했습니다.`,
       type: 'audit',
@@ -1009,6 +981,95 @@ const postApproval = async () => {
       .then((res) => {
         console.log('결재알림기록 === postRecord === res : ', res);
       });
+
+    // 결재 완료 후 다음 결재자 알림 처리
+    if (approved === 'approve' && !isCanceled.value) {
+      if (auditDoContent.value) {
+        const doc = auditDoContent.value;
+        const auditors = JSON.parse(doc.data.auditors);
+        console.log('doc : ', doc);
+
+        // 결재자/합의자 목록 합치기
+        const allAuditors = [
+          ...(auditors.approvers || []).map((a) => ({ ...a, type: 'approvers' })),
+          ...(auditors.agreers || []).map((a) => ({ ...a, type: 'agreers' }))
+        ].sort((a, b) => a.order - b.order);
+
+        // 결재자 ID만 추출
+        const allAuditorIds = allAuditors.map((a) => a.user_id.replaceAll('_', '-'));
+
+        // 다음 결재자
+        const currentUser = allAuditors.find(
+          (a) => a.user_id.replaceAll('_', '-') === user.user_id
+        );
+        const currentOrder = currentUser ? currentUser.order : 0;
+        const nextAuditor = allAuditors.find((a) => a.order === currentOrder + 1);
+
+        if (nextAuditor) {
+          const nextAuditorId = nextAuditor.user_id.replaceAll('_', '-');
+
+          // 실시간 알림 보내기
+          skapi
+            .postRealtime(
+              {
+                audit_request: {
+                  noti_id: res.record_id,
+                  noti_type: 'audit',
+                  send_date: new Date().getTime(),
+                  send_user: senderUser.value.user_id,
+                  audit_info: {
+                    audit_type: 'request',
+                    to_audit: doc.data.to_audit,
+                    audit_doc_id: auditId.value,
+                    audit_request_id: res.record_id,
+                    send_auditors: allAuditorIds
+                  }
+                }
+              },
+              nextAuditorId, // 다음 결재자에게 알림
+              {
+                title: '[그룹웨어]',
+                // body: `${doc.data.to_audit} 문서의 결재가 귀하의 차례입니다.`,
+                body: `${senderUser.value.name}님께서 결재를 완료했습니다.`,
+                config: {
+                  always: true
+                }
+              }
+            )
+            .then((res) => {
+              console.log('결재알림 === postRealtime === res : ', res);
+            });
+
+          // 알림 기록 저장
+          skapi
+            .postRecord(
+              {
+                noti_id: res.record_id,
+                noti_type: 'audit',
+                send_date: new Date().getTime(),
+                send_user: senderUser.value.user_id,
+                audit_info: {
+                  audit_type: 'request',
+                  to_audit: doc.data.to_audit,
+                  audit_doc_id: auditId.value,
+                  audit_request_id: res.record_id,
+                  send_auditors: allAuditorIds
+                }
+              },
+              {
+                readonly: true,
+                table: {
+                  name: `realtime:${nextAuditorId.replaceAll('-', '_')}`,
+                  access_group: 'authorized'
+                }
+              }
+            )
+            .then((res) => {
+              console.log('결재알림기록 === postRecord === res : ', res);
+            });
+        }
+      }
+    }
 
     // 결과 메시지 표시
     let resultMessage = '';
@@ -1127,22 +1188,48 @@ const previewAudit = () => {
 
 // 결재 회수 함수
 const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
-  // console.log('결재회수 === canceledAudit === auditId : ', auditId.value);
-  // console.log('결재회수 === canceledAudit === auditDoContent : ', auditDoContent.value);
-
   const auditors = auditDoContent.value.data.auditors;
   const parsedAuditors = JSON.parse(auditors);
-  // console.log('결재회수 === canceledAudit === auditors : ', auditors);
-  // console.log('결재회수 === canceledAudit === parsedAuditors : ', parsedAuditors);
 
   // 각 배열에서 ID만 추출
   const approverIds = parsedAuditors.approvers;
   const agreerIds = parsedAuditors.agreers;
   const receiverIds = parsedAuditors.receivers;
 
-  // // 결재자 ID 배열 생성
-  const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
-  // console.log('결재회수 === canceledAudit === allAuditors : ', allAuditors);
+  // 결재자 ID 배열 생성
+  // const allAuditors = [...approverIds, ...agreerIds, ...receiverIds];
+
+  // 이미 결재한 사람들 정보 가져오기
+  const approvalRes = await skapi.getRecords({
+    table: {
+      name: 'audit_approval',
+      access_group: 'authorized'
+    },
+    reference: auditId.value
+  });
+
+  const approvedUserIds = approvalRes.list.map((a) => a.user_id);
+
+  // 알림을 받을 사람들 목록 작성
+  const auditorsToBeSent = [];
+
+  // 이미 결재한 사람들 추가
+  approvedUserIds.forEach((auditorId) => {
+    auditorsToBeSent.push(auditorId.replaceAll('_', '-'));
+  });
+
+  // 수신참조자 추가
+  receiverIds.forEach((receiver) => {
+    auditorsToBeSent.push(receiver.user_id.replaceAll('_', '-'));
+  });
+
+  // 기안자 추가
+  if (auditDoContent.value.user_id && !auditorsToBeSent.includes(auditDoContent.value.user_id)) {
+    auditorsToBeSent.push(auditDoContent.value.user_id);
+  }
+
+  // 중복 제거
+  const uniqueAuditorsToBeSent = [...new Set(auditorsToBeSent)];
 
   // 결재 회수 알림 메시지
   const alertMessage = isAutoCancel
@@ -1162,7 +1249,6 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
     };
 
     const res = await skapi.postRecord(null, option);
-    // console.log('결재회수 === postRecord === res : ', res);
   } catch (error) {
     console.error(error);
   }
@@ -1205,11 +1291,16 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   // 각 그룹별 알림 전송 Promise.all로 동시에 처리
   try {
     const results = await Promise.all(
-      allAuditors.map(async (auditor) => {
+      uniqueAuditorsToBeSent.map(async (auditor) => {
         // 자기 자신에게는 알림을 보내지 않음 (반려자가 알림을 자기 자신에게 보내는 경우 방지)
         if (isAutoCancel && auditor.replaceAll('_', '-') === user.user_id) {
           return { auditor, skipped: true };
         }
+
+        // // 자기 자신에게는 알림을 보내지 않음
+        // if (isAutoCancel && auditorId === user.user_id) {
+        //   return { auditorId, skipped: true };
+        // }
 
         // 실시간 알림 전송
         let realtimeResult;

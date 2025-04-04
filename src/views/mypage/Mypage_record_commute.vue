@@ -88,21 +88,21 @@ const router = useRouter();
 const route = useRoute();
 
 // 테스트용 삭제 함수 (추후 삭제)
-// const testDelete = async() => {
+// const testDelete = async () => {
 //   const res = await fetchCommuteRecords();
 //   console.log('=== testDelete === res : ', res.list);
 
-//   res.list.forEach(record => {
+//   res.list.forEach((record) => {
 //     console.log(record.data.date);
 
-//     if(record.data.date === '2025-03-09') {
+//     if (record.data.date === '2025-04-04') {
 //       const config = {
 //         record_id: record.record_id
 //       };
 
 //       skapi.deleteRecords(config);
 //     }
-//   })
+//   });
 // };
 
 // 출퇴근 기록 관련
@@ -122,7 +122,7 @@ const initWorkFormat = {
   endTime: null,
   startTimeStamp: null,
   endTimeStamp: null,
-  dailyCommuteTime: null,
+  dailyCommuteTime: null
 };
 
 const loading = ref(false);
@@ -162,34 +162,34 @@ const getWorkTime = async () => {
 
     const res = await skapi.getRecords(query);
     // console.log('=== getWorkTime === res : ', res);
-		// console.log('divisionNameList : ', divisionNameList.value);
+    // console.log('divisionNameList : ', divisionNameList.value);
 
-		// 직원의 부서, 직급 정보 가져오기
-		const getDvs = await skapi.getRecords({
-				table: {
-						name: 'emp_position_current',
-						access_group: 1
-				},
-				unique_id: "[emp_position_current]" + makeSafe(user.user_id),
-		});
+    // 직원의 부서, 직급 정보 가져오기
+    const getDvs = await skapi.getRecords({
+      table: {
+        name: 'emp_position_current',
+        access_group: 1
+      },
+      unique_id: '[emp_position_current]' + makeSafe(user.user_id)
+    });
 
     // 현재 로그인한 유저의 부서 근무시간 찾기
-    const myDivisionWorkTime = res.list.find(workTime => {
-			if(workTime.data.division_key === getDvs.list[0].index.name.split('.')[0]) {
-				return workTime.data.division_startTime;
-			}
+    const myDivisionWorkTime = res.list.find((workTime) => {
+      if (workTime.data.division_key === getDvs.list[0].index.name.split('.')[0]) {
+        return workTime.data.division_startTime;
+      }
     });
     // console.log('=== getWorkTime === myDivisionWorkTime : ', myDivisionWorkTime);
 
     if (myDivisionWorkTime) {
       // 마스터가 설정한 시간으로 업데이트
       masterStartTime.min = myDivisionWorkTime.data.division_startTime.min;
-			// console.log('=== masterStartTime.min ===', masterStartTime.min);
+      // console.log('=== masterStartTime.min ===', masterStartTime.min);
       masterStartTime.max = myDivisionWorkTime.data.division_startTime.max;
       masterStartTime.minTimestamp = convertToTimestamp(
         `${currentDate} ${myDivisionWorkTime.data.division_startTime.min}`
       );
-			// console.log('=== masterStartTime.minTimestamp ===', masterStartTime.minTimestamp);
+      // console.log('=== masterStartTime.minTimestamp ===', masterStartTime.minTimestamp);
       masterStartTime.maxTimestamp = convertToTimestamp(
         `${currentDate} ${myDivisionWorkTime.data.division_startTime.max}`
       );
@@ -204,7 +204,7 @@ const getWorkTime = async () => {
       );
     }
   } catch (error) {
-    console.error('근무시간 데이터 조회 실패:', {error});
+    console.error('근무시간 데이터 조회 실패:', { error });
   }
 };
 
@@ -358,8 +358,7 @@ const endWork = async () => {
     const endTimeStamp = convertToTimestamp(endTime);
 
     // 마지막 출근 이력
-    const lastCommute =
-      commuteStorage && commuteStorage.length > 0 && commuteStorage[0];
+    const lastCommute = commuteStorage && commuteStorage.length > 0 && commuteStorage[0];
 
     // 새로운 출근 이력
     const newCommuteData = {
@@ -419,12 +418,10 @@ const endWork = async () => {
     // console.log('=== 마스터가 정한 퇴근시간 벗어남 === ');
 
     const maxTimeStr = new Date(maxEndTime).toLocaleTimeString();
-    const lastCommute =
-      commuteStorage && commuteStorage.length > 0 && commuteStorage[0];
+    const lastCommute = commuteStorage && commuteStorage.length > 0 && commuteStorage[0];
 
     if (newEndWork) {
       if (lastCommute && lastCommute.data.date === getDate()) {
-
         // 이전 퇴근기록에서 업데이트
         const config = {
           record_id: lastCommute.record_id
@@ -555,17 +552,17 @@ const updateDesc = async (record) => {
     alert('비고 내용 저장에 실패했습니다.');
     console.error(error);
   }
-}
+};
 
 // 1200ms마다 한 번씩만 실행되도록 설정
-function autoUpdateDesc (record) {
-    // 이전 타이머가 있다면 제거
-    if (timeoutId) window.clearTimeout(timeoutId);
+function autoUpdateDesc(record) {
+  // 이전 타이머가 있다면 제거
+  if (timeoutId) window.clearTimeout(timeoutId);
 
-    // 새로운 타이머 설정
-    timeoutId = window.setTimeout(() => {
-      updateDesc(record);
-    }, 1200);
+  // 새로운 타이머 설정
+  timeoutId = window.setTimeout(() => {
+    updateDesc(record);
+  }, 1200);
 }
 
 // 출퇴근 기록 조회
@@ -627,7 +624,9 @@ watch(commuteRecords, (newVal) => {
 // 근무시간 계산
 watch(commuteRecords, (newVal) => {
   // 근무시간 계산
-  const validRecords = newVal.filter((record) => record.data && record.data.startTimeStamp && record.data.endTimeStamp);
+  const validRecords = newVal.filter(
+    (record) => record.data && record.data.startTimeStamp && record.data.endTimeStamp
+  );
 
   const totalMilliseconds = validRecords.reduce((total, record) => {
     const workTime = record.data.endTimeStamp - record.data.startTimeStamp;
@@ -652,15 +651,20 @@ onMounted(async () => {
 
     // 현재 시간이 마스터가 정한 출근 시간 범위 내인지 체크
     const currentTimestamp = convertToTimestamp(`${getDate()} ${getTime()}`);
-    commuted.value = !(masterStartTime.minTimestamp <= currentTimestamp && currentTimestamp <= masterStartTime.maxTimestamp);
+    commuted.value = !(
+      masterStartTime.minTimestamp <= currentTimestamp &&
+      currentTimestamp <= masterStartTime.maxTimestamp
+    );
 
     // DB에서 기록 조회
     const res = await fetchCommuteRecords();
     if (res.list && Array.isArray(res.list)) {
       commuteStorage = [...res.list].sort((a, b) => b.uploaded - a.uploaded); // uploaded(레코드 최초 생성순) 기준으로 정렬해야 함.
-      
+
       // 오늘 이미 출근했는지 확인
-      const todayRecord = commuteStorage.find(record => record.data.date === getDate() && record.data.startTime);
+      const todayRecord = commuteStorage.find(
+        (record) => record.data.date === getDate() && record.data.startTime
+      );
       if (todayRecord) {
         commuted.value = true; // 이미 출근했으면 버튼 비활성화
       }
