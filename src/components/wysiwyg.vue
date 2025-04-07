@@ -55,7 +55,7 @@
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
-		//- button.btn-custom(type="button" @click="handleCommand('table')")
+		button.btn-custom(type="button" @click="handleCommand('table')")
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
@@ -108,7 +108,7 @@ import { onMounted, onBeforeUnmount, nextTick, ref } from 'vue';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
 import wysiwygTable from '@/components/wysiwygTable.vue';
-import { insertTables } from '@/components/wysiwygTable';
+import { insertTableToWysiwyg } from '@/components/wysiwygTable';
 import { createApp } from 'vue';
 
 // 이벤트 emit 방식으로 에디터 내용을 실시간으로 부모 컴포넌트로 전달
@@ -126,24 +126,16 @@ const showTableCreator = () => {
   showTableDialog.value = true;
 };
 
-// 테이블 생성 시 사용할 열, 행
-function loadWysiwygTable(col, row) {
-  const container = document.createElement('div');
-
-  const app = createApp(wysiwygTable, { col, row });
-  app.mount(container);
-  console.log({ app, container });
-  return container;
-}
-
 // 테이블 생성 함수
 const insertTable = () => {
   if (!wysiwyg) return;
 
-  wysiwyg.command({
-    element: loadWysiwygTable(col, row),
-    contenteditable: true
-  });
+  insertTableToWysiwyg(
+    wysiwyg,
+    tableCols.value,
+    tableRows.value,
+    true // Vue 컴포넌트 사용 (false로 설정하면 DOM 방식 사용)
+  );
 
   showTableDialog.value = false;
 };
