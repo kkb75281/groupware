@@ -182,7 +182,12 @@ function openGmailAppOrWeb(link:string | null, show = false) {
 
 	if(googleAccountCheck) {
 		const encodedEmail = encodeURIComponent(user.email);
-        gmailWebUrl = `https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`;
+
+		if(link) {
+			gmailWebUrl = `https://mail.google.com/mail/u/${encodedEmail}/?view=cm&fs=1&to=${encodeURIComponent(link)}&authuser=${encodedEmail}&login_hint=${encodedEmail}`;
+		} else {
+			gmailWebUrl = `https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`;
+		}
 	}
 
 	console.log('googleAccountCheck : ', googleAccountCheck);
