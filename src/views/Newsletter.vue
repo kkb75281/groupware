@@ -23,8 +23,8 @@ hr
 				input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
 		.tb-toolbar
 			.btn-wrap
-				button.btn.outline.refresh-icon(:disabled="getNewsletterListRunning" @click="getNewsletterList(true)")
-					svg(:class="{'rotate' : getNewsletterListRunning}")
+				button.btn.outline.refresh-icon(:disabled="loading" @click="searchNewsletter(true)")
+					svg(:class="{'rotate' : loading}")
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
 				button.btn.outline.md(v-if="user.access_group > 98" type="button" @click="sendAdminNewsletter") 등록
 	.tb-overflow
@@ -56,7 +56,7 @@ hr
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { newsletterList, getNewsletterList, getNewsletterListRunning } from '@/notifications'
+import { newsletterList, getNewsletterList } from '@/notifications'
 import { convertTimestampToDateMillis } from "@/utils/time";
 import { openGmailAppOrWeb } from '@/utils/mail';
 import { skapi } from '@/main';
@@ -77,10 +77,10 @@ let searchValue = ref({
 	}
 });
 
-let searchNewsletter = async() => {
+let searchNewsletter = async(refresh = false) => {
 	loading.value = true;
 
-	if(searchValue.value.subject === '') {
+	if(searchValue.value.subject === '' || refresh) {
 		await getNewsletterList(true);
 		loading.value = false;
 		return;
