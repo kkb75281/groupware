@@ -90,7 +90,7 @@ watch(mainPageLoading, (nv) => {
 	}
 
 	#navbar {
-		left: calc(-1 * var(--navbar-width));
+		left: calc(-1 * var(--navbar-width) - 5rem);
 	}
 
 	#main {
@@ -118,7 +118,7 @@ watch(mainPageLoading, (nv) => {
 		}
 
 		#navbar {
-			left: calc(-1 * var(--navbar-width));
+			left: calc(-1 * var(--navbar-width) - 5rem);
 		}
 
 		#main {
