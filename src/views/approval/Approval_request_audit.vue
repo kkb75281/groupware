@@ -382,19 +382,24 @@ const openModal = () => {
   if (isTemplateMode.value) return;
 
   // 열렸을 때 selectedAuditors 전체를 original로 백업
-  console.log('== selectedAuditors.value == : ', selectedAuditors.value);
-
   backupSelected.value = {
     approvers: [...selectedAuditors.value.approvers],
     agreers: [...selectedAuditors.value.agreers],
     receivers: [...selectedAuditors.value.receivers]
   };
 
-  // selectedAuditors 에 있는 모든 유저를 selectedUsers에 추가
+  // selectedAuditors에 있는 모든 유저를 selectedUsers에 추가
   selectedUsers.value = [];
 
-  for (const key in selectedAuditors.value) {
-    selectedUsers.value.push(...selectedAuditors.value[key]);
+  // selectedAuditors의 각 역할에 따라 selectedUsers에 추가
+  for (const role in selectedAuditors.value) {
+    selectedAuditors.value[role].forEach((user) => {
+      const userCopy = JSON.parse(JSON.stringify(user)); // 깊은 복사 하여 참조를 끊어줌
+
+      userCopy.role = role;
+      userCopy.sortable = role !== 'receivers';
+      selectedUsers.value.push(userCopy);
+    });
   }
 
   selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
@@ -411,6 +416,11 @@ const closeModal = () => {
       agreers: [...backupSelected.value.agreers],
       receivers: [...backupSelected.value.receivers]
     };
+
+    // // 모든 사용자의 role을 '결재'로 초기화
+    // selectedUsers.value.forEach((user) => {
+    //   user.role = 'approvers';
+    // });
   } else {
     selectedAuditors.value = {
       approvers: [],
@@ -589,22 +599,16 @@ const handleOrganigramSelection = (users) => {
     }
   });
 
-  console.log('selectedUsers', selectedUsers.value);
-
   // 선택된 유저들의 순서 저장
   selectedUsersOrder.value = selectedUsers.value.map((user) => ({
     user_id: user.data.user_id,
     order: user.order,
     type: user.role
   }));
-
-  console.log('selectedUsersOrder', selectedUsersOrder.value);
 };
 
 // 수신참조자로 선택되면 선택된 결재자에서 가장 아래로 이동
 const checkRole = (user) => {
-  console.log('== checkRole == user : ', user);
-
   // 이전 역할 저장
   const previousRole = user.role;
 
@@ -687,17 +691,15 @@ const getAllSelectedUserIds = () => {
 
 // 결재자 저장
 const saveAuditor = () => {
-  console.log('== saveAuditor == selectedUsersOrder : ', selectedUsersOrder.value);
-
   selectedAuditors.value.agreers = [];
   selectedAuditors.value.approvers = [];
   selectedAuditors.value.receivers = [];
 
-  // user.role 에 따라 approvers, agreers, receivers에 추가
+  // user.role에 따라 approvers, agreers, receivers에 추가
   selectedUsers.value.forEach((user) => {
-    selectedAuditors.value[user.role].push(user);
+    const userCopy = JSON.parse(JSON.stringify(user)); // 깊은 복사 하여 참조를 끊어줌
+    selectedAuditors.value[user.role].push(userCopy);
   });
-  console.log('== saveAuditor == selectedAuditors', selectedAuditors.value);
 
   backupSelected.value = null;
   isModalOpen.value = false;
@@ -789,8 +791,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     // 만약 첨부파일이 있는 결재 양식 선택시
     if (uploadedFile.value.length) {
       for (const file of uploadedFile.value) {
-        // console.log('Processing file:', file);
-
         // 파일 데이터를 서버에서 가져옴
         const fileData = await skapi.getFile(file.url, {
           dataType: 'endpoint'
@@ -939,39 +939,35 @@ const createAuditRequest = async (
         }
       )
       .then((res) => {
-        console.log('실시간 알림 == res : ', res);
+        // console.log('실시간 알림 == res : ', res);
       })
       .catch(async (err) => {
         console.error(err);
       });
 
     // 실시간 못 받을 경우 알림 기록 저장
-    skapi
-      .postRecord(
-        {
-          noti_id: res.record_id,
-          noti_type: 'audit',
-          send_date: new Date().getTime(),
-          send_user: user.user_id,
-          audit_info: {
-            audit_type: 'request',
-            to_audit: to_audit,
-            audit_doc_id: audit_id,
-            audit_request_id: res.record_id,
-            send_auditors: send_auditors
-          }
-        },
-        {
-          readonly: true,
-          table: {
-            name: `realtime:${auditor_id.replaceAll('-', '_')}`,
-            access_group: 'authorized'
-          }
+    skapi.postRecord(
+      {
+        noti_id: res.record_id,
+        noti_type: 'audit',
+        send_date: new Date().getTime(),
+        send_user: user.user_id,
+        audit_info: {
+          audit_type: 'request',
+          to_audit: to_audit,
+          audit_doc_id: audit_id,
+          audit_request_id: res.record_id,
+          send_auditors: send_auditors
         }
-      )
-      .then((res) => {
-        console.log('실시간 기록 == res : ', res);
-      });
+      },
+      {
+        readonly: true,
+        table: {
+          name: `realtime:${auditor_id.replaceAll('-', '_')}`,
+          access_group: 'authorized'
+        }
+      }
+    );
   }
 
   return res;
@@ -1754,7 +1750,8 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  max-width: 900px;
+  // max-width: 900px;
+  max-width: 930px;
 
   .title {
     position: relative;

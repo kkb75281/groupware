@@ -51,10 +51,14 @@
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-divider")
-		button.btn-custom(type="button" @click="handleCommand('quote')")
+		button.btn-custom(type="button" @click="handleCommand('quote')" style="border-right: 1px solid #e4e4e7;")
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
+		//- button.btn-custom(type="button" @click="handleCommand('table')")
+			.icon
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
 		button.btn-custom(type="button" @click="handleCommand('unorderedList')")
 			.icon
 				svg
@@ -80,140 +84,273 @@
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
 		//- button.btn-custom(type="button" @click="exportData") Export
+
+	// 테이블 생성 모달
+	.modal-tb-set(v-if="showTableDialog")
+		.modal-overlay(@click="showTableDialog = false")
+		.modal-cont
+			h3 테이블 생성
+			.input-group
+				label(for="table-rows") 행
+				input#table-rows(type="number" v-model.number="tableRows" min="1" max="10")
+			.input-group
+				label(for="table-cols") 열
+				input#table-cols(type="number" v-model.number="tableCols" min="1" max="10")
+			.button-group
+				button.btn-cancel(type="button" @click="showTableDialog = false") 취소
+				button.btn-confirm(type="button" @click="insertTable") 생성
 	
 	#myeditor(style="width: 100%; min-height: 3rem;")
 </template>
 
 <script setup>
-	import { onMounted, onBeforeUnmount, nextTick } from 'vue';
-	import { Wysiwyg4All } from 'wysiwyg4all';
-	import 'wysiwyg4all/css';
+import { onMounted, onBeforeUnmount, nextTick, ref } from 'vue';
+import { Wysiwyg4All } from 'wysiwyg4all';
+import 'wysiwyg4all/css';
+import wysiwygTable from '@/components/wysiwygTable.vue';
+import { insertTables } from '@/components/wysiwygTable';
+import { createApp } from 'vue';
 
-	// 이벤트 emit 방식으로 에디터 내용을 실시간으로 부모 컴포넌트로 전달
-	const emit = defineEmits(['update:content', 'editor-ready']);
-	const props = defineProps(['savedContent']);
-	let wysiwyg = null;
+// 이벤트 emit 방식으로 에디터 내용을 실시간으로 부모 컴포넌트로 전달
+const emit = defineEmits(['update:content', 'editor-ready']);
+const props = defineProps(['savedContent']);
+let wysiwyg = null;
 
-	const handleCommand = (command) => {
-		if (!wysiwyg) return;
-		wysiwyg.command(command);
-	};
+// 테이블 행, 열 크기 설정
+const showTableDialog = ref(false);
+const tableRows = ref(3);
+const tableCols = ref(3);
 
-	// const handleBlur = () => {
-	// 	wysiwyg.restoreLastSelection();
-	// };
+// 테이블 열, 행 설정 모달
+const showTableCreator = () => {
+  showTableDialog.value = true;
+};
 
-	onMounted(() => {
-		//   initEditor();
-		wysiwyg = new Wysiwyg4All({
-			elementId: 'myeditor',
-			placeholder: '결재 내용',
-			spellcheck: false,
-			highlightColor: '#4a90e2',
-			// lastLineBlank: true,
-			hashtag: false,
-			urllink: true,
-			callback: (c) => {
-				if (c.commandTracker) {
-					// 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
-					wysiwyg.export().then(r => {
-						emit('update:content', r.html);
-					});
-				}
-				return c;
-			}
-		});
-		// savedContent가 있는 경우 에디터에 내용 로드
-		if (props.savedContent) {
-        	const editorElement = document.getElementById('myeditor');
-			
-			if (!editorElement) {
-				console.error('Editor element not found!');
-				return;
-			}
+// 테이블 생성 시 사용할 열, 행
+function loadWysiwygTable(col, row) {
+  const container = document.createElement('div');
 
-			if (props.savedContent) {
-				nextTick(() => {
-					editorElement.innerHTML = props.savedContent;
-				})
-			}
-    	}
-		emit('editor-ready', true);
-	});
+  const app = createApp(wysiwygTable, { col, row });
+  app.mount(container);
+  console.log({ app, container });
+  return container;
+}
 
-	onBeforeUnmount(() => {
-		wysiwyg = null;
-	});
+// 테이블 생성 함수
+const insertTable = () => {
+  if (!wysiwyg) return;
 
-	defineExpose({
-		getContent: () => wysiwyg.export() || '',
-		// getContent: () => {
-		// 	const editorElement = document.getElementById('myeditor');
-		// 	return editorElement?.innerHTML || '';
-		// },
-	});
+  wysiwyg.command({
+    element: loadWysiwygTable(col, row),
+    contenteditable: true
+  });
+
+  showTableDialog.value = false;
+};
+
+const handleCommand = (command) => {
+  if (!wysiwyg) return;
+
+  if (command === 'table') {
+    showTableCreator(); // 테이블 생성 모달 open
+  } else {
+    wysiwyg.command(command);
+  }
+};
+
+onMounted(() => {
+  wysiwyg = new Wysiwyg4All({
+    elementId: 'myeditor',
+    placeholder: '결재 내용',
+    spellcheck: false,
+    highlightColor: '#4a90e2',
+    hashtag: false,
+    urllink: true,
+    logMutation: false,
+    callback: (c) => {
+      if (c.commandTracker) {
+        // 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
+        wysiwyg.export().then((r) => {
+          emit('update:content', r.html);
+        });
+      }
+
+      if (c.range) {
+        // console.log('범위 확인 : ', c.range);
+      }
+
+      return c;
+    }
+  });
+
+  // savedContent가 있는 경우 에디터에 내용 로드
+  if (props.savedContent) {
+    const editorElement = document.getElementById('myeditor');
+
+    if (!editorElement) {
+      console.error('Editor element not found!');
+      return;
+    }
+
+    if (props.savedContent) {
+      nextTick(() => {
+        editorElement.innerHTML = props.savedContent;
+      });
+    }
+  }
+  emit('editor-ready', true);
+});
+
+onBeforeUnmount(() => {
+  wysiwyg = null;
+});
+
+defineExpose({
+  getContent: () => wysiwyg.export() || ''
+});
 </script>
 
 <style lang="less">
 ._wysiwyg4all {
-	padding: 1.5rem 1rem 1rem 1rem;
-	min-height: calc(14em + 50px) !important;
+  padding: 1.5rem 1rem 1rem 1rem;
+  min-height: calc(14em + 50px) !important;
 
-	&::before {
-		color: var(--gray-color-300) !important;
-	}
+  &::before {
+    color: var(--gray-color-300) !important;
+  }
 
-	ul {
-		list-style: disc !important;
-		padding: initial !important;
-		padding-inline-start: 40px !important;
-	}
+  ul {
+    list-style: disc !important;
+    padding: initial !important;
+    padding-inline-start: 40px !important;
+  }
 
-	ol {
-		list-style: decimal !important;
-		padding: initial !important;
-		padding-inline-start: 40px !important;
-	}
+  ol {
+    list-style: decimal !important;
+    padding: initial !important;
+    padding-inline-start: 40px !important;
+  }
 
-	li {
-		list-style: inherit !important;
-		padding: initial !important;
-	}
+  li {
+    list-style: inherit !important;
+    padding: initial !important;
+  }
+}
+
+.modal-tb-set {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-cont {
+    position: relative;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    z-index: 1001;
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+
+    .input-group {
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+
+      label {
+        width: 40px;
+        margin-right: 10px;
+      }
+
+      input {
+        flex: 1;
+        padding: 6px 12px;
+        border: 1px solid var(--gray-color-200);
+        border-radius: 6px;
+      }
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 1.25rem;
+
+      button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+
+        &.btn-cancel {
+          background-color: var(--gray-color-200);
+          color: var(--gray-color-700);
+        }
+
+        &.btn-confirm {
+          background-color: var(--primary-color, #3b82f6);
+          color: white;
+        }
+      }
+    }
+  }
 }
 
 .input-color {
-	display: inline-block;
-	position: relative;
+  display: inline-block;
+  position: relative;
 }
 
 .btns-wrap {
-	justify-content: flex-start !important;
-	gap: 0 !important;
-	display: flex;
-	flex-wrap: wrap;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  display: flex;
+  flex-wrap: wrap;
 
-	&:after {
-		content: "";
-		flex: 1 1 auto;
-		border-bottom: 1px solid var(--gray-color-200);
-	}
+  &:after {
+    content: '';
+    flex: 1 1 auto;
+    border-bottom: 1px solid var(--gray-color-200);
+  }
 }
 
 .btn-custom {
-	display: inline-block;
-	border-bottom: 1px solid var(--gray-color-200);
-	padding: 0 8px;
-	height: 2rem;
+  display: inline-block;
+  border-bottom: 1px solid var(--gray-color-200);
+  padding: 0 8px;
+  height: 2rem;
 
-	&:hover,
-	&:focus,
-	&:active {
-		border-bottom: 1px solid var(--gray-color-200);
-		background-color: var(--gray-color-200);
-	}
+  &:hover,
+  &:focus,
+  &:active {
+    border-bottom: 1px solid var(--gray-color-200);
+    background-color: var(--gray-color-200);
+  }
 
-	.icon {
-		padding: 0;
-	}
+  .icon {
+    padding: 0;
+  }
 }
 </style>
