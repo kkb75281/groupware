@@ -111,7 +111,7 @@ const menuList = computed(() => [
         name: 'home',
         to: '/',
         icon: '#icon-home',
-        text: '대시보드',
+        text: '홈',
     },
     {
         show: googleAccountCheck.value,
