@@ -99,7 +99,7 @@ const isadmin = computed(() => user.access_group > 98);
 
 // menuList를 computed로 변경하여 isadmin 값 변화에 따라 자동 업데이트
 const menuList = computed(() => [
-	// {
+    // {
     //     show: true,
     //     name: 'test',
     //     to: '/test',
@@ -240,7 +240,7 @@ const menuList = computed(() => [
         name: 'newsletter',
         to: '/newsletter',
         icon: '#icon-campaign',
-        text: '공지사항',
+        text: '공지사항'
     },
     {
         show: true,
@@ -291,19 +291,29 @@ onUnmounted(() => {
     window.removeEventListener('click', checkNavbarClose);
 });
 
-watch(() => route.fullPath, (nv) => {
-    let currentPath = nv.split('/');
-    let currentPathName = currentPath[currentPath.length - 1];
-    let currentFullPath = nv.replace(/^\//, '');
-    
-    currentPathName = currentPathName === '' ? 'home' : currentPathName; // 빈 문자열이면 'home'으로 설정(값을 재할당하도록 수정)
-    
-    if(closeNavbar.value.includes(currentPathName) && isOpen.value) {
+let childList = menuList.value.filter(item => item.child);
+
+watch(isOpen, (nv) => {
+    // 다른 토글메뉴 눌렀다가 페이지 이동 안하고 메뉴를 나가는 경우, 현재 있는 경로로 activeMenu 설정
+    if (nv) {
+        let foundChild = childList.find(item => item.child.list.some(child => child.name === route.name));
+
+        if (foundChild) {
+            activeMenu.value = foundChild.name;
+            return;
+        } else {
+            activeMenu.value = route.name;
+        }
+    }
+})
+
+watch(() => route.name, (nv) => {
+    if(closeNavbar.value.includes(nv) && isOpen.value) {
         isOpen.value = false;
         document.body.classList.toggle('open', isOpen.value);
     }
 
-    if (currentPathName === 'list-employee') {
+    if (nv === 'list-employee') {
         if (isadmin.value) {
             activeMenu.value = 'admin';
             return;
@@ -313,31 +323,19 @@ watch(() => route.fullPath, (nv) => {
         }
     }
 
-    for(let menu of menuList.value) {
-        if (!menu.show || menu.isExternal) continue;  // 외부 링크는 active 상태 체크에서 제외
-
-        let menuPath = menu.to.replace(/^\//, '');
-        
-        if(menu.child) {
-            for(let child of menu.child.list) {
-                let childPath = child.to.replace(/^\//, '');
-                
-                if(childPath === currentFullPath || currentPath.includes(child.name)) {
-                    activeMenu.value = menu.name;
-                    return;
-                }
-            }
-        }
-        
-        if(menuPath === currentFullPath || currentPath.includes(menu.name)) {
-            activeMenu.value = menu.name;
-            return;
-        }
+    if (nv === 'newsletter-detail') {
+        activeMenu.value = 'newsletter';
+        return;
     }
 
-    // 홈페이지(/)로 이동했을 때 activeMenu를 'home'으로 명시적 설정
-    if (nv === '/') {
-        activeMenu.value = 'home';
+    let foundChild = childList.find(item => item.child.list.some(child => child.name === nv));
+    
+    // 현재 route.name이 childList에 포함되어 있으면 activeMenu를 해당 menu의 name으로 설정
+    if (foundChild) {
+        activeMenu.value = foundChild.name;
+        return;
+    } else {
+        activeMenu.value = nv;
     }
 }, { immediate: true });
 </script>

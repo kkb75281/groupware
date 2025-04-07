@@ -24,7 +24,7 @@ ul.card-wrap.gmail
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 		ul.newsletter-mail
-			li.mail(v-for="news in newsletterList" :key="news.message_id" @click="(e) => router.push('/newsletter-detail/' + news.message_id)")
+			li.mail(v-for="news in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
 				.link
 					span.mail-title {{ news.subject }}
 					span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
@@ -119,12 +119,16 @@ ul.card-wrap
 </template>
 
 <script setup>
+import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
 import { openGmailAppOrWeb } from '@/utils/mail';
 import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications";
 import Loading from '@/components/loading.vue';
+
+const router = useRouter();
+const route = useRoute();
 
 let loading = ref(false);
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
