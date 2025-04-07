@@ -24,7 +24,7 @@ import { skapi } from '@/main';
 import { newsletterList } from '@/notifications'
 import { convertTimestampToDateMillis } from "@/utils/time";
 
-import Loading from '../components/loading.vue';
+import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
