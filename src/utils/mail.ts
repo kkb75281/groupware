@@ -161,6 +161,7 @@ function openGmailAppOrWeb(link:string | null, show = false) {
 			// console.log('특정 이메일 보기 : ', gmailWebUrl);
 			// console.log('특정 이메일 보기 : ', show);
 		} else {
+			console.log('특정 이메일 주소 메일 작성하는 경우 : ', link);
 			// 특정 이메일 주소 메일 작성하는 경우
 			gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
 			gmailAppUrlAndroid = `mailto:${link}`;
