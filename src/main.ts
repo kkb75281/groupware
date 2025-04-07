@@ -119,6 +119,21 @@ if ('serviceWorker' in navigator) {
     .register(`/wrk.${serviceID}.js`)
     .then((registration) => {
       // console.log('Service Worker registered:', registration);
+	  
+	  registration.addEventListener('updatefound', () => {
+		const newWorker = registration.installing;
+		console.log('[Service Worker] New update found');
+
+		newWorker.addEventListener('statechange', () => {
+			if (newWorker.state === 'installed') {
+				if (navigator.serviceWorker.controller) {
+					// 새로운 서비스 워커가 설치되었음을 사용자에게 알림
+					alert('새로운 버전이 준비되었습니다. 앱을 종료 후 다시 시작하세요.');
+				}
+			}
+		});
+	});
+
     })
     .catch((error) => {
       console.error('Service Worker registration failed:', error);
