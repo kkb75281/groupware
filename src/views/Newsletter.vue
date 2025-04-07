@@ -21,12 +21,12 @@ hr
 				input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList")
 				span ~
 				input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
-		.tb-toolbar(v-if="user.access_group > 98")
+		.tb-toolbar
 			.btn-wrap
-				button.btn.outline.refresh-icon(:disabled="loading" @click="getNewsletterList(true)")
-					svg(:class="{'rotate' : loading}")
+				button.btn.outline.refresh-icon(:disabled="getNewsletterListRunning" @click="getNewsletterList(true)")
+					svg(:class="{'rotate' : getNewsletterListRunning}")
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-				button.btn.outline.md(type="button" @click="sendAdminNewsletter") 등록
+				button.btn.outline.md(v-if="user.access_group > 98" type="button" @click="sendAdminNewsletter") 등록
 	.tb-overflow
 		table.table#newsletter_list
 			colgroup
@@ -56,7 +56,7 @@ hr
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { newsletterList, getNewsletterList } from '@/notifications'
+import { newsletterList, getNewsletterList, getNewsletterListRunning } from '@/notifications'
 import { convertTimestampToDateMillis } from "@/utils/time";
 import { openGmailAppOrWeb } from '@/utils/mail';
 import { skapi } from '@/main';
