@@ -1,5 +1,4 @@
 const CACHE_NAME = 'fg-works-cache-v1'; // 버전 번호를 포함한 캐시 이름
-const VERSION = '1.0.0'; // 서비스 워커의 버전 정보
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
