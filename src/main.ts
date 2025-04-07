@@ -102,7 +102,7 @@ export function resetBadgeCount() {
   // console.log(`[Main App] Badge count reset to ${currentBadgeCount}`);
 }
 
-let isUpdateNotified = false; // 중복 알림 방지 플래그
+let currentVersion:any = null; // 현재 활성화된 서비스 워커의 버전
 
 if ('serviceWorker' in navigator) {
   // Service Worker로부터 메시지 수신
@@ -121,18 +121,42 @@ if ('serviceWorker' in navigator) {
     .register(`/wrk.${serviceID}.js`)
     .then((registration) => {
       // console.log('Service Worker registered:', registration);
+
+	  // 현재 활성화된 서비스 워커의 버전 확인
+	  if (navigator.serviceWorker.controller) {
+		fetch(`/wrk.${serviceID}.js`)
+			.then((response) => response.text())
+			.then((scriptContent) => {
+				const match = scriptContent.match(/const VERSION = '(.+)';/);
+				if (match) {
+					currentVersion = match[1];
+					console.log('[Main] Current Service Worker Version:', currentVersion);
+				}
+			});
+	  }
 	  
 	  registration.addEventListener('updatefound', () => {
 		const newWorker = registration.installing;
-		console.log('[Service Worker] New update found');
+		console.log('[Main] New Service Worker Found');
 
 		newWorker.addEventListener('statechange', () => {
 			if (newWorker.state === 'installed') {
-				if (navigator.serviceWorker.controller && !isUpdateNotified) {
-					// 새로운 서비스 워커가 설치되었음을 사용자에게 알림
-					alert('새로운 버전이 준비되었습니다. 앱을 종료하고 다시 실행해 주세요.');
-					isUpdateNotified = true; // 알림 표시 후 플래그 설정
-				}
+				// 새로 설치된 서비스 워커의 버전 확인
+				fetch(`/wrk.${serviceID}.js`)
+					.then((response) => response.text())
+					.then((scriptContent) => {
+						const match = scriptContent.match(/const VERSION = '(.+)';/);
+						if (match) {
+							const newVersion = match[1];
+							console.log('[Main] New Service Worker Version:', newVersion);
+
+							// 버전이 다를 경우에만 알림 표시
+							if (currentVersion && currentVersion !== newVersion) {
+								alert('새로운 버전이 준비되었습니다. 앱을 종료하고 다시 실행해 주세요.');
+								currentVersion = newVersion; // 현재 버전 업데이트
+							}
+						}
+					});
 			}
 		});
 	});
