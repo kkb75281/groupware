@@ -102,6 +102,8 @@ export function resetBadgeCount() {
   // console.log(`[Main App] Badge count reset to ${currentBadgeCount}`);
 }
 
+let isUpdateNotified = false; // 중복 알림 방지 플래그
+
 if ('serviceWorker' in navigator) {
   // Service Worker로부터 메시지 수신
   navigator.serviceWorker.addEventListener('message', (event) => {
@@ -126,9 +128,10 @@ if ('serviceWorker' in navigator) {
 
 		newWorker.addEventListener('statechange', () => {
 			if (newWorker.state === 'installed') {
-				if (navigator.serviceWorker.controller) {
+				if (navigator.serviceWorker.controller && !isUpdateNotified) {
 					// 새로운 서비스 워커가 설치되었음을 사용자에게 알림
-					alert('새로운 버전이 준비되었습니다. 앱을 종료 후 다시 시작하세요.');
+					alert('새로운 버전이 준비되었습니다. 앱을 종료하고 다시 실행해 주세요.');
+					isUpdateNotified = true; // 알림 표시 후 플래그 설정
 				}
 			}
 		});
