@@ -167,7 +167,7 @@ function openGmailAppOrWeb(link: string | null, show = false) {
     } else {
       console.log('특정 이메일 주소 메일 작성하는 경우 : ', link);
       // 특정 이메일 주소 메일 작성하는 경우
-      gmailAppUrlIOS = `googlegmail:///co?to=${link}`;
+      gmailAppUrlIOS = `googlegmail://co?to=${encodeURIComponent(link)}`;
       gmailAppUrlAndroid = `mailto:${link}`;
       // gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${link}`;
       gmailWebUrl = `https://mail.google.com/mail/u/${encodeURIComponent(user.email)}/?view=cm&fs=1&to=${encodeURIComponent(link)}&authuser=${encodeURIComponent(user.email)}&login_hint=${encodeURIComponent(user.email)}`;
@@ -175,7 +175,7 @@ function openGmailAppOrWeb(link: string | null, show = false) {
     }
   } else {
     // 기본 Gmail 앱 메일함 열기
-    gmailAppUrlIOS = `googlegmail://`;
+    gmailAppUrlIOS = `googlegmail://inbox`;
     gmailAppUrlAndroid = `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.google.android.gm;end;`;
     // gmailAppUrlAndroid = `intent://co#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
     // gmailAppUrlAndroid = `intent://#Intent;scheme=googlegmail;package=com.google.android.gm;end`;
