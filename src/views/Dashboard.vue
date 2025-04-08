@@ -41,7 +41,7 @@ ul.card-wrap.gmail(v-if="googleAccountCheck")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
 				| 안읽은 메일
-			a.go-detail(v-if="googleAccountCheck" :href="'https://mail.google.com/mail/u/0/#inbox'" target="_blank") 메일 더보기
+			a.go-detail(v-if="googleAccountCheck" :href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
 				.icon
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
@@ -132,6 +132,7 @@ const route = useRoute();
 
 let loading = ref(false);
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
+const encodedEmail = encodeURIComponent(user.email);
 
 // google login
 function googleLogin() {
