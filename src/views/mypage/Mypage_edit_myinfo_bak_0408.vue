@@ -71,9 +71,11 @@ hr
 
 		.input-wrap.upload-stamp
 			p.label 대표 도장
-			.main-stamp
-				img#stamp-img(:src="mainStamp.url" alt="도장 이미지")
-				button.btn-select-stamp(type="button" @click="openStampListModal")
+			.selected-stamp
+				//- input#upload-stamp-img(type="file" name="stamp" accept="image/*" @change="openCropImageDialog" hidden)
+				//- img#stamp-img(:src="stamp.url" alt="도장 이미지")
+				img#stamp-img(alt="도장 이미지")
+				button.btn-select-stamp(type="button" :disabled="verifiedEmail || disabled" @click="openStampModal = !openStampModal")
 					.icon.white
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
@@ -109,63 +111,45 @@ hr
 	CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
 // 도장 관리 모달
-.modal.stamp-list(v-if="showStampList")
-	.modal-cont(@click.stop)
-		.modal-header
-			h2.modal-title 대표 도장 선택
-			button.btn-close(@click="closeStampListModal")
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+//- .form-wrap
+	.form-inner
+		button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
+			svg(:class="{'rotate' : loading}")
+				use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+		.stamp-wrap
+			input#stamp-file(ref="stamp_file_input" name="stamp_data" type="file" accept="image/*" @change="uploadStamp" style="display: none")
 
-		.modal-body
-			button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
-				svg(:class="{'rotate' : loading}")
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-			.stamp-wrap
-				input#stamp-file(ref="stamp_file_input" name="stamp_data" type="file" accept="image/*" @change="uploadStamp" style="display: none")
+			.stamp-grid
+				.stamp.upload-btn(ref="optionsBtn" :class="{'disabled': uploading}" @click="showOptions = !showOptions")
+					#stamp-img
+						svg.add-icon
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-add-circle-fill")
+					.name 등록하기
+				ul.upload-options(v-if="showOptions" @click.stop)
+					li.option(@click="selectFile") 파일 등록
+					li.option(@click="showOptions = false; openStampModal = !openStampModal") 서명 등록
 
-				.stamp-grid
-					.stamp.upload-btn(ref="stampOptionsBtn" :class="{'disabled': uploading}" @click="showStampOptions = !showStampOptions")
-						#stamp-img
-							svg.add-icon
-								use(xlink:href="@/assets/icon/material-icon.svg#icon-add-circle-fill")
-						.name 등록하기
-					ul.upload-options(v-if="showStampOptions" @click.stop)
-						li.option(@click="selectStampFile") 파일 등록
-						li.option(@click="showStampOptions = false; openStampModal = !openStampModal") 서명 등록
+			template(v-if="getStampListRunning")
+				.stamp-grid.loading
+					.stamp
+						Loading#loading
 
-				template(v-if="getStampListRunning")
-					.stamp-grid.loading
-						.stamp
-							Loading#loading
+			template(v-else)
+				.stamp-grid(v-for="stamp in uploadedStamp")
+					.stamp
+						img#stamp-img(:src="stamp.url" alt="도장 이미지")
+						.name {{ stamp.filename }}
+						svg.delete-icon(@click="selectedStamp=stamp")
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
-				template(v-else)
-					.stamp-grid(v-for="stamp in uploadedStamp")
-						.stamp(:class="{'selected': mainStamp === stamp}")
-							img#stamp-img(:src="stamp.url" alt="도장 이미지")
-							.name {{ stamp.filename }}
-							.btn-wrap
-								svg.btn-select(@click="selectAsMainStamp(stamp)")
-									use(xlink:href="@/assets/icon/material-icon.svg#icon-check")
-								svg.btn-delete(@click="selectedStamp=stamp")
-									use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-
-					.stamp-grid(v-if="uploading && uploadingStamp.length")
-						.stamp.upload-preview
-							img#stamp-img(:src="uploadingStamp.url" alt="도장 미리보기")
-							.name {{ uploadingStamp.name }}
+				.stamp-grid(v-if="uploading && uploadingStamp.length")
+					.stamp.upload-preview
+						img#stamp-img(:src="uploadingStamp.url" alt="도장 미리보기")
+						.name {{ uploadingStamp.name }}
         
 .modal(v-if="openStampModal" ref="dialog" @keydown.esc.prevent="closeStampDialog")
 	.modal-cont(style="padding:1rem")
 		MakeStamp(@upload="uploadStampImage" @save="handleStampBlob" @close="closeStampDialog")
-
-AlertModal(:open="stampSelectedAlert")
-	.content-wrap
-		h4.title.success 도장 선택
-		p.desc 대표 도장으로 선택되었습니다.
-	.button-wrap
-		button.btn(@click="stampSelectedAlert = false") 확인
-
 AlertModal(:open="!!selectedStamp")
 	.content-wrap
 		template(v-if="deleteStampStep === 1")
@@ -180,6 +164,7 @@ AlertModal(:open="!!selectedStamp")
 			button.btn.warning(:disabled="deleteStampRunning" @click="deleteStamp(selectedStamp)") 삭제
 		template(v-if="deleteStampStep === 2")
 			button.btn(@click="selectedStamp=null;deleteStampStep=1") 확인
+
 </template>
 
 <script setup>
@@ -266,15 +251,10 @@ let editUserProfile = ref({
 
 // 도장 관리
 let loading = ref(false);
-let showStampOptions = ref(false);
 let stamp_file_input = ref(null);
-let stampOptionsBtn = ref(null);
 let isSignImage = ref(false);
 let selectedStamp = ref(null);
 let uploading = ref(false);
-let showStampList = ref(false);
-let mainStamp = ref({}); // 대표 도장 정보
-let stampSelectedAlert = ref(false); // 도장 선택 알림 표시 여부
 
 function makeSafe(str) {
   return str.replaceAll('.', '_').replaceAll('+', '_').replaceAll('@', '_').replaceAll('-', '_');
@@ -402,6 +382,7 @@ let profile_pic_input = ref(null);
 let selectFile = () => {
   showOptions.value = false;
   profile_pic_input.value.click();
+  //   stamp_file_input.value.click();
 };
 
 let setToDefault = () => {
@@ -602,28 +583,9 @@ let registerMypage = async (e) => {
       }
     });
 
-  // misc 업데이트 -  국가코드, 대표도장
+  // misc 국가코드 관련 정보 추가
   let misc = JSON.parse(user.misc || '{}');
-
-  // 국가코드 추가
   misc.country = selectedCountry.value;
-
-  // 대표도장 추가
-  if (mainStamp.value) {
-    misc.main_stamp = {
-      url: mainStamp.value.url,
-      filename: mainStamp.value.filename
-    };
-  } else {
-    misc.main_stamp = null;
-  }
-
-  //   if (mainStamp.value) {
-  //     misc.main_stamp = mainStamp.value;
-  //   } else {
-  //     misc.main_stamp = null;
-  //   }
-
   await skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => err);
 
   console.log({ user });
@@ -655,25 +617,6 @@ let updateFileList = (e) => {
 };
 
 // 도장 관리 :: s
-const openStampListModal = () => {
-  showStampList.value = true;
-};
-
-const closeStampListModal = () => {
-  showStampList.value = false;
-};
-
-let closeStampOptions = (e) => {
-  if (showStampOptions.value && !stampOptionsBtn.value.contains(e.target)) {
-    showStampOptions.value = false;
-  }
-};
-
-let selectStampFile = () => {
-  showStampOptions.value = false;
-  stamp_file_input.value.click();
-};
-
 let uploadStampImage = async (imageUrl) => {
   await handleStampBlob(imageUrl);
 
@@ -786,25 +729,17 @@ let deleteStamp = async (stamp) => {
   }
 };
 
-const selectAsMainStamp = (stamp) => {
-  mainStamp.value = stamp;
-  showStampList.value = false;
-  stampSelectedAlert.value = true;
-
-  console.log('mainStamp : ', mainStamp.value);
-};
-
 const refresh = async () => {
   getStampList(true);
 };
 
 onMounted(() => {
-  document.addEventListener('click', closeStampOptions);
+  document.addEventListener('click', closeOptions);
   getStampList();
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeStampOptions);
+  document.removeEventListener('click', closeOptions);
 });
 // 도장 관리 :: e
 
@@ -1111,29 +1046,7 @@ onUnmounted(() => {
   }
 }
 
-.input-wrap.upload-stamp {
-  .main-stamp {
-    #stamp-img {
-      &:empty::before {
-        content: '도장 등록';
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        color: #888;
-        background-color: #fff;
-        font-size: 14px;
-        text-align: center;
-        position: absolute;
-        top: 0;
-        left: 0;
-      }
-    }
-  }
-}
-
-.main-stamp {
+.selected-stamp {
   width: fit-content;
   position: relative;
 }
@@ -1164,19 +1077,13 @@ onUnmounted(() => {
   }
 }
 
-.modal.stamp-list {
-  .modal-cont {
-    min-width: 950px;
-    max-width: 950px;
-  }
+.form-wrap {
+  margin-top: 3rem;
+}
 
-  .modal-header {
-    margin-bottom: 0;
-  }
-
-  .modal-body {
-    padding: 1.5rem 1.5rem 2rem;
-  }
+.form-inner {
+  //   max-width: 1200px;
+  margin: 0 auto;
 }
 
 .upload-button-wrap {
@@ -1220,15 +1127,6 @@ onUnmounted(() => {
       align-items: center;
       justify-content: center;
 
-      &.selected {
-        background-color: var(--primary-color-50);
-
-        #stamp-img {
-          border-color: var(--primary-color-400);
-          border-width: 3px;
-        }
-      }
-
       .checkbox {
         position: absolute;
         top: 0.5rem;
@@ -1256,32 +1154,18 @@ onUnmounted(() => {
         // fill: var(--gray-color-300);
       }
 
-      .btn-wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
+      .delete-icon {
         position: absolute;
-        top: 12px;
-        right: 12px;
-      }
-
-      svg {
+        top: 0.5rem;
+        right: 0.5rem;
         width: 25px;
         height: 25px;
         fill: var(--gray-color-300);
         transition: all 0.3s;
         cursor: pointer;
 
-        &.btn-select {
-          &:hover {
-            fill: var(--primary-color-400);
-          }
-        }
-
-        &.btn-delete {
-          &:hover {
-            fill: var(--warning-color-400);
-          }
+        &:hover {
+          fill: var(--warning-color-400);
         }
       }
 
@@ -1448,13 +1332,6 @@ onUnmounted(() => {
   .stamp-wrap {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  .modal.stamp-list {
-    .modal-cont {
-      min-width: 100%;
-      max-width: 100%;
-    }
-  }
 }
 
 @media (max-width: 768px) {
@@ -1503,18 +1380,6 @@ onUnmounted(() => {
   #stamp-img {
     width: 80px;
     height: 80px;
-  }
-
-  .stamp-wrap {
-    grid-template-columns: repeat(2, 1fr);
-
-    .stamp-grid {
-      .stamp {
-        .btn-wrap {
-          right: 8px;
-        }
-      }
-    }
   }
 
   // .stamp-wrap {
