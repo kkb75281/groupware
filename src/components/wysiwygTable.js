@@ -1,6 +1,3 @@
-import { createApp } from 'vue';
-import wysiwygTable from '@/components/wysiwygTable.vue';
-
 export function createTable(cols, rows, isCreate = false) {
   // 전체 테이블 컨테이너 생성
   const tableWrap = document.createElement('div');
