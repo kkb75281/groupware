@@ -36,7 +36,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 진행
 
 			label.radio-button
-				input(type="radio" name="radio" value="false" v-model="rejectSetting")
+				input(type="radio" name="radio" value="false" v-model="rejectSetting" checked)
 				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 중단
 
 	.button-wrap

@@ -55,7 +55,7 @@
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
-		button.btn-custom(type="button" @click="handleCommand('table')")
+		//- button.btn-custom(type="button" @click="handleCommand('table')")
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
@@ -104,12 +104,12 @@
 </template>
 
 <script setup>
+import { createApp } from 'vue';
 import { onMounted, onBeforeUnmount, nextTick, ref } from 'vue';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
 import wysiwygTable from '@/components/wysiwygTable.vue';
-import { insertTableToWysiwyg } from '@/components/wysiwygTable';
-import { createApp } from 'vue';
+import { currentTable, createTable, loadWysiwygTable } from '@/components/wysiwygTable';
 
 // 이벤트 emit 방식으로 에디터 내용을 실시간으로 부모 컴포넌트로 전달
 const emit = defineEmits(['update:content', 'editor-ready']);
@@ -130,12 +130,10 @@ const showTableCreator = () => {
 const insertTable = () => {
   if (!wysiwyg) return;
 
-  insertTableToWysiwyg(
-    wysiwyg,
-    tableCols.value,
-    tableRows.value,
-    true // Vue 컴포넌트 사용 (false로 설정하면 DOM 방식 사용)
-  );
+  wysiwyg.command({
+    element: loadWysiwygTable(tableRows.value, tableCols.value),
+    contenteditable: true
+  });
 
   showTableDialog.value = false;
 };
