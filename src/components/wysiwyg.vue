@@ -1,6 +1,6 @@
 <template lang="pug">
 .wysiwyg
-	.btns-wrap
+	.btns-wrap(:class="isDetail ? 'disalbed' : ''")
 		button.btn-custom(type="button" @click="handleCommand('bold')")
 			.icon
 				svg
@@ -55,7 +55,7 @@
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
-		//- button.btn-custom(type="button" @click="handleCommand('table')")
+		button.btn-custom(type="button" @click="handleCommand('table')")
 			.icon
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
@@ -104,22 +104,28 @@
 </template>
 
 <script setup>
-import { createApp } from 'vue';
-import { onMounted, onBeforeUnmount, nextTick, ref } from 'vue';
+import { onMounted, onBeforeUnmount, nextTick, ref, computed } from 'vue';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
 import wysiwygTable from '@/components/wysiwygTable.vue';
-import { currentTable, createTable, loadWysiwygTable } from '@/components/wysiwygTable';
+import { insertTableToWysiwyg } from '@/components/wysiwygTable';
+import { createApp } from 'vue';
 
 // 이벤트 emit 방식으로 에디터 내용을 실시간으로 부모 컴포넌트로 전달
 const emit = defineEmits(['update:content', 'editor-ready']);
-const props = defineProps(['savedContent']);
+const props = defineProps(['savedContent', 'showBtn']);
+
 let wysiwyg = null;
 
 // 테이블 행, 열 크기 설정
 const showTableDialog = ref(false);
 const tableRows = ref(3);
 const tableCols = ref(3);
+
+// showBtn이 true일 경우, Create 페이지 / false일 경우, Detail 페이지
+const isDetail = computed(() => {
+  return !props.showBtn;
+});
 
 // 테이블 열, 행 설정 모달
 const showTableCreator = () => {
@@ -130,10 +136,13 @@ const showTableCreator = () => {
 const insertTable = () => {
   if (!wysiwyg) return;
 
-  wysiwyg.command({
-    element: loadWysiwygTable(tableRows.value, tableCols.value),
-    contenteditable: true
-  });
+  insertTableToWysiwyg(
+    wysiwyg,
+    tableCols.value,
+    tableRows.value,
+    // true, // Vue 컴포넌트 사용 (false로 설정하면 DOM 방식 사용)
+    props.showBtn // 행, 열 추가 버튼 사용
+  );
 
   showTableDialog.value = false;
 };
@@ -156,6 +165,7 @@ onMounted(() => {
     highlightColor: '#4a90e2',
     hashtag: false,
     urllink: true,
+    disabled: true,
     logMutation: false,
     callback: (c) => {
       if (c.commandTracker) {
@@ -187,7 +197,12 @@ onMounted(() => {
         editorElement.innerHTML = props.savedContent;
       });
     }
+
+    if (!props.showBtn) {
+    }
+    editorElement.setAttribute('disalbed', 'false');
   }
+
   emit('editor-ready', true);
 });
 
@@ -324,6 +339,10 @@ defineExpose({
     flex: 1 1 auto;
     border-bottom: 1px solid var(--gray-color-200);
   }
+}
+
+.btns-wrap.disalbed {
+  display: none;
 }
 
 .btn-custom {
