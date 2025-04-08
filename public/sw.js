@@ -1,12 +1,34 @@
+const CACHE_NAME = 'fg-works-cache-v1'; // 버전 번호를 포함한 캐시 이름
+
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installed');
-    event.waitUntil(self.skipWaiting()); // 즉시 활성화
+    // event.waitUntil(self.skipWaiting()); // 즉시 활성화
+	event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll([
+                '/', // 메인 페이지
+                '/index.html'
+            ]);
+        }).then(() => self.skipWaiting()) // 즉시 활성화
+    );
 });
 
-    self.addEventListener('activate', (event) => {
+self.addEventListener('activate', (event) => {
     console.log('[Service Worker] Activated');
-    event.waitUntil(self.clients.claim()); // 모든 클라이언트를 제어
+    // event.waitUntil(self.clients.claim()); // 모든 클라이언트를 제어
+	event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cache) => {
+                    if (cache !== CACHE_NAME) {
+                        console.log(`[Service Worker] Deleting old cache: ${cache}`);
+                        return caches.delete(cache); // 이전 캐시 삭제
+                    }
+                })
+            );
+        }).then(() => self.clients.claim()) // 모든 클라이언트를 제어
+    );
 });
 
 let badgeCount = 0; // 뱃지 숫자를 저장할 변수

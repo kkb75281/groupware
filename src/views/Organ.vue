@@ -12,7 +12,7 @@ hr
 
 br
 
-Organigram(:useCheckbox="false")
+Organigram(:useCheckbox="false" :excludeCurrentUser="false")
 </template>
 
 <script setup>

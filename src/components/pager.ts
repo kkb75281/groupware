@@ -4,7 +4,7 @@ export default class Pager {
     order: 'asc' | 'desc' = 'asc';
     map: any[] = [];
     list: { [key: string]: any } = {};
-    resultsPerPage = 2;
+    resultsPerPage = 10;
     worker: any;
 
     constructor(
@@ -16,7 +16,7 @@ export default class Pager {
             resultsPerPage?: number; // how many items per page
         }
     ) {
-        let { id, sortBy, order = 'asc', resultsPerPage = 2 } = options;
+        let { id, sortBy, order = 'asc', resultsPerPage = 10 } = options;
         if (!id || typeof id !== 'string') {
             throw 'id is required';
         }
@@ -33,11 +33,11 @@ export default class Pager {
     } {
         let startIndex = (page - 1) * this.resultsPerPage;
         let result = this.map.slice(startIndex, startIndex + this.resultsPerPage);
-
-        console.log({page});
-        console.log({startIndex});
-        console.log({result});
-        console.log(this.map);
+        
+        // console.log({page});
+        // console.log({startIndex});
+        // console.log({result});
+        // console.log('this.map : ', this.map);
         
         return {
             list: result.map((target: string) => this.list[target.split('􏿿')[1]]),
@@ -60,7 +60,7 @@ export default class Pager {
 
         return new Promise((res) => {
             this.worker.onmessage = (event: any) => {
-                console.log(event.data);
+                // console.log(event.data);
                 this.map = event.data;
                 res("Insert Successful");
             };
@@ -76,16 +76,16 @@ export default class Pager {
                 withinRange: withinRange
             });
 
-            console.log({
-                method: 'insert',
-                list: this.list,
-                map: this.map,
-                id: this.id,
-                sortBy: this.sortBy,
-                order: this.order,
-                items: items,
-                withinRange: withinRange
-            });
+            // console.log({
+            //     method: 'insert',
+            //     list: this.list,
+            //     map: this.map,
+            //     id: this.id,
+            //     sortBy: this.sortBy,
+            //     order: this.order,
+            //     items: items,
+            //     withinRange: withinRange
+            // });
 
             for (let item of items) {
                 this.list[item[this.id]] = item;

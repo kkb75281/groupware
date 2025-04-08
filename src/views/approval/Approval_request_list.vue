@@ -79,13 +79,14 @@ const isDesktop = ref(window.innerWidth > 768);
 
 let pager = null;
 
-const searchFor = ref('uploaded'); // 'uploaded' or 'to_audit'
+const searchFor = ref('uploaded'); // 검색 'uploaded' or 'to_audit'
 
 const fetching = ref(false); // 데이터를 가져오는 중인지 여부
 const maxPage = ref(0); // 최대 페이지 수
 const currentPage = ref(1); // 현재 페이지
 const endOfList = ref(false); // 리스트의 끝에 도달했는지 여부
 const ascending = ref(false); // 오름차순 정렬 여부
+const listDisplay = ref([]); // 리스트 표시
 
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
@@ -107,9 +108,8 @@ const showSendAuditDoc = (e, audit) => {
 	goToAuditDetail(e, audit.record_id, router)
 }
 
-const listDisplay = ref([]);
-
-const getPage = async(refresh = false) => {
+// pagination
+const getPage = async(refresh = false) => {	
 	if(refresh) {
         endOfList.value = false;
     }
@@ -124,18 +124,15 @@ const getPage = async(refresh = false) => {
     }
 
  	if (!refresh && maxPage.value >= currentPage.value || endOfList.value) {
-        // if is not refresh and has page data
+		console.log('== AA ==');
         sendAuditList.value = pager.getPage(currentPage.value).list;
 		console.log('sendAuditList : ', sendAuditList.value);
         return;
-    }
-
-	else if (!endOfList.value || refresh) {
-        // if page data needs to be fetched
+    } else if (!endOfList.value || refresh) {
+		console.log('== BB ==');
         fetching.value = true;
 
         // fetch from server
-        // let fetchedData = await skapi.getNewsletters(callParams.value.params, Object.assign({ fetchMore: !refresh }, callParams.value.options));
 		let fetchOptions = Object.assign({ fetchMore: !refresh }, { limit: 10, ascending: false })
 		let fetchedData = await getSendAuditList(fetchOptions);
 		console.log('fetchedData : ', fetchedData);
@@ -148,18 +145,17 @@ const getPage = async(refresh = false) => {
             await pager.insertItems(fetchedData.list);
         }
 
-		console.log('pager : ', pager);
-		console.log('currentPage : ', currentPage.value);
-
         // get page from pager
         let disp = pager.getPage(currentPage.value);
 		console.log('disp : ', disp);
 
         // set maxpage
         maxPage.value = disp.maxPage;
+		console.log('maxPage : ', maxPage.value);
 
         // render data
         sendAuditList.value = disp.list;
+		console.log('sendAuditList : ', sendAuditList.value);
         fetching.value = false;
     }
 

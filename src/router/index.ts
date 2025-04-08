@@ -3,7 +3,6 @@ import { user } from '@/user';
 
 import Login from '@/views/Login.vue';
 // import Change_password from '@/views/Change_password.vue';
-import Profile from '@/views/Profile.vue';
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
 // import List_employee from '@/views/List_employee.vue';
@@ -253,11 +252,6 @@ const router = createRouter({
 							component: () => import('@/views/admin/Admin_form_detail.vue'),  // 마스터가 올린 결재 양식 리스트 상세,
 						},
 					],
-				},
-				{
-					path: '/profile',
-					name: 'profile',
-					component: Profile,
 				},
 				{
 					path: '/component',

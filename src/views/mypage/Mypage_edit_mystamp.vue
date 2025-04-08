@@ -6,6 +6,9 @@ hr
 
 .form-wrap
     .form-inner
+        button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
+            svg(:class="{'rotate' : loading}")
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
         .stamp-wrap
             input#stamp-file(ref="stamp_file_input" name="stamp_data" type="file" accept="image/*" @change="uploadStamp" style="display: none")
 
@@ -68,6 +71,7 @@ import MakeStamp from '@/components/make_stamp.vue';
 import AlertModal from '@/components/alert_modal.vue';
 import Loading from '@/components/loading.vue';
 
+let loading = ref(false);
 let showOptions = ref(false);
 let stamp_file_input = ref(null);
 let optionsBtn = ref(null);
@@ -198,6 +202,10 @@ let deleteStamp = async(stamp) => {
     }
 }
 
+const refresh = async() => {
+    getStampList(true);
+}
+
 onMounted(() => {
     document.addEventListener('click', closeOptions);
 	getStampList();
@@ -234,7 +242,7 @@ onUnmounted(() => {
     .stamp-grid {
         position: relative;
         width: 100%;
-        border: 1px solid var(--gray-color-100);
+        border: 1px solid var(--gray-color-200);
         border-radius: 0.5rem;
 
         &::after {
@@ -415,7 +423,7 @@ onUnmounted(() => {
     object-fit: contain;
     position: relative;
     background-color: #fff;
-    border: 2px dashed var(--gray-color-100);
+    border: 2px dashed var(--gray-color-200);
     margin-bottom: 0.5rem;
 
     &::before {
@@ -450,6 +458,11 @@ onUnmounted(() => {
     }
 }
 
+.refresh-icon {
+    margin-bottom: 1rem;
+    margin-left: auto;
+}
+
 @media (max-width: 950px) {
     .stamp-wrap {
         grid-template-columns: repeat(3, 1fr);
@@ -474,25 +487,24 @@ onUnmounted(() => {
 }
 
 @media (max-width: 576px) {
-    .stamp-wrap {
-        grid-template-columns: repeat(1, 1fr);
-
-        .stamp-grid {
-            .upload-options {
-                transform: translateX(10%) translateY(-12%);
-                
-                li {
-                    font-size: 1rem;
-                    padding: 10px 14px;
-                }
-            }
-        }
+    #stamp-img {
+        width: 80px;
+        height: 80px;
     }
-}
+    
+    // .stamp-wrap {
+    //     grid-template-columns: repeat(1, 1fr);
 
-// @media (max-width: 390px) {
-//     .stamp-wrap {
-//         grid-template-columns: repeat(1, 1fr);
-//     }
-// }
+    //     .stamp-grid {
+    //         .upload-options {
+    //             transform: translateX(10%) translateY(-12%);
+                
+    //             li {
+    //                 font-size: 1rem;
+    //                 padding: 10px 14px;
+    //             }
+    //         }
+    //     }
+    // }
+}
 </style>

@@ -21,14 +21,14 @@ function insertItems(event) {
   let { items, sortBy, order, id, map, withinRange } = event.data;
   for (let item of items) {
     let indexValue = getIndexValue(item, sortBy);
-    console.log('indexValue', indexValue);
+    // console.log('indexValue', indexValue);
 
     if (indexValue === null) {
       continue; // pass
     }
 
     indexValue += '􏿿' + item[id]; // 'indexValue􏿿id'
-    console.log('indexValue22', indexValue);
+    // console.log('indexValue22', indexValue);
 
     let index = map.indexOf(indexValue);
     if (index !== -1) {
@@ -60,7 +60,7 @@ function insertItems(event) {
     }
   }
 
-  console.log('map', map);
+  // console.log('map', map);
 
   return map;
 }

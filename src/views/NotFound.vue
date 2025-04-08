@@ -12,8 +12,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import Loading from '@/components/loading.vue';
 </script>
 
 <style scoped lang="less">

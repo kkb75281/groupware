@@ -21,12 +21,12 @@ hr
 				input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList")
 				span ~
 				input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
-		.tb-toolbar(v-if="user.access_group > 98")
+		.tb-toolbar
 			.btn-wrap
-				button.btn.outline.refresh-icon(:disabled="loading" @click="getNewsletterList(true)")
+				button.btn.outline.refresh-icon(:disabled="loading" @click="searchNewsletter(true)")
 					svg(:class="{'rotate' : loading}")
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-				button.btn.outline.md(type="button" @click="sendAdminNewsletter") 등록
+				button.btn.outline.md(v-if="user.access_group > 98" type="button" @click="sendAdminNewsletter") 등록
 	.tb-overflow
 		table.table#newsletter_list
 			colgroup
@@ -77,10 +77,10 @@ let searchValue = ref({
 	}
 });
 
-let searchNewsletter = async() => {
+let searchNewsletter = async(refresh = false) => {
 	loading.value = true;
 
-	if(searchValue.value.subject === '') {
+	if(searchValue.value.subject === '' || refresh) {
 		await getNewsletterList(true);
 		loading.value = false;
 		return;

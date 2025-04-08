@@ -6,10 +6,10 @@
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ serviceWorkerRegistMsg }}
 
-template(v-if="onlyUserGesture")
-	button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
+//- template(v-if="onlyUserGesture")
+button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
 
-	br
+br
 
 ul.card-wrap.gmail
 	li.card
@@ -24,7 +24,7 @@ ul.card-wrap.gmail
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 		ul.newsletter-mail
-			li.mail(v-for="news in newsletterList" :key="news.message_id" @click="(e) => router.push('/newsletter-detail/' + news.message_id)")
+			li.mail(v-for="news in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
 				.link
 					span.mail-title {{ news.subject }}
 					span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
@@ -41,7 +41,7 @@ ul.card-wrap.gmail(v-if="googleAccountCheck")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
 				| 안읽은 메일
-			a.go-detail(v-if="googleAccountCheck" :href="'https://mail.google.com/mail/u/0/#inbox'" target="_blank") 메일 더보기
+			a.go-detail(v-if="googleAccountCheck" :href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
 				.icon
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
@@ -119,6 +119,7 @@ ul.card-wrap
 </template>
 
 <script setup>
+import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { user } from "@/user";
 import { convertTimestampToDateMillis } from "@/utils/time";
@@ -126,8 +127,12 @@ import { openGmailAppOrWeb } from '@/utils/mail';
 import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications";
 import Loading from '@/components/loading.vue';
 
+const router = useRouter();
+const route = useRoute();
+
 let loading = ref(false);
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
+const encodedEmail = encodeURIComponent(user.email);
 
 // google login
 function googleLogin() {

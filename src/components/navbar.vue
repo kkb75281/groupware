@@ -55,6 +55,7 @@ let navbar = ref(null);
 let activeMenu = ref(null);
 // let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const googleAccountCheck = computed(() => !!localStorage.getItem('accessToken'));
+const encodedEmail = encodeURIComponent(user.email);
 
 const handleLinkClick = (to) => {
     if (route.path === to || route.path.startsWith(to) || isSubMenuPath(to)) {
@@ -63,7 +64,8 @@ const handleLinkClick = (to) => {
 
     if (route.path === to) {
         // 해당 메뉴에 active 클래스 추가
-        activeMenu.value = to.split('/')[1];
+        // '/' 경로인 경우 직접 'home'으로 설정
+        activeMenu.value = to === '/' ? 'home' : to.split('/')[1];
     }
 };
 
@@ -97,7 +99,7 @@ const isadmin = computed(() => user.access_group > 98);
 
 // menuList를 computed로 변경하여 isadmin 값 변화에 따라 자동 업데이트
 const menuList = computed(() => [
-	// {
+    // {
     //     show: true,
     //     name: 'test',
     //     to: '/test',
@@ -108,13 +110,13 @@ const menuList = computed(() => [
         show: true,
         name: 'home',
         to: '/',
-        icon: '#icon-dashboard',
-        text: '대시보드',
+        icon: '#icon-home',
+        text: '홈',
     },
     {
         show: googleAccountCheck.value,
         name: 'email',
-        to: 'https://mail.google.com/mail/u/0/#inbox',
+        to: `https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`,
         icon: '#icon-mail',
         text: '이메일',
         isExternal: true  // 외부 링크 표시
@@ -134,24 +136,24 @@ const menuList = computed(() => [
                     text: '결재 작성',
                 },
                 {
-                    name: 'audit-list',
-                    to: '/approval/audit-list',
-                    text: '수신함',
-                },
-                {
                     name: 'request-list',
                     to: '/approval/request-list',
-                    text: '발신함',
+                    text: '결재 발신함',
+                },
+                {
+                    name: 'audit-list',
+                    to: '/approval/audit-list',
+                    text: '결재 수신함',
                 },
                 {
                     name: 'audit-reference',
                     to: '/approval/audit-reference',
-                    text: '수신참조',
+                    text: '수신 참조함',
                 },
                 {
                     name: 'audit-list-favorite',
                     to: '/approval/audit-list-favorite',
-                    text: '중요메일',
+                    text: '중요 결재함',
                 },
             ]
         }
@@ -183,7 +185,7 @@ const menuList = computed(() => [
                 {
                     name: 'record-commute',
                     to: '/mypage/record-commute',
-                    text: '근태 관리',
+                    text: '출퇴근 관리',
                 },
                 {
                     show: !googleAccountCheck.value, // 구글 로그인 시 비밀번호 변경 메뉴 숨기기
@@ -238,7 +240,7 @@ const menuList = computed(() => [
         name: 'newsletter',
         to: '/newsletter',
         icon: '#icon-campaign',
-        text: '공지사항',
+        text: '공지사항'
     },
     {
         show: true,
@@ -289,20 +291,29 @@ onUnmounted(() => {
     window.removeEventListener('click', checkNavbarClose);
 });
 
-// route watch 함수는 이전과 동일
-watch(() => route.fullPath, (nv) => {
-    let currentPath = nv.split('/');
-    let currentPathName = currentPath[currentPath.length - 1];
-    let currentFullPath = nv.replace(/^\//, '');
-    
-    currentPathName === '' ? currentPathName = 'home' : currentPathName;
-    
-    if(closeNavbar.value.includes(currentPathName) && isOpen.value) {
+let childList = menuList.value.filter(item => item.child);
+
+watch(isOpen, (nv) => {
+    // 다른 토글메뉴 눌렀다가 페이지 이동 안하고 메뉴를 나가는 경우, 현재 있는 경로로 activeMenu 설정
+    if (nv) {
+        let foundChild = childList.find(item => item.child.list.some(child => child.name === route.name));
+
+        if (foundChild) {
+            activeMenu.value = foundChild.name;
+            return;
+        } else {
+            activeMenu.value = route.name;
+        }
+    }
+})
+
+watch(() => route.name, (nv) => {
+    if(closeNavbar.value.includes(nv) && isOpen.value) {
         isOpen.value = false;
         document.body.classList.toggle('open', isOpen.value);
     }
 
-    if (currentPathName === 'list-employee') {
+    if (nv === 'list-employee') {
         if (isadmin.value) {
             activeMenu.value = 'admin';
             return;
@@ -312,26 +323,19 @@ watch(() => route.fullPath, (nv) => {
         }
     }
 
-    for(let menu of menuList.value) {
-        if (!menu.show || menu.isExternal) continue;  // 외부 링크는 active 상태 체크에서 제외
+    if (nv === 'newsletter-detail') {
+        activeMenu.value = 'newsletter';
+        return;
+    }
 
-        let menuPath = menu.to.replace(/^\//, '');
-        
-        if(menu.child) {
-            for(let child of menu.child.list) {
-                let childPath = child.to.replace(/^\//, '');
-                
-                if(childPath === currentFullPath || currentPath.includes(child.name)) {
-                    activeMenu.value = menu.name;
-                    return;
-                }
-            }
-        }
-        
-        if(menuPath === currentFullPath || currentPath.includes(menu.name)) {
-            activeMenu.value = menu.name;
-            return;
-        }
+    let foundChild = childList.find(item => item.child.list.some(child => child.name === nv));
+    
+    // 현재 route.name이 childList에 포함되어 있으면 activeMenu를 해당 menu의 name으로 설정
+    if (foundChild) {
+        activeMenu.value = foundChild.name;
+        return;
+    } else {
+        activeMenu.value = nv;
     }
 }, { immediate: true });
 </script>
@@ -373,6 +377,11 @@ watch(() => route.fullPath, (nv) => {
 
         .img-logo {
             width: 12rem;
+            padding: 0 0 0 16px;
+
+            img {
+                width: calc(12rem - 16px);
+            }
             
             svg {
                 width: 2rem;
@@ -383,6 +392,12 @@ watch(() => route.fullPath, (nv) => {
 
     .btn-close {
         display: none;
+        position: relative;
+        top: 6px;
+
+        .icon {
+            padding: 0;
+        }
     }
 
     .menu-item {
@@ -515,9 +530,16 @@ watch(() => route.fullPath, (nv) => {
 }
 
 @media (max-width: 1200px)  {
+    #navbar {
+        .btn-close {
+            display: block;
+        }
+    }
+
     .open {
         #navbar {
             left: 0;
+            width: 100% !important;
         }
     }
 }
@@ -525,15 +547,7 @@ watch(() => route.fullPath, (nv) => {
 @media (max-width: 768px) {
     .open {
         #navbar {
-            width: 100% !important;
-
-            .btn-menu {
-                display: none;
-            }
-            
-            .btn-close {
-                display: block;
-            }
+            // width: 100% !important;
         }
     }
 }

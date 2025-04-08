@@ -223,9 +223,8 @@ const registerEmpDivision = async (data) => {
 		const { user_id_safe, user_division_name } = data;
 
 		const params = {
-			unique_id: "[emp_division]" + user_id_safe,
 			table: {
-				name: 'emp_division',
+				name: 'emp_division' + user_id_safe,
 				access_group: 1
 			},
 			tags: ["[emp_pst]" + _el_position.value, "[emp_id]" + user_id_safe, "[emp_dvs]" + user_division_name] 

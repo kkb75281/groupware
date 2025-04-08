@@ -36,7 +36,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 진행
 
 			label.radio-button
-				input(type="radio" name="radio" value="false" v-model="rejectSetting" checked)
+				input(type="radio" name="radio" value="false" v-model="rejectSetting")
 				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 중단
 
 	.button-wrap
@@ -181,7 +181,7 @@ template(v-if="step === 2 || isTemplateMode")
 									th.essential 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
-											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content" :showBtn="true")
+											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -382,24 +382,19 @@ const openModal = () => {
   if (isTemplateMode.value) return;
 
   // 열렸을 때 selectedAuditors 전체를 original로 백업
+  console.log('== selectedAuditors.value == : ', selectedAuditors.value);
+
   backupSelected.value = {
     approvers: [...selectedAuditors.value.approvers],
     agreers: [...selectedAuditors.value.agreers],
     receivers: [...selectedAuditors.value.receivers]
   };
 
-  // selectedAuditors에 있는 모든 유저를 selectedUsers에 추가
+  // selectedAuditors 에 있는 모든 유저를 selectedUsers에 추가
   selectedUsers.value = [];
 
-  // selectedAuditors의 각 역할에 따라 selectedUsers에 추가
-  for (const role in selectedAuditors.value) {
-    selectedAuditors.value[role].forEach((user) => {
-      const userCopy = JSON.parse(JSON.stringify(user)); // 깊은 복사 하여 참조를 끊어줌
-
-      userCopy.role = role;
-      userCopy.sortable = role !== 'receivers';
-      selectedUsers.value.push(userCopy);
-    });
+  for (const key in selectedAuditors.value) {
+    selectedUsers.value.push(...selectedAuditors.value[key]);
   }
 
   selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
@@ -416,11 +411,6 @@ const closeModal = () => {
       agreers: [...backupSelected.value.agreers],
       receivers: [...backupSelected.value.receivers]
     };
-
-    // // 모든 사용자의 role을 '결재'로 초기화
-    // selectedUsers.value.forEach((user) => {
-    //   user.role = 'approvers';
-    // });
   } else {
     selectedAuditors.value = {
       approvers: [],
@@ -599,16 +589,22 @@ const handleOrganigramSelection = (users) => {
     }
   });
 
+  console.log('selectedUsers', selectedUsers.value);
+
   // 선택된 유저들의 순서 저장
   selectedUsersOrder.value = selectedUsers.value.map((user) => ({
     user_id: user.data.user_id,
     order: user.order,
     type: user.role
   }));
+
+  console.log('selectedUsersOrder', selectedUsersOrder.value);
 };
 
 // 수신참조자로 선택되면 선택된 결재자에서 가장 아래로 이동
 const checkRole = (user) => {
+  console.log('== checkRole == user : ', user);
+
   // 이전 역할 저장
   const previousRole = user.role;
 
@@ -691,15 +687,17 @@ const getAllSelectedUserIds = () => {
 
 // 결재자 저장
 const saveAuditor = () => {
+  console.log('== saveAuditor == selectedUsersOrder : ', selectedUsersOrder.value);
+
   selectedAuditors.value.agreers = [];
   selectedAuditors.value.approvers = [];
   selectedAuditors.value.receivers = [];
 
-  // user.role에 따라 approvers, agreers, receivers에 추가
+  // user.role 에 따라 approvers, agreers, receivers에 추가
   selectedUsers.value.forEach((user) => {
-    const userCopy = JSON.parse(JSON.stringify(user)); // 깊은 복사 하여 참조를 끊어줌
-    selectedAuditors.value[user.role].push(userCopy);
+    selectedAuditors.value[user.role].push(user);
   });
+  console.log('== saveAuditor == selectedAuditors', selectedAuditors.value);
 
   backupSelected.value = null;
   isModalOpen.value = false;
@@ -791,6 +789,8 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     // 만약 첨부파일이 있는 결재 양식 선택시
     if (uploadedFile.value.length) {
       for (const file of uploadedFile.value) {
+        // console.log('Processing file:', file);
+
         // 파일 데이터를 서버에서 가져옴
         const fileData = await skapi.getFile(file.url, {
           dataType: 'endpoint'
@@ -843,14 +843,7 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 };
 
 // 결재 요청을 생성하고 알림을 보내는 함수
-const createAuditRequest = async (
-  { audit_id, auditor_id, role, audit_title },
-  send_auditors,
-  isNotificationTarget = false
-) => {
-  console.log('send_auditors : ', send_auditors);
-  console.log('auditor_id : ', auditor_id);
-
+const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, send_auditors) => {
   if (!audit_id || !auditor_id) return;
 
   // 결재 요청
@@ -875,78 +868,56 @@ const createAuditRequest = async (
       }
     }
   );
-  console.log('res : ', res);
 
   skapi.grantPrivateRecordAccess({
     record_id: res.record_id,
     user_id: auditor_id
   });
 
-  //   // 결재자/합의자를 순서대로 정렬
-  //   const approversAndAgreers = [
-  //     ...selectedAuditors.value.approvers,
-  //     ...selectedAuditors.value.agreers
-  //   ].sort((a, b) => a.order - b.order);
-  //   console.log('approversAndAgreers : ', approversAndAgreers);
+  let to_audit = document.getElementById('to_audit').value;
 
-  //   // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
-  //   const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
-  //   console.log('sendFirstNoti : ', sendFirstNoti);
-
-  //   // Id만 추출
-  //   const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id.replaceAll('-', '_'));
-  //   console.log('sendFirstNotiId : ', sendFirstNotiId);
-
-  //   //sendFirstNotiId string으로 변환
-  //   const sendFirstNotiIdString = sendFirstNotiId.join(',');
-  //   console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
+  let postRealtimeBody = {
+    text: `${user.name}님께서 결재를 올렸습니다.`,
+    type: 'audit',
+    id: audit_id
+  };
 
   // 실시간 알림 보내기
-  if (isNotificationTarget) {
-    let to_audit = document.getElementById('to_audit').value;
-
-    let postRealtimeBody = {
-      text: `${user.name}님께서 결재를 올렸습니다.`,
-      type: 'audit',
-      id: audit_id
-    };
-
-    skapi
-      .postRealtime(
-        {
-          audit_request: {
-            noti_id: res.record_id,
-            noti_type: 'audit',
-            send_date: new Date().getTime(),
-            send_user: user.user_id,
-            audit_info: {
-              audit_type: 'request',
-              to_audit: to_audit,
-              audit_doc_id: audit_id,
-              audit_request_id: res.record_id,
-              send_auditors: send_auditors
-            }
-          }
-        },
-        auditor_id,
-        {
-          title: '[그룹웨어]',
-          // body: JSON.stringify(postRealtimeBody)
-          body: `${user.name}님께서 결재를 올렸습니다.`,
-          config: {
-            always: true // 무조건 알림 받기
+  skapi
+    .postRealtime(
+      {
+        audit_request: {
+          noti_id: res.record_id,
+          noti_type: 'audit',
+          send_date: new Date().getTime(),
+          send_user: user.user_id,
+          audit_info: {
+            audit_type: 'request',
+            to_audit: to_audit,
+            audit_doc_id: audit_id,
+            audit_request_id: res.record_id,
+            send_auditors: send_auditors
           }
         }
-      )
-      .then((res) => {
-        // console.log('실시간 알림 == res : ', res);
-      })
-      .catch(async (err) => {
-        console.error(err);
-      });
+      },
+      auditor_id,
+      {
+        title: '[그룹웨어]',
+        // body: JSON.stringify(postRealtimeBody)
+        body: `${user.name}님께서 결재를 올렸습니다.`,
+        config: {
+          always: true // 무조건 알림 받기
+        }
+      }
+    )
+    .then((res) => {})
+    .catch(async (err) => {
+      console.error(err);
+    });
 
-    // 실시간 못 받을 경우 알림 기록 저장
-    skapi.postRecord(
+  // 실시간 못 받을 경우 알림 기록 저장
+  skapi
+    .postRecord(
       {
         noti_id: res.record_id,
         noti_type: 'audit',
@@ -967,20 +938,14 @@ const createAuditRequest = async (
           access_group: 'authorized'
         }
       }
-    );
-  }
+    )
+    .then((res) => {});
 
   return res;
 };
 
 // 결재 요청 Alarm
-const postAuditDocRecordId = async (
-  auditId,
-  auditTitle,
-  userId,
-  role,
-  isNotificationTarget = false
-) => {
+const postAuditDocRecordId = async (auditId, auditTitle, userId, role) => {
   try {
     // 권한 부여
     await grantAuditorAccess({
@@ -997,38 +962,12 @@ const postAuditDocRecordId = async (
         role: role,
         audit_title: auditTitle
       },
-      send_auditors_arr,
-      isNotificationTarget
+      send_auditors_arr
     );
   } catch (error) {
     console.error(error);
     throw error;
   }
-};
-
-const removeButtonTags = (content) => {
-  if (!content) return '';
-
-  // 임시 DOM 요소 생성
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = content;
-
-  // 버튼 요소들 선택
-  const buttons = tempDiv.querySelectorAll('button');
-
-  // 버튼 요소들 제거
-  buttons.forEach((button) => {
-    button.remove();
-  });
-
-  // 컨트롤 버튼 그룹 요소 제거 (btn-control-wrap 클래스를 가진 요소)
-  const controlWraps = tempDiv.querySelectorAll('.btn-control-wrap');
-  controlWraps.forEach((wrap) => {
-    wrap.remove();
-  });
-
-  // 변경된 HTML 반환
-  return tempDiv.innerHTML;
 };
 
 // 결재 요청
@@ -1043,7 +982,7 @@ const requestAudit = async (e) => {
 
   try {
     const formData = new FormData(e.target);
-    formData.set('inp_content', removeButtonTags(editorContent.value)); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
+    formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
 
     const formValues = Object.fromEntries(formData.entries());
@@ -1084,33 +1023,7 @@ const requestAudit = async (e) => {
     const auditId = auditDoc.record_id; // 결재 문서 ID
     const auditTitle = to_audit; // 결재 제목
 
-    // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
-    // 결재자/합의자를 순서대로 정렬
-    // const approversAndAgreers = [
-    //   ...selectedAuditors.value.approvers,
-    //   ...selectedAuditors.value.agreers
-    // ].sort((a, b) => a.order - b.order);
-    // console.log('approversAndAgreers : ', approversAndAgreers);
-
-    // // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
-    // const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
-    // console.log('sendFirstNoti : ', sendFirstNoti);
-
-    // // Id만 추출
-    // const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id);
-    // console.log('sendFirstNotiId : ', sendFirstNotiId);
-
-    // //sendFirstNotiId string으로 변환
-    // const sendFirstNotiIdString = sendFirstNotiId.join(',');
-    // console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
-
-    // const processRoles = sendFirstNoti.map((auditor) => ({
-    //   userId: auditor.data.user_id,
-    //   role: auditor.role,
-    //   order: auditor.order
-    // }));
-    // console.log('processRoles : ', processRoles);
-
+    // 각 역할별 권한 부여 및 알림 전송
     const processRoles = [
       // 결재
       ...selectedAuditors.value.approvers.map((auditor, index) => ({
@@ -1133,42 +1046,12 @@ const requestAudit = async (e) => {
         order: auditor.order
       }))
     ];
-    console.log('processRoles : ', processRoles);
 
-    // const res = await Promise.all(
-    //   processRoles.map((roleInfo) =>
-    //     postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
-    //   )
-    // );
-
-    // 결재자와 합의자를 순서대로 통합 정렬
-    const approversAndAgreers = [
-      ...selectedAuditors.value.approvers,
-      ...selectedAuditors.value.agreers
-    ].sort((a, b) => a.order - b.order);
-
-    // 통합된 목록에서 첫 번째 사람과 모든 수신참조자
-    const notificationTargets = [
-      // 첫 번째 결재/합의자 (전체 목록 중 첫 번째)
-      ...(approversAndAgreers.length > 0 ? [approversAndAgreers[0]] : []),
-      // 모든 수신참조자
-      ...selectedAuditors.value.receivers
-    ];
-
-    // 모든 결재자에게 문서 권한 및 요청 레코드 생성
     const res = await Promise.all(
-      processRoles.map((roleInfo, index) =>
-        postAuditDocRecordId(
-          auditId,
-          auditTitle,
-          roleInfo.userId,
-          roleInfo.role,
-          // 알림 대상인지 여부 확인
-          notificationTargets.some((target) => target.data.user_id === roleInfo.userId)
-        )
+      processRoles.map((roleInfo) =>
+        postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
       )
     );
-    console.log('promiseall : ', res);
 
     // 결재라인 select option '결재'로 초기화
     selectedUsers.value.forEach((user) => {
@@ -1775,8 +1658,7 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  // max-width: 900px;
-  max-width: 930px;
+  max-width: 900px;
 
   .title {
     position: relative;

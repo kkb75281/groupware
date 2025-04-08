@@ -8,7 +8,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 	.item-wrap
 		.selected-wrap
 			p.label 카테고리 선택
-			select(name="selCategory" @change="(e) => {formCategory = e.target.value}")
+			select(name="selCategory" @change="(e) => {formCategory = e.target.value; selectedForm = []; isFormSelected = false;}")
 				//- option(disabled selected) 카테고리 선택
 				//- option(value="bookmark") 즐겨찾기
 				option(value="master") 일반 결재 양식
@@ -16,12 +16,12 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 			
 		.selected-wrap
 			p.label 결재 양식 선택
-			select(v-if="formCategory === 'master'" name="masterForms" @change="(e) => selDocForm(e)")
-				option(value="" disabled selected) 기본 결재 양식을 선택해주세요.
+			select(v-if="formCategory === 'master'" name="masterForms" :disabled="!masterForms.length" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) {{ masterForms.length ? "기본 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
 				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-			select(v-else-if="formCategory === 'mine'" name="myForms" @change="(e) => selDocForm(e)")
-				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
+			select(v-else-if="formCategory === 'mine'" name="myForms" :disabled="!myForms.length" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) {{ myForms.length ? "나의 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
 				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
 			select(v-else)
@@ -40,8 +40,8 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 중단
 
 	.button-wrap
-		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새로 작성
-		button.btn.btn-next(type="button" @click="step = 2") 다음
+		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새 양식 생성
+		button.btn.btn-next(type="button" :disabled="!isFormSelected" @click="step = 2") 다음
 
 	//- .top-wrap
 		p.desc 결재 양식 선택 후 결재 작성이 진행됩니다. 결재 양식을 먼저 선택해주세요.
@@ -299,9 +299,6 @@ template(v-if="step === 2 || isTemplateMode")
 		.modal-footer
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
 			button.btn.btn-save(type="submit" @click="saveAuditor") 저장
-
-//- 테스트용 삭제 버튼 (추후 삭제)
-//- button.btn.sm(@click="testDelete") delete
 </template>
 
 <script setup>
@@ -310,6 +307,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { skapi, mainPageLoading, RealtimeCallback } from "@/main";
 import { user, makeSafe, verifiedEmail } from "@/user";
 import { divisionNameList } from "@/division";
+import { organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram'
 
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
@@ -330,9 +328,7 @@ const isRowModalOpen = ref(false); // 작성란 추가 모달
 const showBackStep = ref(true);
 const isDesktop = ref(window.innerWidth > 768);
 
-// const modalType = ref(''); // 결재라인 모달 타입 구분
 const selectedUsers = ref([]); // 조직도에서 선택된 직원
-// const tableUsers = ref([]); // 모달 내 우측 테이블에 표시될 직원 목록
 
 // 결재자 정보 저장
 const selectedAuditors = ref({
@@ -342,8 +338,8 @@ const selectedAuditors = ref({
 });
 
 const formCategory = ref('master'); // 결재 양식 카테고리
-const masterForms = ref({}); // 기본 결재 양식
-const myForms = ref({}); // 나의 결재 양식
+const masterForms = ref([]); // 기본 결재 양식
+const myForms = ref([]); // 나의 결재 양식
 const selectedForm = ref([]); // 선택된 결재 양식
 const isFormSelected = ref(false); // 양식이 선택되었는지 여부
 const rejectSetting = ref(true); // 반려 설정 관련 체크박스
@@ -365,26 +361,6 @@ const disabled = ref(false);
 // 에디터 상태 관리
 const editorContent = ref('');
 const editorIsReady = ref(false);
-
-// 테스트용 삭제 함수 (추후 삭제)
-// const testDelete = async () => {
-// 	const res = await skapi.deleteRecords({
-// 		table: {
-// 			name: 'audit_form',
-// 			access_group: 1
-// 		},
-// 		record_id: 'UfPGLV82o5YH2Bqp',
-// 	});
-
-// 	console.log('=== testDelete === res : ', res);
-// 	console.log('결재 양식 삭제완');
-// }
-
-// watch(auditTitle, (nv, ov) => {
-// 	if(nv) {
-// 		step.value = 2;
-// 	}
-// });
 
 // 결재라인 모달 열기
 const openModal = () => {
@@ -587,13 +563,11 @@ const removeAuditor = (user, type) => {
 // 에디터 준비
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
-  console.log('=== handleEditorReady === editorIsReady : ', editorIsReady.value);
 };
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
 	editorContent.value = content;
-	console.log('=== exportWysiwygData === editorContent : ', editorContent.value);
 };
 
 // 업로드 파일 삭제
@@ -650,7 +624,7 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 		// 만약 첨부파일이 있는 결재 양식 선택시
 		if(uploadedFile.value.length) {
 			for (const file of uploadedFile.value) {
-				console.log('Processing file:', file);
+				// console.log('Processing file:', file);
 
 				// 파일 데이터를 서버에서 가져옴
 				const fileData = await skapi.getFile(file.url, {
@@ -667,11 +641,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 				additionalFormData.append('additional_data', fileObject);
 			}
 		}
-		// console.log('BB == uploadedFile.value : ', uploadedFile.value);
-
-		// for (const x of additionalFormData.entries()) {
-		// 	console.log(x);
-		// };
 
         const options = {
             readonly: true, // 결재 올리면 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
@@ -693,7 +662,6 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
         };
 
         const res = await skapi.postRecord(additionalFormData, options);
-		console.log('=== postAuditDoc === res : ', res);
 
         return res;
     } catch (error) {
@@ -710,7 +678,7 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 };
 
 // 결재 요청을 생성하고 알림을 보내는 함수
-const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors, roleInfo.role) => {
+const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, send_auditors) => {
     if (!audit_id || !auditor_id) return;
 
 	// 결재 요청
@@ -718,24 +686,24 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors, roleI
         {
             audit_id,
             auditor: auditor_id,
+			audit_title,
         },
         {
             unique_id: `audit_request:${audit_id}:${auditor_id}`,
             readonly: true,
             table: {
-                name: "audit_request",
+                name: `audit_request_${role}`,
                 access_group: "authorized",
             },
             reference: `audit:${auditor_id}`,
             tags: [audit_id],
 			index: {
-				name: 'type',
-				// value: 'agreer' | 'approver' | 'receiver',
-				value: roleInfo.role,
-			},
+				name: 'audit_title',
+				value: audit_title.replaceAll(".", "_"),
+			}
         }
     );
-	console.log('=== createAuditRequest === res : ', res);
+	// console.log('=== createAuditRequest === res : ', res);
 
     skapi.grantPrivateRecordAccess({
         record_id: res.record_id,
@@ -816,18 +784,21 @@ const createAuditRequest = async ({ audit_id, auditor_id }, send_auditors, roleI
 };
 
 // 결재 요청 Alarm
-const postAuditDocRecordId = async (auditId, userId ) => {
+const postAuditDocRecordId = async (auditId, auditTitle, userId, role) => {
     try {
         // 권한 부여
         await grantAuditorAccess({
             audit_id: auditId,
-            auditor_id: userId
+            auditor_id: userId,
+			audit_title: auditTitle
         });
 
 		// 알림 전송
 		return createAuditRequest({
             audit_id: auditId,
-            auditor_id: userId
+            auditor_id: userId,
+			role: role,
+			audit_title: auditTitle
         }, send_auditors_arr);
     } catch (error) {
         console.error(error);
@@ -879,9 +850,9 @@ const requestAudit = async (e) => {
             // roles: getAllSelectedUserIds() // ID 목록만 전달
 			reject_setting: rejectSetting.value, // 반려 설정 관련 체크박스 값 전달
         });
-		console.log('=== requestAudit === auditDoc : ', auditDoc);
 
-        const auditId = auditDoc.record_id;
+        const auditId = auditDoc.record_id; // 결재 문서 ID
+		const auditTitle = to_audit; // 결재 제목
 
         // 각 역할별 권한 부여 및 알림 전송
         const processRoles = [
@@ -908,7 +879,7 @@ const requestAudit = async (e) => {
 		];
 
 		const res = await Promise.all(processRoles.map(roleInfo => 
-			postAuditDocRecordId(auditId, roleInfo.userId)
+			postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
 		));
 
 		// 결재라인 select option '결재'로 초기화
@@ -937,8 +908,6 @@ const requestAudit = async (e) => {
 
 // 기존 결재 양식 저장 (마스터가 저장한 결재 양식)
 const saveDocForm = async () => {
-	console.log('결재 양식 저장');
-
 	try {
 		// 첨부파일 업로드
         const filebox = document.querySelector('input[name="additional_data"]');
@@ -957,7 +926,7 @@ const saveDocForm = async () => {
 
 		if(uploadedFile.value.length) {
 			for (const file of uploadedFile.value) {
-				console.log('Processing file:', file);
+				// console.log('Processing file:', file);
 
 				// 파일 데이터를 서버에서 가져옴
 				const fileData = await skapi.getFile(file.url, {
@@ -987,7 +956,6 @@ const saveDocForm = async () => {
 		};
 	
 		const res = await skapi.postRecord(formData, options);
-		console.log('=== saveDocForm === res : ', res);
 
 		alert('결재 양식이 저장되었습니다.');
 		router.push('/admin/list-form');
@@ -998,8 +966,6 @@ const saveDocForm = async () => {
 
 // 내 결재 양식 저장
 const saveMyDocForm = async () => {
-	console.log('본인 결재 양식 저장');
-
 	// 결재 제목이 없을 경우 저장 불가
 	if (!auditTitle.value) {
 		alert('결재 제목을 입력해주세요.');
@@ -1048,7 +1014,7 @@ const saveMyDocForm = async () => {
 
 		if(uploadedFile.value.length) {
 			for (const file of uploadedFile.value) {
-				console.log('Processing file:', file);
+				// console.log('Processing file:', file);
 
 				// 파일 데이터를 서버에서 가져옴
 				const fileData = await skapi.getFile(file.url, {
@@ -1078,7 +1044,6 @@ const saveMyDocForm = async () => {
 		};
 	
 		const res = await skapi.postRecord(formData, options);
-		console.log('=== saveMyDocForm === res : ', res);
 
 		alert('결재 양식이 저장되었습니다.');
 	} catch (error) {
@@ -1097,10 +1062,7 @@ const getDocForm = async () => {
 			},
 		});
 
-		for(let l of res.list) {
-			masterForms.value[l.record_id] = l;
-		}
-
+		masterForms.value = res.list || [];
 		return res;
 	} catch (error) {
 		console.error('결재 양식 가져오기 중 오류 발생: ', error);
@@ -1116,11 +1078,8 @@ const getMyDocForm = async () => {
 				access_group: 'private'
 			}
 		});
-		
-		for(let l of res.list) {
-			myForms.value[l.record_id] = l;
-		}
 
+		myForms.value = res.list || [];
 		return res;
 	} catch (error) {
 		console.error('결재 양식 가져오기 중 오류 발생: ', error);
@@ -1128,67 +1087,78 @@ const getMyDocForm = async () => {
 }
 
 // 결재자 정보 변환 함수
-const convertAuditorFormat = (auditors) => {
-  return auditors.map(auditor => ({
-    data: { user_id: auditor.user_id },
-    index: {
-      value: auditor.name,
-      name: `${auditor.division}.${auditor.position}`
-    }
-  }));
+const convertAuditorFormat = (auditors, role) => {
+	console.log('auditors : ', auditors);
+	return auditors.map(auditor => ({
+		data: { user_id: auditor.user_id },
+		index: {
+			value: auditor.name,
+			name: `${auditor.division}.${auditor.position}`
+		},
+		role: role,
+	}));
 };
 
 // 결재 양식 선택
 const selDocForm = async (e) => {
-	selectedForm.value = masterForms.value[e.target.value] || myForms.value[e.target.value];
-	console.log('selectedForm : ', selectedForm.value);
-	// step.value = 2;
-	isFormSelected.value = true;
+	// 선택된 record_id로 양식 찾기 
+	let selectedFormId = e.target.value;
 
-	auditTitle.value = selectedForm.value.data.form_title;
-	editorContent.value = selectedForm.value.data.form_content;
-	
-	// 결재자
-	if (selectedForm.value.data.auditors) {
-		const auditors = JSON.parse(selectedForm.value.data.auditors);
+	// 카테고리에 따라 적절한 목록에서 양식 찾기
+	if (formCategory.value === 'master') {
+		selectedForm.value = masterForms.value.find(form => form.record_id === selectedFormId);
+	} else if (formCategory.value === 'mine') {
+		selectedForm.value = myForms.value.find(form => form.record_id === selectedFormId);
+	}	
 
-		if (auditors) {
+	isFormSelected.value = !!selectedForm.value;
+
+	// 선택된 양식이 있으면 데이터 채우기
+	if (selectedForm.value) {
+		auditTitle.value = selectedForm.value.data.form_title;
+		editorContent.value = selectedForm.value.data.form_content;
+		
+		// 결재자
+		if (selectedForm.value.data.auditors) {
+			const auditors = JSON.parse(selectedForm.value.data.auditors);
+
+			if (auditors) {
+				selectedAuditors.value = {
+					approvers: convertAuditorFormat(auditors.approvers || [], 'approvers'),
+					agreers: convertAuditorFormat(auditors.agreers || [], 'agreers'),
+					receivers: convertAuditorFormat(auditors.receivers || [], 'receivers')
+				};
+			}
+		} else {
 			selectedAuditors.value = {
-				approvers: convertAuditorFormat(auditors.approvers || []),
-				agreers: convertAuditorFormat(auditors.agreers || []),
-				receivers: convertAuditorFormat(auditors.receivers || [])
+				approvers: [],
+				agreers: [],
+				receivers: []
 			};
 		}
-	} else {
-		selectedAuditors.value = {
-			approvers: [],
-			agreers: [],
-			receivers: []
-		};
-	}
 
-	// 추가 행 데이터
-	if (selectedForm.value.data.custom_rows) {
-		addRows.value = JSON.parse(selectedForm.value.data.custom_rows);
-	} else {
-		addRows.value = [];
-	}
+		// 추가 행 데이터
+		if (selectedForm.value.data.custom_rows) {
+			addRows.value = JSON.parse(selectedForm.value.data.custom_rows);
+		} else {
+			addRows.value = [];
+		}
 
-    // 첨부파일이 있는 경우
-    if (selectedForm.value.bin.form_data) {
-        uploadedFile.value = selectedForm.value.bin.form_data;
-		console.log('=== selDocForm === uploadedFile.value : ', uploadedFile.value);
-    } else {
-		uploadedFile.value = [];
-		fileNames.value = [];
-	}
+		// 첨부파일이 있는 경우
+		if (selectedForm.value.bin.form_data) {
+			uploadedFile.value = selectedForm.value.bin.form_data;
+		} else {
+			uploadedFile.value = [];
+			fileNames.value = [];
+		}
 
-	// 체크박스 설정 불러오기
-    if (selectedForm.value.data.reject_setting !== undefined) {
-        rejectSetting.value = selectedForm.value.data.reject_setting === 'true' || selectedForm.value.data.reject_setting === true;
-    } else {
-        rejectSetting.value = true;
-    }
+		// 체크박스 설정 불러오기
+		if (selectedForm.value.data.reject_setting !== undefined) {
+			rejectSetting.value = selectedForm.value.data.reject_setting === 'true' || selectedForm.value.data.reject_setting === true;
+		} else {
+			rejectSetting.value = true;
+		}
+	}
 }
 
 // 새로운 결재 양식 작성
