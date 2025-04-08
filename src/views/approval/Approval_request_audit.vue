@@ -181,7 +181,7 @@ template(v-if="step === 2 || isTemplateMode")
 									th.essential 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
-											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content")
+											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content" :showBtn="true")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -1006,6 +1006,31 @@ const postAuditDocRecordId = async (
   }
 };
 
+const removeButtonTags = (content) => {
+  if (!content) return '';
+
+  // 임시 DOM 요소 생성
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = content;
+
+  // 버튼 요소들 선택
+  const buttons = tempDiv.querySelectorAll('button');
+
+  // 버튼 요소들 제거
+  buttons.forEach((button) => {
+    button.remove();
+  });
+
+  // 컨트롤 버튼 그룹 요소 제거 (btn-control-wrap 클래스를 가진 요소)
+  const controlWraps = tempDiv.querySelectorAll('.btn-control-wrap');
+  controlWraps.forEach((wrap) => {
+    wrap.remove();
+  });
+
+  // 변경된 HTML 반환
+  return tempDiv.innerHTML;
+};
+
 // 결재 요청
 const requestAudit = async (e) => {
   e.preventDefault();
@@ -1018,7 +1043,7 @@ const requestAudit = async (e) => {
 
   try {
     const formData = new FormData(e.target);
-    formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
+    formData.set('inp_content', removeButtonTags(editorContent.value)); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
 
     const formValues = Object.fromEntries(formData.entries());

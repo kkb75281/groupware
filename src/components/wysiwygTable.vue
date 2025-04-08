@@ -1,20 +1,20 @@
 <template lang="pug">
 .wysiwyg-table-wrapper
-    .table-controls
-        button.control-btn(type="button" @click="addRow") 행 추가
-        button.control-btn(type="button" @click="removeRow") 행 삭제
-        button.control-btn(type="button" @click="addColumn") 열 추가
-        button.control-btn(type="button" @click="removeColumn") 열 삭제
+  .table-controls
+    button.control-btn(type="button" @click="addRow") 행 추가
+    button.control-btn(type="button" @click="removeRow") 행 삭제
+    button.control-btn(type="button" @click="addColumn") 열 추가
+    button.control-btn(type="button" @click="removeColumn") 열 삭제
     
-    table.wysiwyg-table
-        tbody
-            tr(v-for="rowIndex in Number(rows)" :key="`row-${rowIndex}`")
-                td(v-for="colIndex in Number(cols)" :key="`${rowIndex}-${colIndex}`" contenteditable="true") 
+  table.wysiwyg-table
+    tbody
+      tr(v-for="rowIndex in Number(rows)" :key="`row-${rowIndex}`")
+        td(v-for="colIndex in Number(cols)" :key="`${rowIndex}-${colIndex}`" contenteditable="true") 
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue';
-import { createTable, loadWysiwygTable } from '@/components/wysiwygTable';
+import { ref, onMounted, watch } from 'vue';
+import { insertTableToWysiwyg } from '@/components/wysiwygTable';
 
 const props = defineProps({
   col: {
@@ -35,43 +35,38 @@ const cols = ref(Number(props.col) || 3);
 watch(
   () => props.row,
   (newVal) => {
-    console.log('newVal : ', newVal);
     rows.value = Number(newVal) || 3;
-    console.log('변경된 rows : ', rows.value);
   }
 );
 
 watch(
   () => props.col,
   (newVal) => {
-    console.log('Column prop changed:', newVal);
     cols.value = Number(newVal) || 3;
   }
 );
 
-const addRow = async () => {
-  //   rows.value = Number(rows.value) + 1;
-  //   await nextTick();
-  console.log('행 추가 버튼 클릭');
+const addRow = () => {
+  rows.value = Number(rows.value) + 1;
+
+  if (currentTable && typeof currentTable.addRow === 'function') {
+    currentTable.addRow();
+  }
 };
 
-const removeRow = async () => {
-  //   if (Number(rows.value) > 1) {
-  //     rows.value = Number(rows.value) - 1;
-  //     await nextTick();
-  //   }
-  console.log('행 삭제 버튼 클릭');
+const removeRow = () => {
+  if (Number(rows.value) > 1) {
+    rows.value = Number(rows.value) - 1;
+  }
 };
 
-const addColumn = async () => {
+const addColumn = () => {
   cols.value = Number(cols.value) + 1;
-  await nextTick();
 };
 
-const removeColumn = async () => {
+const removeColumn = () => {
   if (Number(cols.value) > 1) {
     cols.value = Number(cols.value) - 1;
-    await nextTick();
   }
 };
 

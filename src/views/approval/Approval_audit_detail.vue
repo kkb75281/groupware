@@ -101,7 +101,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 							tr
 								th 결재 내용
 								td.left(colspan="3")
-									._wysiwyg4all(v-html="auditDoContent?.data?.to_audit_content")
+									._wysiwyg4all(v-html="disableContentEditable(auditDoContent?.data?.to_audit_content)")
+									
 
 							tr
 								th 첨부 파일
@@ -215,6 +216,7 @@ import {
 
 import Loading from '@/components/loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
+import Wysiwyg from '@/components/wysiwyg.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -242,6 +244,10 @@ const isCanceled = ref(false); // 결재 회수 여부
 const getAuditDetailRunning = ref(false);
 const customRows = ref([]);
 const rejectSetting = ref(true); // 반려 설정 관련 체크박스
+
+// 에디터 상태 관리
+const editorContent = ref('');
+const editorIsReady = ref(false);
 
 // 반려됨 상태 확인
 const isRejected = computed(() => {
@@ -360,6 +366,32 @@ const closeModal = () => {
   isModalOpen.value = false;
   isStampModalOpen.value = false;
   document.body.classList.remove('modal-open');
+};
+
+function disableContentEditable(htmlString) {
+  // 임시 div 생성
+  const tempDiv = document.createElement('div');
+
+  // HTML 문자열 삽입
+  tempDiv.innerHTML = htmlString;
+
+  // 모든 contenteditable="true" 태그 찾아 false로 변경
+  tempDiv.querySelectorAll('[contenteditable="true"]').forEach((el) => {
+    el.setAttribute('contenteditable', 'false');
+  });
+
+  // 변경된 HTML 문자열 반환
+  return tempDiv.innerHTML;
+}
+
+// 에디터 준비
+const handleEditorReady = (status) => {
+  editorIsReady.value = status;
+};
+
+// 에디터 내보내기
+const exportWysiwygData = (content) => {
+  editorContent.value = content;
 };
 
 const goToPrev = () => {
