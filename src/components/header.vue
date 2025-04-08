@@ -99,7 +99,7 @@ header#header
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-home")
 					p 홈
 
-			li
+			//- li
 				router-link.router(to="/approval" @click="closePopup")
 					.icon
 						svg
@@ -120,14 +120,14 @@ header#header
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
 					p 마스터 페이지
 
-			li(v-if="user.access_group < 99")
+			//- li(v-if="user.access_group < 99")
 				router-link.router(to="/list-employee" @click="closePopup")
 					.icon
 						svg
 							use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
 					p 직원 목록
 			
-			li
+			//- li
 				router-link.router(to="/organigram" @click="closePopup")
 					.icon
 						svg
