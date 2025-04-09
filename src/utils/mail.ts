@@ -150,20 +150,22 @@ function convertToTimestamp(dateTimeString: any) {
   return timestamp;
 }
 
-function openGmailAppOrWeb(link: string | null, show = false) {
+function openGmailAppOrWeb(link: string | null, messageId?: string | null) {
 	const googleAccountCheck = !!localStorage.getItem('accessToken'); // Google 계정 로그인 여부 확인
 	const encodedEmail = googleAccountCheck ? encodeURIComponent(user.email) : '';
   
 	// Gmail 앱 딥 링크 및 웹 URL 생성
-	const getGmailUrls = (link: string | null, show: boolean) => {
+	const getGmailUrls = (link: string | null, messageId?: string | null) => {
 	  let gmailAppUrlIOS = '';
 	  let gmailAppUrlAndroid = '';
 	  let gmailWebUrl = '';
   
 	  if (link) {
-		if (show) {
+		if (messageId) {
 		  // 특정 메일 보기 (웹 버전으로 폴백)
-		  gmailWebUrl = link;
+		  gmailWebUrl = googleAccountCheck
+          ? `https://mail.google.com/mail/u/${encodedEmail}/#inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
+          : `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(messageId)}`;
 		} else {
 		  // 특정 이메일 주소로 메일 작성
 		  gmailAppUrlIOS = `googlegmail://co?to=${encodeURIComponent(link)}`;

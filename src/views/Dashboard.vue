@@ -157,7 +157,7 @@ function googleLogin() {
 let showMailDoc = (e, rt) => {
 	console.log('rt', rt);
 	console.log('mailList', mailList.value);
-	openGmailAppOrWeb(rt.link, true);
+	openGmailAppOrWeb(rt.link, rt.id);
 	// window.open(rt.link, "_blank");
 	// readNoti(rt);
 }
