@@ -111,6 +111,9 @@ fetch('/version.json')
     .then((data) => {
         currentVersion = data.version;
         console.log('[Main] Current Service Worker Version:', currentVersion);
+    })
+    .catch((error) => {
+        console.error('Error fetching version.json:', error);
     });
 
 if ('serviceWorker' in navigator) {
@@ -155,16 +158,11 @@ if ('serviceWorker' in navigator) {
             console.log('[Main] New Service Worker Found');
 
             // 새로운 서비스 워커 감지
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                console.log('[Main] New Service Worker Found');
-
-                newWorker?.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed') {
-                        console.log('[Main] New Service Worker Installed and Waiting');
-                        newWorker.postMessage({ type: 'CHECK_VERSION' }); // 새 버전 확인 요청
-                    }
-                });
+            newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed') {
+                    console.log('[Main] New Service Worker Installed and Waiting');
+                    newWorker.postMessage({ type: 'CHECK_VERSION' }); // 새 버전 확인 요청
+                }
             });
 
             // newWorker.addEventListener('statechange', () => {
