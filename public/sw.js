@@ -1,9 +1,9 @@
-const CACHE_NAME = 'fg-works-cache-v23'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v24'; // 버전 번호를 포함한 캐시 이름
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installed');
-    event.waitUntil(self.skipWaiting()); // 즉시 활성화
+    // event.waitUntil(self.skipWaiting()); // 즉시 활성화
 	// event.waitUntil(
     //     caches.open(CACHE_NAME).then((cache) => {
     //         return cache.addAll([
