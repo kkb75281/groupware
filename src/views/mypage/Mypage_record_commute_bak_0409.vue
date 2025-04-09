@@ -58,14 +58,8 @@ hr
 											td.end-time {{ extractTimeFromDateTime(record.data.endTime) }}
 											td.work-time {{ record.data.dailyCommuteTime }}
 											td.remark
-												.remark-wrap(style="display: flex; gap: 0.5rem;")
-														.input-wrap
-																input(type="text" placeholder="입력해주세요." v-model="record.data.remark")
-
-														// 비고란 수정, 저장 버튼
-														.btn-wrap
-																button.btn.sm.bg-gray(@click="editDesc(record)") 수정
-																button.btn.sm.bg-gray(@click="saveDesc(record)") 저장
+												.input-wrap
+													input(type="text" v-model="record.data.remark" @blur="updateDesc(record)")
 
 //- 테스트용 삭제 버튼 (추후 삭제)
 //- button.btn.sm(@click="testDelete") delete
@@ -533,53 +527,48 @@ const endWork = async () => {
 
 let totalWorkTimeMs = 0; // 총 근무시간
 
-// 비고란 수정
-const editDesc = (record) => {
-  console.log('비고란 수정');
+// 비고란 작성 내용 업데이트
+let timeoutId;
+
+const updateDesc = async (record) => {
+  console.log('=== updateDesc === record : ', record);
+
+  try {
+    const values = {
+      ...record.data,
+      remark: record.data.remark
+    };
+
+    const config = {
+      record_id: record.record_id
+    };
+
+    await skapi.postRecord(values, config).then((res) => {
+      console.log('=== updateDesc === res : ', res);
+    });
+
+    // 상태 업데이트
+    const updatedRecord = {
+      record_id: record.record_id,
+      data: values
+    };
+    console.log('updateRecord : ', updatedRecord);
+  } catch (error) {
+    alert('비고 내용 저장에 실패했습니다.');
+    console.error(error);
+  }
 };
 
-// 비고란 작성 내용 업데이트
-// let timeoutId;
+// 1200ms마다 한 번씩만 실행되도록 설정
+function autoUpdateDesc(record) {
+  // 이전 타이머가 있다면 제거
+  if (timeoutId) window.clearTimeout(timeoutId);
 
-// const updateDesc = async (record) => {
-//   console.log('=== updateDesc === record : ', record);
-
-//   try {
-//     const values = {
-//       ...record.data,
-//       remark: record.data.remark
-//     };
-
-//     const config = {
-//       record_id: record.record_id
-//     };
-
-//     await skapi.postRecord(values, config).then((res) => {
-//       console.log('=== updateDesc === res : ', res);
-//     });
-
-//     // 상태 업데이트
-//     const updatedRecord = {
-//       record_id: record.record_id,
-//       data: values
-//     };
-//     console.log('updateRecord : ', updatedRecord);
-//   } catch (error) {
-//     alert('비고 내용 저장에 실패했습니다.');
-//     console.error(error);
-//   }
-// };
-
-// // 1200ms마다 한 번씩만 실행되도록 설정
-// function autoUpdateDesc(record) {
-//   // 이전 타이머가 있다면 제거
-//   if (timeoutId) window.clearTimeout(timeoutId);
-
-//   // 새로운 타이머 설정
-//   timeoutId = window.setTimeout(() => {
-//     updateDesc(record);
-//   }, 1200);
-// }
+  // 새로운 타이머 설정
+  timeoutId = window.setTimeout(() => {
+    updateDesc(record);
+  }, 1200);
+}
 
 // 출퇴근 기록 조회
 const fetchCommuteRecords = async (userId = null, options = {}) => {
