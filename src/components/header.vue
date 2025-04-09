@@ -145,12 +145,12 @@ header#header
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, watch } from 'vue';
-import { user, profileImage } from '@/user';
-import { skapi, resetBadgeCount } from '@/main';
-import { toggleOpen } from '@/components/navbar';
-import { realtimes, readList, unreadCount, readNoti, unreadEmailNotiMsg } from '@/notifications';
-import { openGmailAppOrWeb } from '@/utils/mail';
-import { goToAuditDetail } from '@/audit';
+import { user, profileImage } from '@/user.ts';
+import { skapi, resetBadgeCount } from '@/main.ts';
+import { toggleOpen } from '@/components/navbar.ts';
+import { realtimes, readList, unreadCount, readNoti, unreadEmailNotiMsg } from '@/notifications.ts';
+import { openGmailAppOrWeb } from '@/utils/mail.ts';
+import { goToAuditDetail } from '@/audit.ts';
 
 const router = useRouter();
 const route = useRoute();

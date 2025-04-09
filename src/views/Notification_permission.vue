@@ -10,7 +10,7 @@
 		button.btn(@click="subscribeNotification") Subscribe
 </template>
 <script setup>
-import { subscribeNotification } from "@/notifications";
+import { subscribeNotification } from "@/notifications.ts";
 </script>
 <style scoped lang="less">
 .notiPermission {

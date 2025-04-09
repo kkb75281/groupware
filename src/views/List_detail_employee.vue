@@ -122,11 +122,11 @@ br
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, nextTick } from 'vue';
-import { skapi, mainPageLoading } from '@/main';
-import { user, makeSafe } from '@/user';
-import { divisionNameList, getDivisionNames } from '@/division'
-import { getEmpDivisionPosition, getUsers, employeeDict } from '@/employee';
-import { openGmailAppOrWeb } from '@/utils/mail';
+import { skapi, mainPageLoading } from '@/main.ts';
+import { user, makeSafe } from '@/user.ts';
+import { divisionNameList, getDivisionNames } from '@/division.ts'
+import { getEmpDivisionPosition, getUsers, employeeDict } from '@/employee.ts';
+import { openGmailAppOrWeb } from '@/utils/mail.ts';
 
 const router = useRouter();
 const route = useRoute();

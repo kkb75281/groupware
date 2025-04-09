@@ -1,8 +1,8 @@
 import { type Ref, ref } from 'vue';
-import { skapi } from '@/main';
-import { user } from '@/user';
-import { getUserInfo } from '@/employee';
-import { divisions, divisionNameList, getDivisionData, getDivisionDataRunning, getDivisionNamesRunning } from '@/division';
+import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
+import { getUserInfo } from '@/employee.ts';
+import { divisions, divisionNameList, getDivisionData, getDivisionDataRunning, getDivisionNamesRunning } from '@/division.ts';
 
 export type Organigram = {
   division: string | null;

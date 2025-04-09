@@ -1,5 +1,5 @@
-import { refreshAccessToken } from '../main';
-import { user } from '../user';
+import { refreshAccessToken } from '../main.ts';
+import { user } from '../user.ts';
 
 async function fetchGmailEmails(accessToken: any) {
   if (!accessToken) {

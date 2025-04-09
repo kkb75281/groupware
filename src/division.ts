@@ -1,6 +1,6 @@
 import { ref, watch, type Ref } from 'vue';
-import { skapi } from './main';
-import { user } from './user';
+import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
 
 export let divisions: Ref<{ [key: string]: any }> = ref({});
 

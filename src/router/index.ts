@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { user } from '@/user';
+import { user } from '@/user.ts';
 
 import Login from '@/views/Login.vue';
 // import Change_password from '@/views/Change_password.vue';

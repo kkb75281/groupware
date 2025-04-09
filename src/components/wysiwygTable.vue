@@ -14,7 +14,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { insertTableToWysiwyg } from '@/components/wysiwygTable';
+import { insertTableToWysiwyg } from '@/components/wysiwygTable.js';
 
 const props = defineProps({
   col: {

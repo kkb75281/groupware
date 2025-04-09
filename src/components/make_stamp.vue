@@ -15,7 +15,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { openStampModal, uploadingStamp, handleStampBlob, stampName, onlyStamp } from '@/components/make_stamp';
+import { openStampModal, uploadingStamp, handleStampBlob, stampName, onlyStamp } from '@/components/make_stamp.ts';
 
 const emit = defineEmits(['close', 'save', 'upload']);
 const props = defineProps({

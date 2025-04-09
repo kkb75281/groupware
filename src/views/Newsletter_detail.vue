@@ -20,9 +20,9 @@ template(v-else)
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { skapi } from '@/main';
-import { newsletterList } from '@/notifications'
-import { convertTimestampToDateMillis } from "@/utils/time";
+import { skapi } from '@/main.ts';
+import { newsletterList } from '@/notifications.ts'
+import { convertTimestampToDateMillis } from "@/utils/time.ts";
 
 import Loading from '@/components/loading.vue';
 

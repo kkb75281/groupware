@@ -40,15 +40,16 @@ h4(style="margin-bottom: 1rem;") {{buildTime}}
 </template>
 
 <script setup>
+import { createApp } from 'vue';
 import { onMounted, ref } from "vue";
 import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications";
-import { skapi, realtimeTestingMsg, buildTime } from "@/main";
-import { user } from "@/user";
-import { getUsers } from "@/employee";
+import { skapi, realtimeTestingMsg, buildTime } from "@/main.ts";
+import { user } from "@/user.ts";
+import { getUsers } from "@/employee.ts";
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
-import { createApp } from 'vue';
 import wysiwygTable from '@/components/wysiwygTable.vue';
+
 let emps = ref([]);
 let subsState = ref(false);
 let pushNotificationBody = {

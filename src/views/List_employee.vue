@@ -238,10 +238,10 @@ br
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
-import { skapi } from '@/main';
-import { user, makeSafe } from '@/user';
-import { divisionNameList } from '@/division'
-import { getEmpDivisionPosition, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee';
+import { skapi } from '@/main.ts';
+import { user, makeSafe } from '@/user.ts';
+import { divisionNameList } from '@/division.ts'
+import { getEmpDivisionPosition, getUsers, getInvitations, getUserCache, getInvitationsCache } from '@/employee.ts';
 
 import Loading from '@/components/loading.vue';
 

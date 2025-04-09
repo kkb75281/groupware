@@ -34,10 +34,10 @@ h4(style="margin-bottom: 1rem;") {{buildTime}}
 
 <script setup>
 import { onMounted, ref } from "vue";
-import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications";
-import { skapi, realtimeTestingMsg, buildTime } from "@/main";
-import { user } from "@/user";
-import { getUsers } from "@/employee";
+import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications.ts";
+import { skapi, realtimeTestingMsg, buildTime } from "@/main.ts";
+import { user } from "@/user.ts";
+import { getUsers } from "@/employee.ts";
 
 let emps = ref([]);
 let subsState = ref(false);

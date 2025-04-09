@@ -1,6 +1,6 @@
 import { Reactive, reactive } from 'vue';
-import { skapi } from './main';
-import { makeSafe } from './user';
+import { skapi } from '@/main.ts';
+import { makeSafe } from '@/user.ts';
 export const employeeDict: Reactive<{ [user_id: string]: any }> = reactive({}); // 사용자정보 저장소 (직급, 부서 정보 포함)
 
 export const empInfo: { // 사용자 직급, 부서 정보 저장소

@@ -17,7 +17,7 @@ Organigram(:useCheckbox="false" :excludeCurrentUser="false")
 
 <script setup>
 import { ref } from 'vue';
-import { organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram'
+import { organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram.ts'
 
 import Organigram from '@/components/organigram.vue';
 

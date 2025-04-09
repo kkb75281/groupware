@@ -128,9 +128,9 @@ hr
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted, onUnmounted } from "vue";
-import { skapi, mainPageLoading } from "@/main";
-import { user, profileImage, verifiedEmail } from "@/user";
-import { divisionNameList } from "@/division";
+import { skapi, mainPageLoading } from "@/main.ts";
+import { user, profileImage, verifiedEmail } from "@/user.ts";
+import { divisionNameList } from "@/division.ts";
 import {
 	openCropModal,
 	croppedImages,
@@ -140,11 +140,11 @@ import {
 	openCropImageDialog,
 	closeCropImageDialog,
 	setCroppedImage,
-} from "@/components/crop_image";
+} from "@/components/crop_image.ts";
+import { Countries } from '@/components/countries.ts';
 
 import CropImage from "@/components/crop_image.vue";
 import Locale from '@/components/locale.vue';
-import { Countries } from '@/components/countries';
 
 const router = useRouter();
 const route = useRoute();

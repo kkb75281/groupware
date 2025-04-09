@@ -81,7 +81,7 @@ hr
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { ref, computed, onMounted } from "vue";
-import { skapi } from "@/main";
+import { skapi } from "@/main.ts";
 import Loading from "@/components/loading.vue";
 
 const router = useRouter();

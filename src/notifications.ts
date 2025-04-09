@@ -1,8 +1,8 @@
 import { type Reactive, reactive, type Ref, ref, watch } from 'vue';
-import { skapi } from '@/main';
-import { user } from '@/user';
-import { getUserInfo } from '@/employee';
-import { fetchGmailEmails } from '@/utils/mail';
+import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
+import { getUserInfo } from '@/employee.ts';
+import { fetchGmailEmails } from '@/utils/mail.ts';
 
 export const notifications: Reactive<{
   messages: { fromUserId: string; msg: any }[];

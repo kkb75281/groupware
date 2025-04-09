@@ -56,11 +56,11 @@ hr
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { newsletterList, getNewsletterList } from '@/notifications'
-import { convertTimestampToDateMillis } from "@/utils/time";
-import { openGmailAppOrWeb } from '@/utils/mail';
-import { skapi } from '@/main';
-import { user } from '@/user';
+import { newsletterList, getNewsletterList } from '@/notifications.ts'
+import { convertTimestampToDateMillis } from "@/utils/time.ts";
+import { openGmailAppOrWeb } from '@/utils/mail.ts';
+import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
 
 import Loading from '@/components/loading.vue';
 

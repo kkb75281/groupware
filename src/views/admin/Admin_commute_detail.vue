@@ -62,9 +62,9 @@ hr
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted } from "vue";
-import { skapi } from "@/main";
-import { user, makeSafe } from '@/user';
-import { extractTimeFromDateTime } from "@/utils/time";
+import { skapi } from "@/main.ts";
+import { user, makeSafe } from '@/user.ts';
+import { extractTimeFromDateTime } from "@/utils/time.ts";
 
 import Loading from "@/components/loading.vue";
 

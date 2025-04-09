@@ -80,8 +80,8 @@ hr
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
-import { skapi } from '@/main';
-import { user, makeSafe } from '@/user';
+import { skapi } from '@/main.ts';
+import { user, makeSafe } from '@/user.ts';
 import {
   auditList,
   auditListRunning,
@@ -90,11 +90,11 @@ import {
   getAuditList,
   getAuditReferenceList,
   goToAuditDetail
-} from '@/audit';
-import { readList, realtimes, readNoti } from '@/notifications';
+} from '@/audit.ts';
+import { readList, realtimes, readNoti } from '@/notifications.ts';
 
 import Loading from '@/components/loading.vue';
-import Pager from '@/components/pager';
+import Pager from '@/components/pager.ts';
 
 const router = useRouter();
 const route = useRoute();

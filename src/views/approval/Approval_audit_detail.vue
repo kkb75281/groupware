@@ -200,11 +200,11 @@ Loading#loading(v-if="getAuditDetailRunning")
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
-import { skapi, RealtimeCallback } from '@/main';
-import { user, makeSafe } from '@/user';
-import { getUserInfo } from '@/employee';
-import { auditList } from '@/audit';
-import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp';
+import { skapi, RealtimeCallback } from '@/main.ts';
+import { user, makeSafe } from '@/user.ts';
+import { getUserInfo } from '@/employee.ts';
+import { auditList } from '@/audit.ts';
+import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp.ts';
 import {
   openStampModal,
   closeStampDialog,

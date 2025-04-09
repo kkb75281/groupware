@@ -121,10 +121,10 @@ ul.card-wrap
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
-import { user } from "@/user";
-import { convertTimestampToDateMillis } from "@/utils/time";
-import { openGmailAppOrWeb } from '@/utils/mail';
-import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications";
+import { user } from "@/user.ts";
+import { convertTimestampToDateMillis } from "@/utils/time.ts";
+import { openGmailAppOrWeb } from '@/utils/mail.ts';
+import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications.ts";
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();

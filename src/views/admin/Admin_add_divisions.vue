@@ -128,11 +128,11 @@ CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCropped
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted } from 'vue';
-import { skapi, mainPageLoading } from '@/main';
-import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
-import { getDivisionNames, divisionNameList } from '@/division';
-import { divisions } from '@/division';
-import { makeSafe } from '@/user';
+import { skapi, mainPageLoading } from '@/main.ts';
+import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image.ts';
+import { getDivisionNames, divisionNameList } from '@/division.ts';
+import { divisions } from '@/division.ts';
+import { makeSafe } from '@/user.ts';
 
 import CropImage from '@/components/crop_image.vue';
 

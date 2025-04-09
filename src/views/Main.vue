@@ -10,7 +10,7 @@ main#main
 <script setup>
 import { watch, ref, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { mainPageLoading } from '@/main'
+import { mainPageLoading } from '@/main.ts'
 
 import Header from '@/components/header.vue';
 import Navbar from '@/components/navbar.vue';

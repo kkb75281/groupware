@@ -2,7 +2,7 @@ import './assets/less/main.less';
 
 import { createApp, ref } from 'vue';
 import { Skapi } from 'skapi-js';
-import { user, profileImage } from './user';
+import { user, profileImage } from './user.ts';
 import App from './App.vue';
 import router from './router';
 import {
@@ -14,9 +14,9 @@ import {
   subscribeNotification,
   unsubscribeNotification,
   unreadEmailNotiMsg
-} from './notifications';
-import { getUserInfo, employeeDict, getEmpDivisionPosition } from './employee';
-import { getAuditList } from './audit';
+} from './notifications.ts';
+import { getUserInfo, employeeDict, getEmpDivisionPosition } from './employee.ts';
+import { getAuditList } from './audit.ts';
 
 const app = createApp(App);
 

@@ -15,7 +15,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { skapi } from '@/main';
+import { skapi } from '@/main.ts';
 
 const router = useRouter();
 const route = useRoute();

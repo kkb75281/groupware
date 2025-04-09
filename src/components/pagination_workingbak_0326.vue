@@ -14,7 +14,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { skapi } from '@/main';
+import { skapi } from '@/main.ts';
 
 const props = defineProps({
   totalItems: Number, // 총 아이템 개수

@@ -68,7 +68,7 @@ hr
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, watch } from 'vue';
-import { skapi } from '@/main';
+import { skapi } from '@/main.ts';
 import {
   getDate,
   getTime,
@@ -77,8 +77,8 @@ import {
   addTimeToTimestamp,
   extractTimeFromDateTime,
   convertMsToTime
-} from '@/utils/time';
-import { user, makeSafe } from '@/user';
+} from '@/utils/time.ts';
+import { user, makeSafe } from '@/user.ts';
 // import { divisionNameList } from '@/division';
 // import type { Ref } from 'vue';
 

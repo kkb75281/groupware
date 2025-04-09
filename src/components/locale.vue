@@ -6,7 +6,7 @@
             .name {{ key }} - {{ c.name }} ({{ c.dial_code }})
 </template>
 <script setup>
-import { Countries } from '@/components/countries';
+import { Countries } from '@/components/countries.ts';
 import { ref, onBeforeUnmount, onMounted } from 'vue';
 
 let emit = defineEmits(['close', 'update:modelValue', 'select-country']);

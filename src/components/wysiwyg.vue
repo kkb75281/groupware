@@ -105,11 +105,10 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, nextTick, ref, computed } from 'vue';
+import { insertTableToWysiwyg } from '@/components/wysiwygTable.js';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
 import wysiwygTable from '@/components/wysiwygTable.vue';
-import { insertTableToWysiwyg } from '@/components/wysiwygTable';
-import { createApp } from 'vue';
 
 // 이벤트 emit 방식으로 에디터 내용을 실시간으로 부모 컴포넌트로 전달
 const emit = defineEmits(['update:content', 'editor-ready']);

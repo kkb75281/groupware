@@ -44,8 +44,8 @@ nav#navbar(ref="navbar")
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { watch, onMounted, onUnmounted, ref, computed } from 'vue'
-import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar'
-import { user } from '@/user'
+import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar.ts'
+import { user } from '@/user.ts'
 import MaterialIcon from '@/assets/icon/material-icon.svg'
 
 const router = useRouter();

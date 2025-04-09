@@ -1,6 +1,6 @@
 import { ref } from 'vue';
-import { skapi } from '@/main';
-import { user, makeSafe } from '@/user';
+import { skapi } from '@/main.ts';
+import { user, makeSafe } from '@/user.ts';
 
 export let uploadedStamp = ref([]);
 export let uploadedRecordId = ref(null);
