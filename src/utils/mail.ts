@@ -192,10 +192,10 @@ function openGmailAppOrWeb(link: string | null, messageId?: string | null) {
 	console.log('gmailWebUrl:', gmailWebUrl);
   
 	try {
-	  if (!show && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+	  if (!messageId && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
 		// iOS: Gmail 앱 딥 링크 호출
 		window.location.href = gmailAppUrlIOS;
-	  } else if (!show && /Android/i.test(navigator.userAgent)) {
+	  } else if (!messageId && /Android/i.test(navigator.userAgent)) {
 		// Android: Gmail 앱 딥 링크 호출 및 웹 폴백
 		const fallbackTimeout = 1000; // 1초 대기 시간
 		let appOpened = false;
