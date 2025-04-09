@@ -35,6 +35,12 @@ self.addEventListener('fetch', (event) => {
     if (event.request.url.includes('/version.json')) {
         // /version.json은 항상 네트워크에서 가져옴
         event.respondWith(fetch(event.request));
+    } else {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
+                return cachedResponse || fetch(event.request); // 캐시가 있으면 반환, 없으면 네트워크 요청
+            })
+        );
     }
 });
 
