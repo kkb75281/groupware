@@ -1,58 +1,75 @@
-const CACHE_NAME = 'fg-works-cache-v27'; // 버전 번호를 포함한 캐시 이름
-
-// // 서비스 워커 설치 및 활성화
-// self.addEventListener('install', (event) => {
-//     console.log('[Service Worker] Installed');
-//     // event.waitUntil(self.skipWaiting()); // 즉시 활성화
-// 	event.waitUntil(
-//         caches.open(CACHE_NAME).then((cache) => {
-//             return cache.addAll([
-//                 '/', // 메인 페이지
-//                 '/index.html',
-// 				'/version.json' // 버전 정보 캐싱
-//             ]);
-//         }).then(() => self.skipWaiting()) // 즉시 활성화
-//     );
-// });
-
-// self.addEventListener('activate', (event) => {
-//     console.log('[Service Worker] Activated');
-
-//     // 클라이언트 제어 권한을 즉시 가져옴
-//     event.waitUntil(self.clients.claim());
-
-// 	// 백그라운드에서 오래된 캐시 정리
-//     caches.keys().then((cacheNames) => {
-//         cacheNames.forEach((cache) => {
-//             if (!cache.startsWith('fg-works-cache-v')) {
-//                 caches.delete(cache); // 더 이상 사용되지 않는 캐시 삭제
-//             }
-//         });
-//     });
-// });
-
-// self.addEventListener('fetch', (event) => {
-//     if (event.request.url.includes('/version.json')) {
-//         // /version.json은 항상 네트워크에서 가져옴
-//         event.respondWith(fetch(event.request));
-//     } else {
-//         event.respondWith(
-//             caches.match(event.request).then((cachedResponse) => {
-//                 return cachedResponse || fetch(event.request); // 캐시가 있으면 반환, 없으면 네트워크 요청
-//             })
-//         );
-//     }
-// });
+const CACHE_NAME = 'fg-works-cache-v30'; // 버전 번호를 포함한 캐시 이름
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installed');
-    event.waitUntil(self.skipWaiting()); // 즉시 활성화
+    // event.waitUntil(self.skipWaiting()); // 즉시 활성화
+	// event.waitUntil(
+    //     caches.open(CACHE_NAME).then((cache) => {
+    //         return cache.addAll([
+    //             '/', // 메인 페이지
+    //             '/index.html',
+	// 			'/version.json' // 버전 정보 캐싱
+    //         ]);
+    //     }).then(() => self.skipWaiting()) // 즉시 활성화
+    // );
+
+	event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll([
+                '/', // 메인 페이지
+                '/index.html',
+                '/styles.css', // 스타일시트
+                '/app.js' // 애플리케이션 스크립트
+            ]);
+        })
+        // self.skipWaiting(); // 주석 처리 또는 삭제
+    );
 });
 
-    self.addEventListener('activate', (event) => {
+self.addEventListener('activate', (event) => {
     console.log('[Service Worker] Activated');
-    event.waitUntil(self.clients.claim()); // 모든 클라이언트를 제어
+
+    // 클라이언트 제어 권한을 즉시 가져옴
+    // event.waitUntil(self.clients.claim());
+
+	// 백그라운드에서 오래된 캐시 정리
+    // caches.keys().then((cacheNames) => {
+    //     cacheNames.forEach((cache) => {
+    //         if (!cache.startsWith('fg-works-cache-v')) {
+    //             caches.delete(cache); // 더 이상 사용되지 않는 캐시 삭제
+    //         }
+    //     });
+    // });
+
+	// 클라이언트 제어는 우선 처리
+    event.waitUntil(self.clients.claim());
+
+    // 캐시 정리는 비동기적으로 처리
+    caches.keys().then((cacheNames) => {
+        cacheNames.forEach((cache) => {
+            if (cache !== CACHE_NAME) {
+                console.log(`[Service Worker] Deleting old cache: ${cache}`);
+                caches.delete(cache);
+            }
+        });
+    });
+});
+
+self.addEventListener('fetch', (event) => {
+    if (event.request.url.includes('/version.json')) {
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                return caches.match(event.request); // 네트워크 요청 실패 시 캐시 사용
+            })
+        );
+    } else {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
+                return cachedResponse || fetch(event.request);
+            })
+        );
+    }
 });
 
 let badgeCount = 0; // 뱃지 숫자를 저장할 변수
