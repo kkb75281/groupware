@@ -187,7 +187,7 @@ function openGmailAppOrWeb(link: string | null, show = false) {
   if (googleAccountCheck) {
     const encodedEmail = encodeURIComponent(user.email);
 
-    if (link) {
+    if (link && !show) {
       gmailWebUrl = `https://mail.google.com/mail/u/${encodedEmail}/?view=cm&fs=1&to=${encodeURIComponent(link)}&authuser=${encodedEmail}&login_hint=${encodedEmail}`;
     } else {
       gmailWebUrl = `https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`;
