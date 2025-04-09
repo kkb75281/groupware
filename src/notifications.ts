@@ -24,8 +24,6 @@ export async function setNotificationPermission() {
 export async function checkNotificationPermission() {
   onlyUserGesture.value = false;
 
-  console.log('=== checkNotificationPermission ===', Notification);
-
   if (Notification.permission === 'granted') {
     console.log('알림이 허용되어 있습니다.');
     console.log('hererererere');
@@ -399,11 +397,8 @@ export const getNewsletterList = async (refresh = false) => {
 export async function subscribeNotification() {
   let vapid = localStorage.getItem(skapi.service + '-vapid');
 
-  console.log('=== subscribeNotification === vapid : ', vapid);
-
   if (!vapid) {
     const vapidResponse = await skapi.vapidPublicKey();
-	console.log('=== subscribeNotification === vapidResponse : ', vapidResponse);
     vapid = vapidResponse.VAPIDPublicKey;
     localStorage.setItem(skapi.service + '-vapid', vapid);
   }
@@ -433,7 +428,6 @@ export async function subscribeNotification() {
   }
 
   const permission = await checkNotificationPermission();
-  console.log('=== subscribeNotification === permission : ', permission);
 
   if (permission !== 'granted') {
     console.error('Permission not granted for notifications');
@@ -450,7 +444,6 @@ export async function subscribeNotification() {
   let serviceID = import.meta.env.VITE_SERVICE_ID;
 
   const registration = await navigator.serviceWorker.register(`/wrk.${serviceID}.js`);
-  console.log('=== subscribeNotification === registration : ', registration);
   await navigator.serviceWorker.ready;
 
   let subscription;
