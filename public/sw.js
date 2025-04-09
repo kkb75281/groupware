@@ -1,18 +1,18 @@
-const CACHE_NAME = 'fg-works-cache-v21'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v22'; // 버전 번호를 포함한 캐시 이름
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installed');
     // event.waitUntil(self.skipWaiting()); // 즉시 활성화
-	event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll([
-                '/', // 메인 페이지
-                '/index.html',
-				'/version.json' // 버전 정보 캐싱
-            ]);
-        }).then(() => self.skipWaiting()) // 즉시 활성화
-    );
+	// event.waitUntil(
+    //     caches.open(CACHE_NAME).then((cache) => {
+    //         return cache.addAll([
+    //             '/', // 메인 페이지
+    //             '/index.html',
+	// 			'/version.json' // 버전 정보 캐싱
+    //         ]);
+    //     }).then(() => self.skipWaiting()) // 즉시 활성화
+    // );
 });
 
 self.addEventListener('activate', (event) => {
