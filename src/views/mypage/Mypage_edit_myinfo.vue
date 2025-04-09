@@ -72,7 +72,7 @@ hr
 		.input-wrap.upload-stamp
 			p.label 대표 도장
 			.main-stamp
-				img#stamp-img(:src="mainStamp.url" alt="도장 이미지")
+				img#stamp-img(:src="getStampImageSrc(mainStamp)" alt="도장 이미지")
 				button.btn-select-stamp(type="button" @click="openStampListModal")
 					.icon.white
 						svg
@@ -141,7 +141,7 @@ hr
 
 				template(v-else)
 					.stamp-grid(v-for="stamp in uploadedStamp")
-						.stamp(:class="{'selected': mainStamp === stamp}")
+						.stamp(:class="{'selected': mainStamp && mainStamp === stamp.url}")
 							img#stamp-img(:src="stamp.url" alt="도장 이미지")
 							.name {{ stamp.filename }}
 							.btn-wrap
@@ -444,6 +444,26 @@ const handleCountrySelect = (country) => {
   selectedCountry.value.dialCode = country.dialCode;
 };
 
+// 도장 이미지 URL 가져오기
+const getStampImageSrc = (mainStamp) => {
+  // 레코드에서 로드된 도장인지 확인 (문자열인 경우)
+  if (typeof mainStamp === 'string') {
+    return mainStamp;
+  }
+
+  // 모달에서 선택된 도장인 경우 (객체로 url 속성을 가진 경우)
+  else if (mainStamp && mainStamp.value && mainStamp.value.url) {
+    return mainStamp.value.url;
+  }
+
+  // 객체 자체에 url 속성이 있는 경우
+  else if (mainStamp && mainStamp.url) {
+    return mainStamp.url;
+  }
+
+  return '';
+};
+
 let oldNumber = '';
 
 let registerMypage = async (e) => {
@@ -574,6 +594,42 @@ let registerMypage = async (e) => {
     });
   }
 
+  const data = mainStamp.value.url.split('?')[0];
+  console.log('data : ', data);
+
+  const config = {
+    table: {
+      name: 'main_stamp_' + makeSafe(user.user_id),
+      access_group: 1
+    }
+  };
+  console.log('config : ', config);
+
+  // 대표 도장 레코드 저장
+  if (mainStamp.value) {
+    console.log('대표도장있음 - 업데이트 :', mainStamp.value);
+
+    // 만약 대표도장이 이미 있다면 삭제 후 새로 저장
+    await skapi
+      .deleteRecords({
+        table: {
+          name: 'main_stamp_' + makeSafe(user.user_id),
+          access_group: 1
+        },
+        record_id: mainStamp.value.record_id
+      })
+      .then((res) => {
+        console.log('대표도장 삭제됨 : ', res);
+      });
+
+    const saveMainStamp = await skapi.postRecord(data, config);
+    console.log('AA == saveMainStamp : ', saveMainStamp);
+  } else {
+    console.log('대표도장없음 :', mainStamp.value);
+    const saveMainStamp = await skapi.postRecord(data, config);
+    console.log('BB == saveMainStamp : ', saveMainStamp);
+  }
+
   console.log({ e });
 
   // 프로필 정보를 업데이트
@@ -602,27 +658,11 @@ let registerMypage = async (e) => {
       }
     });
 
-  // misc 업데이트 -  국가코드, 대표도장
+  // misc 업데이트 -  국가코드
   let misc = JSON.parse(user.misc || '{}');
 
   // 국가코드 추가
   misc.country = selectedCountry.value;
-
-  // 대표도장 추가
-  if (mainStamp.value) {
-    misc.main_stamp = {
-      url: mainStamp.value.url,
-      filename: mainStamp.value.filename
-    };
-  } else {
-    misc.main_stamp = null;
-  }
-
-  //   if (mainStamp.value) {
-  //     misc.main_stamp = mainStamp.value;
-  //   } else {
-  //     misc.main_stamp = null;
-  //   }
 
   await skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => err);
 
@@ -798,14 +838,6 @@ const refresh = async () => {
   getStampList(true);
 };
 
-onMounted(() => {
-  document.addEventListener('click', closeStampOptions);
-  getStampList();
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', closeStampOptions);
-});
 // 도장 관리 :: e
 
 onMounted(async () => {
@@ -852,11 +884,39 @@ onMounted(async () => {
     }
   }
 
+  document.addEventListener('click', closeStampOptions);
+  getStampList();
+
+  // 대표 도장 가져오기
+  skapi
+    .getRecords({
+      table: {
+        name: 'main_stamp_' + makeSafe(user.user_id),
+        access_group: 1
+      }
+    })
+    .then(async (res) => {
+      console.log('== onMounted == 대표도장 가져옴 : ', res);
+      console.log('uploadedStamp : ', uploadedStamp.value);
+      if (res.list.length > 0) {
+        mainStamp.value = await skapi.getFile(res.list[0].data, {
+          dataType: 'endpoint'
+        });
+        console.log('mainStamp.value : ', mainStamp.value);
+      } else {
+        mainStamp.value = null;
+      }
+    })
+    .catch((err) => {
+      console.log('== getRecords == err : ', err);
+    });
+
   console.log(user);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', closeOptions);
+  document.removeEventListener('click', closeStampOptions);
 });
 </script>
 
@@ -1200,6 +1260,11 @@ onUnmounted(() => {
     width: 100%;
     border: 1px solid var(--gray-color-200);
     border-radius: 0.5rem;
+    overflow: hidden;
+
+    &:first-of-type {
+      overflow: visible;
+    }
 
     &::after {
       content: '';
@@ -1222,6 +1287,8 @@ onUnmounted(() => {
 
       &.selected {
         background-color: var(--primary-color-50);
+        border: 4px solid var(--primary-color-400);
+        border-radius: 0.5rem;
 
         #stamp-img {
           border-color: var(--primary-color-400);
