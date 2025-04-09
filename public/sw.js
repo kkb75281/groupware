@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fg-works-cache-v12'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v13'; // 버전 번호를 포함한 캐시 이름
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
@@ -33,6 +33,15 @@ self.addEventListener('activate', (event) => {
             );
         });
     }, 5000); // 5초 후에 삭제 작업 시작
+});
+
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((cachedResponse) => {
+            // 캐시에 있는 경우 캐시 반환, 없는 경우 네트워크 요청
+            return cachedResponse || fetch(event.request);
+        })
+    );
 });
 
 let badgeCount = 0; // 뱃지 숫자를 저장할 변수
