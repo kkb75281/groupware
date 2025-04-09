@@ -70,7 +70,7 @@ hr
 				span.label-checkbox 공개여부
 
 		.input-wrap.upload-stamp
-			p.label 대표 도장
+			p.label 도장
 			.main-stamp
 				img#stamp-img(:src="getStampImageSrc(mainStamp)" alt="도장 이미지")
 				button.btn-select-stamp(type="button" @click="openStampListModal")
@@ -141,7 +141,8 @@ hr
 
 				template(v-else)
 					.stamp-grid(v-for="stamp in uploadedStamp")
-						.stamp(:class="{'selected': mainStamp && mainStamp === stamp.url}")
+						//- .stamp(:class="{'selected': mainStamp && (mainStamp === stamp.url || (mainStamp.url && mainStamp.url.split('?')[0] === stamp.url.split('?')[0]))}")
+						.stamp(:class="{'selected': mainStamp && (mainStamp === stamp.url || (mainStamp.url && mainStamp.url.split('?')[0] === stamp.url.split('?')[0]))}")
 							img#stamp-img(:src="stamp.url" alt="도장 이미지")
 							.name {{ stamp.filename }}
 							.btn-wrap
@@ -446,21 +447,36 @@ const handleCountrySelect = (country) => {
 
 // 도장 이미지 URL 가져오기
 const getStampImageSrc = (mainStamp) => {
+  //   console.log('uploadedStamp.value : ', uploadedStamp.value);
+  //   console.log('mainStamp : ', mainStamp);
+
+  // 도장 목록이 비어있으면 빈 문자열 반환
+  if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
+    // console.log('1111');
+    return '';
+  }
+
   // 레코드에서 로드된 도장인지 확인 (문자열인 경우)
   if (typeof mainStamp === 'string') {
+    // console.log('2222');
     return mainStamp;
   }
 
   // 모달에서 선택된 도장인 경우 (객체로 url 속성을 가진 경우)
   else if (mainStamp && mainStamp.value && mainStamp.value.url) {
+    // console.log('3333');
     return mainStamp.value.url;
   }
 
   // 객체 자체에 url 속성이 있는 경우
   else if (mainStamp && mainStamp.url) {
+    // console.log('4444');
     return mainStamp.url;
   }
 
+  //   console.log('5555');
+
+  // 아무 것도 없으면 빈 문자열 반환
   return '';
 };
 
@@ -530,13 +546,10 @@ let registerMypage = async (e) => {
     }
 
     if (selectedCountry.value.key) {
-      console.log({ selectedCountry: selectedCountry.value });
-
       let formattedNumber = showPhoneNumber.value;
 
       if (formattedNumber.startsWith('0')) {
         formattedNumber = formattedNumber.substring(1);
-        console.log('formattedNumber : ', formattedNumber);
       }
 
       // 국가 코드 추가
@@ -544,8 +557,6 @@ let registerMypage = async (e) => {
 
       // 폼 데이터 업데이트
       showPhoneNumber.value = fullPhoneNumber;
-
-      console.log('showPhoneNumber.value', showPhoneNumber.value);
     } else {
       alert('전화번호 국가코드를 선택해주세요.');
       disabled.value = false;
@@ -554,7 +565,6 @@ let registerMypage = async (e) => {
     }
   }
 
-  // const files = document.querySelector('input[name="additional_data"]').files;
   let filebox = document.querySelector('input[name=additional_data]');
 
   if (filebox && filebox.files.length) {
@@ -578,15 +588,7 @@ let registerMypage = async (e) => {
 
     document.querySelector('input[name="additional_data"]').value = '';
     fileNames.value = [];
-  } else {
-    // console.log(
-    //     "false == registerMypage == uploadedFile.value : ",
-    //     uploadedFile.value
-    // );
   }
-
-  // document.querySelector('input[name="additional_data"]').value = '';
-  // fileNames.value = [];
 
   if (removeFileList.value.length) {
     await skapi.deleteRecords({ record_id: removeFileList.value }).then((r) => {
@@ -594,40 +596,49 @@ let registerMypage = async (e) => {
     });
   }
 
-  const data = mainStamp.value.url.split('?')[0];
-  console.log('data : ', data);
-
-  const config = {
-    table: {
-      name: 'main_stamp_' + makeSafe(user.user_id),
-      access_group: 1
-    }
-  };
-  console.log('config : ', config);
-
   // 대표 도장 레코드 저장
-  if (mainStamp.value) {
-    console.log('대표도장있음 - 업데이트 :', mainStamp.value);
+  if (mainStamp.value && mainStamp.value.url) {
+    const data = mainStamp.value.url.split('?')[0];
 
-    // 만약 대표도장이 이미 있다면 삭제 후 새로 저장
-    await skapi
-      .deleteRecords({
+    const config = {
+      table: {
+        name: 'main_stamp_' + makeSafe(user.user_id),
+        access_group: 1
+      }
+    };
+
+    console.log('data : ', data);
+    console.log('config : ', config);
+
+    try {
+      // 기존 대표 도장 레코드 삭제
+      await skapi.deleteRecords({
         table: {
           name: 'main_stamp_' + makeSafe(user.user_id),
           access_group: 1
-        },
-        record_id: mainStamp.value.record_id
-      })
-      .then((res) => {
-        console.log('대표도장 삭제됨 : ', res);
+        }
       });
 
-    const saveMainStamp = await skapi.postRecord(data, config);
-    console.log('AA == saveMainStamp : ', saveMainStamp);
-  } else {
-    console.log('대표도장없음 :', mainStamp.value);
-    const saveMainStamp = await skapi.postRecord(data, config);
-    console.log('BB == saveMainStamp : ', saveMainStamp);
+      // 새 대표 도장 저장
+      const saveMainStamp = await skapi.postRecord(data, config);
+      console.log('대표 도장 저장 완료:', saveMainStamp);
+    } catch (error) {
+      console.error('대표 도장 저장 중 오류:', error);
+    }
+  } else if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
+    console.log('도장 목록이 비어있어 대표 도장 레코드 삭제');
+    // 도장 목록이 비어있으면 대표 도장 레코드 삭제
+    try {
+      await skapi.deleteRecords({
+        table: {
+          name: 'main_stamp_' + makeSafe(user.user_id),
+          access_group: 1
+        }
+      });
+      console.log('도장 목록이 비어있어 대표 도장 레코드 삭제');
+    } catch (error) {
+      console.error('대표 도장 레코드 삭제 중 오류:', error);
+    }
   }
 
   console.log({ e });
@@ -811,27 +822,57 @@ let deleteStamp = async (stamp) => {
   deleteStampRunning.value = true;
 
   try {
+    // 도장 삭제
     await skapi.postRecord(null, post_params);
-    // getStampList();
-    // alert('도장이 삭제되었습니다.');
+
+    // 삭제된 도장이 대표 도장인지 확인 (간단한 URL 비교)
+    if (
+      mainStamp.value &&
+      mainStamp.value.url &&
+      mainStamp.value.url.split('?')[0] === stamp.url.split('?')[0]
+    ) {
+      // 대표 도장 레코드 삭제
+      await skapi.deleteRecords({
+        table: {
+          name: 'main_stamp_' + makeSafe(user.user_id),
+          access_group: 1
+        }
+      });
+
+      // mainStamp 값 초기화
+      mainStamp.value = null;
+    }
+
+    // 목록에서 도장 제거
     deleteStampStep.value++;
-    uploadedStamp.value = uploadedStamp.value.filter((stamp) => stamp.url !== deleteStampUrl);
+    uploadedStamp.value = uploadedStamp.value.filter((s) => s.url !== deleteStampUrl);
   } catch (e) {
-    // console.log({e});
     deleteStampStep.value = 1;
     alert('도장 삭제 중 오류가 발생했습니다.');
   } finally {
-    // selectedStamp.value = null;
     deleteStampRunning.value = false;
   }
+
+  //   try {
+  //     await skapi.postRecord(null, post_params);
+  //     // getStampList();
+  //     // alert('도장이 삭제되었습니다.');
+  //     deleteStampStep.value++;
+  //     uploadedStamp.value = uploadedStamp.value.filter((stamp) => stamp.url !== deleteStampUrl);
+  //   } catch (e) {
+  //     // console.log({e});
+  //     deleteStampStep.value = 1;
+  //     alert('도장 삭제 중 오류가 발생했습니다.');
+  //   } finally {
+  //     // selectedStamp.value = null;
+  //     deleteStampRunning.value = false;
+  //   }
 };
 
 const selectAsMainStamp = (stamp) => {
   mainStamp.value = stamp;
   showStampList.value = false;
   stampSelectedAlert.value = true;
-
-  console.log('mainStamp : ', mainStamp.value);
 };
 
 const refresh = async () => {
@@ -841,7 +882,7 @@ const refresh = async () => {
 // 도장 관리 :: e
 
 onMounted(async () => {
-  console.log('=== onMounted === user : ', user);
+  console.log('AA == onMounted == user : ', user);
 
   document.addEventListener('click', closeOptions);
 
@@ -885,7 +926,14 @@ onMounted(async () => {
   }
 
   document.addEventListener('click', closeStampOptions);
-  getStampList();
+
+  await getStampList();
+
+  // 도장 목록이 비어있으면 대표 도장을 설정하지 않음
+  if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
+    mainStamp.value = null;
+    return;
+  }
 
   // 대표 도장 가져오기
   skapi
@@ -896,13 +944,11 @@ onMounted(async () => {
       }
     })
     .then(async (res) => {
-      console.log('== onMounted == 대표도장 가져옴 : ', res);
-      console.log('uploadedStamp : ', uploadedStamp.value);
+      //   console.log('== onMounted == 도장 res : ', res);
       if (res.list.length > 0) {
         mainStamp.value = await skapi.getFile(res.list[0].data, {
           dataType: 'endpoint'
         });
-        console.log('mainStamp.value : ', mainStamp.value);
       } else {
         mainStamp.value = null;
       }
@@ -911,7 +957,7 @@ onMounted(async () => {
       console.log('== getRecords == err : ', err);
     });
 
-  console.log(user);
+  console.log('BB == onMounted == user : ', user);
 });
 
 onUnmounted(() => {
