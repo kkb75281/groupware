@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fg-works-cache-v25'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v26'; // 버전 번호를 포함한 캐시 이름
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
@@ -97,7 +97,7 @@ self.addEventListener('message', async function(event) {
         });
     }
 
-	if (event.data && event.data.type === 'CHECK_VERSION') {
+	if (event.data && event.data.type === 'CHECK_VERSION_AFTER_LOGIN') {
         try {
             // 최신 버전 정보 가져오기
             const response = await fetch('/version.json');
@@ -115,6 +115,25 @@ self.addEventListener('message', async function(event) {
         // 사용자가 업데이트를 승인한 경우
         self.skipWaiting();
     }
+
+	// if (event.data && event.data.type === 'CHECK_VERSION') {
+    //     try {
+    //         // 최신 버전 정보 가져오기
+    //         const response = await fetch('/version.json');
+    //         const { version } = await response.json();
+
+    //         // 메인 스레드로 새 버전 정보 전송
+    //         event.source.postMessage({
+    //             type: 'NEW_VERSION_AVAILABLE',
+    //             version
+    //         });
+    //     } catch (error) {
+    //         console.error('[Service Worker] Failed to fetch version.json:', error);
+    //     }
+    // } else if (event.data && event.data.type === 'SKIP_WAITING') {
+    //     // 사용자가 업데이트를 승인한 경우
+    //     self.skipWaiting();
+    // }
 });
 
 self.addEventListener('notificationclick', function(event) {

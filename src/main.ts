@@ -117,74 +117,65 @@ fetch('/version.json')
     });
 
 if ('serviceWorker' in navigator) {
-    // Service Worker로부터 메시지 수신
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        // 뱃지 업데이트 처리
-        if (event.data && event.data.type === 'BADGE_UPDATED') {
-            const newBadgeCount = event.data.badgeCount;
-            currentBadgeCount = newBadgeCount;
-        }
-
-        // 새로운 버전 알림 처리
-        if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
-            const newVersion = event.data.version;
-
-            // localStorage에서 업데이트 상태 확인
-            const lastUpdatePrompted = localStorage.getItem('lastUpdatePrompted');
-            if (!lastUpdatePrompted || lastUpdatePrompted !== newVersion) {
-                // lastUpdatePrompted가 없거나, 저장된 버전과 현재 버전이 다를 경우
-                if (!newWorkerWaiting) {
-                    newWorkerWaiting = true;
-            
-                    if (confirm(`새로운 버전(${newVersion})이 준비되었습니다. 지금 업데이트하시겠습니까?`)) {
-                        localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
-                        navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
-                        window.location.reload(); // 페이지 새로고침
-                    } else {
-                        localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
-                    }
-                }
-            }
-        }
-    });
-
     // Service Worker 등록
     navigator.serviceWorker.register(`/wrk.${serviceID}.js`)
         .then((registration) => {
         console.log('Service Worker registered:', registration);
-        
+
+        // Service Worker로부터 메시지 수신
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            // 뱃지 업데이트 처리
+            if (event.data && event.data.type === 'BADGE_UPDATED') {
+                const newBadgeCount = event.data.badgeCount;
+                currentBadgeCount = newBadgeCount;
+            }
+
+            // 새로운 버전 알림 처리
+            if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
+                const newVersion = event.data.version;
+
+                // localStorage에서 업데이트 상태 확인
+                const lastUpdatePrompted = localStorage.getItem('lastUpdatePrompted');
+                if (!lastUpdatePrompted || lastUpdatePrompted !== newVersion) {
+                    if (!newWorkerWaiting) {
+                        newWorkerWaiting = true;
+
+                        if (confirm(`새로운 버전(${newVersion})이 준비되었습니다. 지금 업데이트하시겠습니까?`)) {
+                            localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
+                            navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+                            window.location.reload(); // 페이지 새로고침
+                        } else {
+                            localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
+                        }
+                    }
+                }
+            }
+        });
+
+        // 새로운 서비스 워커 감지
         registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             console.log('[Main] New Service Worker Found');
 
-            // 새로운 서비스 워커 감지
-            newWorker.addEventListener('statechange', () => {
+            newWorker?.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed') {
                     console.log('[Main] New Service Worker Installed and Waiting');
                     newWorker.postMessage({ type: 'CHECK_VERSION' }); // 새 버전 확인 요청
                 }
             });
-
-            // newWorker.addEventListener('statechange', () => {
-            //     if (newWorker.state === 'installed') {
-            //         // 새로운 버전 확인
-            //         fetch('/version.json')
-            //             .then((response) => response.json())
-            //             .then((data) => {
-            //                 const newVersion = data.version;
-            //                 console.log('[Main] New Service Worker Version:', newVersion);
-
-            //                 // 버전이 다를 경우에만 알림 표시
-            //                 if (currentVersion && currentVersion !== newVersion) {
-            //                     alert('새로운 버전이 준비되었습니다. 앱을 종료하고 다시 실행해 주세요.');
-            //                     currentVersion = newVersion; // 현재 버전 업데이트
-            //                 }
-            //             });
-            //     }
-            // });
         });
     }).catch((error) => {
       console.error('Service Worker registration failed:', error);
+    });
+}
+
+// 로그인 성공 후 호출되는 함수
+function onLoginSuccess() {
+    console.log('[Main] User logged in. Checking for updates...');
+
+    // 서비스 워커에게 버전 확인 요청
+    navigator.serviceWorker.ready.then((registration) => {
+        registration.active?.postMessage({ type: 'CHECK_VERSION_AFTER_LOGIN' });
     });
 }
 
@@ -442,6 +433,8 @@ export async function loginCheck(profile: any) {
     }
 
     await subscribeNotification();
+
+    onLoginSuccess();
   }
 
   if (!loaded.value) {
