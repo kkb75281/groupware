@@ -103,6 +103,7 @@ export function resetBadgeCount() {
 }
 
 let currentVersion:any = null; // 현재 활성화된 서비스 워커의 버전
+let newWorkerWaiting = false;   // 새로운 서비스 워커가 대기 중인지 여부
 
 // 앱 시작 시 버전 정보 로드
 fetch('/version.json')
@@ -113,48 +114,72 @@ fetch('/version.json')
     });
 
 if ('serviceWorker' in navigator) {
-  // Service Worker로부터 메시지 수신
-  navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'BADGE_UPDATED') {
-      const newBadgeCount = event.data.badgeCount;
-      // console.log(`[Main App] Received new badge count: ${newBadgeCount}`);
+    // Service Worker로부터 메시지 수신
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        // 뱃지 업데이트 처리
+        if (event.data && event.data.type === 'BADGE_UPDATED') {
+            const newBadgeCount = event.data.badgeCount;
+            currentBadgeCount = newBadgeCount;
+        }
 
-      // 뱃지 갱신
-      currentBadgeCount = newBadgeCount;
-    }
-  });
+        // 새로운 버전 알림 처리
+        if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
+            const newVersion = event.data.version;
+            console.log('[Main] New version available:', newVersion);
 
-  // Service Worker 등록
-  navigator.serviceWorker
-    .register(`/wrk.${serviceID}.js`)
-    .then((registration) => {
-      // console.log('Service Worker registered:', registration);
-	  
-	  registration.addEventListener('updatefound', () => {
-		const newWorker = registration.installing;
-		console.log('[Main] New Service Worker Found');
+            // 사용자에게 업데이트 확인 창 표시
+            if (!newWorkerWaiting) {
+                newWorkerWaiting = true;
+                if (confirm(`새로운 버전(${newVersion})이 준비되었습니다. 지금 업데이트하시겠습니까?`)) {
+                    // 사용자가 업데이트를 승인한 경우
+                    navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload(); // 페이지 새로고침
+                }
+            }
+        }
+    });
 
-		newWorker.addEventListener('statechange', () => {
-			if (newWorker.state === 'installed') {
-				// 새로운 버전 확인
-				fetch('/version.json')
-					.then((response) => response.json())
-					.then((data) => {
-						const newVersion = data.version;
-						console.log('[Main] New Service Worker Version:', newVersion);
+    // Service Worker 등록
+    navigator.serviceWorker.register(`/wrk.${serviceID}.js`)
+        .then((registration) => {
+        console.log('Service Worker registered:', registration);
+        
+        registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            console.log('[Main] New Service Worker Found');
 
-						// 버전이 다를 경우에만 알림 표시
-						if (currentVersion && currentVersion !== newVersion) {
-							alert('새로운 버전이 준비되었습니다. 앱을 종료하고 다시 실행해 주세요.');
-							currentVersion = newVersion; // 현재 버전 업데이트
-						}
-					});
-			}
-		});
-	  });
+            // 새로운 서비스 워커 감지
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                console.log('[Main] New Service Worker Found');
 
-    })
-    .catch((error) => {
+                newWorker?.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed') {
+                        console.log('[Main] New Service Worker Installed and Waiting');
+                        newWorker.postMessage({ type: 'CHECK_VERSION' }); // 새 버전 확인 요청
+                    }
+                });
+            });
+
+            // newWorker.addEventListener('statechange', () => {
+            //     if (newWorker.state === 'installed') {
+            //         // 새로운 버전 확인
+            //         fetch('/version.json')
+            //             .then((response) => response.json())
+            //             .then((data) => {
+            //                 const newVersion = data.version;
+            //                 console.log('[Main] New Service Worker Version:', newVersion);
+
+            //                 // 버전이 다를 경우에만 알림 표시
+            //                 if (currentVersion && currentVersion !== newVersion) {
+            //                     alert('새로운 버전이 준비되었습니다. 앱을 종료하고 다시 실행해 주세요.');
+            //                     currentVersion = newVersion; // 현재 버전 업데이트
+            //                 }
+            //             });
+            //     }
+            // });
+        });
+    }).catch((error) => {
       console.error('Service Worker registration failed:', error);
     });
 }

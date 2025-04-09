@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fg-works-cache-v19'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v20'; // 버전 번호를 포함한 캐시 이름
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
@@ -8,7 +8,8 @@ self.addEventListener('install', (event) => {
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll([
                 '/', // 메인 페이지
-                '/index.html'
+                '/index.html',
+				'/version.json' // 버전 정보 캐싱
             ]);
         }).then(() => self.skipWaiting()) // 즉시 활성화
     );
@@ -20,28 +21,21 @@ self.addEventListener('activate', (event) => {
     // 클라이언트 제어 권한을 즉시 가져옴
     event.waitUntil(self.clients.claim());
 
-    // 캐시 삭제 작업을 지연
-    setTimeout(() => {
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cache) => {
-                    if (cache !== CACHE_NAME) {
-                        console.log(`[Service Worker] Deleting old cache: ${cache}`);
-                        return caches.delete(cache);
-                    }
-                })
-            );
+	// 백그라운드에서 오래된 캐시 정리
+    caches.keys().then((cacheNames) => {
+        cacheNames.forEach((cache) => {
+            if (!cache.startsWith('fg-works-cache-v')) {
+                caches.delete(cache); // 더 이상 사용되지 않는 캐시 삭제
+            }
         });
-    }, 5000); // 5초 후에 삭제 작업 시작
+    });
 });
 
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            // 캐시에 있는 경우 캐시 반환, 없는 경우 네트워크 요청
-            return cachedResponse || fetch(event.request);
-        })
-    );
+    if (event.request.url.includes('/version.json')) {
+        // /version.json은 항상 네트워크에서 가져옴
+        event.respondWith(fetch(event.request));
+    }
 });
 
 let badgeCount = 0; // 뱃지 숫자를 저장할 변수
@@ -89,7 +83,7 @@ self.addEventListener('push', function(event) {
     );
 });
 
-self.addEventListener('message', function(event) {
+self.addEventListener('message', async function(event) {
     if (event.data && event.data.type === 'RESET_BADGE') {
         // 메인 애플리케이션에서 전달된 뱃지 숫자로 초기화
         badgeCount = event.data.badgeCount || 0;
@@ -101,6 +95,25 @@ self.addEventListener('message', function(event) {
         }).catch(error => {
             console.error('[Service Worker] Failed to clear app badge:', error);
         });
+    }
+
+	if (event.data && event.data.type === 'CHECK_VERSION') {
+        try {
+            // 최신 버전 정보 가져오기
+            const response = await fetch('/version.json');
+            const { version } = await response.json();
+
+            // 메인 스레드로 새 버전 정보 전송
+            event.source.postMessage({
+                type: 'NEW_VERSION_AVAILABLE',
+                version
+            });
+        } catch (error) {
+            console.error('[Service Worker] Failed to fetch version.json:', error);
+        }
+    } else if (event.data && event.data.type === 'SKIP_WAITING') {
+        // 사용자가 업데이트를 승인한 경우
+        self.skipWaiting();
     }
 });
 
