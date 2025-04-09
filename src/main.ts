@@ -131,39 +131,39 @@ if ('serviceWorker' in navigator) {
             }
 
             // 새로운 버전 알림 처리
-            if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
-                const newVersion = event.data.version;
+            // if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
+            //     const newVersion = event.data.version;
 
-                // localStorage에서 업데이트 상태 확인
-                const lastUpdatePrompted = localStorage.getItem('lastUpdatePrompted');
-                if (!lastUpdatePrompted || lastUpdatePrompted !== newVersion) {
-                    if (!newWorkerWaiting) {
-                        newWorkerWaiting = true;
+            //     // localStorage에서 업데이트 상태 확인
+            //     const lastUpdatePrompted = localStorage.getItem('lastUpdatePrompted');
+            //     if (!lastUpdatePrompted || lastUpdatePrompted !== newVersion) {
+            //         if (!newWorkerWaiting) {
+            //             newWorkerWaiting = true;
 
-                        if (confirm(`새로운 버전(${newVersion})이 준비되었습니다. 지금 업데이트하시겠습니까?`)) {
-                            localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
-                            navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
-                            window.location.reload(); // 페이지 새로고침
-                        } else {
-                            localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
-                        }
-                    }
-                }
-            }
+            //             if (confirm(`새로운 버전(${newVersion})이 준비되었습니다. 지금 업데이트하시겠습니까?`)) {
+            //                 localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
+            //                 navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+            //                 window.location.reload(); // 페이지 새로고침
+            //             } else {
+            //                 localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
+            //             }
+            //         }
+            //     }
+            // }
         });
 
         // 새로운 서비스 워커 감지
-        registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            console.log('[Main] New Service Worker Found');
+        // registration.addEventListener('updatefound', () => {
+        //     const newWorker = registration.installing;
+        //     console.log('[Main] New Service Worker Found');
 
-            newWorker?.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed') {
-                    console.log('[Main] New Service Worker Installed and Waiting');
-                    newWorker.postMessage({ type: 'CHECK_VERSION' }); // 새 버전 확인 요청
-                }
-            });
-        });
+        //     newWorker?.addEventListener('statechange', () => {
+        //         if (newWorker.state === 'installed') {
+        //             console.log('[Main] New Service Worker Installed and Waiting');
+        //             newWorker.postMessage({ type: 'CHECK_VERSION' }); // 새 버전 확인 요청
+        //         }
+        //     });
+        // });
     }).catch((error) => {
       console.error('Service Worker registration failed:', error);
     });
@@ -434,7 +434,7 @@ export async function loginCheck(profile: any) {
 
     await subscribeNotification();
 
-    onLoginSuccess();
+    // onLoginSuccess();
   }
 
   if (!loaded.value) {
