@@ -125,15 +125,21 @@ if ('serviceWorker' in navigator) {
         // 새로운 버전 알림 처리
         if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
             const newVersion = event.data.version;
-            console.log('[Main] New version available:', newVersion);
 
-            // 사용자에게 업데이트 확인 창 표시
-            if (!newWorkerWaiting) {
-                newWorkerWaiting = true;
-                if (confirm(`새로운 버전(${newVersion})이 준비되었습니다. 지금 업데이트하시겠습니까?`)) {
-                    // 사용자가 업데이트를 승인한 경우
-                    navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
-                    window.location.reload(); // 페이지 새로고침
+            // localStorage에서 업데이트 상태 확인
+            const lastUpdatePrompted = localStorage.getItem('lastUpdatePrompted');
+            if (!lastUpdatePrompted || lastUpdatePrompted !== newVersion) {
+                // lastUpdatePrompted가 없거나, 저장된 버전과 현재 버전이 다를 경우
+                if (!newWorkerWaiting) {
+                    newWorkerWaiting = true;
+            
+                    if (confirm(`새로운 버전(${newVersion})이 준비되었습니다. 지금 업데이트하시겠습니까?`)) {
+                        localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
+                        navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+                        window.location.reload(); // 페이지 새로고침
+                    } else {
+                        localStorage.setItem('lastUpdatePrompted', newVersion); // 상태 저장
+                    }
                 }
             }
         }
