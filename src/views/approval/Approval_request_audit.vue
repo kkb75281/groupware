@@ -376,6 +376,17 @@ const disabled = ref(false);
 const editorContent = ref('');
 const editorIsReady = ref(false);
 
+// 에디터 내용이 변경 감지
+watch(editorContent, (newContent) => {
+  if (!newContent || newContent === '') {
+    // 내용이 완전히 비어있는 경우 기본 p 태그 추가
+    const editorElement = document.getElementById('myeditor');
+    if (editorElement && (!editorElement.innerHTML || editorElement.innerHTML === '')) {
+      editorElement.innerHTML = '<p><br></p>';
+    }
+  }
+});
+
 // 결재라인 모달 열기
 const openModal = () => {
   // isTemplateMode 경우에는 결재라인 선택 불가
@@ -719,7 +730,10 @@ const handleEditorReady = (status) => {
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
-  editorContent.value = content;
+  // editorContent.value = content;
+
+  // 내용이 비어있을 때 기본 p 태그 유지
+  editorContent.value = content && content.trim() !== '' ? content : '<p><br></p>';
 };
 
 // 업로드 파일 삭제
