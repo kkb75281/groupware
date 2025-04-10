@@ -6,10 +6,15 @@
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ serviceWorkerRegistMsg }}
 
-//- template(v-if="onlyUserGesture")
-button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
+template(v-if="newVersionAvailable")
+	p {{ `새로운 버전(${newVersion})이 준비되었습니다.` }}
 
-br
+	br
+
+template(v-if="onlyUserGesture")
+	button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
+
+	br
 
 ul.card-wrap.gmail
 	li.card
@@ -122,6 +127,7 @@ ul.card-wrap
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
 import { user } from "@/user.ts";
+import { newVersionAvailable, newVersion } from "@/main.ts";
 import { convertTimestampToDateMillis } from "@/utils/time.ts";
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
 import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications.ts";

@@ -1,26 +1,14 @@
-const CACHE_NAME = 'fg-works-cache-v33'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v34'; // 버전 번호를 포함한 캐시 이름
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installed');
-    // event.waitUntil(self.skipWaiting()); // 즉시 활성화
-	// event.waitUntil(
-    //     caches.open(CACHE_NAME).then((cache) => {
-    //         return cache.addAll([
-    //             '/', // 메인 페이지
-    //             '/index.html',
-	// 			'/version.json' // 버전 정보 캐싱
-    //         ]);
-    //     }).then(() => self.skipWaiting()) // 즉시 활성화
-    // );
 
 	event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll([
                 '/', // 메인 페이지
                 '/index.html',
-                '/styles.css', // 스타일시트
-                '/app.js' // 애플리케이션 스크립트
             ]);
         })
         // self.skipWaiting(); // 주석 처리 또는 삭제
@@ -29,18 +17,6 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
     console.log('[Service Worker] Activated');
-
-    // 클라이언트 제어 권한을 즉시 가져옴
-    // event.waitUntil(self.clients.claim());
-
-	// 백그라운드에서 오래된 캐시 정리
-    // caches.keys().then((cacheNames) => {
-    //     cacheNames.forEach((cache) => {
-    //         if (!cache.startsWith('fg-works-cache-v')) {
-    //             caches.delete(cache); // 더 이상 사용되지 않는 캐시 삭제
-    //         }
-    //     });
-    // });
 
 	// 클라이언트 제어는 우선 처리
     event.waitUntil(self.clients.claim());
@@ -58,11 +34,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     if (event.request.url.includes('/version.json')) {
-        event.respondWith(
-            fetch(event.request).catch(() => {
-                return caches.match(event.request); // 네트워크 요청 실패 시 캐시 사용
-            })
-        );
+        event.respondWith(fetch(event.request));
     } else {
         event.respondWith(
             caches.match(event.request).then((cachedResponse) => {
@@ -131,9 +103,8 @@ self.addEventListener('message', async function(event) {
         });
     }
 
-	if (event.data && event.data.type === 'CHECK_VERSION_AFTER_LOGIN') {
+	if (event.data && event.data.type === 'CHECK_VERSION') {
         try {
-            // 최신 버전 정보 가져오기
             const response = await fetch('/version.json');
             const { version } = await response.json();
 
@@ -146,28 +117,8 @@ self.addEventListener('message', async function(event) {
             console.error('[Service Worker] Failed to fetch version.json:', error);
         }
     } else if (event.data && event.data.type === 'SKIP_WAITING') {
-        // 사용자가 업데이트를 승인한 경우
-        self.skipWaiting();
+        self.skipWaiting(); // 대기 중인 서비스 워커를 즉시 활성화
     }
-
-	// if (event.data && event.data.type === 'CHECK_VERSION') {
-    //     try {
-    //         // 최신 버전 정보 가져오기
-    //         const response = await fetch('/version.json');
-    //         const { version } = await response.json();
-
-    //         // 메인 스레드로 새 버전 정보 전송
-    //         event.source.postMessage({
-    //             type: 'NEW_VERSION_AVAILABLE',
-    //             version
-    //         });
-    //     } catch (error) {
-    //         console.error('[Service Worker] Failed to fetch version.json:', error);
-    //     }
-    // } else if (event.data && event.data.type === 'SKIP_WAITING') {
-    //     // 사용자가 업데이트를 승인한 경우
-    //     self.skipWaiting();
-    // }
 });
 
 self.addEventListener('notificationclick', function(event) {
