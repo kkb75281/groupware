@@ -177,23 +177,6 @@ onMounted(() => {
         });
       }
 
-      if (c.caratPosition) {
-        console.log('커서 위치 : ', c.caratPosition);
-
-        // Tracks carat position
-        // Make carat to be always within the viewport
-        let viewPortHeight = Math.min(
-          document.documentElement.clientHeight || 0,
-          window.innerHeight || 0
-        );
-        console.log('뷰포트 높이 : ', viewPortHeight);
-
-        let minusWhenOutOfView = viewPortHeight - c.caratPosition.top;
-        console.log('뷰포트에서 벗어난 거리 : ', minusWhenOutOfView, 'px');
-
-        if (minusWhenOutOfView < 0) window.scrollBy(0, -minusWhenOutOfView);
-      }
-
       if (c.range) {
         // console.log('범위 확인 : ', c.range);
       }
@@ -397,131 +380,53 @@ defineExpose({
   }
 }
 
-/* 테이블 스타일링 */
 .wysiwyg-table-wrap {
-  display: block;
   position: relative;
+  padding: 5px;
   overflow: visible;
-  margin: 0.5rem 0 1.5rem;
 }
 
 .wysiwyg-table {
   position: relative;
   border-collapse: collapse;
   width: calc(100% - 10px);
-  table-layout: auto;
+  table-layout: fixed;
   margin: 0 auto;
-
-  tr,
-  th,
-  td {
-    height: auto !important;
-  }
-
-  td {
-    border: 1px solid #000;
-    padding: 5px;
-    position: relative;
-    min-width: 50px;
-    min-height: 30px;
-    background-color: white;
-    overflow: hidden;
-    word-break: break-word;
-    white-space: normal;
-  }
 }
 
-/* 리사이저 스타일 */
-.table-resizer {
+/* 리사이징 핸들 스타일 */
+.col-resize-handle {
   position: absolute;
-  z-index: 100;
-  background-color: transparent;
-}
-
-.col-resizer {
   top: 0;
-  width: 8px;
-  height: 100%;
+  width: 5px;
   cursor: col-resize;
-  margin-left: -4px;
+  z-index: 1;
+  background-color: transparent;
+  transition: background-color 0.2s;
 }
 
-.col-resizer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 3px;
-  width: 2px;
-  height: 100%;
-  background-color: #bbb;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.col-resizer:hover::after,
-.col-resizer.active::after {
-  opacity: 1;
+.col-resize-handle:hover,
+.col-resize-handle.active {
   background-color: #4a90e2;
 }
 
-.row-resizer {
+.row-resize-handle {
+  position: absolute;
   left: 0;
-  height: 8px;
-  width: 100%;
+  height: 5px;
   cursor: row-resize;
-  margin-top: -4px;
+  z-index: 1;
+  background-color: transparent;
+  transition: background-color 0.2s;
 }
 
-.row-resizer::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 3px;
-  height: 2px;
-  width: 100%;
-  background-color: #bbb;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.row-resizer:hover::after,
-.row-resizer.active::after {
-  opacity: 1;
+.row-resize-handle:hover,
+.row-resize-handle.active {
   background-color: #4a90e2;
 }
 
-/* 리사이징 중 선택 방지 */
-.resizing-table {
+/* 리사이징 중에는 텍스트 선택 방지 */
+.resizing-active {
   user-select: none;
-}
-
-/* 조작 버튼 스타일 */
-.btn-control-wrap {
-  position: absolute;
-  display: flex;
-}
-
-.control-row {
-  bottom: -24px;
-  left: 5px;
-}
-
-.control-col {
-  flex-direction: column;
-  top: 0;
-  right: -19px;
-}
-
-.btn-add,
-.btn-remove {
-  width: 24px;
-  height: 24px;
-  background-color: var(--gray-color-200);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-weight: bold;
-  border: none;
 }
 </style>
