@@ -199,20 +199,18 @@ import {
   closeCropImageDialog,
   setCroppedImage
 } from '@/components/crop_image.ts';
-import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp';
+import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp.ts';
 import {
   openStampModal,
   closeStampDialog,
   handleStampBlob,
   uploadingStamp,
   stampImages
-} from '@/components/make_stamp';
+} from '@/components/make_stamp.ts';
 import { Countries } from '@/components/countries.ts';
 
 import CropImage from '@/components/crop_image.vue';
 import Locale from '@/components/locale.vue';
-import { Countries } from '@/components/countries';
-
 import MakeStamp from '@/components/make_stamp.vue';
 import AlertModal from '@/components/alert_modal.vue';
 import Loading from '@/components/loading.vue';
