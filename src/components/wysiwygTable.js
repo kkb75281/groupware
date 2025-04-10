@@ -21,14 +21,6 @@ export function createTable(cols, rows, isCreate = false) {
       const td = document.createElement('td');
       td.contentEditable = isCreate ? 'true' : 'false';
       td.innerHTML = '&nbsp;';
-      td.style.border = '1px solid #000';
-      td.style.padding = '5px';
-      td.style.minWidth = '50px';
-      td.style.minHeight = '30px';
-      td.style.backgroundColor = 'white';
-      td.style.overflow = 'hidden';
-      td.style.wordBreak = 'break-word';
-      td.style.whiteSpace = 'normal';
       td.setAttribute('disabled', !isCreate);
 
       // 포커스 스타일 추가
@@ -54,23 +46,11 @@ export function createTable(cols, rows, isCreate = false) {
   rowControlWrap.contentEditable = 'false';
   rowControlWrap.tabIndex = '-1';
   rowControlWrap.className = 'btn-control-wrap control-row';
-  rowControlWrap.style.position = 'absolute';
-  rowControlWrap.style.display = 'flex';
-  rowControlWrap.style.bottom = '-24px';
-  rowControlWrap.style.left = '5px';
 
   // 행 추가 버튼
   const addRowBtn = document.createElement('button');
   addRowBtn.className = 'btn-add';
   addRowBtn.type = 'button';
-  addRowBtn.style.backgroundColor = 'var(--gray-color-200)';
-  addRowBtn.style.width = '24px';
-  addRowBtn.style.height = '24px';
-  addRowBtn.style.display = 'flex';
-  addRowBtn.style.alignItems = 'center';
-  addRowBtn.style.justifyContent = 'center';
-  addRowBtn.style.cursor = 'pointer';
-  addRowBtn.style.fontWeight = 'bold';
   addRowBtn.textContent = '+';
 
   // 행 추가 이벤트
@@ -85,14 +65,6 @@ export function createTable(cols, rows, isCreate = false) {
       const td = document.createElement('td');
       td.contentEditable = 'true';
       td.innerHTML = '&nbsp;';
-      td.style.border = '1px solid #000';
-      td.style.padding = '5px';
-      td.style.minWidth = '50px';
-      td.style.minHeight = '30px';
-      td.style.backgroundColor = 'white';
-      td.style.overflow = 'hidden';
-      td.style.wordBreak = 'break-word';
-      td.style.whiteSpace = 'normal';
 
       // 첫 번째 행의 같은 위치 셀이 있다면 너비 적용
       if (tbody.firstChild && tbody.firstChild.childNodes[c]) {
@@ -125,14 +97,6 @@ export function createTable(cols, rows, isCreate = false) {
   const removeRowBtn = document.createElement('button');
   removeRowBtn.className = 'btn-remove';
   removeRowBtn.type = 'button';
-  removeRowBtn.style.backgroundColor = 'var(--gray-color-200)';
-  removeRowBtn.style.width = '24px';
-  removeRowBtn.style.height = '24px';
-  removeRowBtn.style.display = 'flex';
-  removeRowBtn.style.alignItems = 'center';
-  removeRowBtn.style.justifyContent = 'center';
-  removeRowBtn.style.cursor = 'pointer';
-  removeRowBtn.style.fontWeight = 'bold';
   removeRowBtn.textContent = '-';
 
   // 행 삭제 이벤트
@@ -152,24 +116,11 @@ export function createTable(cols, rows, isCreate = false) {
   colControlWrap.contentEditable = 'false';
   colControlWrap.tabIndex = '-1';
   colControlWrap.className = 'btn-control-wrap control-col';
-  colControlWrap.style.position = 'absolute';
-  colControlWrap.style.display = 'flex';
-  colControlWrap.style.flexDirection = 'column';
-  colControlWrap.style.top = '0';
-  colControlWrap.style.right = '-19px';
 
   // 열 추가 버튼
   const addColBtn = document.createElement('button');
   addColBtn.className = 'btn-add';
   addColBtn.type = 'button';
-  addColBtn.style.backgroundColor = 'var(--gray-color-200)';
-  addColBtn.style.width = '24px';
-  addColBtn.style.height = '24px';
-  addColBtn.style.display = 'flex';
-  addColBtn.style.alignItems = 'center';
-  addColBtn.style.justifyContent = 'center';
-  addColBtn.style.cursor = 'pointer';
-  addColBtn.style.fontWeight = 'bold';
   addColBtn.textContent = '+';
 
   // 열 추가 이벤트
@@ -181,14 +132,6 @@ export function createTable(cols, rows, isCreate = false) {
       const td = document.createElement('td');
       td.contentEditable = 'true';
       td.innerHTML = '&nbsp;';
-      td.style.border = '1px solid #000';
-      td.style.padding = '5px';
-      td.style.minWidth = '50px';
-      td.style.minHeight = '30px';
-      td.style.backgroundColor = 'white';
-      td.style.overflow = 'hidden';
-      td.style.wordBreak = 'break-word';
-      td.style.whiteSpace = 'normal';
 
       td.addEventListener('focus', () => {
         td.style.outline = '2px solid #4a90e2';
@@ -211,14 +154,6 @@ export function createTable(cols, rows, isCreate = false) {
   const removeColBtn = document.createElement('button');
   removeColBtn.className = 'btn-remove';
   removeColBtn.type = 'button';
-  removeColBtn.style.backgroundColor = 'var(--gray-color-200)';
-  removeColBtn.style.width = '24px';
-  removeColBtn.style.height = '24px';
-  removeColBtn.style.display = 'flex';
-  removeColBtn.style.alignItems = 'center';
-  removeColBtn.style.justifyContent = 'center';
-  removeColBtn.style.cursor = 'pointer';
-  removeColBtn.style.fontWeight = 'bold';
   removeColBtn.textContent = '-';
 
   // 열 삭제 이벤트
@@ -358,7 +293,8 @@ function addRowResizers(table) {
   const tableWrap = table.parentNode;
   const rowCount = table.rows.length;
 
-  for (let i = 0; i < rowCount - 1; i++) {
+  // 모든 행에 리사이저 추가 (마지막 행 포함)
+  for (let i = 0; i < rowCount; i++) {
     const row = table.rows[i];
 
     const resizer = document.createElement('div');
@@ -437,8 +373,6 @@ function setupColumnResizerEvents(resizer, table, colIndex) {
 
 // 행 리사이저 이벤트 설정
 function setupRowResizerEvents(resizer, table, rowIndex) {
-  // console.log(resizer, table, rowIndex);
-
   resizer.addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -447,22 +381,55 @@ function setupRowResizerEvents(resizer, table, rowIndex) {
     tableWrap.classList.add('resizing-table');
 
     const row = table.rows[rowIndex];
-    const nextRow = table.rows[rowIndex + 1];
-
     const startY = e.clientY;
     const startHeightRow = row.offsetHeight;
-    const startHeightNextRow = nextRow.offsetHeight;
+    const startTableHeight = table.offsetHeight;
+
+    // 마지막 행이 아닌 경우에만 다음 행 참조
+    const isLastRow = rowIndex === table.rows.length - 1;
+    let nextRow, startHeightNextRow;
+
+    if (!isLastRow) {
+      nextRow = table.rows[rowIndex + 1];
+      startHeightNextRow = nextRow.offsetHeight;
+    }
 
     resizer.classList.add('active');
 
     function onMouseMove(e) {
       const diffY = e.clientY - startY;
 
-      if (startHeightRow + diffY < 20 || startHeightNextRow - diffY < 20) return;
+      // 최소 높이 제한
+      if (startHeightRow + diffY < 20) return;
+      if (!isLastRow && startHeightNextRow - diffY < 20) return;
 
-      // 선택한 행(row)만 높이 조절
-      row.style.height = `${startHeightRow + diffY}px`;
-      nextRow.style.height = `${startHeightNextRow - diffY}px`;
+      const rowCells = row.cells;
+
+      if (isLastRow) {
+        // 마지막 행인 경우 - 테이블 전체 높이 조정
+        for (let i = 0; i < rowCells.length; i++) {
+          rowCells[i].style.height = `${startHeightRow + diffY}px`;
+        }
+
+        // 테이블 전체 높이 조정
+        table.style.height = `${startTableHeight + diffY}px`;
+
+        // 열 리사이저 높이 업데이트
+        const colResizers = tableWrap.querySelectorAll('.col-resizer');
+        colResizers.forEach((colResizer) => {
+          colResizer.style.height = `${table.offsetHeight}px`;
+        });
+      } else {
+        // 일반 행인 경우 - 현재 행과 다음 행 사이의 경계 조정
+        for (let i = 0; i < rowCells.length; i++) {
+          rowCells[i].style.height = `${startHeightRow + diffY}px`;
+        }
+
+        const nextRowCells = nextRow.cells;
+        for (let i = 0; i < nextRowCells.length; i++) {
+          nextRowCells[i].style.height = `${startHeightNextRow - diffY}px`;
+        }
+      }
 
       // 리사이저 위치 이동
       const newTop = row.offsetTop + row.offsetHeight - 4;

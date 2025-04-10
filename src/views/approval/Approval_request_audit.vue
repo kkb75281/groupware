@@ -1901,8 +1901,7 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  // max-width: 900px;
-  max-width: 930px;
+  max-width: 960px;
 
   .title {
     position: relative;

@@ -43,10 +43,14 @@
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-h6")
 		//- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
 	
-		// 색상 변경
+		// 텍스트 색상 변경
 		.input-color
-			input#colorInput.btn-custom(type="color" @change="handleCommand($event.target.value)" @blur="wysiwyg.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7; position: relative; border-radius: 0;")
-		//- button.btn-custom(type="button" @click="handleCommand('color')" style="border-right: 1px solid #e4e4e7;") Color
+			input#colorInput.btn-custom(type="color" @change="handleCommand('foreColor:' + $event.target.value)" @blur="wysiwyg.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7; position: relative; border-radius: 0;")
+
+		// 셀 배경색 변경
+		.input-color
+			input#bgColorInput.btn-custom(type="color" @change="handleCommand('bgColor:' + $event.target.value)" @blur="wysiwyg.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7; position: relative; border-radius: 0; background-color: #f0f0f0;")
+
 		button.btn-custom(type="button" @click="handleCommand('divider')")
 			.icon
 				svg
@@ -150,12 +154,169 @@ const insertTable = () => {
 const handleCommand = (command) => {
   if (!wysiwyg) return;
 
-  if (command === 'table') {
-    showTableCreator(); // 테이블 생성 모달 open
-  } else {
+  // 색상 명령 처리 (foreColor:값 또는 bgColor:값 형식)
+  if (
+    typeof command === 'string' &&
+    (command.startsWith('foreColor:') || command.startsWith('bgColor:'))
+  ) {
+    const parts = command.split(':');
+    const colorType = parts[0]; // foreColor 또는 bgColor
+    const colorValue = parts[1]; // 색상 값
+
+    const selection = window.getSelection();
+
+    // 선택 범위가 비어있지 않은지 확인
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+
+      // 테이블 내 셀이 선택되었는지 확인
+      let isCellSelection = false;
+      const selectedCells = [];
+
+      // 테이블 내 모든 셀 순회
+      const allTables = document.querySelectorAll('#myeditor table');
+      allTables.forEach((table) => {
+        const cells = table.querySelectorAll('td');
+        cells.forEach((cell) => {
+          if (selection.containsNode(cell, true)) {
+            selectedCells.push(cell);
+
+            // 셀 전체가 선택된 경우
+            if (isEntireCellSelected(cell, range)) {
+              isCellSelection = true;
+            }
+          }
+        });
+      });
+
+      // 셀 전체가 선택된 경우 (셀 배경색이나 셀 텍스트 색상 전체 변경)
+      if (isCellSelection) {
+        selectedCells.forEach((cell) => {
+          if (colorType === 'bgColor') {
+            cell.style.backgroundColor = colorValue;
+          } else {
+            cell.style.color = colorValue;
+          }
+        });
+      } else if (!range.collapsed) {
+        // 텍스트 일부만 선택된 경우 - span으로 감싸서 처리
+        try {
+          const span = document.createElement('span');
+          if (colorType === 'bgColor') {
+            span.style.backgroundColor = colorValue;
+          } else {
+            span.style.color = colorValue;
+          }
+
+          range.surroundContents(span);
+        } catch (e) {
+          // 범위가 여러 요소에 걸쳐 있는 경우, 기본 명령 사용
+          if (colorType === 'bgColor') {
+            wysiwyg.command('hiliteColor', colorValue);
+          } else {
+            wysiwyg.command('foreColor', colorValue);
+          }
+        }
+      } else {
+        // 선택된 텍스트가 없으면 기본 명령 실행
+        if (colorType === 'bgColor') {
+          wysiwyg.command('hiliteColor', colorValue);
+        } else {
+          wysiwyg.command('foreColor', colorValue);
+        }
+      }
+    } else {
+      // 선택 범위가 없으면 기본 명령 실행
+      if (colorType === 'bgColor') {
+        wysiwyg.command('hiliteColor', colorValue);
+      } else {
+        wysiwyg.command('foreColor', colorValue);
+      }
+    }
+  }
+  // 색상 값이 직접 전달된 경우 (#색상값 형식)
+  else if (typeof command === 'string' && command.startsWith('#')) {
+    const colorValue = command;
+    const selection = window.getSelection();
+
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+
+      if (!range.collapsed) {
+        // 선택된 텍스트에만 색상 적용
+        const span = document.createElement('span');
+        span.style.color = colorValue;
+
+        try {
+          range.surroundContents(span);
+        } catch (e) {
+          wysiwyg.command('foreColor', colorValue);
+        }
+      } else {
+        wysiwyg.command('foreColor', colorValue);
+      }
+    } else {
+      wysiwyg.command('foreColor', colorValue);
+    }
+  }
+  // 테이블 명령 처리
+  else if (command === 'table') {
+    showTableCreator();
+  }
+  // 정렬 명령 처리
+  else if (command === 'alignLeft' || command === 'alignCenter' || command === 'alignRight') {
+    const selection = window.getSelection();
+    const selectedCells = [];
+
+    const allTables = document.querySelectorAll('#myeditor table');
+    allTables.forEach((table) => {
+      const cells = table.querySelectorAll('td');
+      cells.forEach((cell) => {
+        if (selection.containsNode(cell, true)) {
+          selectedCells.push(cell);
+        }
+      });
+    });
+
+    if (selectedCells.length > 0) {
+      selectedCells.forEach((cell) => {
+        cell.style.textAlign = '';
+        switch (command) {
+          case 'alignLeft':
+            cell.style.textAlign = 'left';
+            break;
+          case 'alignCenter':
+            cell.style.textAlign = 'center';
+            break;
+          case 'alignRight':
+            cell.style.textAlign = 'right';
+            break;
+        }
+      });
+    } else {
+      wysiwyg.command(command);
+    }
+  }
+  // 기타 명령 처리
+  else {
     wysiwyg.command(command);
   }
 };
+
+// 셀 전체가 선택되었는지 확인하는 헬퍼 함수
+function isEntireCellSelected(cell, range) {
+  // 간단한 확인: 셀이 범위의 시작과 끝에 모두 포함되는지
+  return (
+    range.startContainer === cell ||
+    range.startContainer.parentNode === cell ||
+    (range.startOffset === 0 &&
+      (range.endContainer === cell.lastChild ||
+        range.endOffset ===
+          (range.endContainer.nodeType === Node.TEXT_NODE
+            ? range.endContainer.length
+            : range.endContainer.childNodes.length)))
+  );
+}
 
 onMounted(() => {
   wysiwyg = new Wysiwyg4All({
@@ -177,20 +338,59 @@ onMounted(() => {
         });
       }
 
-      if (c.caratPosition) {
-        console.log('커서 위치 : ', c.caratPosition);
+      // if (c.caratPosition) {
+      //   console.log('커서 위치 : ', c.caratPosition);
 
-        // Tracks carat position
-        // Make carat to be always within the viewport
+      //   // Tracks carat position
+      //   // Make carat to be always within the viewport
+      //   let viewPortHeight = Math.min(
+      //     document.documentElement.clientHeight || 0,
+      //     window.innerHeight || 0
+      //   );
+      //   console.log('뷰포트 높이 : ', viewPortHeight);
+
+      //   let minusWhenOutOfView = viewPortHeight - c.caratPosition.top;
+      //   console.log('뷰포트에서 벗어난 거리 : ', minusWhenOutOfView, 'px');
+
+      //   if (minusWhenOutOfView < 0) window.scrollBy(0, -minusWhenOutOfView);
+      // }
+
+      if (c.caratPosition) {
+        // 캐럿 위치를 사용하여 현재 셀 찾기
+        const currentNode = document.caretPositionFromPoint
+          ? document.caretPositionFromPoint(c.caratPosition.left, c.caratPosition.top).offsetNode
+          : document.elementFromPoint(c.caratPosition.left, c.caratPosition.top);
+
+        // 현재 노드로부터 가장 가까운 TD 요소 찾기
+        let tdElement = currentNode;
+        while (tdElement && tdElement.nodeName !== 'TD' && tdElement.id !== 'myeditor') {
+          tdElement = tdElement.parentNode;
+        }
+
+        // TD 요소인 경우, 현재 작업 셀로 표시
+        if (tdElement && tdElement.nodeName === 'TD') {
+          // 이전에 선택된 셀의 표시 제거
+          const allTds = document.querySelectorAll('.wysiwyg-table td');
+          allTds.forEach((cell) => {
+            if (cell !== tdElement) {
+              cell.classList.remove('current-cell');
+            }
+          });
+
+          // 현재 셀 표시
+          tdElement.classList.add('current-cell');
+
+          // 현재 활성화된 셀의 참조 저장 (전역 변수나 컴포넌트 데이터로 추가)
+          // 이 참조는 handleCommand에서 사용할 수 있음
+          window.currentActiveCell = tdElement;
+        }
+
+        // 뷰포트 내에 커서 위치 유지하기 위한 기존 코드 유지
         let viewPortHeight = Math.min(
           document.documentElement.clientHeight || 0,
           window.innerHeight || 0
         );
-        console.log('뷰포트 높이 : ', viewPortHeight);
-
         let minusWhenOutOfView = viewPortHeight - c.caratPosition.top;
-        console.log('뷰포트에서 벗어난 거리 : ', minusWhenOutOfView, 'px');
-
         if (minusWhenOutOfView < 0) window.scrollBy(0, -minusWhenOutOfView);
       }
 
@@ -402,26 +602,24 @@ defineExpose({
   display: block;
   position: relative;
   overflow: visible;
-  margin: 0.5rem 0 1.5rem;
+  margin: 0.5rem 0 1.5rem !important;
 }
 
 .wysiwyg-table {
   position: relative;
   border-collapse: collapse;
   width: calc(100% - 10px);
-  table-layout: auto;
+  table-layout: fixed;
   margin: 0 auto;
 
   tr,
   th,
   td {
-    height: auto !important;
+    height: auto;
   }
 
   td {
     border: 1px solid #000;
-    padding: 5px;
-    position: relative;
     min-width: 50px;
     min-height: 30px;
     background-color: white;
@@ -499,29 +697,29 @@ defineExpose({
 .btn-control-wrap {
   position: absolute;
   display: flex;
-}
 
-.control-row {
-  bottom: -24px;
-  left: 5px;
-}
+  &.control-row {
+    bottom: -24px;
+    left: 5px;
+  }
 
-.control-col {
-  flex-direction: column;
-  top: 0;
-  right: -19px;
-}
+  &.control-col {
+    flex-direction: column;
+    top: 0;
+    right: -19px;
+  }
 
-.btn-add,
-.btn-remove {
-  width: 24px;
-  height: 24px;
-  background-color: var(--gray-color-200);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-weight: bold;
-  border: none;
+  .btn-add,
+  .btn-remove {
+    width: 24px;
+    height: 24px;
+    background-color: var(--gray-color-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    border: none;
+  }
 }
 </style>
