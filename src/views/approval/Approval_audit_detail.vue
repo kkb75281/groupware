@@ -159,7 +159,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 			template(v-if="approvalStep === 2")
 				.tab-menu
 					ul(:class="{ 'stamp': stempType === 'stamp', 'sign': stempType === 'sign' }")
-						li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 도장/서명 선택
+						//- li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 도장/서명 선택
+						li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; getMainStamp()") 도장/서명 선택
 						li(:class="{ 'active': stempType === 'sign', 'disabled' : makeStampComplete || makeSignComplete }" @click="stempType = 'sign'; openStampModal = true; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 직접 서명
 				br
 				.tab-cont
@@ -190,7 +191,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 		.modal-footer(style="margin: 0")
 			template(v-if="approvalStep === 1")
 				button.btn.warning.btn-edit(type="button" @click="rejectAudit") 반려하기
-				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getStampList(true)") 승인하기
+				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getMainStamp()") 승인하기
 			template(v-if="approvalStep === 2")
 				button.btn.bg-gray.btn-edit(v-if="stempType === 'sign' ? handleStampBlobComplete : true" type="button" @click="approvalStep--") 이전
 				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재승인
@@ -597,6 +598,33 @@ let createStamp = () => {
     makeStampRunning.value = false;
     makeStampComplete.value = true;
   }, 'image/png');
+};
+
+// 대표 도장 가져오기
+const getMainStamp = async () => {
+  try {
+    const res = await skapi.getRecords({
+      table: {
+        name: 'main_stamp_' + user.user_id.replaceAll('-', '_'),
+        access_group: 1
+      }
+    });
+
+    if (res.list && res.list.length) {
+      const stampUrl = await skapi.getFile(res.list[0].data, {
+        dataType: 'endpoint'
+      });
+
+      previewStamp.value = stampUrl;
+      selectedStamp.value = stampUrl;
+      selectedStampComplete.value = true;
+      gettingStampList.value = false;
+    } else {
+      gettingStampList.value = false;
+    }
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 let selectStamp = (url) => {

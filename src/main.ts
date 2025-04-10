@@ -109,11 +109,11 @@ export let newVersion = ref(''); // 새로운 버전이 있는지 여부
 
 // 앱 시작 시 버전 정보 로드
 fetch('/version.json')
-    .then((response) => response.json())
-    .then((data) => {
-        currentVersion = data.version;
-        console.log('[Main] Current Service Worker Version:', currentVersion);
-    });
+  .then((response) => response.json())
+  .then((data) => {
+    currentVersion = data.version;
+    console.log('[Main] Current Service Worker Version:', currentVersion);
+  });
 
 if ('serviceWorker' in navigator) {
     // Service Worker 등록

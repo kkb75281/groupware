@@ -170,6 +170,8 @@ onMounted(() => {
       if (c.commandTracker) {
         // 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
         wysiwyg.export().then((r) => {
+          // 내용이 비어있을 때 빈 p 태그 생성 추가
+          const html = r.html && r.html.trim() !== '' ? r.html : '<p><br></p>';
           emit('update:content', r.html);
         });
       }
@@ -195,11 +197,25 @@ onMounted(() => {
       nextTick(() => {
         editorElement.innerHTML = props.savedContent;
       });
+    } else {
+      // 내용이 없는 경우 기본 빈 p 태그 추가
+      const editorElement = document.getElementById('myeditor');
+      if (editorElement) {
+        nextTick(() => {
+          editorElement.innerHTML = '<p><br></p>';
+        });
+      }
     }
 
-    if (!props.showBtn) {
-    }
+    // disabled 속성 처리
     editorElement.setAttribute('disalbed', 'false');
+
+    // if (!props.showBtn) {
+    //   const editorElement = document.getElementById('myeditor');
+    //   if (editorElement) {
+    //     editorElement.setAttribute('disabled', 'false');
+    //   }
+    // }
   }
 
   emit('editor-ready', true);
@@ -217,7 +233,8 @@ defineExpose({
 <style lang="less">
 ._wysiwyg4all {
   padding: 1.5rem 1rem 1rem 1rem;
-  min-height: calc(14em + 50px) !important;
+  // min-height: calc(14em + 50px) !important;
+  min-height: 18rem !important;
 
   &::before {
     color: var(--gray-color-300) !important;
@@ -247,7 +264,7 @@ defineExpose({
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1000;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;

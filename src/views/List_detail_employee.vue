@@ -74,6 +74,11 @@ hr
 			p.label 주소
 			input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
 
+		.input-wrap.upload-stamp
+			p.label 도장
+			.main-stamp
+				img#stamp-img(:src="getStampImageSrc(mainStamp)" alt="도장 이미지")
+
 		.input-wrap.upload-file(v-if="user.access_group > 98 || user.user_id === currentEmp?.user_id")
 			p.label(style="margin-bottom: 0;") 기타자료
 			template(v-if="!disabled")
@@ -134,8 +139,8 @@ const route = useRoute();
 let currentEmp = ref(null);
 let currentEmpOriginal = {};
 let currentEmpTags = ref({
-	emp_dvs: '',
-	emp_pst: '',
+  emp_dvs: '',
+  emp_pst: ''
 });
 let uploadFile = ref([]);
 let backupUploadFile = ref([]);
@@ -143,451 +148,589 @@ let disabled = ref(true);
 let removeFileList = ref([]);
 let fileNames = ref([]);
 let access_group = {
-	1: '직원',
-	98: '관리자',
-	99: '마스터',
+  1: '직원',
+  98: '관리자',
+  99: '마스터'
 };
+let mainStamp = ref({}); // 대표 도장 정보
 
 const userId = route.params.userId;
-getUsers({searchFor: "user_id", value: userId}).then(li => Promise.all(li.map((l) => getEmpDivisionPosition(l)))).then(res=>{
-	if(res.length === 0) {
-		window.alert('해당 직원을 찾을 수 없습니다.');
-		router.push('/list-employee');
-	}
+getUsers({ searchFor: 'user_id', value: userId })
+  .then((li) => Promise.all(li.map((l) => getEmpDivisionPosition(l))))
+  .then((res) => {
+    if (res.length === 0) {
+      window.alert('해당 직원을 찾을 수 없습니다.');
+      router.push('/list-employee');
+    }
 
-	let emp = res[0];
-	currentEmp.value = emp;
-	
-	currentEmpTags.value.emp_dvs = emp.division || '';
-	currentEmpTags.value.emp_pst = emp.position || '';
-});
+    let emp = res[0];
+    currentEmp.value = emp;
+
+    currentEmpTags.value.emp_dvs = emp.division || '';
+    currentEmpTags.value.emp_pst = emp.position || '';
+  });
 
 // 부서 목록 가져오기
 getDivisionNames();
 
 // 추가자료 가져오기
 let getAdditionalData = () => {
-    if (user.access_group < 99 && user.user_id !== userId) {
-		return;
-	};
+  if (user.access_group < 99 && user.user_id !== userId) {
+    return;
+  }
 
-	skapi.getRecords({
-		table: {
-			name: 'emp_additional_data',
-			access_group: 99,
-		},
-		reference: "[emp_additional_data]" + makeSafe(userId),
-	}).then(res => {
-		if(res.list.length > 0) {
-			let fileList = [];
+  skapi
+    .getRecords({
+      table: {
+        name: 'emp_additional_data',
+        access_group: 99
+      },
+      reference: '[emp_additional_data]' + makeSafe(userId)
+    })
+    .then((res) => {
+      if (res.list.length > 0) {
+        let fileList = [];
 
-			function getFileUserId(str) {
-				if (!str) return '';
+        function getFileUserId(str) {
+          if (!str) return '';
 
-				return str.split('/')[3]
-			}
+          return str.split('/')[3];
+        }
 
-			res.list.forEach((item) => {
-				if (item.bin.additional_data && item.bin.additional_data.length > 0) {       
-					const result = item.bin.additional_data.map((el) => ({
-						...el,
-						user_id: getFileUserId(el.path),
-						record_id: item.record_id,
-					}));    
+        res.list.forEach((item) => {
+          if (item.bin.additional_data && item.bin.additional_data.length > 0) {
+            const result = item.bin.additional_data.map((el) => ({
+              ...el,
+              user_id: getFileUserId(el.path),
+              record_id: item.record_id
+            }));
 
-					fileList.push(...result);
-				}
-			})
+            fileList.push(...result);
+          }
+        });
 
-			uploadFile.value = fileList;
-		}
-	})
-}
+        uploadFile.value = fileList;
+      }
+    });
+};
 getAdditionalData();
 
 // 부서 목록 옵션으로 가져오기 (회원 수정시 사용)
 let displayDivisionOptions = () => {
-	let divisionList = document.querySelector(`select[name="division"]`);
+  let divisionList = document.querySelector(`select[name="division"]`);
 
-	// 기존 옵션을 제거하지 않고 새로운 옵션을 추가
-	divisionList.innerHTML = ''; // 기존 옵션 초기화
+  // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
+  divisionList.innerHTML = ''; // 기존 옵션 초기화
 
-	const allOption = document.createElement('option');
-	const defaultOption = document.createElement('option');
+  const allOption = document.createElement('option');
+  const defaultOption = document.createElement('option');
 
-	let matchFound = false;
+  let matchFound = false;
 
-	// 기본 옵션 추가
-	defaultOption.disabled = true;
-	defaultOption.selected = true;
-	defaultOption.innerText = '부서 선택';
-	divisionList.appendChild(defaultOption);
+  // 기본 옵션 추가
+  defaultOption.disabled = true;
+  defaultOption.selected = true;
+  defaultOption.innerText = '부서 선택';
+  divisionList.appendChild(defaultOption);
 
-	// 동적으로 부서 옵션 추가
-	for (let key in divisionNameList.value) {
-		if(divisionNameList.value[key] !== '') {
-			const option = document.createElement('option');
-			option.value = key;
-			option.innerText = divisionNameList.value[key];
-	
-			// 선택된 부서 처리
-			if (key === currentEmp.value.division) {
-				option.selected = true;
-				matchFound = true;
-			}
-	
-			divisionList.appendChild(option);
-		}
-	}
+  // 동적으로 부서 옵션 추가
+  for (let key in divisionNameList.value) {
+    if (divisionNameList.value[key] !== '') {
+      const option = document.createElement('option');
+      option.value = key;
+      option.innerText = divisionNameList.value[key];
 
-	// 일치하는 키가 없으면 기본 옵션에 selected 추가
-	if (!matchFound) {
-		defaultOption.selected = true;
-	}
+      // 선택된 부서 처리
+      if (key === currentEmp.value.division) {
+        option.selected = true;
+        matchFound = true;
+      }
 
-	// 선택박스 활성화
-	divisionList.disabled = false;
-}
+      divisionList.appendChild(option);
+    }
+  }
+
+  // 일치하는 키가 없으면 기본 옵션에 selected 추가
+  if (!matchFound) {
+    defaultOption.selected = true;
+  }
+
+  // 선택박스 활성화
+  divisionList.disabled = false;
+};
 
 let sendMail = async (mail) => {
-	const maillink = encodeURIComponent(mail);
+  const maillink = encodeURIComponent(mail);
 
-    openGmailAppOrWeb(maillink);
-}
+  openGmailAppOrWeb(maillink);
+};
 
 let copy = (text) => {
-    let doc = document.createElement('textarea');
-    doc.textContent = text;
-    document.body.append(doc);
-    doc.select();
-    document.execCommand('copy');
-    doc.remove();
+  let doc = document.createElement('textarea');
+  doc.textContent = text;
+  document.body.append(doc);
+  doc.select();
+  document.execCommand('copy');
+  doc.remove();
 
-	alert('이메일이 복사되었습니다.');
-}
+  alert('이메일이 복사되었습니다.');
+};
 
 // 파일 업로드 리스트 업데이트
 let updateFileList = (e) => {
-	let target = e.target;
-	if (target.files) {
-		fileNames.value = Array.from(target.files).map(file => file.name);
-	}
+  let target = e.target;
+  if (target.files) {
+    fileNames.value = Array.from(target.files).map((file) => file.name);
+  }
 };
 
 // 수정 시작
-let startEditEmp = async() => {
-	disabled.value = false;
-	currentEmpOriginal = { ...currentEmp.value };
-	currentEmpOriginal.division = currentEmpTags.value.emp_dvs;
-	currentEmpOriginal.position = currentEmpTags.value.emp_pst;
-	fileNames.value = [];
-	removeFileList.value = [];
+let startEditEmp = async () => {
+  disabled.value = false;
+  currentEmpOriginal = { ...currentEmp.value };
+  currentEmpOriginal.division = currentEmpTags.value.emp_dvs;
+  currentEmpOriginal.position = currentEmpTags.value.emp_pst;
+  fileNames.value = [];
+  removeFileList.value = [];
 
-	nextTick(() => {
-		displayDivisionOptions();
-	});
+  nextTick(() => {
+    displayDivisionOptions();
+  });
 
-	if(uploadFile.value){
-		backupUploadFile.value = [...uploadFile.value];
-	}
-}
+  if (uploadFile.value) {
+    backupUploadFile.value = [...uploadFile.value];
+  }
+};
 
 // 수정 취소
 let cancelEdit = () => {
-	disabled.value = true;
-	currentEmp.value = { ...currentEmpOriginal };
-	currentEmpTags.value.emp_dvs = currentEmpOriginal.division;
-	currentEmpTags.value.emp_pst = currentEmpOriginal.position;
-	fileNames.value = [];
-	removeFileList.value = [];
-	uploadFile.value = [...backupUploadFile.value];
-}
+  disabled.value = true;
+  currentEmp.value = { ...currentEmpOriginal };
+  currentEmpTags.value.emp_dvs = currentEmpOriginal.division;
+  currentEmpTags.value.emp_pst = currentEmpOriginal.position;
+  fileNames.value = [];
+  removeFileList.value = [];
+  uploadFile.value = [...backupUploadFile.value];
+};
 
 // 수정사항 저장
-let registerEmp = async(e) => {
-	e.preventDefault();
-	mainPageLoading.value = true;
-	disabled.value = true;
+let registerEmp = async (e) => {
+  e.preventDefault();
+  mainPageLoading.value = true;
+  disabled.value = true;
 
-	let user_id_safe = makeSafe(currentEmp.value.user_id);
-	let needUpdate = false;
+  let user_id_safe = makeSafe(currentEmp.value.user_id);
+  let needUpdate = false;
 
-	// 부서, 직책 업데이트 (history/current)
-	if(currentEmpOriginal.division !== currentEmpTags.value.emp_dvs || currentEmpOriginal.position !== currentEmpTags.value.emp_pst) {
-		skapi.postRecord(null, {
-			table: {
-				name: 'emp_division' + user_id_safe,
-				access_group: 1
-			},
-			tags: ["[emp_pst]" + currentEmpTags.value.emp_pst, "[emp_id]" + user_id_safe, "[emp_dvs]" + currentEmpTags.value.emp_dvs]
-		}).then(r => {
-			// console.log('history 부서직책업데이트', r);
-		})
+  // 부서, 직책 업데이트 (history/current)
+  if (
+    currentEmpOriginal.division !== currentEmpTags.value.emp_dvs ||
+    currentEmpOriginal.position !== currentEmpTags.value.emp_pst
+  ) {
+    skapi
+      .postRecord(null, {
+        table: {
+          name: 'emp_division' + user_id_safe,
+          access_group: 1
+        },
+        tags: [
+          '[emp_pst]' + currentEmpTags.value.emp_pst,
+          '[emp_id]' + user_id_safe,
+          '[emp_dvs]' + currentEmpTags.value.emp_dvs
+        ]
+      })
+      .then((r) => {
+        // console.log('history 부서직책업데이트', r);
+      });
 
-		await skapi.deleteRecords({unique_id: "[emp_position_current]" + user_id_safe}).then(r => {
-			// console.log(r)
-		}).catch(err=>err);
+    await skapi
+      .deleteRecords({ unique_id: '[emp_position_current]' + user_id_safe })
+      .then((r) => {
+        // console.log(r)
+      })
+      .catch((err) => err);
 
-		await skapi.postRecord({
-			user_id: currentEmp.value.user_id,
-		}, {
-			unique_id: "[emp_position_current]" + user_id_safe,
-			table: {
-				name: 'emp_position_current',
-				access_group: 1
-			},
-			index: {
-				name: currentEmpTags.value.emp_dvs + '.' + currentEmpTags.value.emp_pst,
-				value: currentEmp.value.name
-			}
-		}).then(r => {
-			// console.log('current 부서직책업데이트', r);
-		})
-		
-		needUpdate = true;
-	}
+    await skapi
+      .postRecord(
+        {
+          user_id: currentEmp.value.user_id
+        },
+        {
+          unique_id: '[emp_position_current]' + user_id_safe,
+          table: {
+            name: 'emp_position_current',
+            access_group: 1
+          },
+          index: {
+            name: currentEmpTags.value.emp_dvs + '.' + currentEmpTags.value.emp_pst,
+            value: currentEmp.value.name
+          }
+        }
+      )
+      .then((r) => {
+        // console.log('current 부서직책업데이트', r);
+      });
 
-	// 권한 업데이트
-	if(currentEmpOriginal.access_group !== currentEmp.value.access_group) {
-		skapi.grantAccess({
-			user_id: currentEmp.value.user_id,
-			access_group: currentEmp.value.access_group
-		}).then(r => {
-			// console.log('권한업데이트' ,r)
-		})
-	}
+    needUpdate = true;
+  }
 
-	// 추가자료 업데이트
-	let filebox = document.querySelector('input[name=additional_data]');
+  // 권한 업데이트
+  if (currentEmpOriginal.access_group !== currentEmp.value.access_group) {
+    skapi
+      .grantAccess({
+        user_id: currentEmp.value.user_id,
+        access_group: currentEmp.value.access_group
+      })
+      .then((r) => {
+        // console.log('권한업데이트' ,r)
+      });
+  }
 
-	if (filebox && filebox.files.length) {
-		for(let file of filebox.files) {
-			const formData = new FormData();
+  // 추가자료 업데이트
+  let filebox = document.querySelector('input[name=additional_data]');
 
-			formData.append('additional_data', file);
-			
-			await skapi.postRecord(formData, {
-				table: {
-					name: 'emp_additional_data',
-					access_group: 99
-				},
-				reference: "[emp_additional_data]" + makeSafe(currentEmp.value.user_id),
-			})
-		}
+  if (filebox && filebox.files.length) {
+    for (let file of filebox.files) {
+      const formData = new FormData();
 
-		if(uploadFile.value && uploadFile.value.length) {
-			backupUploadFile.value = [...uploadFile.value];
-		}
-	}
+      formData.append('additional_data', file);
 
-	if(removeFileList.value.length) {
-		await skapi.deleteRecords({record_id: removeFileList.value}).then(r => {
-			uploadFile.value = uploadFile.value.filter(file => !removeFileList.value.includes(file.record_id));
-			
-			removeFileList.value = [];
-		});
-	}
+      await skapi.postRecord(formData, {
+        table: {
+          name: 'emp_additional_data',
+          access_group: 99
+        },
+        reference: '[emp_additional_data]' + makeSafe(currentEmp.value.user_id)
+      });
+    }
 
-	currentEmp.value.division = currentEmpTags.value.emp_dvs;
-	currentEmp.value.position = currentEmpTags.value.emp_pst;
+    if (uploadFile.value && uploadFile.value.length) {
+      backupUploadFile.value = [...uploadFile.value];
+    }
+  }
 
-	employeeDict[currentEmp.value.user_id] = currentEmp.value;
+  if (removeFileList.value.length) {
+    await skapi.deleteRecords({ record_id: removeFileList.value }).then((r) => {
+      uploadFile.value = uploadFile.value.filter(
+        (file) => !removeFileList.value.includes(file.record_id)
+      );
 
-	getAdditionalData();
-	window.alert('직원 정보 수정이 완료되었습니다.');
+      removeFileList.value = [];
+    });
+  }
 
-	disabled.value = true;
-	mainPageLoading.value = false;
-}
+  currentEmp.value.division = currentEmpTags.value.emp_dvs;
+  currentEmp.value.position = currentEmpTags.value.emp_pst;
+
+  employeeDict[currentEmp.value.user_id] = currentEmp.value;
+
+  getAdditionalData();
+  window.alert('직원 정보 수정이 완료되었습니다.');
+
+  disabled.value = true;
+  mainPageLoading.value = false;
+};
+
+// 도장 이미지 URL 가져오기
+const getStampImageSrc = (mainStamp) => {
+  // 도장 목록이 비어있으면 빈 문자열 반환
+  if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
+    return '';
+  }
+
+  // 레코드에서 로드된 도장인지 확인 (문자열인 경우)
+  if (typeof mainStamp === 'string') {
+    return mainStamp;
+  }
+
+  // 모달에서 선택된 도장인 경우 (객체로 url 속성을 가진 경우)
+  else if (mainStamp && mainStamp.value && mainStamp.value.url) {
+    return mainStamp.value.url;
+  }
+
+  // 객체 자체에 url 속성이 있는 경우
+  else if (mainStamp && mainStamp.url) {
+    return mainStamp.url;
+  }
+
+  // 아무 것도 없으면 빈 문자열 반환
+  return '';
+};
 
 onMounted(async () => {
-	window.scrollTo(0, 0);
+  window.scrollTo(0, 0);
+
+  await getStampList();
+
+  // 도장 목록이 비어있으면 대표 도장을 설정하지 않음
+  if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
+    console.log('도장 목록이 없어 대표 도장을 설정하지 않음');
+    mainStamp.value = null;
+    return;
+  }
+
+  // 각 직원에 대한 대표도장 가져오기
+  skapi
+    .getRecords({
+      table: {
+        name: 'main_stamp_' + makeSafe(userId),
+        access_group: 1
+      }
+    })
+    .then(async (res) => {
+      console.log('== onMounted == 도장 res : ', res);
+      if (res.list.length > 0) {
+        mainStamp.value = await skapi.getFile(res.list[0].data, {
+          dataType: 'endpoint'
+        });
+      } else {
+        mainStamp.value = null;
+      }
+    })
+    .catch((err) => {
+      console.log('== getRecords == err : ', err);
+    });
 });
 </script>
 
 <style scoped lang="less">
 .wrap {
-	padding: 3rem 2.4rem 0;
+  padding: 3rem 2.4rem 0;
 }
 
 .title {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: end;
-	gap: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
 
-	span {
-		color: var(--gray-color-400);
-		line-height: 1.4;
-	}
+  span {
+    color: var(--gray-color-400);
+    line-height: 1.4;
+  }
 }
 
 #_el_empDetail_form {
-	.imgbtn-wrap {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-	}
-	.input-wrap {
-		position: relative;
-		margin-top: 16px;
+  .imgbtn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .input-wrap {
+    position: relative;
+    margin-top: 16px;
 
-		input {
-			border-color: var(--primary-color-400);
-			cursor: initial;
+    input {
+      border-color: var(--primary-color-400);
+      cursor: initial;
 
-			&:read-only {
-				border-color: var(--gray-color-200);
-				cursor: default;
+      &:read-only {
+        border-color: var(--gray-color-200);
+        cursor: default;
 
-				&:hover {
-					border-color: var(--gray-color-200);
-				}
-			}
+        &:hover {
+          border-color: var(--gray-color-200);
+        }
+      }
 
-			&:hover {
-				border-color: var(--primary-color-400);
-			}
-		}
+      &:hover {
+        border-color: var(--primary-color-400);
+      }
+    }
 
-		select {
-			border-color: var(--primary-color-400);
-		}
+    select {
+      border-color: var(--primary-color-400);
+    }
 
-		.icon {
-			position: absolute;
-			bottom: 12px;
-			right: 0px;
-			cursor: pointer;
+    .icon {
+      position: absolute;
+      bottom: 12px;
+      right: 0px;
+      cursor: pointer;
 
-			&:hover {
-				svg {
-					transform: scale(1.1);
-				}
-			}
+      &:hover {
+        svg {
+          transform: scale(1.1);
+        }
+      }
 
-			svg {
-				width: 1.2rem;
-				height: 1.2rem;
-				fill: var(--primary-color-400-dark);
-			}
-		}
-	}
+      svg {
+        width: 1.2rem;
+        height: 1.2rem;
+        fill: var(--primary-color-400-dark);
+      }
+    }
+  }
 
-	.util-wrap {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		margin-top: 1rem;
-		padding: 1rem;
-		border-radius: 0.5rem;
+  .util-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
 
-		.util-btn {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			gap: 0.5rem;
+    .util-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
 
-			&.disabled {
-				.click-btn {
-					background-color: var(--gray-color-200);
-					pointer-events: none;
-					cursor: not-allowed;
-					user-select: none;
-				}
+      &.disabled {
+        .click-btn {
+          background-color: var(--gray-color-200);
+          pointer-events: none;
+          cursor: not-allowed;
+          user-select: none;
+        }
 
-				span {
-					color: var(--gray-color-300);
-				}
-			}
+        span {
+          color: var(--gray-color-300);
+        }
+      }
 
-			.click-btn {
-				padding: 0.5rem;
-				border-radius: 50%;
-				background-color: var(--primary-color-400);
+      .click-btn {
+        padding: 0.5rem;
+        border-radius: 50%;
+        background-color: var(--primary-color-400);
 
-				svg {
-					width: 1.2rem;
-					height: 1.2rem;
-					fill: #fff;
-				}
-			}
-			span {
-				font-size: 0.8rem;
-				color: var(--gray-color-400);
-				user-select: none;
-			}
-		}
-	}
+        svg {
+          width: 1.2rem;
+          height: 1.2rem;
+          fill: #fff;
+        }
+      }
+      span {
+        font-size: 0.8rem;
+        color: var(--gray-color-400);
+        user-select: none;
+      }
+    }
+  }
 
-	img {
-		width: 100px;
-		height: 100px;
-		border-radius: 30%;
-		display: block;
-		object-fit: contain;
-		position: relative;
-		background-color: var(--gray-color-100);
+  img {
+    width: 100px;
+    height: 100px;
+    border-radius: 30%;
+    display: block;
+    object-fit: contain;
+    position: relative;
+    background-color: var(--gray-color-100);
 
-		&::before {
-			content: "No Image";
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			width: 100%;
-			height: 100%;
-			background-color: var(--gray-color-100);
-			color: #888;
-			font-size: 14px;
-			text-align: center;
-			position: absolute;
-			top: 0;
-			left: 0;
-		}
+    &::before {
+      content: 'No Image';
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background-color: var(--gray-color-100);
+      color: #888;
+      font-size: 14px;
+      text-align: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
 
-		&#profile-img {
-			border-radius: 50%;
+    &#profile-img {
+      border-radius: 50%;
 
-			&::before {
-				content: "No Image";
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				width: 100%;
-				height: 100%;
-				background-color: var(--gray-color-100);
-				color: #888;
-				font-size: 14px;
-				text-align: center;
-				position: absolute;
-				top: 0;
-				left: 0;
-			}
-		}
-	}
+      &::before {
+        content: 'No Image';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-color: var(--gray-color-100);
+        color: #888;
+        font-size: 14px;
+        text-align: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    }
+  }
 }
 
 .upload-file {
-	.file-item {
-		&.remove {
-			background-color: var(--warning-color-50);
-			border: 1px dashed var(--warning-color-400);
-			color: var(--warning-color-500);
-		}
-	}
+  .file-item {
+    &.remove {
+      background-color: var(--warning-color-50);
+      border: 1px dashed var(--warning-color-400);
+      color: var(--warning-color-500);
+    }
+  }
 }
 
 .btn-upload-file {
-	margin-top: 12px;
+  margin-top: 12px;
+}
+
+.input-wrap.upload-stamp {
+  .main-stamp {
+    #stamp-img {
+      &:empty::before {
+        content: '도장 등록';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        color: #888;
+        background-color: #fff;
+        font-size: 14px;
+        text-align: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    }
+  }
+}
+
+.main-stamp {
+  width: fit-content;
+  position: relative;
+}
+
+#stamp-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 30%;
+  display: block;
+  object-fit: contain;
+  position: relative;
+  background-color: #fff;
+  border: 2px dashed var(--gray-color-200);
+  margin-bottom: 0.5rem;
+
+  &::before {
+    content: '도장 등록';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #888;
+    background-color: #fff;
+    font-size: 14px;
+    text-align: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
 }
 
 @media (max-width: 768px) {
-	.wrap {
-		padding-left: 16px;
-		padding-right: 16px;
-	}
+  .wrap {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 </style>

@@ -12,7 +12,7 @@ ul.card-wrap
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
-    li.card
+    //- li.card
         router-link.router(to="/mypage/edit-mystamp")
             .icon.img
                 svg
@@ -42,7 +42,7 @@ ul.card-wrap
             .icon.img
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
-            h4.name 근태 관리
+            h4.name 출퇴근 관리
             .btn-wrap
                 p.btn-go 바로가기
                 .icon
@@ -72,6 +72,4 @@ const route = useRoute();
 const googleAccountCheck = ref(localStorage.getItem('accessToken') ? true : false);
 </script>
 
-<style scoped lang="less">
-
-</style>
+<style scoped lang="less"></style>
