@@ -44,12 +44,18 @@
 		//- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
 	
 		// 텍스트 색상 변경
-		.input-color
-			input#colorInput.btn-custom(type="color" @change="handleCommand('foreColor:' + $event.target.value)" @blur="wysiwyg.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7; position: relative; border-radius: 0;")
+		.btn-custom.input-color
+			input#colorInput(type="color" @change="handleCommand('textColor:' + $event.target.value)" @blur="wysiwyg.restoreLastSelection()")
+			.icon
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-color-text")
 
 		// 셀 배경색 변경
-		.input-color
-			input#bgColorInput.btn-custom(type="color" @change="handleCommand('bgColor:' + $event.target.value)" @blur="wysiwyg.restoreLastSelection()" style="padding: 0; border: none; border-bottom: 1px solid #e4e4e7; border-right: 1px solid #e4e4e7; position: relative; border-radius: 0; background-color: #f0f0f0;")
+		.btn-custom.input-color(style="border-right: 1px solid #e4e4e7;")
+			input#bgColorInput(type="color" @change="handleCommand('bgColor:' + $event.target.value)" @blur="wysiwyg.restoreLastSelection()")
+			.icon
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
 
 		button.btn-custom(type="button" @click="handleCommand('divider')")
 			.icon
@@ -153,24 +159,33 @@ const insertTable = () => {
 const handleCommand = (command) => {
   if (!wysiwyg) return;
 
-  // 색상 명령 처리 (foreColor:값 또는 bgColor:값 형식)
+  // 색상 명령 처리 (textColor:값 또는 bgColor:값 형식)
   if (
     typeof command === 'string' &&
-    (command.startsWith('foreColor:') || command.startsWith('bgColor:'))
+    (command.startsWith('textColor:') || command.startsWith('bgColor:'))
   ) {
+    console.log('AA 색상 명령:', command);
     const parts = command.split(':');
-    const colorType = parts[0]; // foreColor 또는 bgColor
+    const colorType = parts[0]; // textColor 또는 bgColor
     const colorValue = parts[1]; // 색상 값
 
+    console.log('colorType : ', colorType);
+
     const selection = window.getSelection();
+    console.log('selection : ', selection);
 
     // 선택 범위가 비어있지 않은지 확인
     if (selection.rangeCount > 0) {
+      console.log('== AA ==');
+
       const range = selection.getRangeAt(0);
+      console.log('range : ', range);
 
       // 테이블 내 셀이 선택되었는지 확인
       let isCellSelection = false;
       const selectedCells = [];
+
+      console.log('isCellSelection : ', isCellSelection);
 
       // 테이블 내 모든 셀 순회
       const allTables = document.querySelectorAll('#myeditor table');
@@ -190,6 +205,7 @@ const handleCommand = (command) => {
 
       // 셀 전체가 선택된 경우 (셀 배경색이나 셀 텍스트 색상 전체 변경)
       if (isCellSelection) {
+        console.log('AA');
         selectedCells.forEach((cell) => {
           if (colorType === 'bgColor') {
             cell.style.backgroundColor = colorValue;
@@ -198,14 +214,33 @@ const handleCommand = (command) => {
           }
         });
       } else if (!range.collapsed) {
+        console.log('BB');
+        console.log('range.collapsed : ', range.collapsed);
+
         // 텍스트 일부만 선택된 경우 - span으로 감싸서 처리
         try {
           const span = document.createElement('span');
+
           if (colorType === 'bgColor') {
             span.style.backgroundColor = colorValue;
           } else {
             span.style.color = colorValue;
           }
+
+          // // p 태그 전체가 선택됐는지 확인
+          // const parentEl = range.startContainer.parentElement;
+
+          // // 선택된 노드가 p 태그고 전체가 선택된 경우
+          // if (parentEl.tagName === 'P') {
+          //   if (colorType === 'bgColor') {
+          //     parentEl.style.backgroundColor = colorValue;
+          //   } else {
+          //     parentEl.style.color = colorValue;
+          //   }
+          // } else {
+          //   // 일부 선택 - span으로 감싸기
+          //   range.surroundContents(span);
+          // }
 
           range.surroundContents(span);
         } catch (e) {
@@ -213,28 +248,32 @@ const handleCommand = (command) => {
           if (colorType === 'bgColor') {
             wysiwyg.command('hiliteColor', colorValue);
           } else {
-            wysiwyg.command('foreColor', colorValue);
+            wysiwyg.command('textColor', colorValue);
           }
         }
       } else {
         // 선택된 텍스트가 없으면 기본 명령 실행
         if (colorType === 'bgColor') {
+          console.log('BB');
           wysiwyg.command('hiliteColor', colorValue);
         } else {
-          wysiwyg.command('foreColor', colorValue);
+          console.log('CC');
+          wysiwyg.command('textColor', colorValue);
         }
       }
     } else {
+      console.log('DD');
       // 선택 범위가 없으면 기본 명령 실행
       if (colorType === 'bgColor') {
         wysiwyg.command('hiliteColor', colorValue);
       } else {
-        wysiwyg.command('foreColor', colorValue);
+        wysiwyg.command('textColor', colorValue);
       }
     }
   }
   // 색상 값이 직접 전달된 경우 (#색상값 형식)
   else if (typeof command === 'string' && command.startsWith('#')) {
+    console.log('BB 색상 값:', command);
     const colorValue = command;
     const selection = window.getSelection();
 
@@ -249,13 +288,13 @@ const handleCommand = (command) => {
         try {
           range.surroundContents(span);
         } catch (e) {
-          wysiwyg.command('foreColor', colorValue);
+          wysiwyg.command('textColor', colorValue);
         }
       } else {
-        wysiwyg.command('foreColor', colorValue);
+        wysiwyg.command('textColor', colorValue);
       }
     } else {
-      wysiwyg.command('foreColor', colorValue);
+      wysiwyg.command('textColor', colorValue);
     }
   }
   // 테이블 명령 처리
@@ -426,13 +465,6 @@ onMounted(() => {
 
     // disabled 속성 처리
     editorElement.setAttribute('disalbed', 'false');
-
-    // if (!props.showBtn) {
-    //   const editorElement = document.getElementById('myeditor');
-    //   if (editorElement) {
-    //     editorElement.setAttribute('disabled', 'false');
-    //   }
-    // }
   }
 
   emit('editor-ready', true);
@@ -450,7 +482,6 @@ defineExpose({
 <style lang="less">
 ._wysiwyg4all {
   padding: 1.5rem 1rem 1rem 1rem;
-  // min-height: calc(14em + 50px) !important;
   min-height: 18rem !important;
 
   &::before {
@@ -558,7 +589,32 @@ defineExpose({
 
 .input-color {
   display: inline-block;
+  align-items: center;
   position: relative;
+
+  &.btn-custom {
+    display: flex;
+  }
+
+  input {
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid #e4e4e7;
+    border-right: 1px solid #e4e4e7;
+    position: absolute;
+    left: 0;
+    opacity: 0;
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .icon {
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
 }
 
 .btns-wrap {
@@ -650,7 +706,7 @@ defineExpose({
   left: 3px;
   width: 2px;
   height: 100%;
-  background-color: #bbb;
+  // background-color: #bbb;
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -658,7 +714,7 @@ defineExpose({
 .col-resizer:hover::after,
 .col-resizer.active::after {
   opacity: 1;
-  background-color: #4a90e2;
+  // background-color: #4a90e2;
 }
 
 .row-resizer {
@@ -676,7 +732,7 @@ defineExpose({
   top: 3px;
   height: 2px;
   width: 100%;
-  background-color: #bbb;
+  // background-color: #bbb;
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -684,7 +740,7 @@ defineExpose({
 .row-resizer:hover::after,
 .row-resizer.active::after {
   opacity: 1;
-  background-color: #4a90e2;
+  // background-color: #4a90e2;
 }
 
 /* 리사이징 중 선택 방지 */
