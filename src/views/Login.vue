@@ -76,6 +76,7 @@
 	}
 
 	let setLocalStorage = (e) => {
+		console.log(e.target.checked);
 		localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
 	}
 
