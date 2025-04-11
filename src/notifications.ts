@@ -14,6 +14,7 @@ export const notifications: Reactive<{
 });
 
 export let serviceWorkerRegistMsg = ref('');
+export let notificationNotWorkingMsg = ref('');
 export let onlyUserGesture = ref(false);
 
 export async function setNotificationPermission() {
@@ -22,47 +23,49 @@ export async function setNotificationPermission() {
 }
 
 function isSafari() {
-    const userAgent = navigator.userAgent;
-    return /^((?!chrome|android).)*safari/i.test(userAgent);
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 }
 
 function isIOS() {
-    // navigator.userAgent에서 iOS 관련 문자열을 검색
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-
-    // iOS 기기는 "iPhone", "iPad", "iPod" 등의 키워드를 포함합니다.
     return /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
 }
 
 export async function checkNotificationPermission() {
-  onlyUserGesture.value = false;
-
-  if (isIOS()) {
-    console.log('현재 기기는 isIOS입니다.');
-    onlyUserGesture.value = true;
-    return;
-  }
-
-  if (Notification.permission === 'granted') {
-    console.log('알림이 허용되어 있습니다.');
-    console.log('hererererere');
     onlyUserGesture.value = false;
-  } else if (Notification.permission === 'denied') {
-    console.log('알림이 차단되어 있습니다.');
-    onlyUserGesture.value = false;
-  } else if (Notification.permission === 'default') {
-    console.log('알림 권한이 아직 설정되지 않았습니다.');
+    notificationNotWorkingMsg.value = '';
 
-    if (isSafari()) {
-      console.log('현재 브라우저는 Safari입니다.');
-      onlyUserGesture.value = true;
-    } else {
-      console.log('현재 브라우저는 Safari가 아닙니다.');
-      setNotificationPermission();
+    // Notification API를 지원하지 않는 경우
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+        notificationNotWorkingMsg.value = '현재 환경은 알림 기능을 지원하지 않습니다.';
+        onlyUserGesture.value = false; // 알림을 지원하지 않으므로 사용자 인터랙션 불필요
+        return 'unsupported'; // 또는 null, undefined 등 적절한 값을 반환
     }
-  }
 
-  return Notification.permission;
+    if (isIOS() || isSafari()) {
+        console.log('현재 기기는 iOS 이거나 Safari 입니다.');
+        onlyUserGesture.value = true;
+    }
+
+    if (Notification.permission === 'granted') {
+        console.log('알림이 허용되어 있습니다.');
+        onlyUserGesture.value = false;
+    } else if (Notification.permission === 'denied') {
+        console.log('알림이 차단되어 있습니다.');
+        onlyUserGesture.value = false;
+    } else if (Notification.permission === 'default') {
+        console.log('알림 권한이 아직 설정되지 않았습니다.');
+
+        if (!isSafari()) {
+            try {
+                await setNotificationPermission(); // 권한 요청
+            } catch (error) {
+                console.error('알림 권한 요청 중 오류가 발생했습니다:', error);
+            }
+        }
+    }
+
+    return Notification.permission;
 }
 
 export const readAudit: Ref<

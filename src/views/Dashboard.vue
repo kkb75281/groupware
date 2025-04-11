@@ -6,6 +6,13 @@
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ serviceWorkerRegistMsg }}
 
+
+.warning-msg(v-if="notificationNotWorkingMsg")
+	.icon
+		svg
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+	p {{ notificationNotWorkingMsg }}
+
 template(v-if="newVersionAvailable")
 	p {{ `새로운 버전(${newVersion})이 준비되었습니다.` }}
 
@@ -130,7 +137,7 @@ import { user } from "@/user.ts";
 import { newVersionAvailable, newVersion } from "@/main.ts";
 import { convertTimestampToDateMillis } from "@/utils/time.ts";
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
-import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications.ts";
+import { mailList, serviceWorkerRegistMsg, notificationNotWorkingMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications.ts";
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
