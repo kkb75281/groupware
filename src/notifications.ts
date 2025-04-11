@@ -20,8 +20,10 @@ export let onlyUserGesture = ref(false);
 export async function setNotificationPermission() {
   await Notification.requestPermission().then((permission) => {
 	console.log('setNotificationPermission ==== Notification permission:', permission);
+	onlyUserGesture.value = false;
+	return permission;
   });
-  return checkNotificationPermission();
+//   return checkNotificationPermission();
 }
 
 function isSafari() {
