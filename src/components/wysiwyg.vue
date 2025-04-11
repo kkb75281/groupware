@@ -707,7 +707,7 @@ defineExpose({
   left: 3px;
   width: 2px;
   height: 100%;
-  background-color: #bbb;
+  // background-color: #bbb;
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -715,7 +715,7 @@ defineExpose({
 .col-resizer:hover::after,
 .col-resizer.active::after {
   opacity: 1;
-  background-color: #4a90e2;
+  // background-color: #4a90e2;
 }
 
 .row-resizer {
@@ -733,7 +733,7 @@ defineExpose({
   top: 3px;
   height: 2px;
   width: 100%;
-  background-color: #bbb;
+  // background-color: #bbb;
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -741,7 +741,7 @@ defineExpose({
 .row-resizer:hover::after,
 .row-resizer.active::after {
   opacity: 1;
-  background-color: #4a90e2;
+  // background-color: #4a90e2;
 }
 
 /* 리사이징 중 선택 방지 */

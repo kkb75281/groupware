@@ -725,14 +725,353 @@ const removeAuditor = (user, type) => {
 };
 
 // 에디터 준비
+// const handleEditorReady = (status) => {
+//   editorIsReady.value = status;
+// };
+
+// 에디터 준비 후 테이블 편집 기능 활성화
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
+
+  // 에디터가 준비되었고, 저장된 결재 양식이 있으면 테이블 편집 기능 활성화
+  if (status && selectedForm.value?.data?.form_content) {
+    setTimeout(() => {
+      const editorElement = document.getElementById('myeditor');
+      if (editorElement) {
+        activateTableEditing(editorElement);
+      }
+    }, 500);
+  }
+};
+
+// 테이블 편집 기능 활성화 함수
+const activateTableEditing = (editorElement) => {
+  // 테이블 찾기
+  const tables = editorElement.querySelectorAll('table');
+
+  tables.forEach((table) => {
+    // 테이블 클래스 추가
+    if (!table.classList.contains('wysiwyg-table')) {
+      table.classList.add('wysiwyg-table');
+    }
+
+    // 테이블에 리사이즈 속성 추가
+    table.setAttribute('data-resizable', 'true');
+
+    // 테이블 내 모든 셀을 편집 가능하게 설정
+    const cells = table.querySelectorAll('td');
+    cells.forEach((cell) => {
+      cell.contentEditable = 'true';
+      cell.removeAttribute('disabled');
+
+      // 포커스 이벤트 추가
+      cell.addEventListener('focus', () => {
+        cell.style.outline = '2px solid #4a90e2';
+      });
+
+      cell.addEventListener('blur', () => {
+        cell.style.outline = 'none';
+      });
+    });
+
+    // 테이블 컨테이너 확인 또는 생성
+    let tableWrap = table.closest('.wysiwyg-table-wrap');
+    if (!tableWrap) {
+      // 테이블을 컨테이너로 감싸기
+      tableWrap = document.createElement('div');
+      tableWrap.className = 'wysiwyg-table-wrap';
+      table.parentNode.insertBefore(tableWrap, table);
+      tableWrap.appendChild(table);
+    }
+
+    // 기존 컨트롤 버튼과 리사이저 제거
+    const existingControls = tableWrap.querySelectorAll('.btn-control-wrap, .table-resizer');
+    existingControls.forEach((control) => control.remove());
+
+    // 테이블 리사이저 추가
+    addTableResizers(table, tableWrap);
+
+    // 행 컨트롤 버튼 그룹 생성
+    const rowControlWrap = document.createElement('div');
+    rowControlWrap.contentEditable = 'false';
+    rowControlWrap.tabIndex = '-1';
+    rowControlWrap.className = 'btn-control-wrap control-row';
+
+    // 행 추가 버튼
+    const addRowBtn = document.createElement('button');
+    addRowBtn.className = 'btn-add';
+    addRowBtn.type = 'button';
+    addRowBtn.textContent = '+';
+
+    // 행 추가 이벤트
+    addRowBtn.addEventListener('click', () => {
+      const tr = document.createElement('tr');
+
+      // 현재 테이블의 첫 번째 행을 기준으로 열 수 가져오기
+      const tbody = table.querySelector('tbody') || table;
+      const currentCols = tbody.firstChild ? tbody.firstChild.childNodes.length : 3;
+
+      for (let c = 0; c < currentCols; c++) {
+        const td = document.createElement('td');
+        td.contentEditable = 'true';
+        td.innerHTML = '&nbsp;';
+
+        // 포커스 이벤트
+        td.addEventListener('focus', () => {
+          td.style.outline = '2px solid #4a90e2';
+        });
+
+        td.addEventListener('blur', () => {
+          td.style.outline = 'none';
+        });
+
+        tr.appendChild(td);
+      }
+
+      tbody.appendChild(tr);
+
+      // 행 추가 후 리사이저 업데이트
+      addTableResizers(table, tableWrap);
+    });
+
+    // 행 삭제 버튼
+    const removeRowBtn = document.createElement('button');
+    removeRowBtn.className = 'btn-remove';
+    removeRowBtn.type = 'button';
+    removeRowBtn.textContent = '-';
+
+    // 행 삭제 이벤트
+    removeRowBtn.addEventListener('click', () => {
+      const tbody = table.querySelector('tbody') || table;
+      if (tbody.childNodes.length > 1) {
+        tbody.removeChild(tbody.lastChild);
+
+        // 행 삭제 후 리사이저 업데이트
+        addTableResizers(table, tableWrap);
+      }
+    });
+
+    // 열 컨트롤 버튼 그룹 생성
+    const colControlWrap = document.createElement('div');
+    colControlWrap.contentEditable = 'false';
+    colControlWrap.tabIndex = '-1';
+    colControlWrap.className = 'btn-control-wrap control-col';
+
+    // 열 추가 버튼
+    const addColBtn = document.createElement('button');
+    addColBtn.className = 'btn-add';
+    addColBtn.type = 'button';
+    addColBtn.textContent = '+';
+
+    // 열 추가 이벤트
+    addColBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const rows = table.rows;
+      for (let i = 0; i < rows.length; i++) {
+        const td = document.createElement('td');
+        td.contentEditable = 'true';
+        td.innerHTML = '&nbsp;';
+
+        td.addEventListener('focus', () => {
+          td.style.outline = '2px solid #4a90e2';
+        });
+
+        td.addEventListener('blur', () => {
+          td.style.outline = 'none';
+        });
+
+        rows[i].appendChild(td);
+      }
+
+      // 열 추가 후 리사이저 업데이트
+      addTableResizers(table, tableWrap);
+    });
+
+    // 열 삭제 버튼
+    const removeColBtn = document.createElement('button');
+    removeColBtn.className = 'btn-remove';
+    removeColBtn.type = 'button';
+    removeColBtn.textContent = '-';
+
+    // 열 삭제 이벤트
+    removeColBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const rows = table.rows;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i].childNodes.length > 1) {
+          rows[i].removeChild(rows[i].lastChild);
+        }
+      }
+
+      // 열 삭제 후 리사이저 업데이트
+      addTableResizers(table, tableWrap);
+    });
+
+    // 컨트롤 버튼 추가
+    rowControlWrap.appendChild(addRowBtn);
+    rowControlWrap.appendChild(removeRowBtn);
+
+    colControlWrap.appendChild(addColBtn);
+    colControlWrap.appendChild(removeColBtn);
+
+    // 모든 컨트롤 추가
+    tableWrap.appendChild(rowControlWrap);
+    tableWrap.appendChild(colControlWrap);
+  });
+};
+
+// 테이블 리사이저 추가 함수
+const addTableResizers = (table, tableWrap) => {
+  // 기존 리사이저 제거
+  const existingResizers = tableWrap.querySelectorAll('.table-resizer');
+  existingResizers.forEach((resizer) => resizer.remove());
+
+  // 열 리사이저 추가
+  if (table.rows.length > 0) {
+    const firstRow = table.rows[0];
+    const cellCount = firstRow.cells.length;
+
+    for (let i = 0; i < cellCount - 1; i++) {
+      const cell = firstRow.cells[i];
+
+      const resizer = document.createElement('div');
+      resizer.className = 'table-resizer col-resizer';
+      resizer.setAttribute('data-col-index', i);
+
+      // 위치 계산 및 설정
+      const left = cell.offsetLeft + cell.offsetWidth + 4;
+
+      resizer.style.left = `${left}px`;
+      resizer.style.height = `${table.offsetHeight}px`;
+
+      // 드래그 이벤트 설정
+      resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        tableWrap.classList.add('resizing-table');
+
+        const startX = e.clientX;
+        const startWidthCell = cell.offsetWidth;
+        const nextCell = firstRow.cells[i + 1];
+        const startWidthNextCell = nextCell.offsetWidth;
+
+        resizer.classList.add('active');
+
+        function onMouseMove(e) {
+          const diffX = e.clientX - startX;
+
+          // 최소 너비 제한
+          if (startWidthCell + diffX < 30 || startWidthNextCell - diffX < 30) return;
+
+          // 모든 행의 해당 열 셀 크기 변경
+          for (let j = 0; j < table.rows.length; j++) {
+            const currentCell = table.rows[j].cells[i];
+            const currentNextCell = table.rows[j].cells[i + 1];
+
+            currentCell.style.width = `${startWidthCell + diffX}px`;
+            currentNextCell.style.width = `${startWidthNextCell - diffX}px`;
+          }
+
+          // 리사이저 위치 업데이트
+          const newLeft = currentCell.offsetLeft + currentCell.offsetWidth - 4;
+          resizer.style.left = `${newLeft}px`;
+        }
+
+        function onMouseUp() {
+          resizer.classList.remove('active');
+          tableWrap.classList.remove('resizing-table');
+
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+
+          // 리사이저 위치 업데이트
+          addTableResizers(table, tableWrap);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+
+      tableWrap.appendChild(resizer);
+    }
+  }
+
+  // 행 리사이저 추가
+  const rowCount = table.rows.length;
+
+  // 행 리사이저 추가 부분 수정
+  for (let i = 0; i < rowCount; i++) {
+    const row = table.rows[i];
+
+    const resizer = document.createElement('div');
+    resizer.className = 'table-resizer row-resizer';
+    resizer.setAttribute('data-row-index', i);
+
+    // 위치 계산 및 설정
+    const top = row.offsetTop + row.offsetHeight + 2;
+    const left = row.offsetLeft + 5;
+
+    resizer.style.top = `${top}px`;
+    resizer.style.left = `${left}px`;
+    resizer.style.width = `${table.offsetWidth}px`;
+
+    // 드래그 이벤트 설정
+    resizer.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      tableWrap.classList.add('resizing-table');
+
+      const startY = e.clientY;
+      const startHeight = row.offsetHeight;
+
+      resizer.classList.add('active');
+
+      function onMouseMove(e) {
+        const diffY = e.clientY - startY;
+
+        // 최소 높이 제한
+        if (startHeight + diffY < 20) return;
+
+        // 셀들의 높이 지정
+        const cells = row.cells;
+        for (let j = 0; j < cells.length; j++) {
+          cells[j].style.height = `${startHeight + diffY}px`;
+        }
+
+        // 전체 행의 높이도 설정
+        row.style.height = `${startHeight + diffY}px`;
+
+        // 리사이저 위치 업데이트
+        resizer.style.top = `${row.offsetTop + row.offsetHeight - 4}px`;
+      }
+
+      function onMouseUp() {
+        resizer.classList.remove('active');
+        tableWrap.classList.remove('resizing-table');
+
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        // 리사이저 위치 업데이트
+        setTimeout(() => {
+          addTableResizers(table, tableWrap);
+        }, 0);
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    tableWrap.appendChild(resizer);
+  }
 };
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
-  // editorContent.value = content;
-
   // 내용이 비어있을 때 기본 p 태그 유지
   editorContent.value = content && content.trim() !== '' ? content : '<p><br></p>';
 };
@@ -2397,6 +2736,14 @@ onUnmounted(() => {
         border: 1px solid var(--warning-color-500);
       }
     }
+  }
+}
+
+.wysiwyg-table {
+  tr,
+  th,
+  td {
+    height: auto;
   }
 }
 
