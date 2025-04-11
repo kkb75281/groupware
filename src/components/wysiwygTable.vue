@@ -6,7 +6,7 @@
     button.control-btn(type="button" @click="addColumn") 열 추가
     button.control-btn(type="button" @click="removeColumn") 열 삭제
     
-  table.wysiwyg-table
+  table.wysiwyg-table(ref="wysiwygTable")
     tbody
       tr(v-for="rowIndex in Number(rows)" :key="`row-${rowIndex}`")
         td(v-for="colIndex in Number(cols)" :key="`${rowIndex}-${colIndex}`" contenteditable="true") 
@@ -14,7 +14,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { insertTableToWysiwyg } from '@/components/wysiwygTable.js';
+// import { currentTable, createTable, loadWysiwygTable } from '@/components/wysiwygTable';
 
 const props = defineProps({
   col: {
@@ -26,6 +26,8 @@ const props = defineProps({
     default: 3
   }
 });
+
+const wysiwygTable = ref(null);
 
 // 명시적으로 숫자형 변환하여 반응형 변수 초기화
 const rows = ref(Number(props.row) || 3);
@@ -47,24 +49,36 @@ watch(
 );
 
 const addRow = () => {
+  if (!wysiwygTable.value) return;
+
   rows.value = Number(rows.value) + 1;
 
-  if (currentTable && typeof currentTable.addRow === 'function') {
-    currentTable.addRow();
-  }
+  console.log(rows.value);
+  console.log(cols.value);
+
+  // if (currentTable && typeof currentTable.addRow === 'function') {
+  //   currentTable.addRow();
+  // }
 };
 
 const removeRow = () => {
+  if (!wysiwygTable.value) return;
+
   if (Number(rows.value) > 1) {
     rows.value = Number(rows.value) - 1;
   }
 };
 
 const addColumn = () => {
+  if (!wysiwygTable.value) return;
+
   cols.value = Number(cols.value) + 1;
+  console.log(cols.value);
 };
 
 const removeColumn = () => {
+  if (!wysiwygTable.value) return;
+
   if (Number(cols.value) > 1) {
     cols.value = Number(cols.value) - 1;
   }
@@ -76,6 +90,13 @@ onMounted(() => {
     cols: Number(cols.value)
   });
 });
+
+// defineExpose({
+//   addRow,
+//   removeRow,
+//   addColumn,
+//   removeColumn
+// });
 </script>
 
 <style scoped lang="less">

@@ -212,8 +212,7 @@ template(v-if="step === 2 || isTemplateMode")
 
 				template(v-else)
 					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = true") 취소
-					button.btn.outline.bg-gray.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
-					button.btn.outline.btn-tempsave(type="button" @click="tempSaveMyDoc") 임시저장
+					button.btn.outline.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
 					button.btn(type="submit") 결재요청
 
 //- Modal - 작성란 추가
@@ -303,15 +302,15 @@ template(v-if="step === 2 || isTemplateMode")
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
-import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
-import { user, makeSafe, verifiedEmail } from '@/user.ts';
-import { divisionNameList } from '@/division.ts';
+import { skapi, mainPageLoading, RealtimeCallback } from '@/main';
+import { user, makeSafe, verifiedEmail } from '@/user';
+import { divisionNameList } from '@/division';
 import {
   organigram,
   getOrganigram,
   getOrganigramRunning,
   excludeCurrentUser
-} from '@/components/organigram.ts';
+} from '@/components/organigram';
 
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
@@ -1357,98 +1356,6 @@ const saveMyDocForm = async () => {
   }
 };
 
-// 임시 저장
-const tempSaveMyDoc = async () => {
-  console.log('임시저장');
-
-  // 결재 제목이 없을 경우 저장 불가
-  if (!auditTitle.value) {
-    alert('결재 제목을 입력해주세요.');
-    return;
-  }
-
-  try {
-    // 첨부파일 업로드
-    const filebox = document.querySelector('input[name="additional_data"]');
-    const formData = new FormData();
-
-    formData.append('form_title', auditTitle.value);
-    formData.append('form_content', editorContent.value);
-    formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
-    formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
-
-    // 결재자 정보 저장
-    const auditorData = {
-      approvers: selectedAuditors.value.approvers.map((user) => ({
-        user_id: user.data.user_id,
-        name: user.index.value,
-        position: user.index.name.split('.')[1],
-        division: user.index.name.split('.')[0],
-        order: user.order // 순서 정보 추가
-      })),
-      agreers: selectedAuditors.value.agreers.map((user) => ({
-        user_id: user.data.user_id,
-        name: user.index.value,
-        position: user.index.name.split('.')[1],
-        division: user.index.name.split('.')[0],
-        order: user.order // 순서 정보 추가
-      })),
-      receivers: selectedAuditors.value.receivers.map((user) => ({
-        user_id: user.data.user_id,
-        name: user.index.value,
-        position: user.index.name.split('.')[1],
-        division: user.index.name.split('.')[0],
-        order: user.order // 순서 정보 추가
-      }))
-    };
-
-    formData.append('auditors', JSON.stringify(auditorData ?? []));
-
-    if (filebox && filebox.files.length) {
-      Array.from(filebox.files).forEach((file) => {
-        formData.append('form_data', file);
-      });
-    }
-
-    if (uploadedFile.value.length) {
-      for (const file of uploadedFile.value) {
-        // 파일 데이터를 서버에서 가져옴
-        const fileData = await skapi.getFile(file.url, {
-          dataType: 'endpoint'
-        });
-
-        // 가져온 파일 데이터를 Blob으로 변환
-        const blob = await fetch(fileData.url).then((res) => res.blob());
-
-        // Blob에 원래 파일 이름을 붙여 File 객체 생성
-        const fileObject = new File([blob], file.filename, { type: blob.type });
-
-        // FormData에 추가
-        formData.append('form_data', fileObject);
-      }
-    }
-
-    const options = {
-      table: {
-        name: 'my_tempsave_audit',
-        access_group: 'private'
-      },
-      index: {
-        name: 'form_title', // 제목별 검색을 위한 인덱싱
-        value: auditTitle.value.replaceAll('.', '_')
-      }
-    };
-
-    const res = await skapi.postRecord(formData, options);
-    console.log('임시저장 res : ', res);
-
-    alert('임시 저장되었습니다.');
-  } catch (error) {
-    console.error('임시 저장 중 오류 발생: ', error);
-    alert('임시 저장 중 오류가 발생했습니다.');
-  }
-};
-
 // 마스터가 저장한 결재 양식 가져오기
 const getDocForm = async () => {
   try {
@@ -1477,23 +1384,6 @@ const getMyDocForm = async () => {
     });
 
     myForms.value = res.list || [];
-    return res;
-  } catch (error) {
-    console.error('결재 양식 가져오기 중 오류 발생: ', error);
-  }
-};
-
-// 임시 저장 가져오기
-const getTempSaveMyDoc = async () => {
-  try {
-    const res = await skapi.getRecords({
-      table: {
-        name: 'my_tempsave_audit',
-        access_group: 'private'
-      }
-    });
-    console.log('임시저장 res : ', res);
-
     return res;
   } catch (error) {
     console.error('결재 양식 가져오기 중 오류 발생: ', error);
@@ -1685,8 +1575,6 @@ onMounted(() => {
   window.addEventListener('resize', updateScreenSize);
   getDocForm();
   getMyDocForm();
-
-  getTempSaveMyDoc();
 });
 
 onUnmounted(() => {
@@ -1901,7 +1789,8 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  max-width: 960px;
+  // max-width: 900px;
+  max-width: 930px;
 
   .title {
     position: relative;
