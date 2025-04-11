@@ -327,6 +327,16 @@ watch(
       }
     }
 
+	if (nv === 'audit-detail' && nv === 'audit-detail-favorite') {
+		activeMenu.value = 'approval';
+		return;
+	}
+	
+	if (nv === 'detail-employee') {
+		activeMenu.value = 'list-employee';
+		return;
+	}
+
     if (nv === 'newsletter-detail') {
       activeMenu.value = 'newsletter';
       return;
