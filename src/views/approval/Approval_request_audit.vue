@@ -36,7 +36,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 진행
 
 			label.radio-button
-				input(type="radio" name="radio" value="false" v-model="rejectSetting" checked)
+				input(type="radio" name="radio" value="false" v-model="rejectSetting")
 				span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 중단
 
 	.button-wrap
@@ -211,7 +211,7 @@ template(v-if="step === 2 || isTemplateMode")
 					button.btn(type="button" @click="saveDocForm") 저장
 
 				template(v-else)
-					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = true") 취소
+					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = false") 취소
 					button.btn.outline.bg-gray.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
 					button.btn.outline.btn-tempsave(type="button" @click="tempSaveMyDoc") 임시저장
 					button.btn(type="submit") 결재요청
@@ -356,7 +356,7 @@ const masterForms = ref([]); // 기본 결재 양식
 const myForms = ref([]); // 나의 결재 양식
 const selectedForm = ref([]); // 선택된 결재 양식
 const isFormSelected = ref(false); // 양식이 선택되었는지 여부
-const rejectSetting = ref(true); // 반려 설정 관련 체크박스
+const rejectSetting = ref(false); // 반려 설정 관련 체크박스
 
 const prevSelected = ref([]);
 const backupSelected = ref(null); // 선택된 결재자 백업
@@ -1977,10 +1977,10 @@ const selDocForm = async (e) => {
     // 체크박스 설정 불러오기
     if (selectedForm.value.data.reject_setting !== undefined) {
       rejectSetting.value =
-        selectedForm.value.data.reject_setting === 'true' ||
-        selectedForm.value.data.reject_setting === true;
+        selectedForm.value.data.reject_setting === 'false' ||
+        selectedForm.value.data.reject_setting === false;
     } else {
-      rejectSetting.value = true;
+      rejectSetting.value = false;
     }
   }
 };
@@ -2000,7 +2000,7 @@ const newWriteAudit = () => {
   addRows.value = [];
   uploadedFile.value = [];
   fileNames.value = [];
-  rejectSetting.value = true;
+  rejectSetting.value = false;
 
   // 결재라인 select option '결재'로 초기화
   selectedUsers.value.forEach((user) => {
