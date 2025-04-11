@@ -21,8 +21,27 @@ export async function setNotificationPermission() {
   return checkNotificationPermission();
 }
 
+function isSafari() {
+    const userAgent = navigator.userAgent;
+    return /^((?!chrome|android).)*safari/i.test(userAgent);
+}
+
+function isIOS() {
+    // navigator.userAgent에서 iOS 관련 문자열을 검색
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+    // iOS 기기는 "iPhone", "iPad", "iPod" 등의 키워드를 포함합니다.
+    return /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+}
+
 export async function checkNotificationPermission() {
   onlyUserGesture.value = false;
+
+  if (isIOS()) {
+    console.log('현재 기기는 isIOS입니다.');
+    onlyUserGesture.value = true;
+    return;
+  }
 
   if (Notification.permission === 'granted') {
     console.log('알림이 허용되어 있습니다.');
@@ -33,10 +52,6 @@ export async function checkNotificationPermission() {
     onlyUserGesture.value = false;
   } else if (Notification.permission === 'default') {
     console.log('알림 권한이 아직 설정되지 않았습니다.');
-    function isSafari() {
-      const userAgent = navigator.userAgent;
-      return /^((?!chrome|android).)*safari/i.test(userAgent);
-    }
 
     if (isSafari()) {
       console.log('현재 브라우저는 Safari입니다.');
