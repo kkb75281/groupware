@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fg-works-cache-v45'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v46'; // 버전 번호를 포함한 캐시 이름
 
 // 서비스 워커 설치 및 활성화
 self.addEventListener('install', (event) => {
