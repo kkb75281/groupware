@@ -154,6 +154,11 @@ const menuList = computed(() => [
           name: 'audit-list-favorite',
           to: '/approval/audit-list-favorite',
           text: '중요 결재함'
+        },
+        {
+          name: 'audit-list-tempsave',
+          to: '/approval/audit-list-tempsave',
+          text: '임시 저장함'
         }
       ]
     }
