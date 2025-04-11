@@ -132,6 +132,7 @@ import { user, makeSafe } from '@/user.ts';
 import { divisionNameList, getDivisionNames } from '@/division.ts'
 import { getEmpDivisionPosition, getUsers, employeeDict } from '@/employee.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
+import { getStampList, uploadedStamp } from '@/stamp.ts';
 
 const router = useRouter();
 const route = useRoute();
