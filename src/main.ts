@@ -104,7 +104,7 @@ export function resetBadgeCount() {
 
 let currentVersion: string | null = null; // 현재 활성화된 서비스 워커의 버전
 let newWorkerWaiting = false; // 새로운 서비스 워커가 대기 중인지 여부
-export let newVersionAvailable = false; // 새로운 버전이 있는지 여부
+export let newVersionAvailable = ref(false); // 새로운 버전이 있는지 여부
 export let newVersion = ref(''); // 새로운 버전이 있는지 여부
 
 // 앱 시작 시 버전 정보 로드
@@ -156,12 +156,19 @@ if ('serviceWorker' in navigator) {
 		if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
             newVersion.value = event.data.version;
 			if(currentVersion !== newVersion.value) {
-				newVersionAvailable = true;
+				newVersionAvailable.value = true;
 				console.log('[Main] New version available:', newVersion.value);
 				// alert(`새로운 버전(${newVersion})이 준비되었습니다. 새로고침 후 사용해 주세요.`);
 			}
 		}
 	});
+}
+
+// 설정 페이지에서 업데이트 적용
+export function applyUpdate() {
+    navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+    newVersionAvailable.value = false; // 업데이트 후 상태 초기화
+    window.location.reload();
 }
 
 window.addEventListener('load', () => {
