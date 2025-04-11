@@ -453,6 +453,7 @@ export async function subscribeNotification() {
 
   if (permission !== 'granted') {
     console.error('Permission not granted for notifications');
+	onlyUserGesture.value = false;
     return;
   } else {
     let hasSub = window.localStorage.getItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`);
