@@ -186,7 +186,7 @@ function openGmailAppOrWeb(link: string | null, messageId?: string | null) {
 	  return { gmailAppUrlIOS, gmailAppUrlAndroid, gmailWebUrl };
 	};
   
-	const { gmailAppUrlIOS, gmailAppUrlAndroid, gmailWebUrl } = getGmailUrls(link, show);
+	const { gmailAppUrlIOS, gmailAppUrlAndroid, gmailWebUrl } = getGmailUrls(link, messageId);
   
 	console.log('googleAccountCheck:', googleAccountCheck);
 	console.log('gmailWebUrl:', gmailWebUrl);
