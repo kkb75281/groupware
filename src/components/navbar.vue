@@ -312,6 +312,7 @@ watch(isOpen, (nv) => {
 watch(
   () => route.name,
   (nv) => {
+	console.log(nv)
     if (closeNavbar.value.includes(nv) && isOpen.value) {
       isOpen.value = false;
       document.body.classList.toggle('open', isOpen.value);
@@ -327,14 +328,19 @@ watch(
       }
     }
 
-	if (nv === 'audit-detail' && nv === 'audit-detail-favorite') {
+	if (nv === 'audit-detail' || nv === 'audit-detail-favorite') {
 		activeMenu.value = 'approval';
 		return;
 	}
-	
+
 	if (nv === 'detail-employee') {
-		activeMenu.value = 'list-employee';
-		return;
+		if (isadmin.value) {
+			activeMenu.value = 'admin';
+			return;
+		} else {
+			activeMenu.value = 'list-employee';
+			return;
+		}
 	}
 
     if (nv === 'newsletter-detail') {
