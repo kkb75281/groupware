@@ -162,10 +162,20 @@ function openGmailAppOrWeb(link: string | null, messageId?: string | null) {
   
 	  if (link) {
 		if (messageId) {
-		  // 특정 메일 보기 (웹 버전으로 폴백)
-		  gmailWebUrl = googleAccountCheck
-          ? `https://mail.google.com/mail/u/${encodedEmail}/#inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
-          : `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(messageId)}`;
+		//   // 특정 메일 보기 (웹 버전으로 폴백)
+		//   gmailWebUrl = googleAccountCheck
+        //   ? `https://mail.google.com/mail/u/${encodedEmail}/#inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
+        //   : `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(messageId)}`;
+			// 특정 메일 보기
+			gmailAppUrlIOS = googleAccountCheck
+			? `googlegmail://inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
+			: `googlegmail://inbox/${encodeURIComponent(messageId)}`;
+			gmailAppUrlAndroid = googleAccountCheck
+			? `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F${encodedEmail}%2F%23inbox%2F${encodeURIComponent(messageId)}%3Fauthuser%3D${encodedEmail}%26login_hint%3D${encodedEmail};end`
+			: `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F%23inbox%2F${encodeURIComponent(messageId)};end`;
+			gmailWebUrl = googleAccountCheck
+			? `https://mail.google.com/mail/u/${encodedEmail}/#inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
+			: `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(messageId)}`;
 		} else {
 		  // 특정 이메일 주소로 메일 작성
 		  gmailAppUrlIOS = `googlegmail://co?to=${encodeURIComponent(link)}`;
