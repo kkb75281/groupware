@@ -18,7 +18,9 @@ export let notificationNotWorkingMsg = ref('');
 export let onlyUserGesture = ref(false);
 
 export async function setNotificationPermission() {
-  await Notification.requestPermission();
+  await Notification.requestPermission().then((permission) => {
+	console.log('setNotificationPermission ==== Notification permission:', permission);
+  });
   return checkNotificationPermission();
 }
 
