@@ -36,7 +36,7 @@ nav#navbar(ref="navbar")
                         .text 
                             span {{ item.text }}
                     ul.sub-menu-item(v-if="item.child && item.child.name === activeMenu")
-                        li(v-for="child in item.child.list" :key="child.name" :class="{'active': route.name === child.name}")
+                        li(v-for="child in item.child.list" :key="child.name" :class="{'active': route.name === child.name || (route.name === child.detail?.name && child.detail.show)}")
                             router-link(:to="child.to" @click.native="handleLinkClick(item.to)") {{ child.text }}
 
 </template>
@@ -53,6 +53,7 @@ const route = useRoute();
 
 let navbar = ref(null);
 let activeMenu = ref(null);
+let isSendingValue = ref(false);
 // let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const googleAccountCheck = computed(() => !!localStorage.getItem('accessToken'));
 const encodedEmail = encodeURIComponent(user.email);
@@ -138,22 +139,42 @@ const menuList = computed(() => [
         {
           name: 'request-list',
           to: '/approval/request-list',
-          text: '결재 발신함'
+          text: '결재 발신함',
+          detail: {
+            show: isSendingValue.value,
+            name: 'audit-detail',
+            to: '/approval/audit-detail',
+          }
         },
         {
           name: 'audit-list',
           to: '/approval/audit-list',
-          text: '결재 수신함'
+          text: '결재 수신함',
+          detail: {
+            show: !isSendingValue.value,
+            name: 'audit-detail',
+            to: '/approval/audit-detail',
+          }
         },
         {
           name: 'audit-reference',
           to: '/approval/audit-reference',
-          text: '수신 참조함'
+          text: '수신 참조함',
+          detail: {
+            show: true,
+            name: 'audit-detail-reference',
+            to: '/approval/audit-detail-reference',
+          }
         },
         {
           name: 'audit-list-favorite',
           to: '/approval/audit-list-favorite',
-          text: '중요 결재함'
+          text: '중요 결재함',
+          detail: {
+            show: true,
+            name: 'audit-detail-favorite',
+            to: '/approval/audit-detail-favorite',
+          }
         }
       ]
     }
@@ -309,10 +330,13 @@ watch(isOpen, (nv) => {
   }
 });
 
-watch(
-  () => route.name,
-  (nv) => {
-	console.log(nv)
+watch(() => route.query, (nv) => {
+    if(nv.isSending) {
+        isSendingValue.value = nv.isSending;
+    }
+}, { immediate: true });
+
+watch(() => route.name, (nv) => {
     if (closeNavbar.value.includes(nv) && isOpen.value) {
       isOpen.value = false;
       document.body.classList.toggle('open', isOpen.value);
@@ -328,38 +352,36 @@ watch(
       }
     }
 
-	if (nv === 'audit-detail' || nv === 'audit-detail-favorite') {
-		activeMenu.value = 'approval';
-		return;
-	}
+    if (nv === 'detail-employee') {
+        if (isadmin.value) {
+            activeMenu.value = 'admin';
+            return;
+        } else {
+            activeMenu.value = 'list-employee';
+            return;
+        }
+    }
 
-	if (nv === 'detail-employee') {
-		if (isadmin.value) {
-			activeMenu.value = 'admin';
-			return;
-		} else {
-			activeMenu.value = 'list-employee';
-			return;
-		}
-	}
+    if (nv === 'audit-detail' || nv === 'audit-detail-reference' || nv === 'audit-detail-favorite') {
+        activeMenu.value = 'approval';
+        return;
+    }
 
     if (nv === 'newsletter-detail') {
-      activeMenu.value = 'newsletter';
-      return;
+        activeMenu.value = 'newsletter';
+        return;
     }
 
     let foundChild = childList.find((item) => item.child.list.some((child) => child.name === nv));
 
     // 현재 route.name이 childList에 포함되어 있으면 activeMenu를 해당 menu의 name으로 설정
     if (foundChild) {
-      activeMenu.value = foundChild.name;
-      return;
+        activeMenu.value = foundChild.name;
+        return;
     } else {
-      activeMenu.value = nv;
+        activeMenu.value = nv;
     }
-  },
-  { immediate: true }
-);
+},{ immediate: true });
 </script>
 
 <style scoped lang="less">

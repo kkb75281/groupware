@@ -439,9 +439,9 @@ export async function getSendAuditList(fetchOptions: {}) {
   // sendAuditListRunning.value = false;
 }
 
-export const goToAuditDetail = (e: any, auditId: any, router: any) => {
+export const goToAuditDetail = (e: any, auditId: any, router: any, isSending?: false) => {
   // if(e.target.classList.contains('label-checkbox')) return;
-  router.push({ name: 'audit-detail', params: { auditId } });
+  router.push({ name: 'audit-detail', params: { auditId }, query: { isSending: isSending } });
 
   // 수신참조 경우
   if (router.currentRoute.value.name === 'audit-reference') {
