@@ -30,19 +30,19 @@ hr
                         td(colspan="3" style="padding: 0; height: initial;")
                             Loading#loading
 
-                template(v-else-if="Object.keys(docFormList).length === 0")
+                template(v-else-if="Object.keys(tempSaveList).length === 0")
                     tr
                         td(colspan="3") 데이터가 없습니다.
                 
                 template(v-else)
-                    tr(v-for="(docForm, index) in docFormList" :key="docForm.record_id")
+                    tr(v-for="(docForm, index) in tempSaveList" :key="docForm.record_id")
                         td 
                             label.checkbox
                                 input(type="checkbox" name="checkbox" :checked="Object.keys(selectedList).includes(docForm.record_id)" @click="toggleSelect(docForm.record_id, docForm.data.form_title)")
                                 span.label-checkbox
-                        td.list-num {{ docFormList.length - index }}
+                        td.list-num {{ tempSaveList.length - index }}
                         td.left
-                            router-link.go-detail(:to="{ name: 'form-detail', query: { record_id: docForm.record_id } }")
+                            router-link.go-detail(:to="{ name: 'request-audit', query: { record_id: docForm.record_id, mode: 'tempsave' } }")
                                 span {{ docForm.data.form_title }}
 </template>
 
@@ -63,13 +63,12 @@ const route = useRoute();
 
 const loading = ref(false);
 const selectedList = ref({});
-const docFormList = ref([]); // 결재 양식 리스트
-const formTitle = ref(''); // 검색한 결재 양식 제목
+const tempSaveList = ref([]); // 임시저장 리스트
 
 const isAllSelected = computed(() => {
-  if (docFormList.value.length === 0) return false;
+  if (tempSaveList.value.length === 0) return false;
 
-  return docFormList.value.every((docForm) =>
+  return tempSaveList.value.every((docForm) =>
     Object.keys(selectedList.value).includes(docForm.record_id)
   );
 });
@@ -80,7 +79,7 @@ const toggleSelectAll = () => {
   } else {
     const newSelectedList = {};
 
-    docFormList.value.forEach((docForm) => {
+    tempSaveList.value.forEach((docForm) => {
       newSelectedList[docForm.record_id] = docForm.data.form_title;
     });
     selectedList.value = newSelectedList;
@@ -90,26 +89,24 @@ const toggleSelectAll = () => {
 const toggleSelect = (id, name) => {
   if (selectedList.value[id]) {
     delete selectedList.value[id];
-    console.log('AA 확인');
   } else {
     selectedList.value[id] = name;
-    console.log('BB 확인');
   }
 };
 
 // 새로고침
 const refresh = () => {
-  getDocForm();
+  getTempSaveMyDoc();
 };
 
-// 결재 양식 저장한 리스트 가져오기
-const getDocForm = async () => {
+// 임시 저장한 리스트 가져오기
+const getTempSaveMyDoc = async () => {
   loading.value = true;
 
   const query = {
     table: {
-      name: 'audit_form',
-      access_group: 1
+      name: 'my_tempsave_audit',
+      access_group: 'private'
     }
   };
 
@@ -118,40 +115,11 @@ const getDocForm = async () => {
   };
 
   const res = await skapi.getRecords(query, fetchOptions);
-  docFormList.value = res.list;
-  // console.log('=== getDocForm === docFormList.value : ', docFormList.value);
+  tempSaveList.value = res.list;
+  console.log('tempSaveList.value : ', tempSaveList.value);
 
   loading.value = false;
   return res;
-};
-
-// 결재 양식 검색
-const searchDocForm = async () => {
-  loading.value = true;
-
-  const res = await skapi.getRecords({
-    table: {
-      name: 'audit_form',
-      access_group: 1
-    },
-    index: {
-      name: 'form_title', // 결재 양식 제목으로 검색
-      value: searchValue.value,
-      condition: '>='
-    }
-  });
-
-  if (res.list.length > 0) {
-    docFormList.value = res.list.sort((a, b) => b.data.form_title.localeCompare(a.data.form_title));
-  } else {
-    docFormList.value = [];
-  }
-
-  if (!searchValue.value) {
-    getDocForm();
-  }
-
-  loading.value = false;
 };
 
 // 결재 양식 삭제
@@ -177,6 +145,7 @@ const deleteDocForm = async () => {
           record_id: record_id
         })
         .then((res) => {
+          console.log('결재 양식 삭제 성공 : ', res);
           isSuccess.push(res);
         })
         .catch((err) => {
@@ -192,9 +161,10 @@ const deleteDocForm = async () => {
   if (isSuccess.length > 0) {
     alert(`${isSuccess.length}개의 결재 양식이 삭제되었습니다.`);
 
-    docFormList.value = docFormList.value.filter(
+    tempSaveList.value = tempSaveList.value.filter(
       (docForm) => !deleteList.includes(docForm.record_id)
     );
+    console.log('tempSaveList.value : ', tempSaveList.value);
   } else {
     alert('결재 양식 삭제에 실패하였습니다.');
   }
@@ -203,7 +173,7 @@ const deleteDocForm = async () => {
 };
 
 onMounted(() => {
-  getDocForm();
+  getTempSaveMyDoc();
 });
 </script>
 
