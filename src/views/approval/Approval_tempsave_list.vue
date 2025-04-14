@@ -56,11 +56,6 @@ import Pager from '@/components/pager';
 const router = useRouter();
 const route = useRoute();
 
-// 임시 저장했던 내용 추가 수정 후 저장 or 결재요청 버튼 클릭 안하면 '수정 내용이 저장되지 않습니다.' alert 표시
-// 임시 저장함은 삭제 기능 필요? -> 결재요청까지 필요 없으면 삭제해야 사라지니까
-// 임시 저장했던 내용에서 추가 수정 후 저장 버튼 누르면 양식저장처럼 레코드가 새로 생성되는게 아니고, 덮어쓰는 식으로(업데이트)
-// 추가 수정 후 결재요청 버튼 클릭하면 결재요청이 들어가고, 결재 발신함으로 이동
-
 const loading = ref(false);
 const selectedList = ref({});
 const tempSaveList = ref([]); // 임시저장 리스트
@@ -94,11 +89,6 @@ const toggleSelect = (id, name) => {
   }
 };
 
-// 새로고침
-const refresh = () => {
-  getTempSaveMyDoc();
-};
-
 // 임시 저장한 리스트 가져오기
 const getTempSaveMyDoc = async () => {
   loading.value = true;
@@ -116,7 +106,6 @@ const getTempSaveMyDoc = async () => {
 
   const res = await skapi.getRecords(query, fetchOptions);
   tempSaveList.value = res.list;
-  console.log('tempSaveList.value : ', tempSaveList.value);
 
   loading.value = false;
   return res;
@@ -133,7 +122,6 @@ const deleteDocForm = async () => {
   }
 
   const deleteList = Object.keys(selectedList.value);
-  console.log('=== deleteDocForm === deleteList : ', deleteList);
 
   let isSuccess = [];
   let isFail = [];
@@ -145,13 +133,10 @@ const deleteDocForm = async () => {
           record_id: record_id
         })
         .then((res) => {
-          console.log('결재 양식 삭제 성공 : ', res);
           isSuccess.push(res);
         })
         .catch((err) => {
-          console.log('결재 양식 삭제 실패 : ', err);
           isFail.push(err);
-          console.log('isFail : ', isFail);
           alert('부서 삭제에 실패하였습니다. 관리자에게 문의해주세요.');
           throw err;
         });
@@ -164,7 +149,6 @@ const deleteDocForm = async () => {
     tempSaveList.value = tempSaveList.value.filter(
       (docForm) => !deleteList.includes(docForm.record_id)
     );
-    console.log('tempSaveList.value : ', tempSaveList.value);
   } else {
     alert('결재 양식 삭제에 실패하였습니다.');
   }

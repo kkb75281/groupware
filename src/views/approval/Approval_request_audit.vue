@@ -459,6 +459,7 @@ const closeRowModal = () => {
   isRowModalOpen.value = false;
 };
 
+// 작성란 삭제
 const removeRow = (event, index) => {
   addRows.value.splice(index, 1);
 };
@@ -1790,11 +1791,8 @@ const tempSaveMyDoc = async () => {
       },
       record_id: route.query.record_id
     });
-    console.log('기존 임시저장 res : ', res);
-    console.log('route.query.record_id : ', route.query.record_id);
 
     if (route.query.record_id === res.list[0].record_id) {
-      console.log('임시저장된 결재 양식이 있는 경우');
       await skapi.postRecord(formData, {
         table: {
           name: 'my_tempsave_audit',
@@ -1802,11 +1800,8 @@ const tempSaveMyDoc = async () => {
         },
         record_id: res.list[0].record_id
       });
-      console.log('임시저장 업데이트 res : ', res);
     } else if (route.query.record_id === undefined) {
-      console.log('임시저장된 결재 양식이 없는 경우');
       const res = await skapi.postRecord(formData, options);
-      console.log('새로 임시저장 res : ', res);
     }
 
     alert('임시 저장되었습니다.');
@@ -1879,7 +1874,6 @@ const getTempSaveMyDocCont = async () => {
         },
         record_id: route.query.record_id
       });
-      console.log('== getTempSaveMyDocCont == res : ', res);
 
       temploading.value = true;
 

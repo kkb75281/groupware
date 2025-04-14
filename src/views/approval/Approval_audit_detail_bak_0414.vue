@@ -259,28 +259,6 @@ const isRejected = computed(() => {
   return allAudited && hasRejector;
 });
 
-// 최종 결재자 확인
-const isFinalApprover = computed(() => {
-  if (auditorList.value.length === 0) return false;
-
-  const currentUser = auditorList.value.find((auditor) => auditor.user_id === user.user_id);
-  if (!currentUser) return false;
-
-  // 결재 완료한 사람들 목록을 가져와서 order 순서가 낮은 사람들이 모두 결재했는지 확인
-  const lowerOrderAuditors = auditorList.value.filter(
-    (auditor) =>
-      auditor.order < currentUser.order &&
-      (auditor.approved_type === 'approvers' || auditor.approved_type === 'agreers')
-  );
-
-  // 자신보다 낮은 순서의 결재자가 없으면 결재 가능
-  if (lowerOrderAuditors.length === 0) return true;
-
-  // 자신보다 낮은 순서의 모든 결재자가 결재를 완료했는지 확인
-  return lowerOrderAuditors.every((auditor) => auditor.approved !== null);
-});
-
-// 결재 완료 여부 확인
 const isApprovalOrder = computed(() => {
   if (isCanceled.value) return false;
 

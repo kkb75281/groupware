@@ -396,9 +396,6 @@ watch(
 onMounted(async () => {
   window.addEventListener('resize', updateScreenSize);
   await getPage(true);
-
-  console.log('auditList.value : ', auditList.value);
-  console.log('filterAuditList.value : ', filterAuditList.value);
 });
 
 onUnmounted(() => {
