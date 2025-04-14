@@ -6,10 +6,23 @@
 			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
 	p {{ serviceWorkerRegistMsg }}
 
-//- template(v-if="onlyUserGesture")
-button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
 
-br
+.warning-msg(v-if="notificationNotWorkingMsg")
+	.icon
+		svg
+			use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+	p {{ notificationNotWorkingMsg }}
+
+template(v-if="newVersionAvailable")
+	p {{ `새로운 버전(${newVersion})이 준비되었습니다.` }}
+	button.btn(@click="applyUpdate") 그룹웨어 업데이트 하기
+
+	br
+
+template(v-if="onlyUserGesture")
+	button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
+
+	br
 
 ul.card-wrap.gmail
 	li.card
@@ -121,10 +134,11 @@ ul.card-wrap
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
-import { user } from "@/user";
-import { convertTimestampToDateMillis } from "@/utils/time";
-import { openGmailAppOrWeb } from '@/utils/mail';
-import { mailList, serviceWorkerRegistMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications";
+import { user } from "@/user.ts";
+import { newVersionAvailable, newVersion, applyUpdate } from "@/main.ts";
+import { convertTimestampToDateMillis } from "@/utils/time.ts";
+import { openGmailAppOrWeb } from '@/utils/mail.ts';
+import { mailList, serviceWorkerRegistMsg, notificationNotWorkingMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications.ts";
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
@@ -155,7 +169,9 @@ function googleLogin() {
 }
 
 let showMailDoc = (e, rt) => {
-	openGmailAppOrWeb(rt.link, true);
+	console.log('rt', rt);
+	console.log('mailList', mailList.value);
+	openGmailAppOrWeb(rt.link, rt.id);
 	// window.open(rt.link, "_blank");
 	// readNoti(rt);
 }

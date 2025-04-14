@@ -43,10 +43,10 @@ nav#navbar(ref="navbar")
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { watch, onMounted, onUnmounted, ref, computed } from 'vue';
-import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar';
-import { user } from '@/user';
-import MaterialIcon from '@/assets/icon/material-icon.svg';
+import { watch, onMounted, onUnmounted, ref, computed } from 'vue'
+import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar.ts'
+import { user } from '@/user.ts'
+import MaterialIcon from '@/assets/icon/material-icon.svg'
 
 const router = useRouter();
 const route = useRoute();
@@ -317,6 +317,7 @@ watch(isOpen, (nv) => {
 watch(
   () => route.name,
   (nv) => {
+	console.log(nv)
     if (closeNavbar.value.includes(nv) && isOpen.value) {
       isOpen.value = false;
       document.body.classList.toggle('open', isOpen.value);
@@ -331,6 +332,21 @@ watch(
         return;
       }
     }
+
+	if (nv === 'audit-detail' || nv === 'audit-detail-favorite') {
+		activeMenu.value = 'approval';
+		return;
+	}
+
+	if (nv === 'detail-employee') {
+		if (isadmin.value) {
+			activeMenu.value = 'admin';
+			return;
+		} else {
+			activeMenu.value = 'list-employee';
+			return;
+		}
+	}
 
     if (nv === 'newsletter-detail') {
       activeMenu.value = 'newsletter';

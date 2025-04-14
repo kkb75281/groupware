@@ -1,7 +1,7 @@
 import { ref } from 'vue';
-import { skapi } from '@/main';
-import { user } from '@/user';
-import { getUserInfo } from '@/employee';
+import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
+import { getUserInfo } from '@/employee.ts';
 
 export const auditList = ref([]); // 결재 수신함
 export const auditListRunning = ref(false);

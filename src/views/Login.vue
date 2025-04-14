@@ -53,10 +53,10 @@
 </template>
 
 <script setup>
-	import { useRoute, useRouter } from 'vue-router';
-	import { user } from '@/user';
-	import { skapi } from "@/main";
 	import { ref, onMounted, onUnmounted, watch } from 'vue';
+	import { useRoute, useRouter } from 'vue-router';
+	import { user } from '@/user.ts';
+	import { skapi } from "@/main.ts";
 	import Loading from '@/components/loading.vue';
 
 	const router = useRouter();
@@ -76,6 +76,7 @@
 	}
 
 	let setLocalStorage = (e) => {
+		console.log(e.target.checked);
 		localStorage.setItem('remember', e.target.checked ? 'true' : 'false');
 	}
 

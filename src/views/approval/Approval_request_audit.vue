@@ -303,15 +303,15 @@ template(v-if="step === 2 || isTemplateMode")
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
-import { skapi, mainPageLoading, RealtimeCallback } from '@/main';
-import { user, makeSafe, verifiedEmail } from '@/user';
-import { divisionNameList } from '@/division';
+import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
+import { user, makeSafe, verifiedEmail } from '@/user.ts';
+import { divisionNameList } from '@/division.ts';
 import {
   organigram,
   getOrganigram,
   getOrganigramRunning,
   excludeCurrentUser
-} from '@/components/organigram';
+} from '@/components/organigram.ts';
 
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';

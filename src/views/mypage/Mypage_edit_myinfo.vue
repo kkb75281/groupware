@@ -184,11 +184,11 @@ AlertModal(:open="!!selectedStamp")
 </template>
 
 <script setup>
-import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted } from 'vue';
-import { skapi, mainPageLoading } from '@/main';
-import { user, profileImage, verifiedEmail } from '@/user';
-import { divisionNameList } from '@/division';
+import { useRoute, useRouter } from "vue-router";
+import { ref, onMounted, onUnmounted } from "vue";
+import { skapi, mainPageLoading } from "@/main.ts";
+import { user, profileImage, verifiedEmail } from "@/user.ts";
+import { divisionNameList } from "@/division.ts";
 import {
   openCropModal,
   croppedImages,
@@ -198,20 +198,19 @@ import {
   openCropImageDialog,
   closeCropImageDialog,
   setCroppedImage
-} from '@/components/crop_image';
-import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp';
+} from '@/components/crop_image.ts';
+import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp.ts';
 import {
   openStampModal,
   closeStampDialog,
   handleStampBlob,
   uploadingStamp,
   stampImages
-} from '@/components/make_stamp';
+} from '@/components/make_stamp.ts';
+import { Countries } from '@/components/countries.ts';
 
 import CropImage from '@/components/crop_image.vue';
 import Locale from '@/components/locale.vue';
-import { Countries } from '@/components/countries';
-
 import MakeStamp from '@/components/make_stamp.vue';
 import AlertModal from '@/components/alert_modal.vue';
 import Loading from '@/components/loading.vue';

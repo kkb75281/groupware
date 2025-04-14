@@ -14,7 +14,7 @@ br
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
-import { skapi } from '@/main';
+import { skapi } from '@/main.ts';
 
 import Loading from '@/components/loading.vue';
 

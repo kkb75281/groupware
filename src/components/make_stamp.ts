@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { getStampList, uploadedStamp } from "@/stamp";
+import { getStampList, uploadedStamp } from "@/stamp.ts";
 
 export let openStampModal = ref(false);
 export let uploadingStamp = ref({});

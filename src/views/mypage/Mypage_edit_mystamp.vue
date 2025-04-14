@@ -62,10 +62,10 @@ AlertModal(:open="!!selectedStamp")
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { skapi, mainPageLoading } from '@/main';
-import { user, makeSafe } from '@/user';
-import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp';
-import { openStampModal, closeStampDialog, handleStampBlob, uploadingStamp, stampImages } from '@/components/make_stamp';
+import { skapi, mainPageLoading } from '@/main.ts';
+import { user, makeSafe } from '@/user.ts';
+import { uploadedStamp, uploadedRecordId, getStampListRunning, getStampList } from '@/stamp.ts';
+import { openStampModal, closeStampDialog, handleStampBlob, uploadingStamp, stampImages } from '@/components/make_stamp.ts';
 
 import MakeStamp from '@/components/make_stamp.vue';
 import AlertModal from '@/components/alert_modal.vue';

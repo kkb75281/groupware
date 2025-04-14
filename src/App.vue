@@ -5,6 +5,6 @@ router-view(v-else)
 </template>
 
 <script setup>
-import { loaded } from '@/main'
+import { loaded } from '@/main.ts'
 import Loading from '@/components/loading.vue';
 </script>

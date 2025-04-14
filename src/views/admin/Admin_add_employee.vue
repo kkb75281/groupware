@@ -113,9 +113,9 @@ CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCropped
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted } from 'vue';
-import { skapi, mainPageLoading } from '@/main';
-import { getInvitationsCache } from '@/employee';
-import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image';
+import { skapi, mainPageLoading } from '@/main.ts';
+import { getInvitationsCache } from '@/employee.ts';
+import { openCropModal, croppedImages, uploadSrc, currentImageSrc, resetCropImage, openCropImageDialog, closeCropImageDialog, setCroppedImage } from '@/components/crop_image.ts';
 
 import CropImage from '@/components/crop_image.vue';
 import Loading from '@/components/loading.vue';

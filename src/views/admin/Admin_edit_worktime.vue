@@ -106,9 +106,9 @@ hr
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted } from "vue";
-import { skapi } from "@/main";
-import { loading, divisions, getDivisionData, divisionNameList } from "@/division";
-import { makeSafe } from '@/user';
+import { skapi } from "@/main.ts";
+import { loading, divisions, getDivisionData, divisionNameList } from "@/division.ts";
+import { makeSafe } from '@/user.ts';
 
 import Loading from "@/components/loading.vue";
 

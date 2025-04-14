@@ -64,13 +64,13 @@ hr
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { skapi } from '@/main';
-import { user } from '@/user';
-import { sendAuditList, sendAuditListRunning, getSendAuditList, goToAuditDetail } from '@/audit';
-import { readList, realtimes, readNoti } from '@/notifications';
+import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
+import { sendAuditList, sendAuditListRunning, getSendAuditList, goToAuditDetail } from '@/audit.ts';
+import { readList, realtimes, readNoti } from '@/notifications.ts';
 
 import Loading from '@/components/loading.vue';
-import Pager from '@/components/pager';
+import Pager from '@/components/pager.ts';
 
 const router = useRouter();
 const route = useRoute();

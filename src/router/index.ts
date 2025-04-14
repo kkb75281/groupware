@@ -1,27 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { user } from '@/user';
+import { user } from '@/user.ts';
 
 import Login from '@/views/Login.vue';
-// import Change_password from '@/views/Change_password.vue';
 import Main from '@/views/Main.vue';
 import Dashboard from '@/views/Dashboard.vue';
-// import List_employee from '@/views/List_employee.vue';
-// import List_detail_employee from '@/views/List_detail_employee.vue';
 import Mypage from '@/views/mypage/Mypage.vue';
-// import Mypage_edit_myinfo from '@/views/mypage/Mypage_edit_myinfo.vue';
-// import Mypage_edit_mystamp from '@/views/mypage/Mypage_edit_mystamp.vue';
-// import Mypage_list_data from '@/views/_backup/Mypage_list_data.vue';
 import Admin from '@/views/admin/Admin.vue';
-// import Admin_add_employee from '@/views/admin/Admin_add_employee.vue';
-// import Admin_add_divisions from '@/views/admin/Admin_add_divisions.vue';
-// import Admin_edit_divisions from '@/views/admin/Admin_edit_divisions.vue';
-// import Admin_list_divisions from '@/views/admin/Admin_list_divisions.vue';
 import Approval from '@/views/approval/Approval.vue';
 import NotFound from '@/views/NotFound.vue';
-// import Approval_request_audit from '@/views/approval/Approval_request_audit.vue';
-// import Approval_request_list from '@/views/approval/Approval_request_list.vue';
-// import Approval_audit_list from '@/views/approval/Approval_audit_list.vue';
-// import Approval_audit_detail from '@/views/approval/Approval_audit_detail.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

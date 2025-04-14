@@ -1,8 +1,8 @@
 import { type Reactive, reactive, type Ref, ref, watch } from 'vue';
-import { skapi } from '@/main';
-import { user } from '@/user';
-import { getUserInfo } from '@/employee';
-import { fetchGmailEmails } from '@/utils/mail';
+import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
+import { getUserInfo } from '@/employee.ts';
+import { fetchGmailEmails } from '@/utils/mail.ts';
 
 export const notifications: Reactive<{
   messages: { fromUserId: string; msg: any }[];
@@ -14,40 +14,62 @@ export const notifications: Reactive<{
 });
 
 export let serviceWorkerRegistMsg = ref('');
+export let notificationNotWorkingMsg = ref('');
 export let onlyUserGesture = ref(false);
 
 export async function setNotificationPermission() {
-  await Notification.requestPermission();
-  return checkNotificationPermission();
+  await Notification.requestPermission().then((permission) => {
+	console.log('setNotificationPermission ==== Notification permission:', permission);
+	onlyUserGesture.value = false;
+	return permission;
+  });
+//   return checkNotificationPermission();
+}
+
+function isSafari() {
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
+function isIOS() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    return /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
 }
 
 export async function checkNotificationPermission() {
-  onlyUserGesture.value = false;
+    onlyUserGesture.value = false;
+    notificationNotWorkingMsg.value = '';
 
-  if (Notification.permission === 'granted') {
-    console.log('알림이 허용되어 있습니다.');
-    console.log('hererererere');
-    onlyUserGesture.value = false;
-  } else if (Notification.permission === 'denied') {
-    console.log('알림이 차단되어 있습니다.');
-    onlyUserGesture.value = false;
-  } else if (Notification.permission === 'default') {
-    console.log('알림 권한이 아직 설정되지 않았습니다.');
-    function isSafari() {
-      const userAgent = navigator.userAgent;
-      return /^((?!chrome|android).)*safari/i.test(userAgent);
+    // Notification API를 지원하지 않는 경우
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+        notificationNotWorkingMsg.value = '현재 환경은 알림 기능을 지원하지 않습니다.';
+        onlyUserGesture.value = false; // 알림을 지원하지 않으므로 사용자 인터랙션 불필요
+        return 'unsupported'; // 또는 null, undefined 등 적절한 값을 반환
     }
 
-    if (isSafari()) {
-      console.log('현재 브라우저는 Safari입니다.');
-      onlyUserGesture.value = true;
-    } else {
-      console.log('현재 브라우저는 Safari가 아닙니다.');
-      setNotificationPermission();
+    if (isIOS() || isSafari()) {
+        console.log('현재 기기는 iOS 이거나 Safari 입니다.');
+        onlyUserGesture.value = true;
     }
-  }
 
-  return Notification.permission;
+    if (Notification.permission === 'granted') {
+        console.log('알림이 허용되어 있습니다.');
+        onlyUserGesture.value = false;
+    } else if (Notification.permission === 'denied') {
+        console.log('알림이 차단되어 있습니다.');
+        onlyUserGesture.value = false;
+    } else if (Notification.permission === 'default') {
+        console.log('알림 권한이 아직 설정되지 않았습니다.');
+
+        if (!isSafari()) {
+            try {
+                await setNotificationPermission(); // 권한 요청
+            } catch (error) {
+                console.error('알림 권한 요청 중 오류가 발생했습니다:', error);
+            }
+        }
+    }
+
+    return Notification.permission;
 }
 
 export const readAudit: Ref<
@@ -431,6 +453,7 @@ export async function subscribeNotification() {
 
   if (permission !== 'granted') {
     console.error('Permission not granted for notifications');
+	onlyUserGesture.value = false;
     return;
   } else {
     let hasSub = window.localStorage.getItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`);

@@ -83,21 +83,21 @@ const config = {
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
-    server: {
-        // https: {
-        // 	key: fs.readFileSync('./certs/localhost-key.pem'),
-        // 	cert: fs.readFileSync('./certs/localhost-cert.pem')
-        // },
-        host: 'localhost',
-        port: 3333,
-        allowedHosts: ['dev.broadwayinc.computer'],
-        // port: 5173,
-        // https: false, // HTTPS를 비활성화
-        // host: 'localhost',
-        // port: 5173,
-        // cors: true,
-    },
-    // base: './',
+    // server: {
+    //     // https: {
+    //     // 	key: fs.readFileSync('./certs/localhost-key.pem'),
+    //     // 	cert: fs.readFileSync('./certs/localhost-cert.pem')
+    //     // },
+    //     host: 'localhost',
+    //     port: 3333,
+    //     allowedHosts: ['dev.broadwayinc.computer'],
+    //     // port: 5173,
+    //     // https: false, // HTTPS를 비활성화
+    //     // host: 'localhost',
+    //     // port: 5173,
+    //     // cors: true,
+    // },
+    base: '/',
 }
 
 // https://vite.dev/config/

@@ -81,8 +81,8 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { skapi } from "@/main";
-import { user } from "@/user";
+import { skapi } from "@/main.ts";
+import { user } from "@/user.ts";
 import { ref } from 'vue';
 
 const router = useRouter();

@@ -8,8 +8,8 @@
 
 <script setup>
 import { ref, watch, nextTick, onMounted } from 'vue';
-import { skapi } from '@/main';
-import { user } from '@/user';
+import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
 import {
   organigram,
   getOrganigram,
