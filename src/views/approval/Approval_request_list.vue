@@ -42,7 +42,7 @@ hr
 					tr.nohover
 						td(colspan="5") 결재 목록이 없습니다.
 				template(v-else)
-					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled }")
+					tr(v-for="(audit, index) of sendAuditList" :key="audit.user_id" @click.stop="(e) => showSendAuditDoc(e, audit)" style="cursor: pointer;" :class="{ 'canceled': audit.isCanceled, approve: audit.documentStatus === '완료됨', reject: audit.documentStatus === '반려됨', canceled: audit.documentStatus === '회수됨' }")
 						td {{ index + 1 + (10 * (currentPage - 1)) }}
 						td.left
 							.audit-title {{ audit.data.to_audit }}
@@ -93,116 +93,115 @@ const updateScreenSize = () => {
 };
 
 const showSendAuditDoc = (e, audit) => {
-	let searchCurrentAuditNotis = realtimes.value.filter(rt => rt?.audit_info?.audit_doc_id === audit.record_id);
+  let searchCurrentAuditNotis = realtimes.value.filter(
+    (rt) => rt?.audit_info?.audit_doc_id === audit.record_id
+  );
 
-	// 읽지 않은 알람만 필터링
-	let unreadNotis = searchCurrentAuditNotis.filter(noti => 
-		!Object.keys(readList.value).includes(noti.noti_id)
-	);
+  // 읽지 않은 알람만 필터링
+  let unreadNotis = searchCurrentAuditNotis.filter(
+    (noti) => !Object.keys(readList.value).includes(noti.noti_id)
+  );
 
-	// console.log({unreadNotis})
+  // console.log({unreadNotis})
 
-	// 모든 읽지 않은 알람을 병렬로 처리
-	Promise.all(unreadNotis.map(noti => readNoti(noti)));
+  // 모든 읽지 않은 알람을 병렬로 처리
+  Promise.all(unreadNotis.map((noti) => readNoti(noti)));
 
-	goToAuditDetail(e, audit.record_id, router)
-}
+  goToAuditDetail(e, audit.record_id, router);
+};
 
 // pagination
-const getPage = async(refresh = false) => {	
-	if(refresh) {
-        endOfList.value = false;
+const getPage = async (refresh = false) => {
+  if (refresh) {
+    endOfList.value = false;
+  }
+
+  if (refresh && searchFor.value) {
+    pager = await Pager.init({
+      id: 'record_id',
+      resultsPerPage: 10,
+      sortBy: searchFor.value,
+      order: ascending.value ? 'asc' : 'desc'
+    });
+  }
+
+  if ((!refresh && maxPage.value >= currentPage.value) || endOfList.value) {
+    console.log('== AA ==');
+    sendAuditList.value = pager.getPage(currentPage.value).list;
+    console.log('sendAuditList : ', sendAuditList.value);
+    return;
+  } else if (!endOfList.value || refresh) {
+    console.log('== BB ==');
+    fetching.value = true;
+
+    // fetch from server
+    let fetchOptions = Object.assign({ fetchMore: !refresh }, { limit: 10, ascending: false });
+    let fetchedData = await getSendAuditList(fetchOptions);
+    console.log('fetchedData : ', fetchedData);
+
+    // save endOfList status
+    endOfList.value = fetchedData.endOfList;
+
+    // insert data in pager
+    if (fetchedData.list.length > 0) {
+      await pager.insertItems(fetchedData.list);
     }
 
-	if (refresh && searchFor.value) {
-        pager = await Pager.init({
-            id: 'record_id',
-            resultsPerPage: 10,
-            sortBy: searchFor.value,
-            order: ascending.value ? 'asc' : 'desc',
+    // get page from pager
+    let disp = pager.getPage(currentPage.value);
+    console.log('disp : ', disp);
+
+    // set maxpage
+    maxPage.value = disp.maxPage;
+    console.log('maxPage : ', maxPage.value);
+
+    // render data
+    sendAuditList.value = disp.list;
+    console.log('sendAuditList : ', sendAuditList.value);
+    fetching.value = false;
+  }
+};
+
+watch(currentPage, (n, o) => {
+  if (n !== o && n > 0 && (n <= maxPage.value || (n > maxPage.value && !endOfList.value))) {
+    getPage();
+  } else {
+    currentPage.value = o;
+  }
+});
+
+onMounted(async () => {
+  getPage(true);
+
+  const auditors = sendAuditList.value[0]?.data?.auditors
+    ? JSON.parse(sendAuditList.value[0]?.data?.auditors)
+    : null;
+
+  try {
+    const results = await Promise.all(
+      sendAuditList.value.map(async (audit) => {
+        // console.log('audit : ', audit);
+        const response = await skapi.getRecords({
+          table: {
+            name: 'audit_approval',
+            access_group: 'authorized'
+          },
+          reference: audit.record_id
         });
-    }
 
- 	if (!refresh && maxPage.value >= currentPage.value || endOfList.value) {
-		console.log('== AA ==');
-        sendAuditList.value = pager.getPage(currentPage.value).list;
-		console.log('sendAuditList : ', sendAuditList.value);
-        return;
-    } else if (!endOfList.value || refresh) {
-		console.log('== BB ==');
-        fetching.value = true;
+        return response;
+      })
+    );
 
-        // fetch from server
-		let fetchOptions = Object.assign({ fetchMore: !refresh }, { limit: 10, ascending: false })
-		let fetchedData = await getSendAuditList(fetchOptions);
-		console.log('fetchedData : ', fetchedData);
-
-        // save endOfList status
-        endOfList.value = fetchedData.endOfList;
-
-        // insert data in pager
-        if (fetchedData.list.length > 0) {
-            await pager.insertItems(fetchedData.list);
-        }
-
-        // get page from pager
-        let disp = pager.getPage(currentPage.value);
-		console.log('disp : ', disp);
-
-        // set maxpage
-        maxPage.value = disp.maxPage;
-		console.log('maxPage : ', maxPage.value);
-
-        // render data
-        sendAuditList.value = disp.list;
-		console.log('sendAuditList : ', sendAuditList.value);
-        fetching.value = false;
-    }
-
-}
-
-watch(currentPage, (n, o) => {	
-    if (
-        n !== o &&
-        n > 0 &&
-        (n <= maxPage.value || (n > maxPage.value && !endOfList.value))
-    ) {
-        getPage();
-    } else {
-        currentPage.value = o;
-    }
+    return results; // 필요에 따라 반환
+  } catch (error) {
+    console.error('Error fetching audit records:', error);
+    throw error; // 필요에 따라 에러를 다시 던짐
+  }
 });
 
 onMounted(async () => {
-	getPage(true);
-
-	const auditors = sendAuditList.value[0]?.data?.auditors ? JSON.parse(sendAuditList.value[0]?.data?.auditors) : null;
-
-	try {
-		const results = await Promise.all(
-			sendAuditList.value.map(async (audit) => {
-				// console.log('audit : ', audit);
-				const response = await skapi.getRecords({
-					table: {
-						name: 'audit_approval',
-						access_group: 'authorized',
-					},
-					reference: audit.record_id,
-				});
-
-				return response;
-			})
-		);
-
-		return results; // 필요에 따라 반환
-	} catch (error) {
-		console.error('Error fetching audit records:', error);
-		throw error; // 필요에 따라 에러를 다시 던짐
-	}
-});
-
-onMounted(async () => {
-	window.addEventListener('resize', updateScreenSize);
+  window.addEventListener('resize', updateScreenSize);
 });
 
 onUnmounted(() => {
@@ -212,65 +211,65 @@ onUnmounted(() => {
 
 <style scoped lang="less">
 .audit-title {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	-webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .audit-state {
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 1px 0.4rem;
-    border-radius: 6px;
-    border: 1px solid var(--gray-color-400);
-    color: var(--gray-color-500);
-	display: inline-flex;
-	justify-content: center;
-	align-items: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 1px 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--gray-color-400);
+  color: var(--gray-color-500);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
 
-    &.approve {
-        color: var(--primary-color-400);
-        border-color: var(--primary-color-400);
-    }
+  &.approve {
+    color: var(--primary-color-400);
+    border-color: var(--primary-color-400);
+  }
 
-    &.reject {
-        color: var(--warning-color-400);
-        border-color: var(--warning-color-400);
-    }
+  &.reject {
+    color: var(--warning-color-400);
+    border-color: var(--warning-color-400);
+  }
 
-	&.canceled {
-		color: var(--gray-color-300);
-		border-color: var(--gray-color-300);
-	}
+  &.canceled {
+    color: var(--gray-color-300);
+    border-color: var(--gray-color-300);
+  }
 }
 
 .table-wrap {
-    margin-top: 3rem;
+  margin-top: 3rem;
 
-	.loading {
-		position: relative;
-		border-bottom: unset;
+  .loading {
+    position: relative;
+    border-bottom: unset;
 
-		#loading {
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-		}
-	}
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
 }
 
 .canceled {
-	.audit-title,
-	.drafter {
-		color: var(--gray-color-300);
-	}
+  .audit-title,
+  .drafter {
+    color: var(--gray-color-300);
+  }
 
-	.audit-state {
-		color: var(--gray-color-300);
-		border-color: var(--gray-color-300);
-	}
+  .audit-state {
+    color: var(--gray-color-300);
+    border-color: var(--gray-color-300);
+  }
 }
 </style>
