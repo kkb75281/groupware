@@ -17,25 +17,31 @@ Organigram(:useCheckbox="false" :excludeCurrentUser="false")
 
 <script setup>
 import { ref } from 'vue';
-import { organigram, getOrganigram, getOrganigramRunning, excludeCurrentUser } from '@/components/organigram.ts'
+import { onMounted } from 'vue';
+import {
+  organigram,
+  getOrganigram,
+  getOrganigramRunning,
+  excludeCurrentUser
+} from '@/components/organigram.ts';
 
 import Organigram from '@/components/organigram.vue';
 
 let allDetailsOpen = ref(false);
 
 function toggleAllDetails() {
-	allDetailsOpen.value = !allDetailsOpen.value;
+  allDetailsOpen.value = !allDetailsOpen.value;
 
-	document.querySelectorAll('details').forEach(detail => {
-		if(allDetailsOpen.value) {
-			detail.open = true;
-		} else {
-			detail.open = false;
-		}
-	});
+  document.querySelectorAll('details').forEach((detail) => {
+    if (allDetailsOpen.value) {
+      detail.open = true;
+    } else {
+      detail.open = false;
+    }
+  });
 }
+
+getOrganigram();
 </script>
 
-<style lang="less" scoped>
-
-</style>
+<style lang="less" scoped></style>
