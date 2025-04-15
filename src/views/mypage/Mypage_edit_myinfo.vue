@@ -184,11 +184,11 @@ AlertModal(:open="!!selectedStamp")
 </template>
 
 <script setup>
-import { useRoute, useRouter } from "vue-router";
-import { ref, onMounted, onUnmounted } from "vue";
-import { skapi, mainPageLoading } from "@/main.ts";
-import { user, profileImage, verifiedEmail } from "@/user.ts";
-import { divisionNameList } from "@/division.ts";
+import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { skapi, mainPageLoading } from '@/main.ts';
+import { user, profileImage, verifiedEmail } from '@/user.ts';
+import { divisionNameList } from '@/division.ts';
 import {
   openCropModal,
   croppedImages,
@@ -446,35 +446,44 @@ const handleCountrySelect = (country) => {
 
 // 도장 이미지 URL 가져오기
 const getStampImageSrc = (mainStamp) => {
-  //   console.log('uploadedStamp.value : ', uploadedStamp.value);
-  //   console.log('mainStamp : ', mainStamp);
+  console.log('uploadedStamp.value : ', uploadedStamp.value);
+  console.log('mainStamp : ', mainStamp);
 
   // 도장 목록이 비어있으면 빈 문자열 반환
   if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
-    // console.log('1111');
+    console.log('1111');
     return '';
   }
 
   // 레코드에서 로드된 도장인지 확인 (문자열인 경우)
   if (typeof mainStamp === 'string') {
-    // console.log('2222');
+    console.log('2222');
     return mainStamp;
   }
 
   // 모달에서 선택된 도장인 경우 (객체로 url 속성을 가진 경우)
   else if (mainStamp && mainStamp.value && mainStamp.value.url) {
-    // console.log('3333');
+    console.log('3333');
     return mainStamp.value.url;
   }
 
   // 객체 자체에 url 속성이 있는 경우
   else if (mainStamp && mainStamp.url) {
-    // console.log('4444');
+    console.log('4444');
     return mainStamp.url;
   }
 
-  //   console.log('5555');
+  // 대표 도장이 없고 도장 목록이 있는 경우, 첫 번째 도장을 기본값으로 사용
+  else if (uploadedStamp.value && uploadedStamp.value.length > 0) {
+    console.log('5555 - 첫 번째 도장을 기본값으로 사용');
+    // mainStamp 객체에 첫 번째 도장 정보 할당 (참조 변경)
+    if (mainStamp !== uploadedStamp.value[0]) {
+      mainStamp = uploadedStamp.value[0];
+    }
+    return uploadedStamp.value[0].url;
+  }
 
+  console.log('6666');
   // 아무 것도 없으면 빈 문자열 반환
   return '';
 };
@@ -943,25 +952,59 @@ onMounted(async () => {
       }
     })
     .then(async (res) => {
-      //   console.log('== onMounted == 도장 res : ', res);
+      console.log('== onMounted == 도장 res : ', res);
       if (res.list.length > 0) {
         mainStamp.value = await skapi.getFile(res.list[0].data, {
           dataType: 'endpoint'
         });
       } else {
-        mainStamp.value = null;
+        // 대표 도장이 설정되어 있지 않다면 첫 번째 도장을 기본값으로 사용
+        if (uploadedStamp.value && uploadedStamp.value.length > 0) {
+          mainStamp.value = uploadedStamp.value[0].url;
+        } else {
+          mainStamp.value = null;
+        }
       }
     })
     .catch((err) => {
       console.log('== getRecords == err : ', err);
+
+      // 오류 발생 시에도 기본값 설정
+      if (uploadedStamp.value && uploadedStamp.value.length > 0) {
+        mainStamp.value = uploadedStamp.value[0].url;
+      } else {
+        mainStamp.value = null;
+      }
     });
 
   console.log('BB == onMounted == user : ', user);
 });
 
 onUnmounted(() => {
+  // 이벤트 리스너 제거
   document.removeEventListener('click', closeOptions);
   document.removeEventListener('click', closeStampOptions);
+
+  // 도장 관련 데이터 정리
+  mainStamp.value = null;
+  uploadedStamp.value = [];
+  uploadingStamp.value = {};
+  showStampList.value = false;
+  showStampOptions.value = false;
+  selectedStamp.value = null;
+  isSignImage.value = false;
+
+  // 스탬프 이미지 관련 데이터 정리
+  if (stampImages.value && Object.keys(stampImages.value).length > 0) {
+    stampImages.value = {};
+  }
+
+  // 업로드 관련 상태 초기화
+  uploading.value = false;
+  loading.value = false;
+  deleteStampStep.value = 1;
+  deleteStampRunning.value = false;
+  stampSelectedAlert.value = false;
 });
 </script>
 

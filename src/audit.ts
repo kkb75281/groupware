@@ -153,6 +153,29 @@ async function processAuditData(auditRequests, isReference = false) {
         const allApprovers = [...(auditors.approvers || []), ...(auditors.agreers || [])];
         const allApproved = allApprovers.length > 0 && allApprovers.length === approvals.length;
 
+        // 최종 결재자(가장 높은 order를 가진 결재자) 찾기
+        const sortedApprovers = [...allApprovers].sort((a, b) => b.order - a.order);
+        const finalApprover = sortedApprovers.length > 0 ? sortedApprovers[0] : null;
+
+        // 최종 결재자의 결재 상태 확인
+        let finalApproverStatus = 'none'; // 'none', 'approve', 'reject'
+        if (finalApprover) {
+          const finalApproverApproval = approvals.find(
+            (approval) => approval.user_id.replaceAll('-', '_') === finalApprover.user_id
+          );
+
+          if (finalApproverApproval) {
+            finalApproverStatus = finalApproverApproval.data.approved; // 'approve' 또는 'reject'
+          }
+        }
+
+        // 최종 결재자가 결재했는지 여부 (승인 또는 반려)
+        const finalApproverActed = finalApproverStatus !== 'none';
+        // 최종 결재자가 승인했는지 여부
+        const finalApproverApproved = finalApproverStatus === 'approve';
+        // 최종 결재자가 반려했는지 여부
+        const finalApproverRejected = finalApproverStatus === 'reject';
+
         // 모든 결재자가 결재를 완료한 상태에서 가장 마지막에 결재한 사람이 반려했는지 확인
         let isLastRejector = false;
 
@@ -180,7 +203,11 @@ async function processAuditData(auditRequests, isReference = false) {
         const cancelRecord = canceledAudit.list[0];
         const isAutoCancel = cancelRecord?.data?.auto_cancel === true;
 
-        if (isCanceled) {
+        if (finalApproverRejected) {
+          documentStatus = '반려됨'; // 최종 결재자가 반려한 경우
+        } else if (finalApproverApproved) {
+          documentStatus = '완료됨'; // 최종 결재자가 승인한 경우
+        } else if (isCanceled) {
           // 수동 회수이거나 (자동 회수이면서 rejectSetting이 false인 경우)만 회수됨으로 표시
           if (!isAutoCancel || (isAutoCancel && !rejectSetting)) {
             documentStatus = '회수됨';
@@ -195,25 +222,9 @@ async function processAuditData(auditRequests, isReference = false) {
           } else {
             documentStatus = '진행중'; // rejectSetting이 true이면 진행중으로 표시
           }
-        } else if (allApproved && isLastRejector) {
-          documentStatus = '반려됨'; // 모든 결재자가 결재를 완료하고 마지막 결재자가 반려한 경우
-        } else if (allApproved) {
-          documentStatus = '완료됨';
         } else {
           documentStatus = '진행중';
         }
-
-        // if (isCanceled) {
-        //   documentStatus = '회수됨'; // 결재요청자가 직접 회수한 경우
-        // } else if (isRejected && !allApproved) {
-        //   documentStatus = '회수됨'; // 결재 진행 중에 반려자가 있는 경우
-        // } else if (allApproved && isLastRejector) {
-        //   documentStatus = '반려됨'; // 모든 결재자가 결재를 완료하고 마지막 결재자가 반려한 경우
-        // } else if (allApproved) {
-        //   documentStatus = '완료됨';
-        // } else {
-        //   documentStatus = '진행중';
-        // }
 
         // 결재자가 반려했지만 마지막 결재자가 아닌 경우에만 자동 회수
         const shouldAutoCancel = isRejected && !allApproved;
@@ -355,6 +366,29 @@ export async function getSendAuditList(fetchOptions: {}) {
         const allApprovers = [...(auditors.approvers || []), ...(auditors.agreers || [])];
         const allApproved = allApprovers.length > 0 && allApprovers.length === approvals.length;
 
+        // 최종 결재자(가장 높은 order를 가진 결재자) 찾기
+        const sortedApprovers = [...allApprovers].sort((a, b) => b.order - a.order);
+        const finalApprover = sortedApprovers.length > 0 ? sortedApprovers[0] : null;
+
+        // 최종 결재자의 결재 상태 확인
+        let finalApproverStatus = 'none'; // 'none', 'approve', 'reject'
+        if (finalApprover) {
+          const finalApproverApproval = approvals.find(
+            (approval) => approval.user_id.replaceAll('-', '_') === finalApprover.user_id
+          );
+
+          if (finalApproverApproval) {
+            finalApproverStatus = finalApproverApproval.data.approved; // 'approve' 또는 'reject'
+          }
+        }
+
+        // 최종 결재자가 결재했는지 여부 (승인 또는 반려)
+        const finalApproverActed = finalApproverStatus !== 'none';
+        // 최종 결재자가 승인했는지 여부
+        const finalApproverApproved = finalApproverStatus === 'approve';
+        // 최종 결재자가 반려했는지 여부
+        const finalApproverRejected = finalApproverStatus === 'reject';
+
         // 마지막 결재자가 반려했는지 확인
         let isLastRejector = false;
 
@@ -379,7 +413,11 @@ export async function getSendAuditList(fetchOptions: {}) {
         const rejectSetting =
           audit.data.reject_setting === 'true' || audit.data.reject_setting === true;
 
-        if (isCanceled) {
+        if (finalApproverRejected) {
+          documentStatus = '반려됨'; // 최종 결재자가 반려한 경우
+        } else if (finalApproverApproved) {
+          documentStatus = '완료됨'; // 최종 결재자가 승인한 경우
+        } else if (isCanceled) {
           // 회수 레코드에서 자동 회수 여부 확인
           const cancelRecord = canceledAudit.list[0];
           const isAutoCancel = cancelRecord?.data?.auto_cancel === true;
@@ -395,25 +433,9 @@ export async function getSendAuditList(fetchOptions: {}) {
           } else {
             documentStatus = '진행중'; // rejectSetting이 true이면 진행중으로 표시
           }
-        } else if (allApproved && isLastRejector) {
-          documentStatus = '반려됨';
-        } else if (allApproved) {
-          documentStatus = '완료됨';
         } else {
           documentStatus = '진행중';
         }
-
-        // if (isCanceled) {
-        //   documentStatus = '회수됨';
-        // } else if (isRejected && !allApproved) {
-        //   documentStatus = '회수됨'; // 결재 진행 중에 반려자가 있는 경우
-        // } else if (allApproved && isLastRejector) {
-        //   documentStatus = '반려됨'; // 모든 결재자가 결재를 완료하고 마지막 결재자가 반려한 경우
-        // } else if (allApproved) {
-        //   documentStatus = '완료됨';
-        // } else {
-        //   documentStatus = '진행중';
-        // }
 
         return {
           ...audit,

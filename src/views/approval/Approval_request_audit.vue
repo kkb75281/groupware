@@ -4,7 +4,7 @@
 
 hr
 
-template(v-if="step === 1 && showBackStep && !isTemplateMode")
+template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode")
 	.item-wrap
 		.selected-wrap
 			p.label 카테고리 선택
@@ -61,7 +61,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
 				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-template(v-if="step === 2 || isTemplateMode")
+template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading)")
 	.form-wrap
 		form#_el_request_form(@submit.prevent="requestAudit")
 			#printArea
@@ -181,7 +181,8 @@ template(v-if="step === 2 || isTemplateMode")
 									th.essential 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
-											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content" :showBtn="true")
+											//- Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content" :showBtn="true")
+											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'tempsave' ? tempSaveData?.data?.form_content : selectedForm?.data?.form_content" :showBtn="true")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -211,7 +212,10 @@ template(v-if="step === 2 || isTemplateMode")
 					button.btn(type="button" @click="saveDocForm") 저장
 
 				template(v-else)
-					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = false") 취소
+					template(v-if="isTempSaveMode")
+						button.btn.bg-gray.btn-cancel(type="button" @click="cancelTempSave") 취소
+					template(v-else)
+						button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = false") 취소
 					button.btn.outline.bg-gray.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
 					button.btn.outline.btn-tempsave(type="button" @click="tempSaveMyDoc") 임시저장
 					button.btn(type="submit") 결재요청
@@ -328,12 +332,12 @@ const route = useRoute();
 // 우측에는 sort 기능 버튼 넣어서 사용자가 순서 지정할 수 있게
 // 사용자가 선택한 순서대로 결재, 합의에 숫자 표시되어야 함
 
-// 결재 양식 관리 > 등록 경로인지 확인
-const isTemplateMode = ref(route.query.mode === 'template');
+const isTemplateMode = computed(() => route.query.mode === 'template'); // 결재 양식 관리 > 등록 경로인지 확인
+const isTempSaveMode = computed(() => route.query.mode === 'tempsave'); // 임시 저장 경로인지 확인
 
 // 페이지 제목 변경
 const pageTitle = computed(() => {
-  return isTemplateMode.value ? '결재 양식 등록' : '결재 작성';
+  return route.query.mode === 'template' ? '결재 양식 등록' : '결재 작성';
 });
 
 const isModalOpen = ref(false);
@@ -355,6 +359,7 @@ const formCategory = ref('master'); // 결재 양식 카테고리
 const masterForms = ref([]); // 기본 결재 양식
 const myForms = ref([]); // 나의 결재 양식
 const selectedForm = ref([]); // 선택된 결재 양식
+const tempSaveData = ref([]); // 임시 저장된 결재 양식
 const isFormSelected = ref(false); // 양식이 선택되었는지 여부
 const rejectSetting = ref(false); // 반려 설정 관련 체크박스
 
@@ -372,6 +377,7 @@ const addRows = ref([]);
 let step = ref(1);
 const auditTitle = ref('');
 const disabled = ref(false);
+const temploading = ref(false);
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -453,6 +459,7 @@ const closeRowModal = () => {
   isRowModalOpen.value = false;
 };
 
+// 작성란 삭제
 const removeRow = (event, index) => {
   addRows.value.splice(index, 1);
 };
@@ -724,21 +731,19 @@ const removeAuditor = (user, type) => {
   selectedUsers.value = newAuditors;
 };
 
-// 에디터 준비
-// const handleEditorReady = (status) => {
-//   editorIsReady.value = status;
-// };
-
 // 에디터 준비 후 테이블 편집 기능 활성화
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
 
-  // 에디터가 준비되었고, 저장된 결재 양식이 있으면 테이블 편집 기능 활성화
-  if (status && selectedForm.value?.data?.form_content) {
+  // 에디터가 준비되었을 때
+  if (status) {
     setTimeout(() => {
       const editorElement = document.getElementById('myeditor');
       if (editorElement) {
-        activateTableEditing(editorElement);
+        // 일반 양식 모드 또는 임시 저장 모드에서 테이블 편집 활성화
+        if (selectedForm.value?.data?.form_content || tempSaveData.value?.data?.form_content) {
+          activateTableEditing(editorElement);
+        }
       }
     }, 500);
   }
@@ -1778,10 +1783,29 @@ const tempSaveMyDoc = async () => {
       }
     };
 
-    const res = await skapi.postRecord(formData, options);
-    console.log('임시저장 res : ', res);
+    // 임시 저장된 결재 양식이 있는지 확인
+    const res = await skapi.getRecords({
+      table: {
+        name: 'my_tempsave_audit',
+        access_group: 'private'
+      },
+      record_id: route.query.record_id
+    });
+
+    if (route.query.record_id === res.list[0].record_id) {
+      await skapi.postRecord(formData, {
+        table: {
+          name: 'my_tempsave_audit',
+          access_group: 'private'
+        },
+        record_id: res.list[0].record_id
+      });
+    } else if (route.query.record_id === undefined) {
+      const res = await skapi.postRecord(formData, options);
+    }
 
     alert('임시 저장되었습니다.');
+    router.push({ path: '/approval/audit-list-tempsave' });
   } catch (error) {
     console.error('임시 저장 중 오류 발생: ', error);
     alert('임시 저장 중 오류가 발생했습니다.');
@@ -1822,8 +1846,8 @@ const getMyDocForm = async () => {
   }
 };
 
-// 임시 저장 가져오기
-const getTempSaveMyDoc = async () => {
+// 임시 저장 리스트 가져오기
+const getTempSaveMyDocList = async () => {
   try {
     const res = await skapi.getRecords({
       table: {
@@ -1839,9 +1863,81 @@ const getTempSaveMyDoc = async () => {
   }
 };
 
+// 임시 저장 내용 가져오기
+const getTempSaveMyDocCont = async () => {
+  if (route.query.mode === 'tempsave' && route.query.record_id) {
+    try {
+      const res = await skapi.getRecords({
+        table: {
+          name: 'my_tempsave_audit',
+          access_group: 'private'
+        },
+        record_id: route.query.record_id
+      });
+
+      temploading.value = true;
+
+      if (res.list && res.list.length > 0) {
+        tempSaveData.value = res.list[0];
+
+        // 폼 데이터 채우기
+        auditTitle.value = tempSaveData.value.data.form_title;
+        editorContent.value = tempSaveData.value.data.form_content;
+
+        // 반려 설정
+        if (tempSaveData.value.data.reject_setting !== undefined) {
+          rejectSetting.value =
+            tempSaveData.value.data.reject_setting === 'true' ||
+            tempSaveData.value.data.reject_setting === true;
+        }
+
+        // 추가 행 데이터
+        if (tempSaveData.value.data.custom_rows) {
+          addRows.value = JSON.parse(tempSaveData.value.data.custom_rows);
+        }
+
+        // 결재자 정보
+        if (tempSaveData.value.data.auditors) {
+          const auditors = JSON.parse(tempSaveData.value.data.auditors);
+
+          // 순서 정보를 포함한 결재자 변환 함수
+          const convertAuditorFormatWithOrder = (auditors, role) => {
+            return auditors.map((auditor) => ({
+              data: { user_id: auditor.user_id },
+              index: {
+                value: auditor.name,
+                name: `${auditor.division}.${auditor.position}`
+              },
+              role: role,
+              order: auditor.order || 0,
+              sortable: role !== 'receivers'
+            }));
+          };
+
+          selectedAuditors.value = {
+            approvers: convertAuditorFormatWithOrder(auditors.approvers || [], 'approvers'),
+            agreers: convertAuditorFormatWithOrder(auditors.agreers || [], 'agreers'),
+            receivers: convertAuditorFormatWithOrder(auditors.receivers || [], 'receivers')
+          };
+
+          // 결재자 순서대로 정렬
+          selectedAuditors.value.approvers.sort((a, b) => (a.order || 0) - (b.order || 0));
+          selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
+        }
+
+        // 첨부파일이 있는 경우
+        if (tempSaveData.value.bin && tempSaveData.value.bin.form_data) {
+          uploadedFile.value = tempSaveData.value.bin.form_data;
+        }
+      }
+    } catch (error) {
+      console.error('임시 저장 내용 불러오기 중 오류 발생:', error);
+    }
+  }
+};
+
 // 결재자 정보 변환 함수
 const convertAuditorFormat = (auditors, role) => {
-  console.log('auditors : ', auditors);
   return auditors.map((auditor) => ({
     data: { user_id: auditor.user_id },
     index: {
@@ -1903,6 +1999,7 @@ const moveUser = (user, direction) => {
     reorderUsers();
   }
 };
+
 // 결재 양식 선택
 const selDocForm = async (e) => {
   // 선택된 record_id로 양식 찾기
@@ -2014,18 +2111,32 @@ const newWriteAudit = () => {
   selectedAuditors.value.receivers = [];
 };
 
+// isTempSaveMode에서 취소버튼 클릭시
+const cancelTempSave = () => {
+  console.log('임시저장 취소');
+
+  router.push({ path: '/approval/audit-list-tempsave' });
+  formCategory.value = 'master';
+  rejectSetting.value = false;
+
+  alert('해당 페이지에서 벗어나면 수정 내용이 저장되지 않습니다.');
+};
+
 const dateValue = ref(new Date().toISOString().substring(0, 10));
 
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('resize', updateScreenSize);
   getDocForm();
   getMyDocForm();
 
-  getTempSaveMyDoc();
+  // 임시 저장 모드인 경우 해당 내용 불러오기
+  if (isTempSaveMode.value) {
+    getTempSaveMyDocCont();
+  }
 });
 
 onUnmounted(() => {

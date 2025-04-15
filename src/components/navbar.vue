@@ -43,10 +43,10 @@ nav#navbar(ref="navbar")
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { watch, onMounted, onUnmounted, ref, computed } from 'vue'
-import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar.ts'
-import { user } from '@/user.ts'
-import MaterialIcon from '@/assets/icon/material-icon.svg'
+import { watch, onMounted, onUnmounted, ref, computed } from 'vue';
+import { checkScreenWidth, toggleNavbarFold, isOpen } from '@/components/navbar.ts';
+import { user } from '@/user.ts';
+import MaterialIcon from '@/assets/icon/material-icon.svg';
 
 const router = useRouter();
 const route = useRoute();
@@ -488,8 +488,8 @@ watch(() => route.name, (nv) => {
       flex-wrap: nowrap;
       align-items: center;
       justify-content: center;
-      padding: 1.2rem 1.25rem 1.2rem 0.75rem;
-      // border-radius: 8px;
+      // padding: 1.2rem 1.25rem 1.2rem 0.75rem;
+      padding: 1.2rem 0.875rem 1.2rem 0.25rem;
       border-radius: 36px;
       cursor: pointer;
 
@@ -577,6 +577,12 @@ watch(() => route.name, (nv) => {
   #navbar {
     .btn-close {
       display: block;
+    }
+
+    .menu-item {
+      .router {
+        padding: 1.2rem 1.25rem 1.2rem 0.75rem;
+      }
     }
   }
 
