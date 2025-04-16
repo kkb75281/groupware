@@ -367,9 +367,16 @@ onMounted(() => {
     disabled: true,
     logMutation: false,
     fontSize: {
-      desktop: 18,
+      desktop: 16,
       tablet: 16, // (max-width: 899px)
-      phone: 14 // (max-width: 599px)
+      phone: 14, // (max-width: 599px)
+
+      h1: 2.25,
+      h2: 2,
+      h3: 1.75,
+      h4: 1.5,
+      h5: 1.125,
+      h6: 0.875
     },
     callback: (c) => {
       if (c.commandTracker) {
