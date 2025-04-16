@@ -139,6 +139,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="isCanceled") 회수
+			button.btn.outline.btn-re-request(type="button" v-if="senderUser.user_id === user.user_id" @click="reRequestAudit") 재요청
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -766,7 +767,6 @@ const getAuditDetail = async () => {
     getAuditDetailRunning.value = false;
 
     const approvals = await approvedAudit();
-    console.log('결재완료자 === getAuditDetail === approvals : ', approvals);
 
     // 최종결재자 정보 확인
     const allApprovers = [
@@ -1490,6 +1490,20 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   }
 
   await nextTick();
+};
+
+// 기안자의 재요청
+const reRequestAudit = async () => {
+  console.log('재요청');
+
+  const res = await skapi.getRecords({
+    record_id: auditId.value
+  });
+  console.log('res : ', res);
+
+  // router.push({ name: 'audit-detail-reference', params: { auditId } });
+  router.push({ path: '/approval/request-audit' });
+  step.value = 2;
 };
 
 onMounted(() => {

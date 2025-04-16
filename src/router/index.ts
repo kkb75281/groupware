@@ -77,6 +77,11 @@ const router = createRouter({
           component: () => import('@/views/Newsletter.vue')
         },
         {
+          path: '/newsletter-add',
+          name: 'newsletter-add',
+          component: () => import('@/views/Newsletter_add.vue')
+        },
+        {
           path: '/newsletter-detail/:messageId',
           name: 'newsletter-detail',
           component: () => import('@/views/Newsletter_detail.vue')

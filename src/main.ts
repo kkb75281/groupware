@@ -30,7 +30,7 @@ export let buildTime = import.meta.env.VITE_BUILD_TIME;
 
 let serviceID = import.meta.env.VITE_SERVICE_ID;
 
-console.log('바뀐 버전 입니다. 0410 14:46');
+console.log('바뀐 버전 입니다. 0416 14:46');
 
 const skapi = new Skapi(import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID, {
   autoLogin: window.localStorage.getItem('remember') === 'true',
@@ -116,66 +116,68 @@ fetch('/version.json')
   });
 
 if ('serviceWorker' in navigator) {
-    // Service Worker 등록
-    navigator.serviceWorker.register(`/wrk.${serviceID}.js`)
-        .then((registration) => {
-        console.log('Service Worker registered:', registration);
+  // Service Worker 등록
+  navigator.serviceWorker
+    .register(`/wrk.${serviceID}.js`)
+    .then((registration) => {
+      console.log('Service Worker registered:', registration);
 
-        // 새로운 서비스 워커 감지
-        registration.addEventListener('updatefound', () => {
-			const newWorker = registration.installing;
-			console.log('[Main] New Service Worker Found');
+      // 새로운 서비스 워커 감지
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        console.log('[Main] New Service Worker Found');
 
-			newWorker?.addEventListener('statechange', () => {
-				if (newWorker.state === 'installed') {
-					console.log('[Main] New Service Worker Installed and Waiting');
-					newWorkerWaiting = true;
+        newWorker?.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed') {
+            console.log('[Main] New Service Worker Installed and Waiting');
+            newWorkerWaiting = true;
 
-					// 첫 방문 시 자동으로 업데이트
-					if (!localStorage.getItem('hasVisitedBefore')) {
-						console.log('[Main] First visit, skipping waiting...');
-						newWorker.postMessage({ type: 'SKIP_WAITING' });
-						window.location.reload();
-					}
-				}
-			});
-		});
-    }).catch((error) => {
-		console.error('Service Worker registration failed:', error);
+            // 첫 방문 시 자동으로 업데이트
+            if (!localStorage.getItem('hasVisitedBefore')) {
+              console.log('[Main] First visit, skipping waiting...');
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              window.location.reload();
+            }
+          }
+        });
+      });
+    })
+    .catch((error) => {
+      console.error('Service Worker registration failed:', error);
     });
 
-	// Service Worker로부터 메시지 수신
-	navigator.serviceWorker.addEventListener('message', (event) => {
-		// 뱃지 업데이트 처리
-		if (event.data && event.data.type === 'BADGE_UPDATED') {
-			const newBadgeCount = event.data.badgeCount;
-			currentBadgeCount = newBadgeCount;
-		}
+  // Service Worker로부터 메시지 수신
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    // 뱃지 업데이트 처리
+    if (event.data && event.data.type === 'BADGE_UPDATED') {
+      const newBadgeCount = event.data.badgeCount;
+      currentBadgeCount = newBadgeCount;
+    }
 
-		// 새로운 버전 알림 처리
-		if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
-            newVersion.value = event.data.version;
-			if(currentVersion !== newVersion.value) {
-				newVersionAvailable.value = true;
-				console.log('[Main] New version available:', newVersion.value);
-				// alert(`새로운 버전(${newVersion})이 준비되었습니다. 새로고침 후 사용해 주세요.`);
-			}
-		}
-	});
+    // 새로운 버전 알림 처리
+    if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
+      newVersion.value = event.data.version;
+      if (currentVersion !== newVersion.value) {
+        newVersionAvailable.value = true;
+        console.log('[Main] New version available:', newVersion.value);
+        // alert(`새로운 버전(${newVersion})이 준비되었습니다. 새로고침 후 사용해 주세요.`);
+      }
+    }
+  });
 }
 
 // 설정 페이지에서 업데이트 적용
 export function applyUpdate() {
-    navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
-    newVersionAvailable.value = false; // 업데이트 후 상태 초기화
-    window.location.reload();
+  navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+  newVersionAvailable.value = false; // 업데이트 후 상태 초기화
+  window.location.reload();
 }
 
 window.addEventListener('load', () => {
-	if(!localStorage.getItem('hasVisitedBefore')) {
-		localStorage.setItem('hasVisitedBefore', 'true');
-	}
-})
+  if (!localStorage.getItem('hasVisitedBefore')) {
+    localStorage.setItem('hasVisitedBefore', 'true');
+  }
+});
 
 export let RealtimeCallback = async (rt: any) => {
   if (rt.type === 'error' || rt.type === 'close') {
