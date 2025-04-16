@@ -366,6 +366,11 @@ onMounted(() => {
     urllink: true,
     disabled: true,
     logMutation: false,
+    fontSize: {
+      desktop: 18,
+      tablet: 16, // (max-width: 899px)
+      phone: 14 // (max-width: 599px)
+    },
     callback: (c) => {
       if (c.commandTracker) {
         // 에디터 내용이 변경될 때마다 부모 컴포넌트에 내용 전달
