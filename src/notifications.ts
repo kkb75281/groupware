@@ -19,57 +19,57 @@ export let onlyUserGesture = ref(false);
 
 export async function setNotificationPermission() {
   await Notification.requestPermission().then((permission) => {
-	console.log('setNotificationPermission ==== Notification permission:', permission);
-	onlyUserGesture.value = false;
-	return permission;
+    console.log('setNotificationPermission ==== Notification permission:', permission);
+    onlyUserGesture.value = false;
+    return permission;
   });
-//   return checkNotificationPermission();
+  //   return checkNotificationPermission();
 }
 
 function isSafari() {
-    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 }
 
 function isIOS() {
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    return /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  return /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
 }
 
 export async function checkNotificationPermission() {
+  onlyUserGesture.value = false;
+  notificationNotWorkingMsg.value = '';
+
+  // Notification API를 지원하지 않는 경우
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    notificationNotWorkingMsg.value = '현재 환경은 알림 기능을 지원하지 않습니다.';
+    onlyUserGesture.value = false; // 알림을 지원하지 않으므로 사용자 인터랙션 불필요
+    return 'unsupported'; // 또는 null, undefined 등 적절한 값을 반환
+  }
+
+  if (isIOS() || isSafari()) {
+    console.log('현재 기기는 iOS 이거나 Safari 입니다.');
+    onlyUserGesture.value = true;
+  }
+
+  if (Notification.permission === 'granted') {
+    console.log('알림이 허용되어 있습니다.');
     onlyUserGesture.value = false;
-    notificationNotWorkingMsg.value = '';
+  } else if (Notification.permission === 'denied') {
+    console.log('알림이 차단되어 있습니다.');
+    onlyUserGesture.value = false;
+  } else if (Notification.permission === 'default') {
+    console.log('알림 권한이 아직 설정되지 않았습니다.');
 
-    // Notification API를 지원하지 않는 경우
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-        notificationNotWorkingMsg.value = '현재 환경은 알림 기능을 지원하지 않습니다.';
-        onlyUserGesture.value = false; // 알림을 지원하지 않으므로 사용자 인터랙션 불필요
-        return 'unsupported'; // 또는 null, undefined 등 적절한 값을 반환
+    if (!isSafari()) {
+      try {
+        await setNotificationPermission(); // 권한 요청
+      } catch (error) {
+        console.error('알림 권한 요청 중 오류가 발생했습니다:', error);
+      }
     }
+  }
 
-    if (isIOS() || isSafari()) {
-        console.log('현재 기기는 iOS 이거나 Safari 입니다.');
-        onlyUserGesture.value = true;
-    }
-
-    if (Notification.permission === 'granted') {
-        console.log('알림이 허용되어 있습니다.');
-        onlyUserGesture.value = false;
-    } else if (Notification.permission === 'denied') {
-        console.log('알림이 차단되어 있습니다.');
-        onlyUserGesture.value = false;
-    } else if (Notification.permission === 'default') {
-        console.log('알림 권한이 아직 설정되지 않았습니다.');
-
-        if (!isSafari()) {
-            try {
-                await setNotificationPermission(); // 권한 요청
-            } catch (error) {
-                console.error('알림 권한 요청 중 오류가 발생했습니다:', error);
-            }
-        }
-    }
-
-    return Notification.permission;
+  return Notification.permission;
 }
 
 export const readAudit: Ref<
@@ -388,33 +388,37 @@ export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
 export const getNewsletterList = async (refresh = false) => {
-  if (getNewsletterListRunning instanceof Promise) {
-    // 이미 실행중인 경우
-    await getNewsletterListRunning;
-    return newsletterList.value;
-  }
-
-  if (newsletterList.value && newsletterList.value.length && !refresh) {
-    // 기존 데이터가 있는 경우
-    return newsletterList.value;
-  }
-
-  getNewsletterListRunning = skapi
-    .getNewsletters()
-    .catch((err) => console.log(err))
-    .finally(() => {
-      getNewsletterListRunning = null;
-    });
-
-  let res = await getNewsletterListRunning;
-
-  if (res && res.list) {
-    newsletterList.value = res.list.slice(0, 10);
-    console.log('=== getNewsletterList === newsletterList : ', newsletterList.value);
-  }
-
-  return newsletterList.value;
+  console.log('=== getNewsletterList === refresh : ', refresh);
 };
+
+// export const getNewsletterList = async (refresh = false) => {
+//   if (getNewsletterListRunning instanceof Promise) {
+//     // 이미 실행중인 경우
+//     await getNewsletterListRunning;
+//     return newsletterList.value;
+//   }
+
+//   if (newsletterList.value && newsletterList.value.length && !refresh) {
+//     // 기존 데이터가 있는 경우
+//     return newsletterList.value;
+//   }
+
+//   getNewsletterListRunning = skapi
+//     .getNewsletters()
+//     .catch((err) => console.log(err))
+//     .finally(() => {
+//       getNewsletterListRunning = null;
+//     });
+
+//   let res = await getNewsletterListRunning;
+
+//   if (res && res.list) {
+//     newsletterList.value = res.list.slice(0, 10);
+//     console.log('=== getNewsletterList === newsletterList : ', newsletterList.value);
+//   }
+
+//   return newsletterList.value;
+// };
 
 export async function subscribeNotification() {
   let vapid = localStorage.getItem(skapi.service + '-vapid');
@@ -453,7 +457,7 @@ export async function subscribeNotification() {
 
   if (permission !== 'granted') {
     console.error('Permission not granted for notifications');
-	onlyUserGesture.value = false;
+    onlyUserGesture.value = false;
     return;
   } else {
     let hasSub = window.localStorage.getItem(`${import.meta.env.VITE_SERVICE_ID}.loggedInUser`);

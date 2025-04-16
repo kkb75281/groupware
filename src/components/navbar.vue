@@ -317,7 +317,6 @@ watch(isOpen, (nv) => {
 watch(
   () => route.name,
   (nv) => {
-    console.log(nv);
     if (closeNavbar.value.includes(nv) && isOpen.value) {
       isOpen.value = false;
       document.body.classList.toggle('open', isOpen.value);

@@ -371,12 +371,12 @@ onMounted(() => {
       tablet: 16, // (max-width: 899px)
       phone: 14, // (max-width: 599px)
 
-      h1: 2.25,
-      h2: 2,
-      h3: 1.75,
-      h4: 1.5,
-      h5: 1.125,
-      h6: 0.875
+      h1: '26px',
+      h2: '24px',
+      h3: '22px',
+      h4: '19px',
+      h5: '16px',
+      h6: '13px'
     },
     callback: (c) => {
       if (c.commandTracker) {
