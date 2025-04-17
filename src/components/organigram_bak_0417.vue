@@ -43,11 +43,6 @@ const props = defineProps({
   useCheckbox: {
     type: Boolean,
     default: false
-  },
-  filterMyDepartment: {
-    // 본인 부서만 필터링
-    type: Boolean,
-    default: false
   }
 });
 
@@ -81,20 +76,13 @@ function resetAllCheckStatus() {
 
 onMounted(() => {
   excludeCurrentUser.value = props.excludeCurrentUser;
-
-  // 본인 부서만 필터링
-  if (props.filterMyDepartment) {
-    getOrganigram(true, props.filterMyDepartment);
-  } else {
-    getOrganigram(true);
-  }
 });
 
 watch(excludeCurrentUser, (nv, ov) => {
   if (!ov || (ov && nv !== ov)) {
-    getOrganigram(true, props.filterMyDepartment);
+    getOrganigram(true);
   } else {
-    getOrganigram(false, props.filterMyDepartment);
+    getOrganigram();
   }
 });
 
