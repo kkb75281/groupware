@@ -107,8 +107,8 @@ const showSendAuditDoc = (e, audit) => {
   // 모든 읽지 않은 알람을 병렬로 처리
   Promise.all(unreadNotis.map((noti) => readNoti(noti)));
 
-  goToAuditDetail(e, audit.record_id, router);
-};
+	goToAuditDetail(e, audit.record_id, router, true)
+}
 
 // pagination
 const getPage = async (refresh = false) => {
