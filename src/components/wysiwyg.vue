@@ -18,29 +18,17 @@
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-strike")
 		button.btn-custom(type="button" @click="handleCommand('h1')")
-			.icon
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-h1")
+			.icon.text 20pt
 		button.btn-custom(type="button" @click="handleCommand('h2')")
-			.icon
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-h2")
+			.icon.text 18pt
 		button.btn-custom(type="button" @click="handleCommand('h3')")
-			.icon
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-h3")
+			.icon.text 16pt
 		button.btn-custom(type="button" @click="handleCommand('h4')")
-			.icon
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-h4")
+			.icon.text 14pt
 		button.btn-custom(type="button" @click="handleCommand('h5')")
-			.icon
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-h5")
+			.icon.text 12pt
 		button.btn-custom(type="button" @click="handleCommand('h6')" style="border-right: 1px solid #e4e4e7;")
-			.icon
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-h6")
+			.icon.text 10pt
 		//- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
 	
 		// 텍스트 색상 변경
@@ -661,6 +649,11 @@ defineExpose({
 
   .icon {
     padding: 0;
+
+    &.text {
+      font-weight: 700;
+      color: var(--gray-color-500);
+    }
   }
 }
 
