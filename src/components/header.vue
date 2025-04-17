@@ -4,26 +4,26 @@ header#header
         img(src="/img_fgworks_logo.png")
 
     .btn-wrap
-        .icon(style="padding-bottom:6px")
+        .icon(@click="router.push('/approval/request-audit')" style="padding-bottom:6px")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
         .icon
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-        .icon
+        .icon.btn-noti(:data-count="unreadCount" ref="btnNoti" @click="openNotification")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
-        .icon
+        .icon(@click="router.push('/organigram')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
-        .icon(v-if="user.access_group > 98")
+        .icon(v-if="user.access_group > 98" @click="router.push('/admin/list-divisions')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
 
         //- button.btn-profile(type="button" ref="btnProfile" @click="openProfile")
             span.user-name {{ user.name }}
             span.hello
-        .thumbnail(ref="btnProfile" @click="openProfile")
+        .thumbnail(ref="btnProfile" @click="isProfileOpen = !isProfileOpen")
             template(v-if="profileImage")
                 img(:src="profileImage" alt="img-profile")
             template(v-else)
@@ -31,10 +31,10 @@ header#header
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 
-    //- button.btn-mo-navbar(@click="toggleOpen" @click.stop="closePopup")
-        .icon
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-menu")
+        button.btn-mo-navbar(ref="btnMobileMenu" v-if="route.name !== 'home'" @click="isMobileMenuOpen = !isMobileMenuOpen")
+            .icon(style="padding:0")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-apps")
 
     //- button.btn-noti(type="button" :data-count="unreadCount" ref="btnNoti" @click="openNotification")
         .icon.icon-bell
@@ -44,7 +44,7 @@ header#header
 
 #popup.notification(v-if="isNotiOpen" @click.stop)
     .popup-header
-        h3.title 알림 목록
+        h3.title 알림
 
     template(v-if="unreadEmailNotiMsg || realtimes.length > 0")
         .popup-main
@@ -161,6 +161,63 @@ header#header
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-logout")
                     p 로그아웃
+
+#popup.menu(v-show="isMobileMenuOpen" @click.stop)
+    .popup-main
+        .icon-menu-wrap
+            router-link.icon-menu(to="/")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-home")
+                p 홈
+
+            router-link.icon-menu(to="/approval")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+                p 이메일
+
+            router-link.icon-menu(to="/approval")
+                .icon(style="padding-bottom:6px")
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
+                p 전자결재
+
+            router-link.icon-menu(to="/mypage")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
+                p 공지사항
+
+            router-link.icon-menu(to="/mypage")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
+                p 마이페이지
+
+            router-link.icon-menu(to="/list-employee")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
+                p 직원 목록
+
+            router-link.icon-menu(to="/organigram")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+                p 조직도
+
+            router-link.icon-menu(v-if="user.access_group > 98" to="/organigram")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
+                p 마스터 페이지
+
+            .icon-menu
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-logout")
+                p 로그아웃
 </template>
 
 <script setup>
@@ -176,10 +233,12 @@ import { goToAuditDetail } from '@/audit.ts';
 const router = useRouter();
 const route = useRoute();
 
-let isNotiOpen = ref(false);
 let btnNoti = ref(null);
-let isProfileOpen = ref(false);
 let btnProfile = ref(null);
+let btnMobileMenu = ref(null);
+let isNotiOpen = ref(false);
+let isProfileOpen = ref(false);
+let isMobileMenuOpen = ref(false);
 
 function formatTimeAgo(timestamp) {
   const now = Date.now(); // 현재 시간 (밀리초)
@@ -206,23 +265,17 @@ let openNotification = () => {
   resetBadgeCount();
 };
 
-let closeNotification = (event) => {
-  if (isNotiOpen.value && !btnNoti.value.contains(event.target)) {
-    isNotiOpen.value = false;
-  }
-};
-
 let closeNotificatiRouter = () => {
   isNotiOpen.value = false;
 };
 
-let openProfile = () => {
-  isProfileOpen.value = !isProfileOpen.value;
-};
-
-let closeProfile = (event) => {
-  if (isProfileOpen.value && !btnProfile.value.contains(event.target)) {
+let closePopupOutside = (event) => {
+  if (isNotiOpen.value && !btnNoti.value.contains(event.target)) {
+    isNotiOpen.value = false;
+  } else if (isProfileOpen.value && !btnProfile.value.contains(event.target)) {
     isProfileOpen.value = false;
+  } else if (isMobileMenuOpen.value && !btnMobileMenu.value.contains(event.target)) {
+    isMobileMenuOpen.value = false;
   }
 };
 
@@ -233,11 +286,11 @@ let closeProfileRouter = () => {
 let closePopup = () => {
   isNotiOpen.value = false;
   isProfileOpen.value = false;
+  isMobileMenuOpen.value = false;
 };
 
 onMounted(() => {
-  document.addEventListener('click', closeNotification);
-  document.addEventListener('click', closeProfile);
+  document.addEventListener('click', closePopupOutside);
   router.beforeEach((to, from, next) => {
     closeNotificatiRouter();
     closeProfileRouter();
@@ -247,8 +300,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeNotification);
-  document.removeEventListener('click', closeProfile);
+  document.removeEventListener('click', closePopupOutside);
 });
 
 let showRealtimeNoti = (e, type, rt) => {
@@ -318,36 +370,40 @@ watch(
     .btn-mo-navbar {
         display: none;
         margin-right: auto;
-
-        .icon {
-            padding: 0;
-        }
     }
 
     .btn-noti {
-        width: 2.75rem;
-        height: 2.75rem;
-        background-color: var(--primary-color-100);
+        // width: 2.75rem;
+        // height: 2.75rem;
+        // background-color: var(--primary-color-100);
         position: relative;
-        margin-right: 2rem;
+        // margin-right: 2rem;
         // border-radius: 0.5rem;
-        border-radius: 50%;
+        // border-radius: 50%;
 
         &::after {
             content: attr(data-count);
             display: inline-block;
             position: absolute;
-            top: -0.5rem;
-            right: -14px;
-            min-width: 1.625rem;
-            height: 1.625rem;
-            line-height: 1.625rem;
+            // top: -0.5rem;
+            // right: -14px;
+            // min-width: 1.625rem;
+            // height: 1.625rem;
+            // line-height: 1.625rem;
+            top: -8px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
             font-size: 0.75rem;
             font-weight: 700;
             color: #fff;
             background-color: var(--primary-color-400);
-            padding: 0 0.3125rem;
-            border-radius: 0.75rem;
+            // padding: 0 0.3125rem;
+            // border-radius: 0.75rem;
+            // padding: 0 4px;
+            border-radius: 50%;
+            text-align: center;
         }
     }
 
@@ -424,12 +480,15 @@ watch(
     box-shadow: 1px 1px 20px 0px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     z-index: 99999;
+    padding: 1rem;
 
     .popup-header {
         display: flex;
         align-items: center;
-        padding: 0.9rem;
-        gap: 1rem;
+        // padding: 0.9rem;
+        // gap: 1rem;
+        padding-bottom: 0.9rem;
+        border-bottom: 1px solid var(--gray-color-200);
 
         .image {
             width: 64px;
@@ -473,10 +532,10 @@ watch(
     }
 
     .popup-main {
+        // padding: 0 0.8rem;
         ul {
             li {
                 // border-top: 1px solid var(--gray-color-200);
-                border-top: 1px solid var(--gray-color-200);
                 font-size: 0.8rem;
 
                 &:first-child {
@@ -514,28 +573,29 @@ watch(
     }
 
     &.notification {
-        right: 124px;
+        // right: 124px;
+        right: 190px;
         max-width: 420px;
         width: calc(100% - 16px);
 
         .popup-header {
-            padding: 34px 30px 24px;
-            border-bottom: 1px solid var(--gray-color-300);
+            // padding: 34px 30px 24px;
+            // border-bottom: 1px solid var(--gray-color-300);
 
             .title {
-                font-size: 24px;
+                font-size: 1.1rem;
             }
         }
 
         .popup-main {
-            padding-bottom: 1.5rem;
+            // padding-bottom: 1.1rem;
 
             ul {
                 max-height: 240px;
                 overflow-y: scroll;
 
                 li {
-                    border-top: none;
+                    // border-top: none;
 
                     // &:first-child {
                     // 	padding-top: 0.5rem;
@@ -555,8 +615,8 @@ watch(
             }
 
             .router {
-                padding-left: 30px;
-                padding-right: 30px;
+                // padding-left: 30px;
+                // padding-right: 30px;
                 gap: 0.8rem;
 
                 &:hover {
@@ -668,15 +728,57 @@ watch(
             }
         }
     }
+
+    &.profile {
+        padding: 0;
+    }
+
+    &.menu {
+        padding: 0;
+        
+        .icon-menu-wrap {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 1.5rem;
+            padding: 1.5rem 1rem 2rem;
+            // width: 100%;
+            // height: 100%;
+
+            .icon-menu {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+
+                .icon {
+                    height: 2rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    svg {
+                        width: 30px;
+                        height: 30px;
+                    }
+                }
+
+                p {
+                    font-size: 0.9rem;
+                }
+            }
+        }
+    }
 }
 
 @media (max-width: 1200px) {
     #header {
         // padding-left: 2.4rem;
 
-        .btn-mo-navbar {
-            display: block;
-        }
+        // .btn-mo-navbar {
+        //     display: block;
+        // }
     }
 }
 
@@ -684,6 +786,20 @@ watch(
     #header {
         padding-left: 16px;
         padding-right: 16px;
+
+        .btn-wrap {
+            > *:not(.btn-mo-navbar) {
+                display: none;
+            }
+        }
+
+        .thumbnail {
+            display: none;
+        }
+
+        .btn-mo-navbar {
+            display: block;
+        }
     }
 
     #popup {

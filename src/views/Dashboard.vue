@@ -24,7 +24,7 @@
 
         br
 
-    .desktop-wrap
+    .profComp-wrap
         .profile-wrap
             .thumbnail(ref="btnProfile" @click="openProfile")
                 template(v-if="profileImage")
@@ -35,8 +35,8 @@
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             .name {{ user.name }}
             .division {{ userDvsPstn }}
-        .company-wrap 회사사진
-            //- img(src="@/assets/img/rh.png" alt="회사사진" style="height:200px")
+        .company-wrap
+            img(src="@/assets/img/rh.png" alt="회사사진")
 
     ul.card-wrap.gmail
         li.card
@@ -231,18 +231,20 @@ getNewsletterList();
 #dashboard {
     max-width: 1200px;
     margin: 0 auto;
+	padding: 1rem;
 }
 
-.desktop-wrap {
+.profComp-wrap {
     display:flex;
     flex-wrap:wrap;
     gap: 1rem;
     margin-bottom: 1rem;
 
     > div {
+		height: 250px;
         background-color: #fff;
         border: 1px solid var(--gray-color-300);
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
         border-radius: 16px;
         padding: 1.5rem;
         text-align: center;
@@ -253,6 +255,7 @@ getNewsletterList();
         display: flex;
         flex-direction: column;
         align-items: center;
+		justify-content: center;
 
         .thumbnail {
             width: 3rem;
@@ -287,12 +290,14 @@ getNewsletterList();
     }
 
     .company-wrap {
-        flex-grow: 4;
-        // padding: 0;
+		position: relative;
+        flex-grow: 3;
+		overflow: hidden;
+        padding: 0;
 
         img {
-            // width: 100%;
-            // height: 100%;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             border-radius: 16px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
@@ -467,6 +472,26 @@ getNewsletterList();
 // }
 
 @media (max-width: 768px) {
+	.profComp-wrap {
+		.profile-wrap {
+			position: relative;
+			border: 0;
+			box-shadow: none;
+			height: unset;
+			align-items: end;
+			padding-right: 4rem;
+
+			.thumbnail {
+				position: absolute;
+				top: 50%;
+				right: 0;
+				transform: translateY(-50%);
+			}
+		}
+		.company-wrap {
+			display: none;
+		}
+	}
     .card-wrap {
         &.gmail {
             .from,

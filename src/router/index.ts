@@ -3,6 +3,7 @@ import { user } from '@/user.ts';
 
 import Login from '@/views/Login.vue';
 import Main from '@/views/Main.vue';
+import MainNav from '@/views/Main_navbar.vue';
 import Dashboard from '@/views/Dashboard.vue';
 import Mypage from '@/views/mypage/Mypage.vue';
 import Admin from '@/views/admin/Admin.vue';
@@ -101,60 +102,68 @@ const router = createRouter({
           name: 'detail-employee',
           component: () => import('@/views/List_detail_employee.vue') // List_detail_employee,
         },
+        // {
+        // 	path: '/employee',
+        // 	name: 'employee',
+        // 	component: MainNav,
+        // 	children: []
+        // },
         {
           path: '/approval',
           children: [
             {
               path: '/approval',
               name: 'approval',
-              component: Approval
+              component: MainNav,
+              children: [
+                  {
+                    path: 'request-list',
+                    name: 'request-list',
+                    component: () => import('@/views/approval/Approval_request_list.vue')
+                  },
+                  {
+                    path: 'request-audit',
+                    name: 'request-audit',
+                    component: () => import('@/views/approval/Approval_request_audit.vue') // Approval_request_audit,
+                    // component: () => import('@/views/approval/Approval_request_audit_qb.vue'), // Approval_request_audit,
+                  },
+                  {
+                    path: 'audit-list',
+                    name: 'audit-list',
+                    component: () => import('@/views/approval/Approval_audit_list.vue')
+                  },
+                  {
+                    path: 'audit-reference',
+                    name: 'audit-reference',
+                    component: () => import('@/views/approval/Approval_audit_list.vue')
+                  },
+                  {
+                    path: 'audit-list-favorite',
+                    name: 'audit-list-favorite',
+                    component: () => import('@/views/approval/Approval_audit_list.vue') // 즐겨찾기한 결재 리스트
+                  },
+                  {
+                    path: 'audit-detail/:auditId',
+                    name: 'audit-detail',
+                    component: () => import('@/views/approval/Approval_audit_detail.vue')
+                  },
+                  {
+                    path: 'audit-detail-reference/:auditId',
+                    name: 'audit-detail-reference',
+                    component: () => import('@/views/approval/Approval_audit_detail.vue')
+                  },
+                  {
+                    path: 'audit-detail-favorite/:auditId',
+                    name: 'audit-detail-favorite',
+                    component: () => import('@/views/approval/Approval_audit_detail.vue')
+                  },
+                  {
+                    path: 'audit-list-tempsave',
+                    name: 'audit-list-tempsave',
+                    component: () => import('@/views/approval/Approval_tempsave_list.vue')
+                  }
+              ]
             },
-            {
-              path: 'request-list',
-              name: 'request-list',
-              component: () => import('@/views/approval/Approval_request_list.vue')
-            },
-            {
-              path: 'request-audit',
-              name: 'request-audit',
-              component: () => import('@/views/approval/Approval_request_audit.vue') // Approval_request_audit,
-              // component: () => import('@/views/approval/Approval_request_audit_qb.vue'), // Approval_request_audit,
-            },
-            {
-              path: 'audit-list',
-              name: 'audit-list',
-              component: () => import('@/views/approval/Approval_audit_list.vue')
-            },
-            {
-              path: 'audit-reference',
-              name: 'audit-reference',
-              component: () => import('@/views/approval/Approval_audit_list.vue')
-            },
-            {
-              path: 'audit-list-favorite',
-              name: 'audit-list-favorite',
-              component: () => import('@/views/approval/Approval_audit_list.vue') // 즐겨찾기한 결재 리스트
-            },
-            {
-              path: 'audit-detail/:auditId',
-              name: 'audit-detail',
-              component: () => import('@/views/approval/Approval_audit_detail.vue')
-            },
-            {
-              path: 'audit-detail-reference/:auditId',
-              name: 'audit-detail-reference',
-              component: () => import('@/views/approval/Approval_audit_detail.vue')
-            },
-            {
-              path: 'audit-detail-favorite/:auditId',
-              name: 'audit-detail-favorite',
-              component: () => import('@/views/approval/Approval_audit_detail.vue')
-            },
-            {
-              path: 'audit-list-tempsave',
-              name: 'audit-list-tempsave',
-              component: () => import('@/views/approval/Approval_tempsave_list.vue')
-            }
           ]
         },
         {
@@ -163,28 +172,30 @@ const router = createRouter({
             {
               path: '/mypage',
               name: 'mypage',
-              component: Mypage
+              component: MainNav,
+              children: [
+                  {
+                    path: 'edit-myinfo',
+                    name: 'edit-myinfo',
+                    component: () => import('@/views/mypage/Mypage_edit_myinfo.vue') // Mypage_edit_myinfo,
+                  },
+                  {
+                    path: 'edit-mystamp',
+                    name: 'edit-mystamp',
+                    component: () => import('@/views/mypage/Mypage_edit_mystamp.vue')
+                  },
+                  // {
+                  // 	path: 'edit-myfile',
+                  // 	name: 'edit-myfile',
+                  // 	component: () => import('@/views/mypage/Mypage_edit_myfile.vue'),
+                  // },
+                  {
+                    path: 'record-commute',
+                    name: 'record-commute',
+                    component: () => import('@/views/mypage/Mypage_record_commute.vue') // Mypage_record_commute,
+                  }
+              ]
             },
-            {
-              path: 'edit-myinfo',
-              name: 'edit-myinfo',
-              component: () => import('@/views/mypage/Mypage_edit_myinfo.vue') // Mypage_edit_myinfo,
-            },
-            {
-              path: 'edit-mystamp',
-              name: 'edit-mystamp',
-              component: () => import('@/views/mypage/Mypage_edit_mystamp.vue')
-            },
-            // {
-            // 	path: 'edit-myfile',
-            // 	name: 'edit-myfile',
-            // 	component: () => import('@/views/mypage/Mypage_edit_myfile.vue'),
-            // },
-            {
-              path: 'record-commute',
-              name: 'record-commute',
-              component: () => import('@/views/mypage/Mypage_record_commute.vue') // Mypage_record_commute,
-            }
           ]
         },
         {
@@ -200,53 +211,65 @@ const router = createRouter({
             {
               path: '/admin',
               name: 'admin',
-              component: Admin
+              component: MainNav,
+              children: [
+                  {
+                    path: '/list-employee',
+                    name: 'list-employee',
+                    component: () => import('@/views/List_employee.vue') // List_employee,
+                  },
+                  {
+                    path: '/detail-employee/:userId',
+                    name: 'detail-employee',
+                    component: () => import('@/views/List_detail_employee.vue') // List_detail_employee,
+                  },
+                  {
+                    path: 'add-employee',
+                    name: 'add-employee',
+                    component: () => import('@/views/admin/Admin_add_employee.vue') // Admin_add_employee,
+                  },
+                  {
+                    path: 'add-divisions',
+                    name: 'add-divisions',
+                    component: () => import('@/views/admin/Admin_add_divisions.vue') // Admin_add_divisions,
+                  },
+                  {
+                    path: 'edit-divisions',
+                    name: 'edit-divisions',
+                    component: () => import('@/views/admin/Admin_edit_divisions.vue') //Admin_edit_divisions,
+                  },
+                  {
+                    path: 'list-divisions',
+                    name: 'list-divisions',
+                    component: () => import('@/views/admin/Admin_list_divisions.vue')
+                  },
+                  {
+                    path: 'list-commute',
+                    name: 'list-commute',
+                    component: () => import('@/views/admin/Admin_list_commute.vue') //Admin_list_commute,
+                  },
+                  {
+                    path: '/commute-detail/:userId',
+                    name: 'commute-detail',
+                    component: () => import('@/views/admin/Admin_commute_detail.vue') //Admin_commute_detail,
+                  },
+                  {
+                    path: 'edit-worktime',
+                    name: 'edit-worktime',
+                    component: () => import('@/views/admin/Admin_edit_worktime.vue') // Admin_edit_worktime,
+                  },
+                  {
+                    path: 'list-form',
+                    name: 'list-form',
+                    component: () => import('@/views/admin/Admin_list_form.vue') // 마스터가 올린 결재 양식 리스트,
+                  },
+                  {
+                    path: 'form-detail',
+                    name: 'form-detail',
+                    component: () => import('@/views/admin/Admin_form_detail.vue') // 마스터가 올린 결재 양식 리스트 상세,
+                  }
+              ]
             },
-            {
-              path: 'add-employee',
-              name: 'add-employee',
-              component: () => import('@/views/admin/Admin_add_employee.vue') // Admin_add_employee,
-            },
-            {
-              path: 'add-divisions',
-              name: 'add-divisions',
-              component: () => import('@/views/admin/Admin_add_divisions.vue') // Admin_add_divisions,
-            },
-            {
-              path: 'edit-divisions',
-              name: 'edit-divisions',
-              component: () => import('@/views/admin/Admin_edit_divisions.vue') //Admin_edit_divisions,
-            },
-            {
-              path: 'list-divisions',
-              name: 'list-divisions',
-              component: () => import('@/views/admin/Admin_list_divisions.vue')
-            },
-            {
-              path: 'list-commute',
-              name: 'list-commute',
-              component: () => import('@/views/admin/Admin_list_commute.vue') //Admin_list_commute,
-            },
-            {
-              path: '/commute-detail/:userId',
-              name: 'commute-detail',
-              component: () => import('@/views/admin/Admin_commute_detail.vue') //Admin_commute_detail,
-            },
-            {
-              path: 'edit-worktime',
-              name: 'edit-worktime',
-              component: () => import('@/views/admin/Admin_edit_worktime.vue') // Admin_edit_worktime,
-            },
-            {
-              path: 'list-form',
-              name: 'list-form',
-              component: () => import('@/views/admin/Admin_list_form.vue') // 마스터가 올린 결재 양식 리스트,
-            },
-            {
-              path: 'form-detail',
-              name: 'form-detail',
-              component: () => import('@/views/admin/Admin_form_detail.vue') // 마스터가 올린 결재 양식 리스트 상세,
-            }
           ]
         },
         {

@@ -43,7 +43,7 @@ watch(mainPageLoading, (nv) => {
 		// padding: 3rem 2.4rem 0;
 		position: relative;
 		// padding: 3rem 2.4rem;
-		padding: 1rem;
+		// padding: 1rem;
 
 		&.loading {
 			&::after {
@@ -105,12 +105,12 @@ watch(mainPageLoading, (nv) => {
 	}
 
 	#main {
-		padding-left: 0;
+		// padding-left: 0;
 
-		.wrap {
-			padding-left: 16px;
-			padding-right: 16px;
-		}
+		// .wrap {
+		// 	padding-left: 16px;
+		// 	padding-right: 16px;
+		// }
 	}
 
 	.fold {
