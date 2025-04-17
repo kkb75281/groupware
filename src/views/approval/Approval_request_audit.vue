@@ -4,7 +4,7 @@
 
 hr
 
-template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode")
+template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode && !isReRequestMode")
 	.item-wrap
 		.selected-wrap
 			p.label 카테고리 선택
@@ -61,7 +61,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode"
 				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
 				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading)")
+template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) || (isReRequestMode && temploading)")
 	.form-wrap
 		form#_el_request_form(@submit.prevent="requestAudit")
 			#printArea
@@ -181,8 +181,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading)")
 									th.essential 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
-											//- Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content" :showBtn="true")
-											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'tempsave' ? tempSaveData?.data?.form_content : selectedForm?.data?.form_content" :showBtn="true")
+											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'tempsave' ? tempSaveData?.data?.form_content : route.query.mode === 'reRequest' ? reRequestData?.data?.to_audit_content : selectedForm?.data?.form_content" :showBtn="true")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -310,6 +309,7 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe, verifiedEmail } from '@/user.ts';
 import { divisionNameList } from '@/division.ts';
+import { reRequestData } from '@/audit.ts';
 import {
   organigram,
   getOrganigram,
@@ -334,6 +334,7 @@ const route = useRoute();
 
 const isTemplateMode = computed(() => route.query.mode === 'template'); // 결재 양식 관리 > 등록 경로인지 확인
 const isTempSaveMode = computed(() => route.query.mode === 'tempsave'); // 임시 저장 경로인지 확인
+const isReRequestMode = computed(() => route.query.mode === 'reRequest'); // 재요청 모드인지 확인
 
 // 페이지 제목 변경
 const pageTitle = computed(() => {
@@ -740,8 +741,12 @@ const handleEditorReady = (status) => {
     setTimeout(() => {
       const editorElement = document.getElementById('myeditor');
       if (editorElement) {
-        // 일반 양식 모드 또는 임시 저장 모드에서 테이블 편집 활성화
-        if (selectedForm.value?.data?.form_content || tempSaveData.value?.data?.form_content) {
+        if (
+          (isTempSaveMode.value && tempSaveData.value?.data?.form_content) ||
+          (isReRequestMode.value && reRequestData.value?.data?.to_audit_content) ||
+          selectedForm.value?.data?.form_content
+        ) {
+          console.log('에디터 준비 완료');
           activateTableEditing(editorElement);
         }
       }
@@ -1149,7 +1154,16 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 
     // 만약 첨부파일이 있는 결재 양식 선택시
     if (uploadedFile.value.length) {
+      console.log('uploadedFile.value : ', uploadedFile.value);
       for (const file of uploadedFile.value) {
+        // file.url에 '?'가 포함되어 있을 경우 제거
+        if (file.url.includes('?')) {
+          file.url = file.url.split('?')[0];
+        } else {
+          file.url = file.url;
+        }
+        console.log('file.url : ', file.url);
+
         // 파일 데이터를 서버에서 가져옴
         const fileData = await skapi.getFile(file.url, {
           dataType: 'endpoint'
@@ -1571,6 +1585,7 @@ const saveDocForm = async () => {
     }
 
     if (uploadedFile.value.length) {
+      console.log('uploadedFile.value : ', uploadedFile.value);
       for (const file of uploadedFile.value) {
         // console.log('Processing file:', file);
 
@@ -1655,15 +1670,27 @@ const saveMyDocForm = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
+    console.log('filebox : ', filebox);
+    console.log('uploadedFile.value : ', uploadedFile.value);
+
     if (filebox && filebox.files.length) {
       Array.from(filebox.files).forEach((file) => {
+        console.log('file:', file);
         formData.append('form_data', file);
       });
     }
 
     if (uploadedFile.value.length) {
       for (const file of uploadedFile.value) {
-        // console.log('Processing file:', file);
+        console.log('file:', file);
+
+        // // file.url '?' 포함되어 있을 경우 제거
+        // if (file.url.includes('?')) {
+        //   file.url = file.url.split('?')[0];
+        // } else {
+        //   file.url = file.url;
+        // }
+        // console.log('file.url : ', file.url);
 
         // 파일 데이터를 서버에서 가져옴
         const fileData = await skapi.getFile(file.url, {
@@ -1675,6 +1702,9 @@ const saveMyDocForm = async () => {
 
         // Blob에 원래 파일 이름을 붙여 File 객체 생성
         const fileObject = new File([blob], file.filename, { type: blob.type });
+
+        console.log('blob : ', blob);
+        console.log('fileObject : ', fileObject);
 
         // FormData에 추가
         formData.append('form_data', fileObject);
@@ -1703,8 +1733,6 @@ const saveMyDocForm = async () => {
 
 // 임시 저장
 const tempSaveMyDoc = async () => {
-  console.log('임시저장');
-
   // 결재 제목이 없을 경우 저장 불가
   if (!auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
@@ -1754,12 +1782,22 @@ const tempSaveMyDoc = async () => {
       });
     }
 
+    console.log('filebox : ', filebox);
+    console.log('uploadedFile.value : ', uploadedFile.value);
+
     if (uploadedFile.value.length) {
       for (const file of uploadedFile.value) {
+        console.log('file:', file);
+
+        // file.url ?를 기준으로 [0]만 가져오기
+        const fileUrl = file.url.split('?')[0];
+        console.log('fileUrl : ', fileUrl);
+
         // 파일 데이터를 서버에서 가져옴
-        const fileData = await skapi.getFile(file.url, {
+        const fileData = await skapi.getFile(fileUrl, {
           dataType: 'endpoint'
         });
+        console.log('fileData : ', fileData);
 
         // 가져온 파일 데이터를 Blob으로 변환
         const blob = await fetch(fileData.url).then((res) => res.blob());
@@ -1855,7 +1893,6 @@ const getTempSaveMyDocList = async () => {
         access_group: 'private'
       }
     });
-    console.log('임시저장 res : ', res);
 
     return res;
   } catch (error) {
@@ -1899,6 +1936,7 @@ const getTempSaveMyDocCont = async () => {
         // 결재자 정보
         if (tempSaveData.value.data.auditors) {
           const auditors = JSON.parse(tempSaveData.value.data.auditors);
+          console.log('auditors : ', auditors);
 
           // 순서 정보를 포함한 결재자 변환 함수
           const convertAuditorFormatWithOrder = (auditors, role) => {
@@ -1930,6 +1968,8 @@ const getTempSaveMyDocCont = async () => {
           uploadedFile.value = tempSaveData.value.bin.form_data;
         }
       }
+
+      return res;
     } catch (error) {
       console.error('임시 저장 내용 불러오기 중 오류 발생:', error);
     }
@@ -2136,6 +2176,110 @@ onMounted(async () => {
   // 임시 저장 모드인 경우 해당 내용 불러오기
   if (isTempSaveMode.value) {
     getTempSaveMyDocCont();
+  }
+
+  // 재요청 모드인 경우 바로 step 2로 이동
+  if (isReRequestMode.value && reRequestData.value && reRequestData.value.data) {
+    step.value = 2;
+    temploading.value = true;
+    console.log('== onMounted == reRequestData : ', reRequestData.value);
+
+    // 결재 제목 설정
+    auditTitle.value = reRequestData.value.data.to_audit;
+
+    // 에디터 내용 설정
+    editorContent.value = reRequestData.value.data.to_audit_content;
+
+    // 반려 설정 불러오기
+    if (reRequestData.value.data.reject_setting !== undefined) {
+      rejectSetting.value =
+        reRequestData.value.data.reject_setting === 'true' ||
+        reRequestData.value.data.reject_setting === true;
+    }
+
+    // 추가 행 데이터 불러오기
+    if (reRequestData.value.data.custom_rows) {
+      try {
+        addRows.value = JSON.parse(reRequestData.value.data.custom_rows);
+      } catch (e) {
+        console.error('Custom rows parsing error:', e);
+        addRows.value = [];
+      }
+    }
+
+    // 첨부파일이 있는 경우
+    if (reRequestData.value.bin && reRequestData.value.bin.additional_data) {
+      uploadedFile.value = reRequestData.value.bin.additional_data;
+      console.log('uploadedFile : ', uploadedFile.value);
+    }
+
+    // 결재자 정보 불러오기
+    if (reRequestData.value.data.auditors) {
+      try {
+        // 직원 목록 조회
+        const empList = await skapi.getRecords({
+          table: {
+            name: 'emp_position_current',
+            access_group: 1
+          }
+        });
+
+        // 직원 정보 맵 생성
+        const empMap = {};
+        if (empList && empList.list) {
+          empList.list.forEach((emp) => {
+            if (emp.data && emp.data.user_id) {
+              // 전체 직원 정보를 저장
+              empMap[emp.data.user_id] = {
+                division: emp.index.name.split('.')[0],
+                name: emp.index.value,
+                user_id: emp.data.user_id,
+                position: emp.index.name.split('.')[1]
+              };
+            }
+          });
+        }
+
+        // 결재자 정보 파싱
+        const auditors = JSON.parse(reRequestData.value.data.auditors);
+
+        // 결재자 데이터 변환 함수
+        const convertAuditors = (auditorsList, role) => {
+          return (auditorsList || []).map((auditor) => {
+            const userId = auditor.user_id.replaceAll('_', '-');
+
+            return {
+              data: { user_id: userId },
+              index: {
+                value: empMap[userId] ? empMap[userId].name : '',
+                name: empMap[userId] ? `${empMap[userId].division}.${empMap[userId].position}` : ''
+              },
+              role: role,
+              order: auditor.order || 0, // 순서 정보 추가
+              sortable: role !== 'receivers' // receivers는 정렬 불가능
+            };
+          });
+        };
+
+        // 결재자 정보 설정
+        selectedAuditors.value = {
+          approvers: convertAuditors(auditors.approvers, 'approvers'),
+          agreers: convertAuditors(auditors.agreers, 'agreers'),
+          receivers: convertAuditors(auditors.receivers, 'receivers')
+        };
+        console.log('selectedAuditors : ', selectedAuditors.value);
+
+        // 결재자 순서대로 정렬
+        selectedAuditors.value.approvers.sort((a, b) => (a.order || 0) - (b.order || 0));
+        selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        console.log('결재자 정보 설정 완료:', selectedAuditors.value);
+      } catch (error) {
+        console.error('결재자 정보 처리 중 오류:', error);
+      }
+    }
+
+    isFormSelected.value = true;
   }
 });
 
@@ -2351,7 +2495,8 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  max-width: 960px;
+  // max-width: 960px;
+  max-width: 992px;
 
   .title {
     position: relative;

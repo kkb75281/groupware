@@ -7,6 +7,7 @@ export const auditList = ref([]); // 결재 수신함
 export const auditListRunning = ref(false);
 export const auditReferenceList = ref([]); // 수신참조
 export const auditReferenceListRunning = ref(false);
+export const reRequestData = ref({});
 
 // 결재 수신함 가져오기 (결재자, 합의자)
 export async function getAuditList(fetchOptions: {}) {

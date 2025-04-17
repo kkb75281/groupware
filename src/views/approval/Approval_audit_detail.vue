@@ -206,7 +206,7 @@ import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { skapi, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe } from '@/user.ts';
 import { getUserInfo } from '@/employee.ts';
-import { auditList } from '@/audit.ts';
+import { auditList, reRequestData } from '@/audit.ts';
 import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp.ts';
 import {
   openStampModal,
@@ -670,7 +670,7 @@ const getAuditDetail = async () => {
         record_id: auditId.value
       })
     ).list[0];
-    // console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
+    console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
 
     if (auditDoc) {
       auditDoContent.value = auditDoc;
@@ -1493,17 +1493,17 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
 };
 
 // 기안자의 재요청
-const reRequestAudit = async () => {
-  console.log('재요청');
+const reRequestAudit = () => {
+  reRequestData.value = auditDoContent.value;
+  console.log('reRequestData : ', reRequestData.value);
 
-  const res = await skapi.getRecords({
-    record_id: auditId.value
+  router.push({
+    path: '/approval/request-audit',
+    query: {
+      mode: 'reRequest',
+      isReRequest: true
+    }
   });
-  console.log('res : ', res);
-
-  // router.push({ name: 'audit-detail-reference', params: { auditId } });
-  router.push({ path: '/approval/request-audit' });
-  step.value = 2;
 };
 
 onMounted(() => {

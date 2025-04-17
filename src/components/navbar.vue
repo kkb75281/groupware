@@ -143,7 +143,7 @@ const menuList = computed(() => [
           detail: {
             show: isSendingValue.value,
             name: 'audit-detail',
-            to: '/approval/audit-detail',
+            to: '/approval/audit-detail'
           }
         },
         {
@@ -153,7 +153,7 @@ const menuList = computed(() => [
           detail: {
             show: !isSendingValue.value,
             name: 'audit-detail',
-            to: '/approval/audit-detail',
+            to: '/approval/audit-detail'
           }
         },
         {
@@ -163,7 +163,7 @@ const menuList = computed(() => [
           detail: {
             show: true,
             name: 'audit-detail-reference',
-            to: '/approval/audit-detail-reference',
+            to: '/approval/audit-detail-reference'
           }
         },
         {
@@ -173,8 +173,13 @@ const menuList = computed(() => [
           detail: {
             show: true,
             name: 'audit-detail-favorite',
-            to: '/approval/audit-detail-favorite',
+            to: '/approval/audit-detail-favorite'
           }
+        },
+        {
+          name: 'audit-list-tempsave',
+          to: '/approval/audit-list-tempsave',
+          text: '임시 저장함'
         }
       ]
     }
@@ -330,13 +335,19 @@ watch(isOpen, (nv) => {
   }
 });
 
-watch(() => route.query, (nv) => {
-    if(nv.isSending) {
-        isSendingValue.value = nv.isSending;
+watch(
+  () => route.query,
+  (nv) => {
+    if (nv.isSending) {
+      isSendingValue.value = nv.isSending;
     }
-}, { immediate: true });
+  },
+  { immediate: true }
+);
 
-watch(() => route.name, (nv) => {
+watch(
+  () => route.name,
+  (nv) => {
     if (closeNavbar.value.includes(nv) && isOpen.value) {
       isOpen.value = false;
       document.body.classList.toggle('open', isOpen.value);
@@ -353,35 +364,41 @@ watch(() => route.name, (nv) => {
     }
 
     if (nv === 'detail-employee') {
-        if (isadmin.value) {
-            activeMenu.value = 'admin';
-            return;
-        } else {
-            activeMenu.value = 'list-employee';
-            return;
-        }
+      if (isadmin.value) {
+        activeMenu.value = 'admin';
+        return;
+      } else {
+        activeMenu.value = 'list-employee';
+        return;
+      }
     }
 
-    if (nv === 'audit-detail' || nv === 'audit-detail-reference' || nv === 'audit-detail-favorite') {
-        activeMenu.value = 'approval';
-        return;
+    if (
+      nv === 'audit-detail' ||
+      nv === 'audit-detail-reference' ||
+      nv === 'audit-detail-favorite'
+    ) {
+      activeMenu.value = 'approval';
+      return;
     }
 
     if (nv === 'newsletter-detail') {
-        activeMenu.value = 'newsletter';
-        return;
+      activeMenu.value = 'newsletter';
+      return;
     }
 
     let foundChild = childList.find((item) => item.child.list.some((child) => child.name === nv));
 
     // 현재 route.name이 childList에 포함되어 있으면 activeMenu를 해당 menu의 name으로 설정
     if (foundChild) {
-        activeMenu.value = foundChild.name;
-        return;
+      activeMenu.value = foundChild.name;
+      return;
     } else {
-        activeMenu.value = nv;
+      activeMenu.value = nv;
     }
-},{ immediate: true });
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped lang="less">
