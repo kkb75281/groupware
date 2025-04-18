@@ -164,7 +164,7 @@ onMounted(() => {
 <style scoped lang="less">
 .table-wrap {
   position: relative;
-  margin-top: 3rem;
+//   margin-top: 3rem;
 }
 
 .go-detail {
