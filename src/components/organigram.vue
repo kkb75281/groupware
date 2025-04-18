@@ -1,9 +1,9 @@
 <template lang="pug">
 .organigram-wrap
-	template(v-if="getOrganigramRunning")
-		Loading
-	template(v-else)
-		Department(v-for="(department, index) in organigram" :key="index" :useCheckbox="useCheckbox" :department="department" :selectedAuditors="selectedAuditors" @update-check="onDepartmentCheck")
+    template(v-if="getOrganigramRunning")
+        Loading
+    template(v-else)
+        Department(v-for="(department, index) in organigram" :key="index" :useCheckbox="useCheckbox" :department="department" :selectedAuditors="selectedAuditors" @update-check="onDepartmentCheck")
 </template>
 
 <script setup>
@@ -14,7 +14,8 @@ import {
   organigram,
   getOrganigram,
   getOrganigramRunning,
-  excludeCurrentUser
+  excludeCurrentUser,
+  onlyMyDepartment
 } from '@/components/organigram';
 
 import Loading from '@/components/loading.vue';
@@ -44,8 +45,8 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  filterMyDepartment: {
-    // 본인 부서만 필터링
+  onlyMyDepartment: {
+    // 내 부서만 보기
     type: Boolean,
     default: false
   }
@@ -81,22 +82,24 @@ function resetAllCheckStatus() {
 
 onMounted(() => {
   excludeCurrentUser.value = props.excludeCurrentUser;
-
-  // 본인 부서만 필터링
-  if (props.filterMyDepartment) {
-    getOrganigram(true, props.filterMyDepartment);
-  } else {
-    getOrganigram(true);
-  }
+  onlyMyDepartment.value = props.onlyMyDepartment;
 });
 
 watch(excludeCurrentUser, (nv, ov) => {
   if (!ov || (ov && nv !== ov)) {
-    getOrganigram(true, props.filterMyDepartment);
+    getOrganigram(true);
   } else {
-    getOrganigram(false, props.filterMyDepartment);
+    getOrganigram();
   }
 });
+
+// watch(onlyMyDepartment, (nv, ov) => {
+//   if (!ov || (ov && nv !== ov)) {
+//     getOrganigram(true);
+//   } else {
+//     getOrganigram();
+//   }
+// });
 
 function onDepartmentCheck(obj) {
   const { type, target, isChecked } = obj;

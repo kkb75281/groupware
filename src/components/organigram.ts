@@ -22,8 +22,9 @@ export type Organigram = {
 export let organigram: Ref<Organigram[]> = ref([]);
 export let getOrganigramRunning = ref(false);
 export let excludeCurrentUser = ref(false);
+export let onlyMyDepartment = ref(false); // 내 부서만 보기
 
-export async function getOrganigram(refresh = false, filterMyDepartment = false) {
+export async function getOrganigram(refresh = false) {
   if (getDivisionNamesRunning instanceof Promise) {
     await getDivisionNamesRunning;
   }
@@ -40,15 +41,6 @@ export async function getOrganigram(refresh = false, filterMyDepartment = false)
     for (const division in divisionNameList.value) {
       const fullName = divisionNameList.value[division];
       if (typeof fullName !== 'string') continue;
-
-      console.log('user.division : ', user.division);
-      console.log('division : ', division);
-      console.log('filterMyDepartment : ', filterMyDepartment);
-
-      // 본인 부서만 필터링하는 옵션이 활성화된 경우
-      if (filterMyDepartment && user.division && division !== user.division) {
-        continue; // 본인 부서가 아닌 경우 건너뛰기
-      }
 
       const path = fullName.split('/');
       await addDepartment(path, division, organigram.value);
@@ -133,13 +125,13 @@ async function addDepartment(path: string[], division: string | null, currentLev
         condition: '>'
       }
     });
-
     // const departmentMembers = searchDepartmentMembers.list;
 
     // approved 상태인 직원만 필터링
     const filteredMembers = searchDepartmentMembers.list.filter((member) =>
-      approvedIdsSet.has(member.data.user_id)
+      approvedIdsSet.has(member?.data?.user_id)
     );
+    console.log('=== filteredMembers ===', filteredMembers);
 
     const filteredMembersInfo = await Promise.all(
       filteredMembers.map(async (member) => {
@@ -155,6 +147,24 @@ async function addDepartment(path: string[], division: string | null, currentLev
         };
       })
     );
+    console.log('=== filteredMembersInfo ===', filteredMembersInfo);
+
+    // 본인 찾기
+    const myIndex = filteredMembersInfo.find((member) => member.data.user_id === user.user_id);
+    console.log('myIndex : ', myIndex);
+
+    // 내 부서만 보기일 때
+    if (onlyMyDepartment.value) {
+      console.log('내 부서만 보기');
+      // 내 부서의 멤버만 필터링
+      const myDepartmentMembers = filteredMembersInfo.filter((member) => {
+        console.log('member : ', member);
+        member.index.name.startsWith(user.department);
+      });
+      console.log('myDepartmentMembers : ', myDepartmentMembers);
+    } else {
+      console.log('전체 보기');
+    }
 
     // excludeCurrentUser가 true일 때만 현재 사용자 제외
     // department.members = excludeCurrentUser.value ? departmentMembers.filter((data) => data.data.user_id !== user.user_id) : departmentMembers;
