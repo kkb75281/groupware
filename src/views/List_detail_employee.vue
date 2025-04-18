@@ -1,122 +1,123 @@
 <template lang="pug">
-.title
-	h1 직원 상세
+//- .title
+//- 	h1 직원 상세
 
-hr
+//- hr
 
-.form-wrap(v-if="currentEmp")
-	form#_el_empDetail_form
-		.imgbtn-wrap
-			.image
-				img#profile-img(:src="currentEmp?.picture" alt="profile image")
+.inner
+    .form-wrap(v-if="currentEmp")
+        form#_el_empDetail_form
+            .imgbtn-wrap
+                .image
+                    img#profile-img(:src="currentEmp?.picture" alt="profile image")
 
-			//- .util-wrap
-				.util-btn(:class="{'disabled' : !currentEmp?.phone_number}")
-					a.click-btn(:href="'tel:' + currentEmp?.phone_number" style="display: block;")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
-					span 전화걸기
-				.util-btn
-					button.click-btn(type="button" @click="sendMail(currentEmp?.email)" :disanbled="!currentEmp?.email || disabled")
-						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-					span 이메일전송
+                //- .util-wrap
+                    .util-btn(:class="{'disabled' : !currentEmp?.phone_number}")
+                        a.click-btn(:href="'tel:' + currentEmp?.phone_number" style="display: block;")
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
+                        span 전화걸기
+                    .util-btn
+                        button.click-btn(type="button" @click="sendMail(currentEmp?.email)" :disanbled="!currentEmp?.email || disabled")
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+                        span 이메일전송
 
-		.input-wrap
-			p.label 직책
-			input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled" :disabled="disabled && currentEmpTags.emp_pst === ''")
-			p.desc(v-if="user.access_group > 98 && currentEmpTags.emp_pst === ''") 직책을 등록해주세요.
+            .input-wrap
+                p.label 직책
+                input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled" :disabled="disabled && currentEmpTags.emp_pst === ''")
+                p.desc(v-if="user.access_group > 98 && currentEmpTags.emp_pst === ''") 직책을 등록해주세요.
 
-		.input-wrap
-			p.label 부서
-			template(v-if="disabled")
-				input(type="text" name="division" :disabled="!divisionNameList[currentEmp?.division]" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division]" readonly)
-			template(v-else)
-				select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
-					option(value="" disabled) 부서 선택
-			p.desc(v-if="user.access_group > 98 && currentEmpTags.emp_dvs === ''") 부서를 등록해주세요.
-		
-		.input-wrap
-			p.label 권한
-			template(v-if="disabled")
-				input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
-			template(v-else)
-				select(name="access_group" v-model="currentEmp.access_group")
-					option(value="" disabled selected) 권한선택
-					option(value="1") 직원
-					option(value="98") 관리자
-					option(value="99") 마스터
-			
-		.input-wrap
-			p.label 이름
-			input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." :readonly="disabled" disabled required)
+            .input-wrap
+                p.label 부서
+                template(v-if="disabled")
+                    input(type="text" name="division" :disabled="!divisionNameList[currentEmp?.division]" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division]" readonly)
+                template(v-else)
+                    select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
+                        option(value="" disabled) 부서 선택
+                p.desc(v-if="user.access_group > 98 && currentEmpTags.emp_dvs === ''") 부서를 등록해주세요.
+            
+            .input-wrap
+                p.label 권한
+                template(v-if="disabled")
+                    input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
+                template(v-else)
+                    select(name="access_group" v-model="currentEmp.access_group")
+                        option(value="" disabled selected) 권한선택
+                        option(value="1") 직원
+                        option(value="98") 관리자
+                        option(value="99") 마스터
+                
+            .input-wrap
+                p.label 이름
+                input(type="text" name="name" :value="currentEmp?.name || '-' "  placeholder="이름을 입력해주세요." :readonly="disabled" disabled required)
 
-		.input-wrap
-			p.label 이메일
-			input(type="email" name="email" :value="currentEmp?.email || '-' " placeholder="예) user@email.com" disabled)
-			.icon(v-if="currentEmp?.email" @click="copy(currentEmp?.email)")
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-file-copy-fill")
+            .input-wrap
+                p.label 이메일
+                input(type="email" name="email" :value="currentEmp?.email || '-' " placeholder="예) user@email.com" disabled)
+                .icon(v-if="currentEmp?.email" @click="copy(currentEmp?.email)")
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-file-copy-fill")
 
-		.input-wrap
-			p.label 생년월일
-			input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled style="width:100% !important")
+            .input-wrap
+                p.label 생년월일
+                input(type="date" name="birthdate" :value="currentEmp?.birthdate" disabled style="width:100% !important")
 
-		.input-wrap
-			p.label 전화번호
-			input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
-			.icon(v-if="currentEmp?.phone_number")
-				a(:href="'tel:' + currentEmp?.phone_number")
-					svg
-						use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
+            .input-wrap
+                p.label 전화번호
+                input(type="tel" name="phone_number" :value="currentEmp?.phone_number || '-' " placeholder="예) +821012345678" disabled)
+                .icon(v-if="currentEmp?.phone_number")
+                    a(:href="'tel:' + currentEmp?.phone_number")
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-phone-call")
 
-		.input-wrap
-			p.label 주소
-			input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
+            .input-wrap
+                p.label 주소
+                input(type="text" name="address" :value="currentEmp?.address || '-' " placeholder="예) 서울시 마포구" disabled)
 
-		.input-wrap.upload-stamp
-			p.label 도장
-			.main-stamp
-				img#stamp-img(:src="getStampImageSrc(mainStamp)" alt="도장 이미지")
+            .input-wrap.upload-stamp
+                p.label 도장
+                .main-stamp
+                    img#stamp-img(:src="getStampImageSrc(mainStamp)" alt="도장 이미지")
 
-		.input-wrap.upload-file(v-if="user.access_group > 98 || user.user_id === currentEmp?.user_id")
-			p.label(style="margin-bottom: 0;") 기타자료
-			template(v-if="!disabled")
-				.btn-upload-file
-					input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-					label.btn.outline.btn-upload(for="file") 파일 추가
-					ul.upload-file-list
-						li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+            .input-wrap.upload-file(v-if="user.access_group > 98 || user.user_id === currentEmp?.user_id")
+                p.label(style="margin-bottom: 0;") 기타자료
+                template(v-if="!disabled")
+                    .btn-upload-file
+                        input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                        label.btn.outline.btn-upload(for="file") 파일 추가
+                        ul.upload-file-list
+                            li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
-			.file-wrap
-				ul.file-list
-					template(v-if="uploadFile.length === 0")
-						li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
-					template(v-else)
-						li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
-							a.file-name(:href="file.url" target="_blank") {{ file.filename }}
-							template(v-if="!disabled")
-								button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
-									svg
-										use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-								button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
-									svg
-										use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+                .file-wrap
+                    ul.file-list
+                        template(v-if="uploadFile.length === 0")
+                            li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
+                        template(v-else)
+                            li.file-item(v-for="(file, index) in uploadFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id)}")
+                                a.file-name(:href="file.url" target="_blank") {{ file.filename }}
+                                template(v-if="!disabled")
+                                    button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="removeFileList = removeFileList.filter((id) => id !== file.record_id);")
+                                        svg
+                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+                                    button.btn-remove(v-else type="button" @click="removeFileList.push(file.record_id);")
+                                        svg
+                                            use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
-		br
-		br
-		br
+            br
+            br
+            br
 
-		.button-wrap
-			template(v-if="user.access_group > 98")
-				template(v-if="disabled")
-					button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
-					button.btn.btn-edit(type="button" @click="startEditEmp") 수정
-				template(v-else)
-					button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
-					button.btn.btn-register(type="submit" @click="registerEmp") 저장
-			template(v-else)
-				button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
+            .button-wrap
+                template(v-if="user.access_group > 98")
+                    template(v-if="disabled")
+                        button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
+                        button.btn.btn-edit(type="button" @click="startEditEmp") 수정
+                    template(v-else)
+                        button.btn.bg-gray.btn-cancel(type="button" @click="cancelEdit") 취소
+                        button.btn.btn-register(type="submit" @click="registerEmp") 저장
+                template(v-else)
+                    button.btn.bg-gray(type="button" @click="$router.push('/list-employee')") 이전
 
 
 br  
@@ -495,188 +496,225 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="less">
-.wrap {
-  padding: 3rem 2.4rem 0;
+.inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
 }
 
 .title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 1rem;
 
-  span {
-    color: var(--gray-color-400);
-    line-height: 1.4;
-  }
+    span {
+        color: var(--gray-color-400);
+        line-height: 1.4;
+    }
 }
 
 #_el_empDetail_form {
-  .imgbtn-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .input-wrap {
+    .imgbtn-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .input-wrap {
+        position: relative;
+        margin-top: 16px;
+
+        input {
+            border-color: var(--primary-color-400);
+            cursor: initial;
+
+            &:read-only {
+                border-color: var(--gray-color-200);
+                cursor: default;
+
+                &:hover {
+                    border-color: var(--gray-color-200);
+                }
+            }
+
+            &:hover {
+                border-color: var(--primary-color-400);
+            }
+        }
+
+        select {
+            border-color: var(--primary-color-400);
+        }
+
+        .icon {
+            position: absolute;
+            bottom: 12px;
+            right: 0px;
+            cursor: pointer;
+
+            &:hover {
+                svg {
+                    transform: scale(1.1);
+                }
+            }
+
+            svg {
+                width: 1.2rem;
+                height: 1.2rem;
+                fill: var(--primary-color-400-dark);
+            }
+        }
+    }
+
+    .util-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 0.5rem;
+
+        .util-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+
+            &.disabled {
+                .click-btn {
+                    background-color: var(--gray-color-200);
+                    pointer-events: none;
+                    cursor: not-allowed;
+                    user-select: none;
+                }
+
+                span {
+                    color: var(--gray-color-300);
+                }
+            }
+
+            .click-btn {
+                padding: 0.5rem;
+                border-radius: 50%;
+                background-color: var(--primary-color-400);
+
+                svg {
+                    width: 1.2rem;
+                    height: 1.2rem;
+                    fill: #fff;
+                }
+            }
+            span {
+                font-size: 0.8rem;
+                color: var(--gray-color-400);
+                user-select: none;
+            }
+        }
+    }
+
+    img {
+        width: 100px;
+        height: 100px;
+        border-radius: 30%;
+        display: block;
+        object-fit: contain;
+        position: relative;
+        background-color: var(--gray-color-100);
+
+        &::before {
+            content: 'No Image';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            background-color: var(--gray-color-100);
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        &#profile-img {
+            border-radius: 50%;
+
+            &::before {
+                content: 'No Image';
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+                background-color: var(--gray-color-100);
+                color: #888;
+                font-size: 14px;
+                text-align: center;
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+        }
+    }
+}
+
+.upload-file {
+    .file-item {
+        &.remove {
+            background-color: var(--warning-color-50);
+            border: 1px dashed var(--warning-color-400);
+            color: var(--warning-color-500);
+        }
+    }
+}
+
+.btn-upload-file {
+    margin-top: 12px;
+}
+
+.input-wrap.upload-stamp {
+    .main-stamp {
+        #stamp-img {
+            &:empty::before {
+                content: '도장 등록';
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+                color: #888;
+                background-color: #fff;
+                font-size: 14px;
+                text-align: center;
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+        }
+    }
+}
+
+.main-stamp {
+    width: fit-content;
     position: relative;
-    margin-top: 16px;
+}
 
-    input {
-      border-color: var(--primary-color-400);
-      cursor: initial;
-
-      &:read-only {
-        border-color: var(--gray-color-200);
-        cursor: default;
-
-        &:hover {
-          border-color: var(--gray-color-200);
-        }
-      }
-
-      &:hover {
-        border-color: var(--primary-color-400);
-      }
-    }
-
-    select {
-      border-color: var(--primary-color-400);
-    }
-
-    .icon {
-      position: absolute;
-      bottom: 12px;
-      right: 0px;
-      cursor: pointer;
-
-      &:hover {
-        svg {
-          transform: scale(1.1);
-        }
-      }
-
-      svg {
-        width: 1.2rem;
-        height: 1.2rem;
-        fill: var(--primary-color-400-dark);
-      }
-    }
-  }
-
-  .util-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 0.5rem;
-
-    .util-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-
-      &.disabled {
-        .click-btn {
-          background-color: var(--gray-color-200);
-          pointer-events: none;
-          cursor: not-allowed;
-          user-select: none;
-        }
-
-        span {
-          color: var(--gray-color-300);
-        }
-      }
-
-      .click-btn {
-        padding: 0.5rem;
-        border-radius: 50%;
-        background-color: var(--primary-color-400);
-
-        svg {
-          width: 1.2rem;
-          height: 1.2rem;
-          fill: #fff;
-        }
-      }
-      span {
-        font-size: 0.8rem;
-        color: var(--gray-color-400);
-        user-select: none;
-      }
-    }
-  }
-
-  img {
+#stamp-img {
     width: 100px;
     height: 100px;
     border-radius: 30%;
     display: block;
     object-fit: contain;
     position: relative;
-    background-color: var(--gray-color-100);
+    background-color: #fff;
+    border: 2px dashed var(--gray-color-200);
+    margin-bottom: 0.5rem;
 
     &::before {
-      content: 'No Image';
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      background-color: var(--gray-color-100);
-      color: #888;
-      font-size: 14px;
-      text-align: center;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    &#profile-img {
-      border-radius: 50%;
-
-      &::before {
-        content: 'No Image';
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        background-color: var(--gray-color-100);
-        color: #888;
-        font-size: 14px;
-        text-align: center;
-        position: absolute;
-        top: 0;
-        left: 0;
-      }
-    }
-  }
-}
-
-.upload-file {
-  .file-item {
-    &.remove {
-      background-color: var(--warning-color-50);
-      border: 1px dashed var(--warning-color-400);
-      color: var(--warning-color-500);
-    }
-  }
-}
-
-.btn-upload-file {
-  margin-top: 12px;
-}
-
-.input-wrap.upload-stamp {
-  .main-stamp {
-    #stamp-img {
-      &:empty::before {
         content: '도장 등록';
         display: flex;
         align-items: center;
@@ -690,48 +728,12 @@ onMounted(async () => {
         position: absolute;
         top: 0;
         left: 0;
-      }
     }
-  }
-}
-
-.main-stamp {
-  width: fit-content;
-  position: relative;
-}
-
-#stamp-img {
-  width: 100px;
-  height: 100px;
-  border-radius: 30%;
-  display: block;
-  object-fit: contain;
-  position: relative;
-  background-color: #fff;
-  border: 2px dashed var(--gray-color-200);
-  margin-bottom: 0.5rem;
-
-  &::before {
-    content: '도장 등록';
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    color: #888;
-    background-color: #fff;
-    font-size: 14px;
-    text-align: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
 }
 
 @media (max-width: 768px) {
-  .wrap {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
+    .inner {
+        padding: 1rem;
+    }
 }
 </style>

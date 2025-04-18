@@ -1,7 +1,7 @@
 <template lang="pug">
-h1 부서 관리
+//- h1 부서 관리
 
-hr
+//- hr
 
 .table-wrap
     .tb-head-wrap
@@ -243,18 +243,6 @@ const searchDivision = async () => {
     width: 2rem;
     height: 2rem;
     object-fit: contain;
-}
-
-.table-wrap {
-    position: relative;
-    margin-top: 3rem;
-
-    // #loading {
-    //     position: absolute;
-    //     top: 126px;
-    //     left: 50%;
-    //     transform: translateX(-50%);
-    // }
 }
 
 .go-detail {

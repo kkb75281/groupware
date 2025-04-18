@@ -1,112 +1,113 @@
 <template lang="pug">
-.title
-	h1 회원 정보 수정
+//- .title
+//- 	h1 회원 정보 수정
 
-hr
+//- hr
 
-.form-wrap
-	form#_el_pictureForm
-		.image
-			img#profile-img(:src="uploadSrc.profile_pic" alt="profile image")
-			.label(ref="optionsBtn" :class="{'disabled': verifiedEmail || disabled}" @click="showOptions = !showOptions")
-				.icon.white
-					svg
-						use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
-			ul.options(v-if="showOptions" @click.stop)
-				li(@click="selectFile") 사진 변경
-				li(@click="setToDefault" :class="{'disabled': uploadSrc.profile_pic === null}") 기본 이미지로 변경
-			input#profile_pic(ref="profile_pic_input" type="file" name="profile_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
-			//- input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
-
-	form#_el_myinfoForm(@submit.prevent="registerMypage")
-		input(type="text" name="picture" id='_el_picture_input' hidden)
-		#position
-			.input-wrap
-				p.label 부서
-				input(v-model="userPosition" type="text" name="position" disabled)
-
-			.input-wrap
-				p.label 권한
-				input(v-model="access_group[user.access_group]" type="text" name="authority" disabled)
-
-		.input-wrap
-			p.label 이름
-			input(v-model="editUserProfile.name" type="text" name="name" placeholder="이름을 입력해주세요." :key="'name-input'" disabled required)
-
-		.input-wrap
-			p.label 이메일
-			input(v-model="editUserProfile.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(googleAccountCheck || verifiedEmail || disabled) && !onlyEmail" required)
-
-		template(v-if="verifiedEmail && !onlyEmail")
-			button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
-			button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
-		
-		//- .input-wrap
-		//-     p.label 비밀번호
-		//-     button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('change-password')") 비밀번호 변경
-
-		//- br
-
-		.input-wrap
-			p.label 생년월일
-			input(v-model="editUserProfile.birthdate" type="date" name="birthdate" :disabled="verifiedEmail || disabled")
-			label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
-				input(:checked="editUserProfile.birthdate_public" @change ="editUserProfile.birthdate_public = !editUserProfile.birthdate_public" type="checkbox" name="birthdate_public" hidden :disabled="verifiedEmail || disabled")
-				span.label-checkbox 공개여부
-
-		.input-wrap
-			p.label 전화번호
-			.item-wrap.tel
-				.select-wrap(@click="showLocale = !showLocale")
-					input.selectbox(type="text" placeholder="국가코드를 선택하세요." v-model="selectedCountry.key" name="locale" readonly :disabled="verifiedEmail || disabled")
-					Locale(v-model="selectedCountry.key" :showLocale="showLocale" @close="showLocale=false" @select-country="handleCountrySelect")
-				input(v-model="showPhoneNumber" type="tel" name="phone_number" placeholder="예) 01012345678" :disabled="verifiedEmail || disabled")
-
-		.input-wrap
-			p.label 주소
-			input(v-model="editUserProfile.address" type="text" name="address" placeholder="예) 서울시 마포구" :disabled="verifiedEmail || disabled")
-			label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
-				input(:checked="editUserProfile.address_public" @change ="editUserProfile.address_public = !editUserProfile.address_public" type="checkbox" name="address_public" hidden :disabled="verifiedEmail || disabled")
-				span.label-checkbox 공개여부
-
-		.input-wrap.upload-stamp
-			p.label 도장
-			.main-stamp
-				img#stamp-img(:src="getStampImageSrc(mainStamp)" alt="도장 이미지")
-				button.btn-select-stamp(type="button" @click="openStampListModal")
+.inner
+	.form-wrap
+		form#_el_pictureForm
+			.image
+				img#profile-img(:src="uploadSrc.profile_pic" alt="profile image")
+				.label(ref="optionsBtn" :class="{'disabled': verifiedEmail || disabled}" @click="showOptions = !showOptions")
 					.icon.white
 						svg
-							use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-camera")
+				ul.options(v-if="showOptions" @click.stop)
+					li(@click="selectFile") 사진 변경
+					li(@click="setToDefault" :class="{'disabled': uploadSrc.profile_pic === null}") 기본 이미지로 변경
+				input#profile_pic(ref="profile_pic_input" type="file" name="profile_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+				//- input#_el_file_input(ref="_el_file_input" type="file" name="profile_pic" @change="changeProfileImg" style="display:none")
 
-		.input-wrap.upload-file
-			p.label 자료 관리
-			.file-wrap
-				.btn-upload-file
-					input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
-					label.btn.outline.btn-upload(for="file") 파일 올리기
+		form#_el_myinfoForm(@submit.prevent="registerMypage")
+			input(type="text" name="picture" id='_el_picture_input' hidden)
+			#position
+				.input-wrap
+					p.label 부서
+					input(v-model="userPosition" type="text" name="position" disabled)
 
-				ul.upload-file-list
-					li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
-				
-				ul.file-list
-					template(v-if="uploadedFile.length > 0")
-						li.file-item(v-for="(file, index) in uploadedFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
-							a.file-name(:href="file.url" target="_blank") {{ file.filename }}
-							template(v-if="(!verifiedEmail && !disabled) && file.user_id === user.user_id")
-								button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
-									svg
-										use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
-								button.btn-remove(v-else type="button" @click="removeFile(file)")
-									svg
-										use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-					template(v-if="uploadedFile.length === 0")
-						li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
+				.input-wrap
+					p.label 권한
+					input(v-model="access_group[user.access_group]" type="text" name="authority" disabled)
 
-		.button-wrap(v-if="(verifiedEmail && !onlyEmail) ? false : true" style="margin-top: 2rem")
-			button.btn.bg-gray(type="button" :disabled="disabled" @click="cancelEdit") 취소
-			button.btn(type="submit" :disabled="disabled") 저장
+			.input-wrap
+				p.label 이름
+				input(v-model="editUserProfile.name" type="text" name="name" placeholder="이름을 입력해주세요." :key="'name-input'" disabled required)
 
-	CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
+			.input-wrap
+				p.label 이메일
+				input(v-model="editUserProfile.email" type="email" name="email" placeholder="예) user@email.com" :disabled="(googleAccountCheck || verifiedEmail || disabled) && !onlyEmail" required)
+
+			template(v-if="verifiedEmail && !onlyEmail")
+				button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
+				button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
+			
+			//- .input-wrap
+			//-     p.label 비밀번호
+			//-     button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('change-password')") 비밀번호 변경
+
+			//- br
+
+			.input-wrap
+				p.label 생년월일
+				input(v-model="editUserProfile.birthdate" type="date" name="birthdate" :disabled="verifiedEmail || disabled")
+				label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
+					input(:checked="editUserProfile.birthdate_public" @change ="editUserProfile.birthdate_public = !editUserProfile.birthdate_public" type="checkbox" name="birthdate_public" hidden :disabled="verifiedEmail || disabled")
+					span.label-checkbox 공개여부
+
+			.input-wrap
+				p.label 전화번호
+				.item-wrap.tel
+					.select-wrap(@click="showLocale = !showLocale")
+						input.selectbox(type="text" placeholder="국가코드를 선택하세요." v-model="selectedCountry.key" name="locale" readonly :disabled="verifiedEmail || disabled")
+						Locale(v-model="selectedCountry.key" :showLocale="showLocale" @close="showLocale=false" @select-country="handleCountrySelect")
+					input(v-model="showPhoneNumber" type="tel" name="phone_number" placeholder="예) 01012345678" :disabled="verifiedEmail || disabled")
+
+			.input-wrap
+				p.label 주소
+				input(v-model="editUserProfile.address" type="text" name="address" placeholder="예) 서울시 마포구" :disabled="verifiedEmail || disabled")
+				label.checkbox.public(:class="{'disabled': verifiedEmail || disabled}")
+					input(:checked="editUserProfile.address_public" @change ="editUserProfile.address_public = !editUserProfile.address_public" type="checkbox" name="address_public" hidden :disabled="verifiedEmail || disabled")
+					span.label-checkbox 공개여부
+
+			.input-wrap.upload-stamp
+				p.label 도장
+				.main-stamp
+					img#stamp-img(:src="getStampImageSrc(mainStamp)" alt="도장 이미지")
+					button.btn-select-stamp(type="button" @click="openStampListModal")
+						.icon.white
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
+
+			.input-wrap.upload-file
+				p.label 자료 관리
+				.file-wrap
+					.btn-upload-file
+						input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
+						label.btn.outline.btn-upload(for="file") 파일 올리기
+
+					ul.upload-file-list
+						li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+					
+					ul.file-list
+						template(v-if="uploadedFile.length > 0")
+							li.file-item(v-for="(file, index) in uploadedFile" :key="index" :class="{'remove': removeFileList.includes(file.record_id), 'disabled': disabled}")
+								a.file-name(:href="file.url" target="_blank") {{ file.filename }}
+								template(v-if="(!verifiedEmail && !disabled) && file.user_id === user.user_id")
+									button.btn-cancel(v-if="removeFileList.includes(file.record_id)" type="button" @click="cancelRemoveFile(file)")
+										svg
+											use(xlink:href="@/assets/icon/material-icon.svg#icon-undo")
+									button.btn-remove(v-else type="button" @click="removeFile(file)")
+										svg
+											use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+						template(v-if="uploadedFile.length === 0")
+							li.file-item(style="height: 36px;") 등록된 파일이 없습니다.
+
+			.button-wrap(v-if="(verifiedEmail && !onlyEmail) ? false : true" style="margin-top: 2rem")
+				button.btn.bg-gray(type="button" :disabled="disabled" @click="cancelEdit") 취소
+				button.btn(type="submit" :disabled="disabled") 저장
+
+		CropImage(:open="openCropModal" :imageSrc="currentImageSrc" @cropped="setCroppedImage" @close="closeCropImageDialog")
 
 // 도장 관리 모달
 .modal.stamp-list(v-if="showStampList")
@@ -1009,6 +1010,12 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="less">
+.inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
 .title {
   display: flex;
   flex-wrap: wrap;
@@ -1611,8 +1618,10 @@ onUnmounted(() => {
     }
   }
 }
-
 @media (max-width: 768px) {
+	.inner {
+        padding: 1rem;
+    }
   .stamp-wrap {
     grid-template-columns: repeat(2, 1fr);
 

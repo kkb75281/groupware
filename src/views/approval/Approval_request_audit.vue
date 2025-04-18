@@ -1,8 +1,8 @@
 <template lang="pug">
-.title
+//- .title
 	h1 {{ pageTitle }}
 
-hr
+//- hr
 
 template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode")
 	.item-wrap

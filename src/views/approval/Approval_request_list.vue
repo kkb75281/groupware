@@ -1,7 +1,7 @@
 <template lang="pug">
-h1.title 결재 발신함
+//- h1.title 결재 발신함
 
-hr
+//- hr
 
 .table-wrap
 	//- .tb-head-wrap
@@ -246,8 +246,6 @@ onUnmounted(() => {
 }
 
 .table-wrap {
-  margin-top: 3rem;
-
   .loading {
     position: relative;
     border-bottom: unset;
