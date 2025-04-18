@@ -53,7 +53,7 @@ ul.card-wrap.gmail(v-if="googleAccountCheck")
 				.icon.img
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-				| 안읽은 메일
+				| 이메일
 			a.go-detail(v-if="googleAccountCheck" :href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
 				.icon
 					svg
@@ -134,11 +134,21 @@ ul.card-wrap
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref } from 'vue';
-import { user } from "@/user.ts";
-import { newVersionAvailable, newVersion, applyUpdate } from "@/main.ts";
-import { convertTimestampToDateMillis } from "@/utils/time.ts";
+import { user } from '@/user.ts';
+import { newVersionAvailable, newVersion, applyUpdate } from '@/main.ts';
+import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
-import { mailList, serviceWorkerRegistMsg, notificationNotWorkingMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications.ts";
+import {
+  mailList,
+  serviceWorkerRegistMsg,
+  notificationNotWorkingMsg,
+  readNoti,
+  newsletterList,
+  getNewsletterList,
+  subscribeNotification,
+  onlyUserGesture,
+  setNotificationPermission
+} from '@/notifications.ts';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
@@ -150,221 +160,224 @@ const encodedEmail = encodeURIComponent(user.email);
 
 // google login
 function googleLogin() {
-	loading.value = true;
+  loading.value = true;
 
-	const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-	const REDIRECT_URL = 'http://localhost:5173/login';
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const REDIRECT_URL = 'http://localhost:5173/login';
 
-	let rnd = Math.random().toString(36).substring(2); // Generate a random string
+  let rnd = Math.random().toString(36).substring(2); // Generate a random string
 
-	let url = 'https://accounts.google.com/o/oauth2/v2/auth';
-	url += '?client_id=' + GOOGLE_CLIENT_ID;
-	url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
-	url += '&response_type=token';
-	url += '&scope=' + encodeURIComponent('https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly');
-	url += '&prompt=select_account';
-	url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
+  let url = 'https://accounts.google.com/o/oauth2/v2/auth';
+  url += '?client_id=' + GOOGLE_CLIENT_ID;
+  url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
+  url += '&response_type=token';
+  url +=
+    '&scope=' +
+    encodeURIComponent(
+      'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly'
+    );
+  url += '&prompt=select_account';
+  url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
 
-	window.location.href = url;
+  window.location.href = url;
 }
 
 let showMailDoc = (e, rt) => {
-	console.log('rt', rt);
-	console.log('mailList', mailList.value);
-	openGmailAppOrWeb(rt.link, rt.id);
-	// window.open(rt.link, "_blank");
-	// readNoti(rt);
-}
+  console.log('rt', rt);
+  console.log('mailList', mailList.value);
+  openGmailAppOrWeb(rt.link, rt.id);
+  // window.open(rt.link, "_blank");
+  // readNoti(rt);
+};
 
 getNewsletterList();
-
 </script>
 
 <style scoped lang="less">
 .wrap {
-	padding: 3rem 2.4rem 0;
+  padding: 3rem 2.4rem 0;
 }
 
 .fold {
-	.wrap {
-		padding: 3rem 2.4rem 0;
-	}
+  .wrap {
+    padding: 3rem 2.4rem 0;
+  }
 }
 
 .card-wrap {
-	&.gmail {
-		display: flex;
+  &.gmail {
+    display: flex;
 
-		.card {
-			// padding: 1.5rem;
-			transition: none;
-			width: 100%;
+    .card {
+      // padding: 1.5rem;
+      transition: none;
+      width: 100%;
 
-			&:hover {
-				transform: none;
-				// box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
-			}
+      &:hover {
+        transform: none;
+        // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
+      }
 
-			ul {
-				padding-bottom: 1.5rem;
-			}
-		}
+      ul {
+        padding-bottom: 1.5rem;
+      }
+    }
 
-		.title-wrap {
-			padding: 1.5rem;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			gap: 1rem;
-			flex-wrap: wrap;
-			border-bottom: 1px solid var(--gray-color-300);
-		}
+    .title-wrap {
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--gray-color-300);
+    }
 
-		.title {
-			display: flex;
-			align-items: center;
-			gap: 0.5rem;
-		}
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-		.go-detail {
-			display: flex;
-			align-items: center;
-			gap: 0.25rem;
-			font-size: 0.875rem;
-			color: var(--gray-color-500);
-		}
+    .go-detail {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.875rem;
+      color: var(--gray-color-500);
+    }
 
-		.icon.img {
-			svg {
-				width: 1.5rem;
-				height: 1.5rem;
-				margin: 0;
-			}
-		}
+    .icon.img {
+      svg {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin: 0;
+      }
+    }
 
-		.mail {
-			// padding: 1.5rem 0;
-			// border-top: 1px solid var(--gray-color-300);
-			padding: 0.75rem 0.5rem;
-			cursor: pointer;
+    .mail {
+      // padding: 1.5rem 0;
+      // border-top: 1px solid var(--gray-color-300);
+      padding: 0.75rem 0.5rem;
+      cursor: pointer;
 
-			&:hover {
-				background-color: var(--primary-color-25);
-			}
-		}
+      &:hover {
+        background-color: var(--primary-color-25);
+      }
+    }
 
-		.link {
-			display: flex;
-			align-items: center;
-			gap: 1rem;
-			padding: 0 1.5rem;
-			font-size: 0.875rem;
-			line-height: 1.2;
-			color: var(--gray-color-500);
+    .link {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 1.5rem;
+      font-size: 0.875rem;
+      line-height: 1.2;
+      color: var(--gray-color-500);
 
-			> * {
-				overflow: hidden;
-				text-overflow: ellipsis;
-				display: -webkit-box;
-				-webkit-line-clamp: 1;
-				-webkit-box-orient: vertical;
-			}
-		}
+      > * {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+      }
+    }
 
-		.from {
-			font-weight: 600;
-			color: var(--gray-color-900);
-			flex: none;
-			width: 100px;
-		}
+    .from {
+      font-weight: 600;
+      color: var(--gray-color-900);
+      flex: none;
+      width: 100px;
+    }
 
-		.mail-title {
-			font-weight: 600;
-			color: var(--gray-color-900);
-		}
+    .mail-title {
+      font-weight: 600;
+      color: var(--gray-color-900);
+    }
 
-		.mail-cont {
-			font-size: 0.75rem;
-			color: var(--gray-color-400);
-			margin-right: 1rem;
-			flex: 1;
-		}
+    .mail-cont {
+      font-size: 0.75rem;
+      color: var(--gray-color-400);
+      margin-right: 1rem;
+      flex: 1;
+    }
 
-		.attachment {
-			.icon {
-				svg {
-					width: 1rem;
-					height: 1rem;
-					fill: var(--gray-color-400);
-				}
-			}
-		}
+    .attachment {
+      .icon {
+        svg {
+          width: 1rem;
+          height: 1rem;
+          fill: var(--gray-color-400);
+        }
+      }
+    }
 
-		.mail-date {
-			font-size: 0.75rem;
-			margin-left: auto;
-			flex: none;
-		}
-	}
+    .mail-date {
+      font-size: 0.75rem;
+      margin-left: auto;
+      flex: none;
+    }
+  }
 
-	.empty {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		gap: 4px;
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: var(--gray-color-500);
-		line-height: 1.4;
-		min-height: 150px;
-		text-align: center;
-		padding-top: 1.5rem;
+  .empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gray-color-500);
+    line-height: 1.4;
+    min-height: 150px;
+    text-align: center;
+    padding-top: 1.5rem;
 
-		.icon {
-			flex: none;
-		}
-	}
+    .icon {
+      flex: none;
+    }
+  }
 }
 
 .warning-msg {
-	display: flex;
-	align-items: flex-start;
-	gap: 4px;
-	line-height: 1.2;
-	margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.2;
+  margin-bottom: 1rem;
 
-	.icon {
-		padding: 0;
-		flex: none;
-		position: relative;
-		top: 2px;
+  .icon {
+    padding: 0;
+    flex: none;
+    position: relative;
+    top: 2px;
 
-		svg {
-			width: 16px;
-			height: 16px;
-			fill: var(--warning-color-400);
-		}
-	}
-	p {
-		font-size: 0.8rem;
-		color: var(--warning-color-500);
-	}
+    svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--warning-color-400);
+    }
+  }
+  p {
+    font-size: 0.8rem;
+    color: var(--warning-color-500);
+  }
 }
 
 @media (max-width: 1200px) {
-	.wrap {
-		padding-top: 3rem;
-	}
+  .wrap {
+    padding-top: 3rem;
+  }
 }
 
 @media (max-width: 768px) {
-	.card-wrap {
-		&.gmail {
-			.from,
-			.mail-cont {
-				display: none;
-			}
-		}
-	}
+  .card-wrap {
+    &.gmail {
+      .from,
+      .mail-cont {
+        display: none;
+      }
+    }
+  }
 }
 </style>

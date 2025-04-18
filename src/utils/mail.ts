@@ -9,7 +9,8 @@ async function fetchGmailEmails(accessToken: any) {
 
   try {
     const response = await fetch(
-      'https://www.googleapis.com/gmail/v1/users/me/messages?labelIds=UNREAD&maxResults=10',
+      // 'https://www.googleapis.com/gmail/v1/users/me/messages?labelIds=UNREAD&maxResults=10', // 안 읽은 메일만
+      'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=10', // 전체 메일
       {
         headers: {
           Authorization: `Bearer ${accessToken}`
@@ -151,83 +152,83 @@ function convertToTimestamp(dateTimeString: any) {
 }
 
 function openGmailAppOrWeb(link: string | null, messageId?: string | null) {
-	const googleAccountCheck = !!localStorage.getItem('accessToken'); // Google 계정 로그인 여부 확인
-	const encodedEmail = googleAccountCheck ? encodeURIComponent(user.email) : '';
-  
-	// Gmail 앱 딥 링크 및 웹 URL 생성
-	const getGmailUrls = (link: string | null, messageId?: string | null) => {
-	  let gmailAppUrlIOS = '';
-	  let gmailAppUrlAndroid = '';
-	  let gmailWebUrl = '';
-  
-	  if (link) {
-		if (messageId) {
-		//   // 특정 메일 보기 (웹 버전으로 폴백)
-		//   gmailWebUrl = googleAccountCheck
+  const googleAccountCheck = !!localStorage.getItem('accessToken'); // Google 계정 로그인 여부 확인
+  const encodedEmail = googleAccountCheck ? encodeURIComponent(user.email) : '';
+
+  // Gmail 앱 딥 링크 및 웹 URL 생성
+  const getGmailUrls = (link: string | null, messageId?: string | null) => {
+    let gmailAppUrlIOS = '';
+    let gmailAppUrlAndroid = '';
+    let gmailWebUrl = '';
+
+    if (link) {
+      if (messageId) {
+        //   // 특정 메일 보기 (웹 버전으로 폴백)
+        //   gmailWebUrl = googleAccountCheck
         //   ? `https://mail.google.com/mail/u/${encodedEmail}/#inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
         //   : `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(messageId)}`;
-			// 특정 메일 보기
-			gmailAppUrlIOS = googleAccountCheck
-			? `googlegmail://inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
-			: `googlegmail://inbox/${encodeURIComponent(messageId)}`;
-			gmailAppUrlAndroid = googleAccountCheck
-			? `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F${encodedEmail}%2F%23inbox%2F${encodeURIComponent(messageId)}%3Fauthuser%3D${encodedEmail}%26login_hint%3D${encodedEmail};end`
-			: `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F%23inbox%2F${encodeURIComponent(messageId)};end`;
-			gmailWebUrl = `https://mail.google.com/mail/u/${encodedEmail}/#inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
-		} else {
-		  // 특정 이메일 주소로 메일 작성
-		  gmailAppUrlIOS = `googlegmail://co?to=${encodeURIComponent(link)}`;
-		  gmailAppUrlAndroid = `mailto:${link}`;
-		  gmailWebUrl = googleAccountCheck
-			? `https://mail.google.com/mail/u/${encodedEmail}/?view=cm&fs=1&to=${encodeURIComponent(link)}&authuser=${encodedEmail}&login_hint=${encodedEmail}`
-			: `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(link)}`;
-		}
-	  } else {
-		// 기본 Gmail 앱 메일함 열기
-		gmailAppUrlIOS = 'googlegmail://inbox';
-		gmailAppUrlAndroid = `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.google.android.gm;end`;
-		gmailWebUrl = googleAccountCheck
-		  ? `https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`
-		  : 'https://mail.google.com/mail/u/0/#inbox';
-	  }
-  
-	  return { gmailAppUrlIOS, gmailAppUrlAndroid, gmailWebUrl };
-	};
-  
-	const { gmailAppUrlIOS, gmailAppUrlAndroid, gmailWebUrl } = getGmailUrls(link, messageId);
-  
-	console.log('googleAccountCheck:', googleAccountCheck);
-	console.log('gmailWebUrl:', gmailWebUrl);
-  
-	try {
-	  if (!messageId && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-		// iOS: Gmail 앱 딥 링크 호출
-		window.location.href = gmailAppUrlIOS;
-	  } else if (!messageId && /Android/i.test(navigator.userAgent)) {
-		// Android: Gmail 앱 딥 링크 호출 및 웹 폴백
-		const fallbackTimeout = 1000; // 1초 대기 시간
-		let appOpened = false;
-  
-		window.location.href = gmailAppUrlAndroid;
-  
-		setTimeout(() => {
-		  if (!appOpened) {
-			console.log("Gmail app not opened, redirecting to web version...");
-			window.open(gmailWebUrl, '_blank');
-		  }
-		}, fallbackTimeout);
-  
-		window.addEventListener('blur', () => {
-		  appOpened = true;
-		});
-	  } else {
-		// 기타 플랫폼 또는 특정 메일 보기 요청
-		window.open(gmailWebUrl, '_blank');
-	  }
-	} catch (error) {
-	  console.error('Failed to open Gmail app, redirecting to web version...', error);
-	  window.open(gmailWebUrl, '_blank');
-	}
+        // 특정 메일 보기
+        gmailAppUrlIOS = googleAccountCheck
+          ? `googlegmail://inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`
+          : `googlegmail://inbox/${encodeURIComponent(messageId)}`;
+        gmailAppUrlAndroid = googleAccountCheck
+          ? `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F${encodedEmail}%2F%23inbox%2F${encodeURIComponent(messageId)}%3Fauthuser%3D${encodedEmail}%26login_hint%3D${encodedEmail};end`
+          : `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F%23inbox%2F${encodeURIComponent(messageId)};end`;
+        gmailWebUrl = `https://mail.google.com/mail/u/${encodedEmail}/#inbox/${encodeURIComponent(messageId)}?authuser=${encodedEmail}&login_hint=${encodedEmail}`;
+      } else {
+        // 특정 이메일 주소로 메일 작성
+        gmailAppUrlIOS = `googlegmail://co?to=${encodeURIComponent(link)}`;
+        gmailAppUrlAndroid = `mailto:${link}`;
+        gmailWebUrl = googleAccountCheck
+          ? `https://mail.google.com/mail/u/${encodedEmail}/?view=cm&fs=1&to=${encodeURIComponent(link)}&authuser=${encodedEmail}&login_hint=${encodedEmail}`
+          : `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(link)}`;
+      }
+    } else {
+      // 기본 Gmail 앱 메일함 열기
+      gmailAppUrlIOS = 'googlegmail://inbox';
+      gmailAppUrlAndroid = `intent://gmail/#Intent;scheme=android-app;package=com.google.android.gm;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.google.android.gm;end`;
+      gmailWebUrl = googleAccountCheck
+        ? `https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`
+        : 'https://mail.google.com/mail/u/0/#inbox';
+    }
+
+    return { gmailAppUrlIOS, gmailAppUrlAndroid, gmailWebUrl };
+  };
+
+  const { gmailAppUrlIOS, gmailAppUrlAndroid, gmailWebUrl } = getGmailUrls(link, messageId);
+
+  console.log('googleAccountCheck:', googleAccountCheck);
+  console.log('gmailWebUrl:', gmailWebUrl);
+
+  try {
+    if (!messageId && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      // iOS: Gmail 앱 딥 링크 호출
+      window.location.href = gmailAppUrlIOS;
+    } else if (!messageId && /Android/i.test(navigator.userAgent)) {
+      // Android: Gmail 앱 딥 링크 호출 및 웹 폴백
+      const fallbackTimeout = 1000; // 1초 대기 시간
+      let appOpened = false;
+
+      window.location.href = gmailAppUrlAndroid;
+
+      setTimeout(() => {
+        if (!appOpened) {
+          console.log('Gmail app not opened, redirecting to web version...');
+          window.open(gmailWebUrl, '_blank');
+        }
+      }, fallbackTimeout);
+
+      window.addEventListener('blur', () => {
+        appOpened = true;
+      });
+    } else {
+      // 기타 플랫폼 또는 특정 메일 보기 요청
+      window.open(gmailWebUrl, '_blank');
+    }
+  } catch (error) {
+    console.error('Failed to open Gmail app, redirecting to web version...', error);
+    window.open(gmailWebUrl, '_blank');
+  }
 }
 
 export {
