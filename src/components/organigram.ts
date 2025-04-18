@@ -2,7 +2,13 @@ import { type Ref, ref } from 'vue';
 import { skapi } from '@/main.ts';
 import { user } from '@/user.ts';
 import { getUserInfo } from '@/employee.ts';
-import { divisions, divisionNameList, getDivisionData, getDivisionDataRunning, getDivisionNamesRunning } from '@/division.ts';
+import {
+  divisions,
+  divisionNameList,
+  getDivisionData,
+  getDivisionDataRunning,
+  getDivisionNamesRunning
+} from '@/division.ts';
 
 export type Organigram = {
   division: string | null;
@@ -16,6 +22,7 @@ export type Organigram = {
 export let organigram: Ref<Organigram[]> = ref([]);
 export let getOrganigramRunning = ref(false);
 export let excludeCurrentUser = ref(false);
+export let onlyMyDepartment = ref(false); // 내 부서만 보기
 
 export async function getOrganigram(refresh = false) {
   if (getDivisionNamesRunning instanceof Promise) {
@@ -79,7 +86,7 @@ async function addDepartment(path: string[], division: string | null, currentLev
       members: [],
       subDepartments: [],
       total: 0,
-      isChecked: false,
+      isChecked: false
     };
 
     currentLevel.push(department);
@@ -91,7 +98,9 @@ async function addDepartment(path: string[], division: string | null, currentLev
   }
 
   // 하위 부서의 데이터를 상위 부서로 합산
-  department.total = department.members.length + department.subDepartments.reduce((sum, subDept) => sum + subDept.total, 0);
+  department.total =
+    department.members.length +
+    department.subDepartments.reduce((sum, subDept) => sum + subDept.total, 0);
 
   // 마지막 레벨이면 멤버 추가
   if (restPath.length === 0) {
@@ -99,7 +108,7 @@ async function addDepartment(path: string[], division: string | null, currentLev
     const approvedUserIds = await skapi.getUsers({
       searchFor: 'approved',
       value: 'by_skapi:approved',
-      condition: '>=',
+      condition: '>='
     });
 
     const approvedIdsSet = new Set(approvedUserIds.list.map((user) => user.user_id));
@@ -108,42 +117,66 @@ async function addDepartment(path: string[], division: string | null, currentLev
     const searchDepartmentMembers = await skapi.getRecords({
       table: {
         name: 'emp_position_current',
-        access_group: 1,
+        access_group: 1
       },
       index: {
         name: division + '.',
         value: '',
-        condition: '>',
-      },
+        condition: '>'
+      }
     });
-
     // const departmentMembers = searchDepartmentMembers.list;
 
     // approved 상태인 직원만 필터링
-    const filteredMembers = searchDepartmentMembers.list.filter((member) => approvedIdsSet.has(member.data.user_id));
+    const filteredMembers = searchDepartmentMembers.list.filter((member) =>
+      approvedIdsSet.has(member?.data?.user_id)
+    );
+    console.log('=== filteredMembers ===', filteredMembers);
 
-	const filteredMembersInfo = await Promise.all(
-		filteredMembers.map(async (member) => {
-			let uif = await getUserInfo(member.data.user_id);
-			// console.log('=== uif ===', uif.list[0]);
+    const filteredMembersInfo = await Promise.all(
+      filteredMembers.map(async (member) => {
+        let uif = await getUserInfo(member.data.user_id);
+        // console.log('=== uif ===', uif.list[0]);
 
-			return {
-				...member,
-				index: {
-					name: member.index.name,
-					value: uif.list[0].name,
-				},
-			};
-		})
-	);
+        return {
+          ...member,
+          index: {
+            name: member.index.name,
+            value: uif.list[0].name
+          }
+        };
+      })
+    );
+    console.log('=== filteredMembersInfo ===', filteredMembersInfo);
+
+    // 본인 찾기
+    const myIndex = filteredMembersInfo.find((member) => member.data.user_id === user.user_id);
+    console.log('myIndex : ', myIndex);
+
+    // 내 부서만 보기일 때
+    if (onlyMyDepartment.value) {
+      console.log('내 부서만 보기');
+      // 내 부서의 멤버만 필터링
+      const myDepartmentMembers = filteredMembersInfo.filter((member) => {
+        console.log('member : ', member);
+        member.index.name.startsWith(user.department);
+      });
+      console.log('myDepartmentMembers : ', myDepartmentMembers);
+    } else {
+      console.log('전체 보기');
+    }
 
     // excludeCurrentUser가 true일 때만 현재 사용자 제외
     // department.members = excludeCurrentUser.value ? departmentMembers.filter((data) => data.data.user_id !== user.user_id) : departmentMembers;
     // department.members = excludeCurrentUser.value ? filteredMembers.filter((data) => data.data.user_id !== user.user_id) : filteredMembers;
-    department.members = excludeCurrentUser.value ? filteredMembersInfo.filter((data) => data.data.user_id !== user.user_id) : filteredMembersInfo;
+    department.members = excludeCurrentUser.value
+      ? filteredMembersInfo.filter((data) => data.data.user_id !== user.user_id)
+      : filteredMembersInfo;
 
     // 멤버 수 업데이트
-    department.total = department.members.length + department.subDepartments.reduce((sum, subDept) => sum + subDept.total, 0);
+    department.total =
+      department.members.length +
+      department.subDepartments.reduce((sum, subDept) => sum + subDept.total, 0);
 
     return department;
   }

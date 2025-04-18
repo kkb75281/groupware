@@ -30,7 +30,7 @@ export let buildTime = import.meta.env.VITE_BUILD_TIME;
 
 let serviceID = import.meta.env.VITE_SERVICE_ID;
 
-console.log('바뀐 버전 입니다. 0416 14:46');
+console.log('바뀐 버전 입니다. 0418 18:00');
 
 const skapi = new Skapi(import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID, {
   autoLogin: window.localStorage.getItem('remember') === 'true',

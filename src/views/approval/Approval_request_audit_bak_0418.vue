@@ -1,8 +1,8 @@
 <template lang="pug">
-//- .title
+.title
 	h1 {{ pageTitle }}
 
-//- hr
+hr
 
 template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode && !isReRequestMode")
 	.item-wrap
@@ -246,7 +246,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 		.modal-body
 			.select-approver-wrap
 				.organigram-wrap
-					Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedAuditors" :onlyMyDepartment="true" @selection-change="handleOrganigramSelection")
+					Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedAuditors" @selection-change="handleOrganigramSelection")
 
 				br
 
@@ -423,9 +423,6 @@ const openModal = () => {
 
   selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
   prevSelected.value = selectedUsers.value;
-
-  // 모달이 열릴 때 본인 부서 직원만 보이도록 새로 조직도 데이터 가져오기
-  // getOrganigram(true, true);
 
   isModalOpen.value = true;
 };

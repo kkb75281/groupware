@@ -301,17 +301,25 @@ export async function updateEmails(refresh = false) {
   if (accessToken) {
     try {
       googleEmailUpdate.value = true;
+
       const res = await fetchGmailEmails(accessToken);
-      // console.log('=== updateEmails === res : ', res);
       mailList.value = res;
-      if (mailList.value.length) {
+
+      // 현재 시간과 일주일 전 시간 계산
+      const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+      // 일주일 이내에 온 이메일만 필터링
+      const recentEmails = mailList.value.filter((email) => {
+        // email.dateTimeStamp가 일주일 이내인지 확인
+        return email.dateTimeStamp > oneWeekAgo;
+      });
+
+      if (recentEmails.length > 0) {
         unreadEmailNotiMsg.value = true;
       } else {
         unreadEmailNotiMsg.value = false;
       }
       googleEmailUpdate.value = false;
-
-      // // console.log('=== updateEmails === res : ', res);
     } catch (error) {
       googleEmailUpdate.value = false;
       console.error('=== updateEmails === error : ', { error });

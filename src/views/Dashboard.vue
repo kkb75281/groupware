@@ -94,7 +94,7 @@
                     .icon.img
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-                    | 안읽은 메일
+                    | 이메일
                 a.go-detail(v-if="googleAccountCheck" :href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
                     .icon
                         svg
@@ -241,7 +241,6 @@ let getUserPositionCurrent = () => {
 
 getUserPositionCurrent();
 getNewsletterList();
-
 </script>
 
 <style scoped lang="less">
