@@ -4,19 +4,20 @@ header#header
         img(src="/img_fgworks_logo.png")
 
     .btn-wrap
-        .icon(@click="router.push('/approval/request-audit')" style="padding-bottom:6px")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
-        .icon
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
         .icon.btn-noti(:data-count="unreadCount" ref="btnNoti" @click="openNotification")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
-        .icon(@click="router.push('/organigram')")
+        .icon
+            a(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+        .icon(:class="{'active': route.path.split('/')[1] === 'approval'}" @click="router.push('/approval/request-audit')" style="padding-bottom:6px")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
+        .icon(:class="{'active': route.path.split('/')[1] === 'organigram'}" @click="router.push('/organigram')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
-        .icon(v-if="user.access_group > 98" @click="router.push('/admin/list-divisions')")
+        .icon(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
 
@@ -27,12 +28,12 @@ header#header
             template(v-if="profileImage")
                 img(:src="profileImage" alt="img-profile")
             template(v-else)
-                .icon
+                .icon.nohover
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
 
         button.btn-mo-navbar(ref="btnMobileMenu" v-if="route.name !== 'home'" @click="isMobileMenuOpen = !isMobileMenuOpen")
-            .icon(style="padding:0")
+            .icon(:class="{'active': isMobileMenuOpen}" style="padding:0")
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-apps")
 
@@ -128,7 +129,7 @@ header#header
                     p 전자결재
 
             li
-                router-link.router(to="/mypage" @click="closePopup")
+                router-link.router(to="/mypage/edit-myinfo" @click="closePopup")
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
@@ -171,25 +172,25 @@ header#header
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-home")
                 p 홈
 
-            router-link.icon-menu(to="/approval")
+            a.icon-menu(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
                 p 이메일
 
-            router-link.icon-menu(to="/approval")
+            router-link.icon-menu(to="/approval/request-audit")
                 .icon(style="padding-bottom:6px")
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
                 p 전자결재
 
-            router-link.icon-menu(to="/mypage")
+            router-link.icon-menu(to="/newsletter")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
                 p 공지사항
 
-            router-link.icon-menu(to="/mypage")
+            router-link.icon-menu(to="/mypage/edit-myinfo")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
@@ -207,7 +208,7 @@ header#header
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
                 p 조직도
 
-            router-link.icon-menu(v-if="user.access_group > 98" to="/organigram")
+            router-link.icon-menu(v-if="user.access_group > 98" to="/admin/list-divisions")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
@@ -223,7 +224,7 @@ header#header
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onUnmounted, onMounted, ref, watch } from 'vue';
-import { user, profileImage } from '@/user.ts';
+import { user, profileImage, encodedEmail } from '@/user.ts';
 import { skapi, resetBadgeCount } from '@/main.ts';
 import { toggleOpen } from '@/components/navbar.ts';
 import { realtimes, readList, unreadCount, readNoti, unreadEmailNotiMsg } from '@/notifications.ts';
@@ -364,6 +365,22 @@ watch(
 
         .icon {
             cursor: pointer;
+
+            svg {
+                fill: var(--gray-color-300);
+            }
+
+            &:hover:not(.nohover) {
+                svg {
+                    fill: var(--primary-color-400);
+                }
+            }
+
+            &.active {
+                svg {
+                    fill: var(--primary-color-400);
+                }
+            }
         }
     }
 
@@ -574,7 +591,7 @@ watch(
 
     &.notification {
         // right: 124px;
-        right: 190px;
+        right: 300px;
         max-width: 420px;
         width: calc(100% - 16px);
 
@@ -735,7 +752,7 @@ watch(
 
     &.menu {
         padding: 0;
-        
+
         .icon-menu-wrap {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -750,6 +767,7 @@ watch(
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
+				cursor: pointer;
                 gap: 0.5rem;
 
                 .icon {

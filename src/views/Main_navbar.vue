@@ -1,13 +1,13 @@
 <template lang="pug">
 #main-nav
-	Navbar(:menuList="menuLists[routePath]")
+	Navbar(:menuList="currentMenuList")
 	.main-nav-wrap
 		router-view
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import { user } from '@/user.ts';
 
 import Navbar from '@/components/navbar.vue';
@@ -15,8 +15,9 @@ import Navbar from '@/components/navbar.vue';
 const router = useRouter();
 const route = useRoute();
 
-let routePath = route.path.split('/')[1];
-const isadmin = computed(() => user.access_group > 98);
+let routePath = ref('');
+let currentMenuList = ref(null);
+let isadmin = computed(() => user.access_group > 98);
 
 let menuLists = {
 	approval: [
@@ -32,28 +33,32 @@ let menuLists = {
 			text: '결재 발신함',
 			name: 'request-list',
 			icon: '#icon-outbox',
-			to: '/approval/request-list'
+			to: '/approval/request-list',
+			child: ['audit-detail']
 		},
 		{
 			show: true,
 			text: '결재 수신함',
 			name: 'audit-list',
 			icon: '#icon-inbox',
-			to: '/approval/audit-list'
+			to: '/approval/audit-list',
+			child: ['audit-detail']
 		},
 		{
 			show: true,
 			text: '수신 참조함',
 			name: 'audit-reference',
 			icon: '#icon-tag',
-			to: '/approval/audit-reference'
+			to: '/approval/audit-reference',
+			child: ['audit-detail-reference']
 		},
 		{
 			show: true,
 			text: '중요 결재함',
 			name: 'audit-list-favorite',
 			icon: '#icon-star',
-			to: '/approval/audit-list-favorite'
+			to: '/approval/audit-list-favorite',
+			child: ['audit-detail-favorite']
 		}
 	],
 	admin: [
@@ -63,6 +68,7 @@ let menuLists = {
 			name: 'list-divisions',
 			icon: '#icon-hive',
 			to: '/admin/list-divisions',
+			child: ['add-divisions']
 		},
 		{
 			show: isadmin.value,
@@ -70,11 +76,11 @@ let menuLists = {
 			name: 'list-employee',
 			icon: '#icon-groups',
 			to: '/list-employee',
-			detail: {
-				show: true,
-				name: 'detail-employee',
-				to: '/detail-employee',
-			}
+			// detail: {
+			// 	show: true,
+			// 	name: 'detail-employee',
+			// 	to: '/detail-employee',
+			// }
 		},
 		{
 			show: isadmin.value,
@@ -82,6 +88,7 @@ let menuLists = {
 			name: 'list-commute',
 			icon: '#icon-clock',
 			to: '/admin/list-commute',
+			child: ['edit-worktime', 'commute-detail']
 		},
 		{
 			show: isadmin.value,
@@ -89,11 +96,20 @@ let menuLists = {
 			name: 'list-form',
 			icon: '#icon-docs',
 			to: '/admin/list-form',
+			child: ['form-detail']
 		}
 	]
 };
 
+watch(()=>route.path, (nv) => {
+	routePath.value = nv.split('/')[1];
+}, { immediate: true });
 
+watch(routePath, (nv) => {
+	if (nv) {
+		currentMenuList.value = menuLists[nv];
+	}
+}, { immediate: true });
 </script>
 
 <style scoped lang="less">
@@ -104,8 +120,8 @@ let menuLists = {
 
 	.main-nav-wrap {
 		flex-grow: 1;
-		padding: 1rem;
-		padding-left: 110px;
+		padding: 2rem;
+		padding-left: 130px;
 	}
 }
 

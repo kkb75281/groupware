@@ -246,8 +246,6 @@ onUnmounted(() => {
 }
 
 .table-wrap {
-  margin-top: 3rem;
-
   .loading {
     position: relative;
     border-bottom: unset;

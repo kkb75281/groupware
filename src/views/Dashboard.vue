@@ -38,6 +38,33 @@
         .company-wrap
             img(src="@/assets/img/rh.png" alt="회사사진")
 
+    .mo-btn-wrap
+        .icon
+            a(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+            p 이메일
+        .icon(:class="{'active': route.path.split('/')[1] === 'approval'}" @click="router.push('/approval/request-audit')" style="padding-bottom:6px")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
+            p 전자결재
+        .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
+            p 공지사항
+        .icon(:class="{'active': route.path.split('/')[1] === 'organigram'}" @click="router.push('/organigram')")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+            p 직원목록
+        .icon(:class="{'active': route.path.split('/')[1] === 'mypage'}" @click="router.push('/mypage/edit-myinfo')")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+            p 마이페이지
+        .icon.master(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
+            p 마스터 페이지
+
     ul.card-wrap.gmail
         li.card
             .title-wrap
@@ -231,7 +258,7 @@ getNewsletterList();
 #dashboard {
     max-width: 1200px;
     margin: 0 auto;
-	padding: 1rem;
+    padding: 1rem;
 }
 
 .profComp-wrap {
@@ -241,7 +268,7 @@ getNewsletterList();
     margin-bottom: 1rem;
 
     > div {
-		height: 250px;
+        height: 250px;
         background-color: #fff;
         border: 1px solid var(--gray-color-300);
         box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
@@ -255,7 +282,7 @@ getNewsletterList();
         display: flex;
         flex-direction: column;
         align-items: center;
-		justify-content: center;
+        justify-content: center;
 
         .thumbnail {
             width: 3rem;
@@ -290,9 +317,9 @@ getNewsletterList();
     }
 
     .company-wrap {
-		position: relative;
+        position: relative;
         flex-grow: 3;
-		overflow: hidden;
+        overflow: hidden;
         padding: 0;
 
         img {
@@ -301,6 +328,36 @@ getNewsletterList();
             object-fit: cover;
             border-radius: 16px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+    }
+}
+
+.mo-btn-wrap {
+    display: none;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+
+    .icon {
+        width: 140px;
+        height: 140px;
+        min-width: 140px;
+        flex-grow: 1;
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--gray-color-300);
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+        border-radius: 1rem;
+        background-color: #fff;
+        cursor: pointer;
+        gap: 8px;
+
+        &.master {
+            // width: 100%;
         }
     }
 }
@@ -472,33 +529,32 @@ getNewsletterList();
 // }
 
 @media (max-width: 768px) {
-	.profComp-wrap {
-		.profile-wrap {
-			position: relative;
-			border: 0;
-			box-shadow: none;
-			height: unset;
-			align-items: end;
-			padding-right: 4rem;
+    .profComp-wrap {
+        .profile-wrap {
+            position: relative;
+            border: 0;
+            box-shadow: none;
+            height: unset;
+            align-items: end;
+            padding-right: 4rem;
 
-			.thumbnail {
-				position: absolute;
-				top: 50%;
-				right: 0;
-				transform: translateY(-50%);
-			}
-		}
-		.company-wrap {
-			display: none;
-		}
-	}
-    .card-wrap {
-        &.gmail {
-            .from,
-            .mail-cont {
-                display: none;
+            .thumbnail {
+                position: absolute;
+                top: 50%;
+                right: 0;
+                transform: translateY(-50%);
             }
         }
+        .company-wrap {
+            display: none;
+        }
+    }
+    .mo-btn-wrap {
+        display: block;
+        display: flex;
+    }
+    .card-wrap {
+        display: none !important;
     }
 }
 </style>

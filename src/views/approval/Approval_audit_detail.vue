@@ -1,9 +1,9 @@
 <template lang="pug">
-.title
-	h1 결재 문서
-	span(v-if="isCanceled" style="color:var(--warning-color-400)") 현재 문서는 회수된 문서입니다.
+//- .title
+//- 	h1 결재 문서
+span(v-if="isCanceled" style="color:var(--warning-color-400)") 현재 문서는 회수된 문서입니다.
 
-hr
+//- hr
 
 Loading#loading(v-if="getAuditDetailRunning")
 

@@ -1,7 +1,7 @@
 <template lang="pug">
-h1 근태 관리
+//- h1 근태 관리
 
-hr
+//- hr
 
 .table-wrap
     .tb-head-wrap
@@ -394,16 +394,6 @@ onMounted(async () => {
 
 <style scoped lang="less">
 .table-wrap {
-    position: relative;
-    margin-top: 3rem;
-
-    // #loading {
-    //     position: absolute;
-    //     top: 126px;
-    //     left: 50%;
-    //     transform: translateX(-50%);
-    // }
-
     #searchForm {
         display: flex;
         flex-wrap: wrap;

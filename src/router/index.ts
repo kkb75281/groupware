@@ -166,38 +166,48 @@ const router = createRouter({
             },
           ]
         },
-        {
-          path: '/mypage',
-          children: [
-            {
-              path: '/mypage',
-              name: 'mypage',
-              component: MainNav,
-              children: [
-                  {
-                    path: 'edit-myinfo',
-                    name: 'edit-myinfo',
-                    component: () => import('@/views/mypage/Mypage_edit_myinfo.vue') // Mypage_edit_myinfo,
-                  },
-                  {
-                    path: 'edit-mystamp',
-                    name: 'edit-mystamp',
-                    component: () => import('@/views/mypage/Mypage_edit_mystamp.vue')
-                  },
-                  // {
-                  // 	path: 'edit-myfile',
-                  // 	name: 'edit-myfile',
-                  // 	component: () => import('@/views/mypage/Mypage_edit_myfile.vue'),
-                  // },
-                  {
-                    path: 'record-commute',
-                    name: 'record-commute',
-                    component: () => import('@/views/mypage/Mypage_record_commute.vue') // Mypage_record_commute,
-                  }
-              ]
-            },
-          ]
-        },
+		{
+			path: '/mypage/edit-myinfo',
+			name: 'edit-myinfo',
+			component: () => import('@/views/mypage/Mypage_edit_myinfo.vue')
+		},
+		{
+			path: '/mypage/record-commute',
+			name: 'record-commute',
+			component: () => import('@/views/mypage/Mypage_record_commute.vue')
+		},
+        // {
+        //   path: '/mypage',
+        //   children: [
+        //     {
+        //       path: '/mypage',
+        //       name: 'mypage',
+        //       component: MainNav,
+        //       children: [
+        //           {
+        //             path: 'edit-myinfo',
+        //             name: 'edit-myinfo',
+        //             component: () => import('@/views/mypage/Mypage_edit_myinfo.vue') // Mypage_edit_myinfo,
+        //           },
+        //         //   {
+        //         //     path: 'edit-mystamp',
+        //         //     name: 'edit-mystamp',
+        //         //     component: () => import('@/views/mypage/Mypage_edit_mystamp.vue')
+        //         //   },
+        //           // {
+        //           // 	path: 'edit-myfile',
+        //           // 	name: 'edit-myfile',
+        //           // 	component: () => import('@/views/mypage/Mypage_edit_myfile.vue'),
+        //           // },
+        //           {
+        //             path: 'record-commute',
+        //             name: 'record-commute',
+        //             component: () => import('@/views/mypage/Mypage_record_commute.vue') // Mypage_record_commute,
+        //           }
+        //       ]
+        //     },
+        //   ]
+        // },
         {
           path: '/admin',
           beforeEnter: (to, from, next) => {
@@ -213,16 +223,6 @@ const router = createRouter({
               name: 'admin',
               component: MainNav,
               children: [
-                  {
-                    path: '/list-employee',
-                    name: 'list-employee',
-                    component: () => import('@/views/List_employee.vue') // List_employee,
-                  },
-                  {
-                    path: '/detail-employee/:userId',
-                    name: 'detail-employee',
-                    component: () => import('@/views/List_detail_employee.vue') // List_detail_employee,
-                  },
                   {
                     path: 'add-employee',
                     name: 'add-employee',
@@ -249,7 +249,7 @@ const router = createRouter({
                     component: () => import('@/views/admin/Admin_list_commute.vue') //Admin_list_commute,
                   },
                   {
-                    path: '/commute-detail/:userId',
+                    path: 'commute-detail/:userId',
                     name: 'commute-detail',
                     component: () => import('@/views/admin/Admin_commute_detail.vue') //Admin_commute_detail,
                   },

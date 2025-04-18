@@ -1,7 +1,7 @@
 <template lang="pug">
-h1.title {{ isCurrentPage === 'audit-list' ? '결재 수신함' : isCurrentPage === 'audit-reference' ? '수신 참조함' : isCurrentPage === 'audit-list-favorite' ? '중요 결재함' : '' }}
+//- h1.title {{ isCurrentPage === 'audit-list' ? '결재 수신함' : isCurrentPage === 'audit-reference' ? '수신 참조함' : isCurrentPage === 'audit-list-favorite' ? '중요 결재함' : '' }}
 
-hr
+//- hr
 
 .table-wrap
 	.tb-overflow
@@ -438,8 +438,6 @@ onUnmounted(() => {
 }
 
 .table-wrap {
-  margin-top: 3rem;
-
   .loading {
     position: relative;
     border-bottom: unset;
