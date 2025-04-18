@@ -1,13 +1,16 @@
 <template lang="pug">
 .inner
-    //- div(style="display: flex; gap: 1rem")
-        h1.title(v-if="user.access_group > 98") 직원 관리
-        h1.title(v-else) 직원 목록
-        .input-wrap(v-if="user.access_group > 98")
+    div(style="display: flex; gap: 1rem")
+        //- h1.title(v-if="user.access_group > 98") 직원 관리
+        //- h1.title(v-else) 직원 목록
+        .input-wrap(v-if="user.access_group > 98" style="max-width: 370px;width: 100%;")
             select(v-model="empListType")
                 option(value="직원목록") 직원목록
                 option(value="초청여부") 초청여부
                 option(value="숨김여부") 숨김여부
+
+            br
+            br
 
     //- hr
 
