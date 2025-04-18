@@ -1,152 +1,150 @@
 <template lang="pug">
-div(style="display: flex; gap: 1rem")
-    h1.title(v-if="user.access_group > 98") 직원 관리
-    h1.title(v-else) 직원 목록
-    .input-wrap(v-if="user.access_group > 98")
-        select(v-model="empListType")
-            option(value="직원목록") 직원목록
-            option(value="초청여부") 초청여부
-            option(value="숨김여부") 숨김여부
+.inner
+    //- div(style="display: flex; gap: 1rem")
+        h1.title(v-if="user.access_group > 98") 직원 관리
+        h1.title(v-else) 직원 목록
+        .input-wrap(v-if="user.access_group > 98")
+            select(v-model="empListType")
+                option(value="직원목록") 직원목록
+                option(value="초청여부") 초청여부
+                option(value="숨김여부") 숨김여부
 
-hr
+    //- hr
 
-.table-wrap
-    .tb-head-wrap
-        form#searchForm(@submit.prevent="searchEmp")
-            .input-wrap
-                select(v-model="searchFor" :disabled="empListType !== '직원목록'")
-                    option(value="name") 이름
-                    option(value="division") 부서/직책
-                    option(value="email") 이메일
-            .input-wrap.search(v-if="searchFor !== 'division'")
-                input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요" :disabled="empListType !== '직원목록'")
-                button.btn-search
-            template(v-else)
+    .table-wrap
+        .tb-head-wrap
+            form#searchForm(@submit.prevent="searchEmp")
                 .input-wrap
-                    select(name="searchDivision" v-model="searchValue" :disabled="empListType !== '직원목록'" @change="searchEmp")
-                .input-wrap.search(style="width: 176px;")
-                    input(v-model="searchPositionValue" type="text" placeholder="직책을 입력하세요" :disabled="searchValue === '전체'")
+                    select(v-model="searchFor" :disabled="empListType !== '직원목록'")
+                        option(value="name") 이름
+                        option(value="division") 부서/직책
+                        option(value="email") 이메일
+                .input-wrap.search(v-if="searchFor !== 'division'")
+                    input(v-model="searchValue" type="text" placeholder="검색어를 입력하세요" :disabled="empListType !== '직원목록'")
                     button.btn-search
-
-        .tb-toolbar
-            .btn-wrap
-                button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
-                    svg(:class="{'rotate' : loading}")
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-
-                template(v-if="user.access_group > 98")
-                    template(v-if="empListType === '직원목록'")
-                        button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김
-                        button.btn.outline(@click="router.push('/admin/add-employee')") 등록
-                    template(v-else-if="empListType === '초청여부'")
-                        button.btn.outline(@click="router.push('/admin/add-employee')") 등록
-                    template(v-else-if="empListType === '숨김여부'")
-                        button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('unblock')") 숨김 해제
-                        button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="employeeState('delete')") 삭제
-
-    .tb-overflow
-        table.table#employee_list
-            colgroup
-                template(v-if="user.access_group > 98 && empListType !== '초청여부'")
-                    col(style="width: 5%;")
-                col(v-show="isDesktop" style="width: 5%;")
-                col(:style="{ width: isDesktop ? '10%' : '24%' }")
-                col(:style="{ width: isDesktop ? '10%' : '24%' }")
-                col(v-show="isDesktop" style="width: 10%;")
-                col(v-show="isDesktop" style="width: 25%;")
-                //- template(v-if='empListType === "초청여부"')
-                //-     col(style="width: 11%;")
-                //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
-                //-     col(style="width: 11%;")
-                col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
-                col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
-                col(v-show="isDesktop" style="min-width: 15rem;")
-            thead
-                tr
-                    template(v-if="user.access_group > 98 && empListType !== '초청여부'")
-                        th(scope="col")
-                            label.checkbox
-                                input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
-                                span.label-checkbox
-                    th(v-show="isDesktop" scope="col") NO
-                    template(v-if="empListType !== '초청여부'")
-                        th(scope="col") 직책<br>(직급)
-                        th(scope="col") 부서
-                    th(scope="col") 이름
-                    th(v-show="isDesktop" scope="col") 이메일
-                    template(v-if='empListType === "초청여부"')
-                        th(scope="col") 초청여부
-                    //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
-                    //-     th(scope="col") 상세보기
-                    th(v-show="isDesktop" scope="col") 생년월일
-                    th(v-show="isDesktop" scope="col") 전화번호
-                    th(v-show="isDesktop" scope="col") 주소
-            tbody
-                template(v-if="loading")
-                    tr.nohover.loading
-                        td(colspan="10")
-                            Loading#loading
-                template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
-                    tr.nohover
-                        td(colspan="10") 데이터가 없습니다.
                 template(v-else)
-                    tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => empListType !== '초청여부' && goToEditEmp(e, emp.user_id)" :style="{cursor: empListType !== '초청여부' ? 'pointer' : 'default'}")
-                        //- 직원목록/숨김여부
-                        template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
-                            template(v-if="user.access_group > 98")
-                                td
-                                    label.checkbox
-                                        input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click.stop="toggleSelect(emp.user_id)")
-                                        span.label-checkbox
-                            td.list-num(v-show="isDesktop") {{ index + 1 }}
-                            td {{ emp?.position }}
-                            td {{ divisionNameList?.[emp?.division] }}
-                            //- template(v-if='user.access_group > 98')
-                            //-     td {{ emp.name }}
-                            //- template(v-else)
-                            td
-                                .name-wrap
-                                    .img-wrap(style="width: 36px; height: 36px;")
-                                        template(v-if="emp.picture")
-                                            img(:src="emp.picture" alt="img-profile")
-                                        template(v-else)
-                                            .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
-                                                svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
-                                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
-                                    span {{ emp.name }}
+                    .input-wrap
+                        select(name="searchDivision" v-model="searchValue" :disabled="empListType !== '직원목록'" @change="searchEmp")
+                    .input-wrap.search(style="width: 176px;")
+                        input(v-model="searchPositionValue" type="text" placeholder="직책을 입력하세요" :disabled="searchValue === '전체'")
+                        button.btn-search
 
-                            td(v-show="isDesktop") {{ emp.email }}
-                            td(v-show="isDesktop") {{ emp.birthdate }}
-                            td(v-show="isDesktop") {{ emp.phone_number }}
-                            td(v-show="isDesktop") {{ emp.address }}
-                        
-                        //- 초청여부
+            .tb-toolbar
+                .btn-wrap
+                    button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
+                        svg(:class="{'rotate' : loading}")
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+
+                    template(v-if="user.access_group > 98")
+                        template(v-if="empListType === '직원목록'")
+                            button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('block')") 숨김
+                            button.btn.outline(@click="router.push('/admin/add-employee')") 등록
                         template(v-else-if="empListType === '초청여부'")
-                            td.list-num(v-show="isDesktop") {{ index + 1 }}
-                            //- td {{ emp?.position }}
-                            //- td {{ divisionNameList?.[emp?.division] }}
-                            td {{ emp.name }}
-                            td(v-show="isDesktop") {{ emp.email }}
-                            td
-                                .btn-wrap
-                                    button.btn.bg-gray.sm(@click.stop="resendInvite(emp.email)") 재전송
-                                    button.btn.bg-gray.sm(@click.stop="cancelInvite(emp)") 초청취소
-                            td(v-show="isDesktop") {{ emp.birthdate }}
-                            td(v-show="isDesktop") {{ emp.phone_number }}
-                            td(v-show="isDesktop") {{ emp.address }}
+                            button.btn.outline(@click="router.push('/admin/add-employee')") 등록
+                        template(v-else-if="empListType === '숨김여부'")
+                            button.btn.bg-gray.btn-block(:disabled="!selectedList.length" @click="employeeState('unblock')") 숨김 해제
+                            button.btn.outline.warning.btn-remove(:disabled="!selectedList.length" @click="employeeState('delete')") 삭제
 
-    //- .pagination
-        button.btn-prev.icon(type="button") 
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
-            | Prev
-        button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+        .tb-overflow
+            table.table#employee_list
+                colgroup
+                    template(v-if="user.access_group > 98 && empListType !== '초청여부'")
+                        col(style="width: 5%;")
+                    col(v-show="isDesktop" style="width: 5%;")
+                    col(:style="{ width: isDesktop ? '10%' : '24%' }")
+                    col(:style="{ width: isDesktop ? '10%' : '24%' }")
+                    col(v-show="isDesktop" style="width: 10%;")
+                    col(v-show="isDesktop" style="width: 25%;")
+                    //- template(v-if='empListType === "초청여부"')
+                    //-     col(style="width: 11%;")
+                    //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
+                    //-     col(style="width: 11%;")
+                    col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
+                    col(v-show="isDesktop" style="width: 10%; min-width: 6rem;")
+                    col(v-show="isDesktop" style="min-width: 15rem;")
+                thead
+                    tr
+                        template(v-if="user.access_group > 98 && empListType !== '초청여부'")
+                            th(scope="col")
+                                label.checkbox
+                                    input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
+                                    span.label-checkbox
+                        th(v-show="isDesktop" scope="col") NO
+                        template(v-if="empListType !== '초청여부'")
+                            th(scope="col") 직책<br>(직급)
+                            th(scope="col") 부서
+                        th(scope="col") 이름
+                        th(v-show="isDesktop" scope="col") 이메일
+                        template(v-if='empListType === "초청여부"')
+                            th(scope="col") 초청여부
+                        //- template(v-if='(empListType === "직원목록" || empListType === "숨김여부") && user.access_group > 98')
+                        //-     th(scope="col") 상세보기
+                        th(v-show="isDesktop" scope="col") 생년월일
+                        th(v-show="isDesktop" scope="col") 전화번호
+                        th(v-show="isDesktop" scope="col") 주소
+                tbody
+                    template(v-if="loading")
+                        tr.nohover.loading
+                            td(colspan="10")
+                                Loading#loading
+                    template(v-else-if="!employee || Object.keys(employee).length === 0 || (empListType === '숨김여부' && suspendedLength === 0)")
+                        tr.nohover
+                            td(colspan="10") 데이터가 없습니다.
+                    template(v-else)
+                        tr(v-for="(emp, index) in employee" :key="emp.user_id" @click.stop="(e) => empListType !== '초청여부' && goToEditEmp(e, emp.user_id)" :style="{cursor: empListType !== '초청여부' ? 'pointer' : 'default'}")
+                            //- 직원목록/숨김여부
+                            template(v-if="empListType === '직원목록' || empListType === '숨김여부'")
+                                template(v-if="user.access_group > 98")
+                                    td
+                                        label.checkbox
+                                            input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click.stop="toggleSelect(emp.user_id)")
+                                            span.label-checkbox
+                                td.list-num(v-show="isDesktop") {{ index + 1 }}
+                                td {{ emp?.position }}
+                                td {{ divisionNameList?.[emp?.division] }}
+                                //- template(v-if='user.access_group > 98')
+                                //-     td {{ emp.name }}
+                                //- template(v-else)
+                                td
+                                    .name-wrap
+                                        .img-wrap(style="width: 36px; height: 36px;")
+                                            template(v-if="emp.picture")
+                                                img(:src="emp.picture" alt="img-profile")
+                                            template(v-else)
+                                                .icon(style="padding: 0; widght: 100%; height: 100%; display: flex; justify-content: center; align-items: center;")
+                                                    svg(style="width: 16px; height: 16px; fill: var(--gray-color-400);")
+                                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+                                        span {{ emp.name }}
 
-br
-br
-br
+                                td(v-show="isDesktop") {{ emp.email }}
+                                td(v-show="isDesktop") {{ emp.birthdate }}
+                                td(v-show="isDesktop") {{ emp.phone_number }}
+                                td(v-show="isDesktop") {{ emp.address }}
+                            
+                            //- 초청여부
+                            template(v-else-if="empListType === '초청여부'")
+                                td.list-num(v-show="isDesktop") {{ index + 1 }}
+                                //- td {{ emp?.position }}
+                                //- td {{ divisionNameList?.[emp?.division] }}
+                                td {{ emp.name }}
+                                td(v-show="isDesktop") {{ emp.email }}
+                                td
+                                    .btn-wrap
+                                        button.btn.bg-gray.sm(@click.stop="resendInvite(emp.email)") 재전송
+                                        button.btn.bg-gray.sm(@click.stop="cancelInvite(emp)") 초청취소
+                                td(v-show="isDesktop") {{ emp.birthdate }}
+                                td(v-show="isDesktop") {{ emp.phone_number }}
+                                td(v-show="isDesktop") {{ emp.address }}
+
+        //- .pagination
+            button.btn-prev.icon(type="button") 
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
+                | Prev
+            button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': endOfList && currentPage >= maxPage }") Next
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
 
 //- Modal
 #modal.modal(v-if="isModalOpen" @click="closeModal")
@@ -570,8 +568,8 @@ let employeeState = async(state) => {
             return skapi.blockAccount({ user_id: el }).then(res => {
                 // let appr_cache = getUserCache['by_skapi:approved'];
                 // let sus_cache = getUserCache['by_admin:suspended'];
-				// console.log('appr_cache', appr_cache);
-				// console.log('sus_cache', sus_cache);
+                // console.log('appr_cache', appr_cache);
+                // console.log('sus_cache', sus_cache);
                 // if(appr_cache.length) {
                 //     let index = appr_cache.findIndex(uid => uid === el);
                 //     appr_cache.splice(index, 1);
@@ -580,7 +578,7 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log({err});
+                console.log({err});
                 isFail.push(el);
             });
         }));
@@ -591,8 +589,8 @@ let employeeState = async(state) => {
             return skapi.unblockAccount({ user_id: el }).then(res => {
                 // let appr_cache = getUserCache['by_skapi:approved'];
                 // let sus_cache = getUserCache['by_admin:suspended'];
-				// console.log('appr_cache', appr_cache);
-				// console.log('sus_cache', sus_cache);
+                // console.log('appr_cache', appr_cache);
+                // console.log('sus_cache', sus_cache);
                 // if(sus_cache.length) {
                 //     let index = sus_cache.findIndex(uid => uid === el);
                 //     sus_cache.splice(index, 1);
@@ -601,7 +599,7 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log({err});
+                console.log({err});
                 isFail.push(el);
             });
         }));
@@ -613,7 +611,7 @@ let employeeState = async(state) => {
                 skapi.deleteRecords({unique_id: "[emp_position_current]" + makeSafe(el)});  // 현재 직책 삭제
 
                 // let sus_cache = getUserCache['by_admin:suspended'];
-				// console.log('sus_cache', sus_cache);
+                // console.log('sus_cache', sus_cache);
                 // if(sus_cache.length) {
                 //     let index = sus_cache.findIndex(uid => uid === el);
                 //     sus_cache.splice(index, 1);
@@ -621,7 +619,7 @@ let employeeState = async(state) => {
 
                 isSuccess.push(el);
             }).catch(err => {
-				console.log({err});
+                console.log({err});
                 isFail.push(el);
             });
         }));
@@ -633,8 +631,8 @@ let employeeState = async(state) => {
         alert(`${alertMsg}에 실패하였습니다.`);
     }
 
-	selectedList.value = [];
-	getEmpList(empListType.value, true);
+    selectedList.value = [];
+    getEmpList(empListType.value, true);
 }
 
 let resendInvite = (email) => {
@@ -701,7 +699,7 @@ let cancelInvite = (employee_info) => {
         let inv = await getInvitations();
         alert('초대메일이 취소되었습니다.');
 
-		employee.value = employee.value.filter(emp => emp.user_id !== employee_info.user_id); // 리스트에서 삭제
+        employee.value = employee.value.filter(emp => emp.user_id !== employee_info.user_id); // 리스트에서 삭제
 
         // employee.value = await inv;
 
@@ -862,6 +860,12 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="less">
+.inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
 #divisions_list>a>* {
     vertical-align: middle;
 }
@@ -873,25 +877,23 @@ onUnmounted(() => {
 }
 
 .table-wrap {
-    margin-top: 3rem;
-
     #searchForm {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
     }
 
-	.loading {
-		position: relative;
-		border-bottom: unset;
+    .loading {
+        position: relative;
+        border-bottom: unset;
 
-		#loading {
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-		}
-	}
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
 }
 
 #employee_list {
@@ -1074,7 +1076,7 @@ onUnmounted(() => {
 .name-wrap {
     display: flex;
     align-items: center;
-	justify-content: center;
+    justify-content: center;
     gap: 12px;
 
     .img-wrap {
@@ -1089,6 +1091,12 @@ onUnmounted(() => {
             height: 100%;
             object-fit: contain;
         }
+    }
+}
+
+@media (max-width: 768px) {
+    .inner {
+        padding: 1rem;
     }
 }
 </style>

@@ -1,7 +1,7 @@
 <template lang="pug">
-h1 결재 양식 관리
+//- h1 결재 양식 관리
 
-hr
+//- hr
 
 .table-wrap
     .tb-head-wrap
@@ -211,11 +211,6 @@ onMounted(() => {
 </script>
 
 <style scoped lang="less">
-.table-wrap {
-    position: relative;
-    margin-top: 3rem;
-}
-
 .go-detail {
     display: flex;
     flex-wrap: nowrap;

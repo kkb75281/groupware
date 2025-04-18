@@ -1,18 +1,19 @@
 <template lang="pug">
-.title
-	h1 조직도
+//- .title
+//- 	h1 조직도
 
-hr
+//- hr
 
-.button-wrap(style="display: flex; justify-content: end; align-items: center;")
-	button.btn.outline.refresh-icon(:disabled="getOrganigramRunning" @click="getOrganigram(true)")
-		svg(:class="{'rotate' : getOrganigramRunning}")
-			use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-	button.btn.outline(type="button" @click="toggleAllDetails") {{ allDetailsOpen ? '모두 닫기' : '모두 열기' }}
+.inner
+	.button-wrap(style="display: flex; justify-content: end; align-items: center;")
+		button.btn.outline.refresh-icon(:disabled="getOrganigramRunning" @click="getOrganigram(true)")
+			svg(:class="{'rotate' : getOrganigramRunning}")
+				use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+		button.btn.outline(type="button" @click="toggleAllDetails") {{ allDetailsOpen ? '모두 닫기' : '모두 열기' }}
 
-br
+	br
 
-Organigram(:useCheckbox="false" :excludeCurrentUser="false")
+	Organigram(:useCheckbox="false" :excludeCurrentUser="false")
 </template>
 
 <script setup>
@@ -44,4 +45,16 @@ function toggleAllDetails() {
 getOrganigram();
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+.inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+@media (max-width: 768px) {
+    .inner {
+        padding: 1rem;
+    }
+}
+</style>

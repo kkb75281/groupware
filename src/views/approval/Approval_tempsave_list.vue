@@ -1,7 +1,7 @@
 <template lang="pug">
-h1 임시 저장함
+//- h1 임시 저장함
 
-hr
+//- hr
 
 .table-wrap
     .tb-head-wrap

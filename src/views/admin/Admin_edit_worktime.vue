@@ -1,7 +1,7 @@
 <template lang="pug">
-h1 출퇴근 시간 설정
+//- h1 출퇴근 시간 설정
 
-hr
+//- hr
 
 .table-wrap
     .tb-head-wrap
@@ -293,7 +293,6 @@ onMounted(async () => {
 
 .table-wrap {
     position: relative;
-    margin-top: 3rem;
 
     #loading {
         position: absolute;

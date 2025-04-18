@@ -1,8 +1,8 @@
 <template lang="pug">
-.title
-	h1 결재 양식 상세
+//- .title
+//- 	h1 결재 양식 상세
 
-hr
+//- hr
 
 .form-wrap
 	.title

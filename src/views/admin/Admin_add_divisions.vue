@@ -1,9 +1,9 @@
 <template lang="pug">
-.title
-    h1 부서 등록
-    //- span 직원을 등록하면 초대 이메일이 발송됩니다.
+//- .title
+//-     h1 부서 등록
+//-     //- span 직원을 등록하면 초대 이메일이 발송됩니다.
 
-hr
+//- hr
 
 .form-wrap
     form#_el_comp_form(@submit.prevent="resigterComp")
