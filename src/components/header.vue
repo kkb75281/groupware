@@ -178,43 +178,43 @@ header#header
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
                 p 이메일
 
-            router-link.icon-menu(to="/approval/request-audit")
+            router-link.icon-menu(to="/approval/request-audit" @click="closePopup")
                 .icon(style="padding-bottom:6px")
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
                 p 전자결재
 
-            router-link.icon-menu(to="/newsletter")
+            router-link.icon-menu(to="/newsletter" @click="closePopup")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
                 p 공지사항
 
-            router-link.icon-menu(to="/mypage/edit-myinfo")
+            router-link.icon-menu(to="/mypage/edit-myinfo" @click="closePopup")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                 p 마이페이지
 
-            router-link.icon-menu(to="/list-employee")
+            router-link.icon-menu(to="/list-employee" @click="closePopup")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
                 p 직원 목록
 
-            router-link.icon-menu(to="/organigram")
+            router-link.icon-menu(to="/organigram" @click="closePopup")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
                 p 조직도
 
-            router-link.icon-menu(v-if="user.access_group > 98" to="/admin/list-divisions")
+            router-link.icon-menu(v-if="user.access_group > 98" to="/admin/list-divisions" @click="closePopup")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
                 p 마스터 페이지
 
-            .icon-menu
+            .icon-menu(@click="logout")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-logout")
@@ -554,6 +554,7 @@ watch(
             li {
                 // border-top: 1px solid var(--gray-color-200);
                 font-size: 0.8rem;
+				cursor: pointer;
 
                 &:first-child {
                     border-top: unset;
@@ -569,7 +570,8 @@ watch(
             display: flex;
             align-items: center;
             // justify-content: space-between;
-            padding: 0.8rem;
+            padding: 0.7rem;
+			border-radius: 8px;
             font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
@@ -610,6 +612,7 @@ watch(
             ul {
                 max-height: 240px;
                 overflow-y: scroll;
+				padding-top: 8px;
 
                 li {
                     // border-top: none;
@@ -747,7 +750,12 @@ watch(
     }
 
     &.profile {
-        padding: 0;
+        padding: 8px;
+
+		// .router {
+		// 	padding: 0.7rem;
+		// 	border-radius: 8px;
+		// }
     }
 
     &.menu {
@@ -757,7 +765,7 @@ watch(
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            gap: 1.5rem;
+            gap: 0.5rem;
             padding: 1.5rem 1rem 2rem;
             // width: 100%;
             // height: 100%;
@@ -769,6 +777,12 @@ watch(
                 justify-content: center;
 				cursor: pointer;
                 gap: 0.5rem;
+				padding: 0.8rem 0.4rem;
+				border-radius: 16px;
+
+				&:hover {
+					background-color: var(--primary-color-50);
+				}
 
                 .icon {
                     height: 2rem;
