@@ -12,7 +12,7 @@
             br
             | 마이페이지로 이동하여 서비스를 이용해주세요.
 
-        button.btn.btn-go-login(@click="router.push('/mypage')") 마이페이지 화면으로
+        button.btn.btn-go-login(@click="router.push('/')") 홈으로
 
     template(v-if="step === 1")
         h2.title 비밀번호 변경

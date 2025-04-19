@@ -38,6 +38,13 @@ let menuLists = {
 		},
 		{
 			show: true,
+			text: '임시 저장함',
+			name: 'audit-list-tempsave',
+			icon: '#icon-outbox',
+			to: '/approval/audit-list-tempsave',
+		},
+		{
+			show: true,
 			text: '결재 수신함',
 			name: 'audit-list',
 			icon: '#icon-inbox',

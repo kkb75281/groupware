@@ -436,7 +436,7 @@ let cancelEdit = () => {
 
   removeFileList.value = [];
   uploadedFile.value = [...backupUploadFile.value];
-  router.push('/mypage');
+  router.push('/');
 };
 
 // 국가코드 변경 시 처리 함수

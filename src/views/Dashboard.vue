@@ -174,7 +174,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { user, makeSafe, profileImage } from "@/user.ts";
 import { skapi, newVersionAvailable, newVersion, applyUpdate } from "@/main.ts";
 import { convertTimestampToDateMillis } from "@/utils/time.ts";
@@ -219,7 +219,7 @@ let showMailDoc = (e, rt) => {
     // readNoti(rt);
 }
 
-let getUserPositionCurrent = () => {
+let getUserPositionCurrent = async() => {
     skapi.getRecords({
         table: {
             name: 'emp_position_current',
@@ -239,8 +239,10 @@ let getUserPositionCurrent = () => {
     })
 }
 
-getUserPositionCurrent();
-getNewsletterList();
+onMounted(async() => {
+	await getUserPositionCurrent();
+	getNewsletterList();
+})
 </script>
 
 <style scoped lang="less">
