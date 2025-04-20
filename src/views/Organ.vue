@@ -47,14 +47,14 @@ getOrganigram();
 
 <style lang="less" scoped>
 .inner {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 @media (max-width: 768px) {
-    .inner {
-        padding: 1rem;
-    }
+  .inner {
+    padding: 1rem;
+  }
 }
 </style>
