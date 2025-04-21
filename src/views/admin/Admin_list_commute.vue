@@ -76,13 +76,13 @@
 </template>
 
 <script setup>
-import { useRoute, useRouter } from "vue-router";
-import { ref, computed, onMounted, watch, nextTick } from "vue";
-import { skapi } from "@/main.ts";
-import { loading, divisionNameList, getDivisionData } from "@/division.ts";
+import { useRoute, useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { skapi } from '@/main.ts';
+import { loading, divisionNameList, getDivisionData } from '@/division.ts';
 import { user, makeSafe } from '@/user.ts';
 
-import Loading from "@/components/loading.vue";
+import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -97,321 +97,332 @@ const searchPositionValue = ref('');
 const extractTimeFromDateTime = (dateTimeStr) => {
   if (!dateTimeStr) return '';
 
-  return dateTimeStr.split(" ")[1] // 시간만 추출 (ex. 2021-08-01 15:00:00 -> 15:00:00)
+  return dateTimeStr.split(' ')[1]; // 시간만 추출 (ex. 2021-08-01 15:00:00 -> 15:00:00)
 };
 
 const callParams = computed(() => {
-    switch (searchFor.value) {
-        case 'name':
-            return {
-                searchFor: 'name',
-                value: searchValue.value,
-                condition: '>='
-            };
+  switch (searchFor.value) {
+    case 'name':
+      return {
+        searchFor: 'name',
+        value: searchValue.value,
+        condition: '>='
+      };
 
-        case 'division':
-            return {
-                searchFor: 'timestamp',
-                value: new Date().getTime(),
-                condition: '<='
-            };
-    }
+    case 'division':
+      return {
+        searchFor: 'timestamp',
+        value: new Date().getTime(),
+        condition: '<='
+      };
+  }
 });
 
 watch(searchFor, (nv) => {
-    if (nv) {
-        searchValue.value = '';
+  if (nv) {
+    searchValue.value = '';
 
-        if(nv === 'division') {
-            nextTick(() => {
-                displayDivisionOptions('searchDivision');
-                searchValue.value = '전체';
-            });
-        }
+    if (nv === 'division') {
+      nextTick(() => {
+        displayDivisionOptions('searchDivision');
+        searchValue.value = '전체';
+      });
     }
+  }
 });
 
 watch(searchValue, (nv) => {
-    if (nv) {
-        if (nv === '전체' && searchFor.value === 'division') {
-            callParams.value.searchFor = 'approved';
-            callParams.value.value = 'by_skapi:approved';
-            callParams.value.condition = '>=';
+  if (nv) {
+    if (nv === '전체' && searchFor.value === 'division') {
+      callParams.value.searchFor = 'approved';
+      callParams.value.value = 'by_skapi:approved';
+      callParams.value.condition = '>=';
 
-            searchEmp();
-        }
+      searchEmp();
     }
+  }
 });
 
 // 출퇴근 관련 직원 목록 가져오기
 const getEmpList = async () => {
-    const newEmpList = [];
-    loading.value = true;
+  const newEmpList = [];
+  loading.value = true;
 
-    try {
-        const empList = await skapi.getUsers();
+  try {
+    const empList = await skapi.getUsers();
 
-        empList.list.pop(); // 최고 마스터 제거
+    empList.list.pop(); // 최고 마스터 제거
 
-        // 부서별 설정된 출퇴근시간 가져오기
-        const workTime = await skapi.getRecords({
-            table:  {
-                name: 'dvs_workTime_setting',
-                access_group: 1
-            },
-        });
+    // 부서별 설정된 출퇴근시간 가져오기
+    const workTime = await skapi.getRecords({
+      table: {
+        name: 'dvs_workTime_setting',
+        access_group: 1
+      }
+    });
 
-		if(!workTime.list.length) {
-			loading.value = false;
-			return [];
-		};
+    if (!workTime.list.length) {
+      loading.value = false;
+      return [];
+    }
 
-        // 기준 근무시간 가져오기
-        const getTimestampFromTimeString = (timeString) => {
-            // 현재 날짜 가져오기
-            const today = new Date();
+    // 기준 근무시간 가져오기
+    const getTimestampFromTimeString = (timeString) => {
+      // 현재 날짜 가져오기
+      const today = new Date();
 
-            // 입력된 시간 문자열 분리 (시, 분, 초)
-            const [hours, minutes, seconds] = timeString.split(':').map(Number);
+      // 입력된 시간 문자열 분리 (시, 분, 초)
+      const [hours, minutes, seconds] = timeString.split(':').map(Number);
 
-            // 오늘 날짜에 입력된 시간 설정
-            today.setHours(hours, minutes, seconds, 0);
+      // 오늘 날짜에 입력된 시간 설정
+      today.setHours(hours, minutes, seconds, 0);
 
-            // 타임스탬프 반환 (밀리초 기준)
-            return today.getTime();
-        }
-
-        const empPromises = empList.list.map(async (emp) => {
-            const user_id_safe = makeSafe(emp.user_id);
-
-            // 직원의 부서, 직급 정보 가져오기
-            const res = await skapi.getRecords({
-                table: {
-                    name: 'emp_position_current',
-                    access_group: 1
-                },
-                unique_id: "[emp_position_current]" + user_id_safe,
-            });
-
-			// 현재 날짜와 시간 가져오기
-			let now = new Date();
-
-			// 오늘 날짜의 0시로 설정
-			let todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-			// timestamp (밀리초 단위)로 변환
-			let todaytimestamp = todayStart.getTime();
-
-            // 직원별 출퇴근 기록 가져오기 (기존 출근시간 이후의 데이터만 == 오늘 출근 기록만 가져오기)
-            const query = {
-                table: {
-                    name: 'commute_record',
-                    access_group: 98,
-                },
-                index: {
-                    name: '$uploaded',
-                    value: todaytimestamp,
-                    condition: '>='
-                },
-                reference: "emp_id:" + makeSafe(emp.user_id),
-            };
-
-            const fetchOptions = {
-                ascending: false
-            };
-
-            // 직원별 출퇴근 기록 가져오기
-            const commuteRecords = await skapi.getRecords(query, fetchOptions);
-            const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
-
-            if (commuteList && commuteList.length > 0) {
-                if (commuteList.length > 1) {
-                    const lastCommute = commuteList[commuteList.length - 1];
-                    emp.startWork = lastCommute?.data?.startTime || '-';
-                    emp.endWork = lastCommute?.data?.endTime || '-';
-                } else {
-                    const lastCommute = commuteList[0];
-                    emp.startWork = lastCommute?.data?.startTime || '-';
-                    emp.endWork = lastCommute?.data?.endTime || '-';
-                }
-            } else {
-                emp.startWork = '-';
-                emp.endWork = '-';
-            }
-            
-            if (res && res.list.length > 0) {
-                const empInfo = res.list[0].index.name;
-                const empSplit = empInfo.split('.');
-
-                return {
-                    ...emp,
-                    position: empSplit[1],
-                    division: empSplit[0],
-                    divisionName: divisionNameList.value[empSplit[0]]
-                };
-            }
-
-            return emp;
-        });
-
-        const results = await Promise.all(empPromises);
-        newEmpList.push(...results);
-
-        return newEmpList;
-    } catch (error) {
-        console.error('=== getEmpList === error : ', error);
-        return newEmpList
-    } finally {
-        loading.value = false;
+      // 타임스탬프 반환 (밀리초 기준)
+      return today.getTime();
     };
+
+    const empPromises = empList.list.map(async (emp) => {
+      const user_id_safe = makeSafe(emp.user_id);
+
+      const userDvsList = await skapi.getRecords({
+        table: {
+          name: 'emp_division' + makeSafe(emp.user_id),
+          access_group: 1
+        },
+        tag: '[emp_id]' + makeSafe(emp.user_id)
+      });
+      const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
+      const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
+
+      // 직원의 부서, 직급 정보 가져오기
+      const res = await skapi.getRecords({
+        table: {
+          name: 'emp_position_current',
+          access_group: 1
+        },
+        unique_id: `[emp_position_current]${user_id_safe}:${userDvs}`
+      });
+
+      // 현재 날짜와 시간 가져오기
+      let now = new Date();
+
+      // 오늘 날짜의 0시로 설정
+      let todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      // timestamp (밀리초 단위)로 변환
+      let todaytimestamp = todayStart.getTime();
+
+      // 직원별 출퇴근 기록 가져오기 (기존 출근시간 이후의 데이터만 == 오늘 출근 기록만 가져오기)
+      const query = {
+        table: {
+          name: 'commute_record',
+          access_group: 98
+        },
+        index: {
+          name: '$uploaded',
+          value: todaytimestamp,
+          condition: '>='
+        },
+        reference: 'emp_id:' + makeSafe(emp.user_id)
+      };
+
+      const fetchOptions = {
+        ascending: false
+      };
+
+      // 직원별 출퇴근 기록 가져오기
+      const commuteRecords = await skapi.getRecords(query, fetchOptions);
+      const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
+
+      if (commuteList && commuteList.length > 0) {
+        if (commuteList.length > 1) {
+          const lastCommute = commuteList[commuteList.length - 1];
+          emp.startWork = lastCommute?.data?.startTime || '-';
+          emp.endWork = lastCommute?.data?.endTime || '-';
+        } else {
+          const lastCommute = commuteList[0];
+          emp.startWork = lastCommute?.data?.startTime || '-';
+          emp.endWork = lastCommute?.data?.endTime || '-';
+        }
+      } else {
+        emp.startWork = '-';
+        emp.endWork = '-';
+      }
+
+      if (res && res.list.length > 0) {
+        const empInfo = res.list[0].index.name;
+        const empSplit = empInfo.split('.');
+
+        return {
+          ...emp,
+          position: empSplit[1],
+          division: empSplit[0],
+          divisionName: divisionNameList.value[empSplit[0]]
+        };
+      }
+
+      return emp;
+    });
+
+    const results = await Promise.all(empPromises);
+    newEmpList.push(...results);
+
+    return newEmpList;
+  } catch (error) {
+    console.error('=== getEmpList === error : ', error);
+    return newEmpList;
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 시간 문자열을 타임스탬프로 변환하는 유틸리티 함수
 function getTimestampFromTimeString(timeString) {
-    const today = new Date();
-    const [hours, minutes, seconds] = timeString.split(':').map(Number);
-    today.setHours(hours, minutes, seconds, 0);
-    return today.getTime();
-};
+  const today = new Date();
+  const [hours, minutes, seconds] = timeString.split(':').map(Number);
+  today.setHours(hours, minutes, seconds, 0);
+  return today.getTime();
+}
 
 const displayDivisionOptions = (selectName) => {
-    let divisionList = document.querySelector(`select[name="${selectName}"]`);
+  let divisionList = document.querySelector(`select[name="${selectName}"]`);
 
-    // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
-    divisionList.innerHTML = ''; // 기존 옵션 초기화
+  // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
+  divisionList.innerHTML = ''; // 기존 옵션 초기화
 
-    const allOption = document.createElement('option');
-    const defaultOption = document.createElement('option');
+  const allOption = document.createElement('option');
+  const defaultOption = document.createElement('option');
 
-    let matchFound = false;
+  let matchFound = false;
 
-    // 기본 옵션 추가
-    if(selectName == 'searchDivision') {
-        allOption.value = '전체';
-        allOption.innerText = '전체';
-        allOption.selected = true;
-        divisionList.appendChild(allOption);
-    } else {
-        defaultOption.disabled = true;
-        defaultOption.selected = true;
-        defaultOption.innerText = '부서 선택';
-        divisionList.appendChild(defaultOption);
+  // 기본 옵션 추가
+  if (selectName == 'searchDivision') {
+    allOption.value = '전체';
+    allOption.innerText = '전체';
+    allOption.selected = true;
+    divisionList.appendChild(allOption);
+  } else {
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    defaultOption.innerText = '부서 선택';
+    divisionList.appendChild(defaultOption);
+  }
+
+  // 동적으로 부서 옵션 추가
+  for (let key in divisionNameList.value) {
+    if (divisionNameList.value[key] !== '') {
+      const option = document.createElement('option');
+      option.value = key;
+      option.innerText = divisionNameList.value[key];
+
+      // 선택된 부서 처리
+      if (selectName === 'division' && key === selectedEmp.value.division) {
+        option.selected = true;
+        matchFound = true;
+      }
+
+      divisionList.appendChild(option);
     }
+  }
 
-    // 동적으로 부서 옵션 추가
-    for (let key in divisionNameList.value) {
-        if(divisionNameList.value[key] !== '') {
-            const option = document.createElement('option');
-            option.value = key;
-            option.innerText = divisionNameList.value[key];
-    
-            // 선택된 부서 처리
-            if (selectName === 'division' && key === selectedEmp.value.division) {
-                option.selected = true;
-                matchFound = true;
-            }
-    
-            divisionList.appendChild(option);
-        }
-    }
+  // 일치하는 키가 없으면 기본 옵션에 selected 추가
+  if (selectName === 'division' && !matchFound) {
+    defaultOption.selected = true;
+  }
 
-    // 일치하는 키가 없으면 기본 옵션에 selected 추가
-    if (selectName === 'division' && !matchFound) {
-        defaultOption.selected = true;
-    }
-
-    // 선택박스 활성화
-    divisionList.disabled = false;
+  // 선택박스 활성화
+  divisionList.disabled = false;
 };
 
 // 직원 검색
-const searchEmp = async(refresh) => {
-    loading.value = true;
-    
-    try {
-        const empList = await getEmpList();  // getEmpList는 이미 부서정보와 출퇴근 기록을 모두 가져옴
-        
-        // 검색어가 없거나 전체 선택시 모든 직원 표시
-        if (!searchValue.value || (searchFor.value === 'division' && searchValue.value === '전체')) {
-            employee.value = empList;
-            return;
-        }
+const searchEmp = async (refresh) => {
+  loading.value = true;
 
-        // 검색 조건에 따른 필터링
-        employee.value = empList.filter(emp => {
-            if (searchFor.value === 'name') {
-                return emp.name.includes(searchValue.value);
-            }
-            
-            if (searchFor.value === 'division') {
-                if (searchPositionValue.value) {
-                    // 부서와 직책 모두 검색
-                    return emp.division === searchValue.value && emp.position.includes(searchPositionValue.value);
-                }
-                // 부서만 검색
-                return emp.division === searchValue.value;
-            }
+  try {
+    const empList = await getEmpList(); // getEmpList는 이미 부서정보와 출퇴근 기록을 모두 가져옴
 
-            return true;
-        });
-
-    } catch (error) {
-        console.error('=== searchEmp === error:', error);
-        employee.value = [];
-    } finally {
-        // loading.value = false;
+    // 검색어가 없거나 전체 선택시 모든 직원 표시
+    if (!searchValue.value || (searchFor.value === 'division' && searchValue.value === '전체')) {
+      employee.value = empList;
+      return;
     }
+
+    // 검색 조건에 따른 필터링
+    employee.value = empList.filter((emp) => {
+      if (searchFor.value === 'name') {
+        return emp.name.includes(searchValue.value);
+      }
+
+      if (searchFor.value === 'division') {
+        if (searchPositionValue.value) {
+          // 부서와 직책 모두 검색
+          return (
+            emp.division === searchValue.value && emp.position.includes(searchPositionValue.value)
+          );
+        }
+        // 부서만 검색
+        return emp.division === searchValue.value;
+      }
+
+      return true;
+    });
+  } catch (error) {
+    console.error('=== searchEmp === error:', error);
+    employee.value = [];
+  } finally {
+    // loading.value = false;
+  }
 };
 
 // 새로고침
-const refresh = async() => {
-    // 검색 영역 초기화
-    searchFor.value = 'name';
-    searchValue.value = '';
-    searchPositionValue.value = '';
-    
-    await getDivisionData();
-    const res = await getEmpList();
-    if(res.length > 0) {
-        employee.value = res.filter(emp => emp.approved.split(':')[1] !== 'suspended');
-    }
+const refresh = async () => {
+  // 검색 영역 초기화
+  searchFor.value = 'name';
+  searchValue.value = '';
+  searchPositionValue.value = '';
+
+  await getDivisionData();
+  const res = await getEmpList();
+  if (res.length > 0) {
+    employee.value = res.filter((emp) => emp.approved.split(':')[1] !== 'suspended');
+  }
 };
 
 // 각 직원 출퇴근 기록 상세 페이지로 이동
 const goToEmpCommute = (userId) => {
-    router.push({ name: 'commute-detail', params: { userId } });        
+  router.push({ name: 'commute-detail', params: { userId } });
 };
 
 onMounted(async () => {
-    await getDivisionData();  // 부서 데이터를 먼저 완전히 로드
-    const res = await getEmpList(); // 그 다음 직원 목록 로드
-    // 만약 숨김 직원이 있다면 제거
-    if(res.length > 0) {
-        employee.value = res.filter(emp => emp.approved.split(':')[1] !== 'suspended');
-    }
+  await getDivisionData(); // 부서 데이터를 먼저 완전히 로드
+  const res = await getEmpList(); // 그 다음 직원 목록 로드
+  // 만약 숨김 직원이 있다면 제거
+  if (res.length > 0) {
+    employee.value = res.filter((emp) => emp.approved.split(':')[1] !== 'suspended');
+  }
 });
 </script>
 
 <style scoped lang="less">
 .table-wrap {
-    #searchForm {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
+  #searchForm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 .table {
-    tbody {
-        tr {
-            &:hover {
-                cursor: pointer;
-            }
-        }
-
-        td {
-            white-space: nowrap;
-        }
+  tbody {
+    tr {
+      &:hover {
+        cursor: pointer;
+      }
     }
+
+    td {
+      white-space: nowrap;
+    }
+  }
 }
 </style>

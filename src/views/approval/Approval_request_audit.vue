@@ -565,13 +565,23 @@ const addRow = () => {
 const getEmpDivision = async (userId) => {
   if (!userId) return;
 
+  const userDvsList = await skapi.getRecords({
+    table: {
+      name: 'emp_division' + makeSafe(emp.user_id),
+      access_group: 1
+    },
+    tag: '[emp_id]' + makeSafe(emp.user_id)
+  });
+  const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
+  const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
+
   await skapi
     .getRecords({
       table: {
         name: 'emp_position_current',
         access_group: 1
       },
-      unique_id: '[emp_position_current]' + makeSafe(userId)
+      unique_id: `[emp_position_current]${makeSafe(userId)}:${userDvs}`
     })
     .then((r) => {
       if (r.list.length === 0) return;

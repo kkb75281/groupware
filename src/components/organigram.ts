@@ -116,13 +116,23 @@ function recalculateTotals(departments: Organigram[]): number {
 // 현재 사용자의 부서 정보를 가져오는 함수
 async function getCurrentUserDepartment() {
   try {
+    const userDvsList = await skapi.getRecords({
+      table: {
+        name: 'emp_division' + makeSafe(user.user_id),
+        access_group: 1
+      },
+      tag: '[emp_id]' + makeSafe(user.user_id)
+    });
+    const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
+    const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
+
     // 현재 사용자의 위치 정보 가져오기
     const userPositionData = await skapi.getRecords({
       table: {
         name: 'emp_position_current',
         access_group: 1
       },
-      unique_id: '[emp_position_current]' + makeSafe(user.user_id)
+      unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${userDvs}`
     });
 
     if (userPositionData.list.length > 0) {

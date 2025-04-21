@@ -130,7 +130,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, nextTick } from 'vue';
 import { skapi, mainPageLoading } from '@/main.ts';
 import { user, makeSafe } from '@/user.ts';
-import { divisionNameList, getDivisionNames } from '@/division.ts'
+import { divisionNameList, getDivisionNames } from '@/division.ts';
 import { getEmpDivisionPosition, getUsers, employeeDict } from '@/employee.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
 import { getStampList, uploadedStamp } from '@/stamp.ts';
@@ -346,7 +346,9 @@ let registerEmp = async (e) => {
       });
 
     await skapi
-      .deleteRecords({ unique_id: '[emp_position_current]' + user_id_safe })
+      .deleteRecords({
+        unique_id: `[emp_position_current]${user_id_safe}:${currentEmpTags.value.emp_dvs}`
+      })
       .then((r) => {
         // console.log(r)
       })
@@ -358,7 +360,7 @@ let registerEmp = async (e) => {
           user_id: currentEmp.value.user_id
         },
         {
-          unique_id: '[emp_position_current]' + user_id_safe,
+          unique_id: `[emp_position_current]${user_id_safe}:${currentEmpTags.value.emp_dvs}`,
           table: {
             name: 'emp_position_current',
             access_group: 1
@@ -497,224 +499,189 @@ onMounted(async () => {
 
 <style scoped lang="less">
 .inner {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .title {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
 
-    span {
-        color: var(--gray-color-400);
-        line-height: 1.4;
-    }
+  span {
+    color: var(--gray-color-400);
+    line-height: 1.4;
+  }
 }
 
 #_el_empDetail_form {
-    .imgbtn-wrap {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-    .input-wrap {
-        position: relative;
-        margin-top: 16px;
-
-        input {
-            border-color: var(--primary-color-400);
-            cursor: initial;
-
-            &:read-only {
-                border-color: var(--gray-color-200);
-                cursor: default;
-
-                &:hover {
-                    border-color: var(--gray-color-200);
-                }
-            }
-
-            &:hover {
-                border-color: var(--primary-color-400);
-            }
-        }
-
-        select {
-            border-color: var(--primary-color-400);
-        }
-
-        .icon {
-            position: absolute;
-            bottom: 12px;
-            right: 0px;
-            cursor: pointer;
-
-            &:hover {
-                svg {
-                    transform: scale(1.1);
-                }
-            }
-
-            svg {
-                width: 1.2rem;
-                height: 1.2rem;
-                fill: var(--primary-color-400-dark);
-            }
-        }
-    }
-
-    .util-wrap {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
-        margin-top: 1rem;
-        padding: 1rem;
-        border-radius: 0.5rem;
-
-        .util-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-
-            &.disabled {
-                .click-btn {
-                    background-color: var(--gray-color-200);
-                    pointer-events: none;
-                    cursor: not-allowed;
-                    user-select: none;
-                }
-
-                span {
-                    color: var(--gray-color-300);
-                }
-            }
-
-            .click-btn {
-                padding: 0.5rem;
-                border-radius: 50%;
-                background-color: var(--primary-color-400);
-
-                svg {
-                    width: 1.2rem;
-                    height: 1.2rem;
-                    fill: #fff;
-                }
-            }
-            span {
-                font-size: 0.8rem;
-                color: var(--gray-color-400);
-                user-select: none;
-            }
-        }
-    }
-
-    img {
-        width: 100px;
-        height: 100px;
-        border-radius: 30%;
-        display: block;
-        object-fit: contain;
-        position: relative;
-        background-color: var(--gray-color-100);
-
-        &::before {
-            content: 'No Image';
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            background-color: var(--gray-color-100);
-            color: #888;
-            font-size: 14px;
-            text-align: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-
-        &#profile-img {
-            border-radius: 50%;
-
-            &::before {
-                content: 'No Image';
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                height: 100%;
-                background-color: var(--gray-color-100);
-                color: #888;
-                font-size: 14px;
-                text-align: center;
-                position: absolute;
-                top: 0;
-                left: 0;
-            }
-        }
-    }
-}
-
-.upload-file {
-    .file-item {
-        &.remove {
-            background-color: var(--warning-color-50);
-            border: 1px dashed var(--warning-color-400);
-            color: var(--warning-color-500);
-        }
-    }
-}
-
-.btn-upload-file {
-    margin-top: 12px;
-}
-
-.input-wrap.upload-stamp {
-    .main-stamp {
-        #stamp-img {
-            &:empty::before {
-                content: '도장 등록';
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                height: 100%;
-                color: #888;
-                background-color: #fff;
-                font-size: 14px;
-                text-align: center;
-                position: absolute;
-                top: 0;
-                left: 0;
-            }
-        }
-    }
-}
-
-.main-stamp {
-    width: fit-content;
+  .imgbtn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .input-wrap {
     position: relative;
-}
+    margin-top: 16px;
 
-#stamp-img {
+    input {
+      border-color: var(--primary-color-400);
+      cursor: initial;
+
+      &:read-only {
+        border-color: var(--gray-color-200);
+        cursor: default;
+
+        &:hover {
+          border-color: var(--gray-color-200);
+        }
+      }
+
+      &:hover {
+        border-color: var(--primary-color-400);
+      }
+    }
+
+    select {
+      border-color: var(--primary-color-400);
+    }
+
+    .icon {
+      position: absolute;
+      bottom: 12px;
+      right: 0px;
+      cursor: pointer;
+
+      &:hover {
+        svg {
+          transform: scale(1.1);
+        }
+      }
+
+      svg {
+        width: 1.2rem;
+        height: 1.2rem;
+        fill: var(--primary-color-400-dark);
+      }
+    }
+  }
+
+  .util-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+
+    .util-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+
+      &.disabled {
+        .click-btn {
+          background-color: var(--gray-color-200);
+          pointer-events: none;
+          cursor: not-allowed;
+          user-select: none;
+        }
+
+        span {
+          color: var(--gray-color-300);
+        }
+      }
+
+      .click-btn {
+        padding: 0.5rem;
+        border-radius: 50%;
+        background-color: var(--primary-color-400);
+
+        svg {
+          width: 1.2rem;
+          height: 1.2rem;
+          fill: #fff;
+        }
+      }
+      span {
+        font-size: 0.8rem;
+        color: var(--gray-color-400);
+        user-select: none;
+      }
+    }
+  }
+
+  img {
     width: 100px;
     height: 100px;
     border-radius: 30%;
     display: block;
     object-fit: contain;
     position: relative;
-    background-color: #fff;
-    border: 2px dashed var(--gray-color-200);
-    margin-bottom: 0.5rem;
+    background-color: var(--gray-color-100);
 
     &::before {
+      content: 'No Image';
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      background-color: var(--gray-color-100);
+      color: #888;
+      font-size: 14px;
+      text-align: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    &#profile-img {
+      border-radius: 50%;
+
+      &::before {
+        content: 'No Image';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-color: var(--gray-color-100);
+        color: #888;
+        font-size: 14px;
+        text-align: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    }
+  }
+}
+
+.upload-file {
+  .file-item {
+    &.remove {
+      background-color: var(--warning-color-50);
+      border: 1px dashed var(--warning-color-400);
+      color: var(--warning-color-500);
+    }
+  }
+}
+
+.btn-upload-file {
+  margin-top: 12px;
+}
+
+.input-wrap.upload-stamp {
+  .main-stamp {
+    #stamp-img {
+      &:empty::before {
         content: '도장 등록';
         display: flex;
         align-items: center;
@@ -728,12 +695,47 @@ onMounted(async () => {
         position: absolute;
         top: 0;
         left: 0;
+      }
     }
+  }
+}
+
+.main-stamp {
+  width: fit-content;
+  position: relative;
+}
+
+#stamp-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 30%;
+  display: block;
+  object-fit: contain;
+  position: relative;
+  background-color: #fff;
+  border: 2px dashed var(--gray-color-200);
+  margin-bottom: 0.5rem;
+
+  &::before {
+    content: '도장 등록';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #888;
+    background-color: #fff;
+    font-size: 14px;
+    text-align: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
 }
 
 @media (max-width: 768px) {
-    .inner {
-        padding: 1rem;
-    }
+  .inner {
+    padding: 1rem;
+  }
 }
 </style>

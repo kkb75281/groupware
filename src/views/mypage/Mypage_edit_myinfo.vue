@@ -298,7 +298,7 @@ let getUserDivision = async () => {
     .getRecords(
       {
         table: {
-          name: 'emp_division',
+          name: 'emp_division' + makeSafe(user.user_id),
           access_group: 1
         },
         tag: '[emp_id]' + makeSafe(user.user_id)
@@ -1011,9 +1011,9 @@ onUnmounted(() => {
 
 <style scoped lang="less">
 .inner {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .title {
@@ -1619,9 +1619,9 @@ onUnmounted(() => {
   }
 }
 @media (max-width: 768px) {
-	.inner {
-        padding: 1rem;
-    }
+  .inner {
+    padding: 1rem;
+  }
   .stamp-wrap {
     grid-template-columns: repeat(2, 1fr);
 

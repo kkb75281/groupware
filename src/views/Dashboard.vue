@@ -175,12 +175,22 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, ref } from 'vue';
-import { user, makeSafe, profileImage } from "@/user.ts";
-import { skapi, newVersionAvailable, newVersion, applyUpdate } from "@/main.ts";
-import { convertTimestampToDateMillis } from "@/utils/time.ts";
+import { user, makeSafe, profileImage } from '@/user.ts';
+import { skapi, newVersionAvailable, newVersion, applyUpdate } from '@/main.ts';
+import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
 import { divisionNameList } from '@/division.ts';
-import { mailList, serviceWorkerRegistMsg, notificationNotWorkingMsg, readNoti, newsletterList, getNewsletterList, subscribeNotification, onlyUserGesture, setNotificationPermission } from "@/notifications.ts";
+import {
+  mailList,
+  serviceWorkerRegistMsg,
+  notificationNotWorkingMsg,
+  readNoti,
+  newsletterList,
+  getNewsletterList,
+  subscribeNotification,
+  onlyUserGesture,
+  setNotificationPermission
+} from '@/notifications.ts';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
@@ -193,56 +203,72 @@ let userDvsPstn = ref('');
 
 // google login
 function googleLogin() {
-    loading.value = true;
+  loading.value = true;
 
-    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    const REDIRECT_URL = 'http://localhost:5173/login';
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const REDIRECT_URL = 'http://localhost:5173/login';
 
-    let rnd = Math.random().toString(36).substring(2); // Generate a random string
+  let rnd = Math.random().toString(36).substring(2); // Generate a random string
 
-    let url = 'https://accounts.google.com/o/oauth2/v2/auth';
-    url += '?client_id=' + GOOGLE_CLIENT_ID;
-    url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
-    url += '&response_type=token';
-    url += '&scope=' + encodeURIComponent('https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly');
-    url += '&prompt=select_account';
-    url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
+  let url = 'https://accounts.google.com/o/oauth2/v2/auth';
+  url += '?client_id=' + GOOGLE_CLIENT_ID;
+  url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
+  url += '&response_type=token';
+  url +=
+    '&scope=' +
+    encodeURIComponent(
+      'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly'
+    );
+  url += '&prompt=select_account';
+  url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
 
-    window.location.href = url;
+  window.location.href = url;
 }
 
 let showMailDoc = (e, rt) => {
-    console.log('rt', rt);
-    console.log('mailList', mailList.value);
-    openGmailAppOrWeb(rt.link, rt.id);
-    // window.open(rt.link, "_blank");
-    // readNoti(rt);
-}
+  console.log('rt', rt);
+  console.log('mailList', mailList.value);
+  openGmailAppOrWeb(rt.link, rt.id);
+  // window.open(rt.link, "_blank");
+  // readNoti(rt);
+};
 
-let getUserPositionCurrent = async() => {
-    skapi.getRecords({
-        table: {
-            name: 'emp_position_current',
-            access_group: 1
-        },
-        unique_id: "[emp_position_current]" + makeSafe(user.user_id),
-    }).then(r => {
-        if(r && r.list && r.list.length > 0) {
-            console.log('emp_position_current:', r.list[0]);
-            let dvs = r.list[0]?.index?.name.split('.')[0];
-            let pst = r.list[0]?.index?.name.split('.')[1];
+let getUserPositionCurrent = async () => {
+  const userDvsList = await skapi.getRecords({
+    table: {
+      name: 'emp_division' + makeSafe(user.user_id),
+      access_group: 1
+    },
+    tag: '[emp_id]' + makeSafe(user.user_id)
+  });
+  const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
+  const userDvs = currentUserDvs.tags[0].split(']')[1];
 
-            userDvsPstn.value = divisionNameList.value[dvs] + ' / ' + pst;
-        } else {
-            userDvsPstn.value = '부서, 직책 미정';
-        }
+  skapi
+    .getRecords({
+      table: {
+        name: 'emp_position_current',
+        access_group: 1
+      },
+      unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${userDvs}`
     })
-}
+    .then((r) => {
+      if (r && r.list && r.list.length > 0) {
+        console.log('emp_position_current:', r.list[0]);
+        let dvs = r.list[0]?.index?.name.split('.')[0];
+        let pst = r.list[0]?.index?.name.split('.')[1];
 
-onMounted(async() => {
-	await getUserPositionCurrent();
-	getNewsletterList();
-})
+        userDvsPstn.value = divisionNameList.value[dvs] + ' / ' + pst;
+      } else {
+        userDvsPstn.value = '부서, 직책 미정';
+      }
+    });
+};
+
+onMounted(async () => {
+  await getUserPositionCurrent();
+  getNewsletterList();
+});
 </script>
 
 <style scoped lang="less">
@@ -257,270 +283,269 @@ onMounted(async() => {
 // }
 
 #dashboard {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
 .profComp-wrap {
-    display:flex;
-    flex-wrap:wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
 
-    > div {
-        height: 250px;
-        background-color: #fff;
-        border: 1px solid var(--gray-color-300);
-        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-        border-radius: 16px;
-        padding: 1.5rem;
-        text-align: center;
-    }
+  > div {
+    height: 250px;
+    background-color: #fff;
+    border: 1px solid var(--gray-color-300);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+  }
 
-    .profile-wrap {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-
-        .thumbnail {
-            width: 3rem;
-            height: 3rem;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-            background: #f4f4f5 url(../images/header/thumb_profile_default.png)
-            center/cover no-repeat;
-            overflow: hidden;
-
-            img {
-                width: 100%;
-                height: 100%;
-                // object-fit: contain;
-                object-fit: cover;
-                z-index: 1;
-                position: relative;
-            }
-
-            svg {
-                fill: var(--gray-color-400);
-            }
-        }
-        .division {
-            font-size: 0.8rem;
-            color: var(--gray-color-500);
-            margin-top: 0.5rem;
-        }
-    }
-
-    .company-wrap {
-        position: relative;
-        flex-grow: 3;
-        overflow: hidden;
-        padding: 0;
-
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 16px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-        }
-    }
-}
-
-.mo-btn-wrap {
-    display: none;
-    flex-wrap: wrap;
-    gap: 1rem;
+  .profile-wrap {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
 
-    .icon {
-        width: 140px;
-        height: 140px;
-        min-width: 140px;
-        flex-grow: 1;
-        display: flex;
-        flex-wrap: wrap;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--gray-color-300);
-        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-        border-radius: 1rem;
-        background-color: #fff;
-        cursor: pointer;
-        gap: 8px;
+    .thumbnail {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
+      overflow: hidden;
 
-        &.master {
-            // width: 100%;
-        }
+      img {
+        width: 100%;
+        height: 100%;
+        // object-fit: contain;
+        object-fit: cover;
+        z-index: 1;
+        position: relative;
+      }
+
+      svg {
+        fill: var(--gray-color-400);
+      }
     }
+    .division {
+      font-size: 0.8rem;
+      color: var(--gray-color-500);
+      margin-top: 0.5rem;
+    }
+  }
+
+  .company-wrap {
+    position: relative;
+    flex-grow: 3;
+    overflow: hidden;
+    padding: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 16px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.mo-btn-wrap {
+  display: none;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+
+  .icon {
+    width: 140px;
+    height: 140px;
+    min-width: 140px;
+    flex-grow: 1;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--gray-color-300);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    border-radius: 1rem;
+    background-color: #fff;
+    cursor: pointer;
+    gap: 8px;
+
+    &.master {
+      // width: 100%;
+    }
+  }
 }
 
 .card-wrap {
-    &.gmail {
-        display: flex;
+  &.gmail {
+    display: flex;
 
-        .card {
-            // padding: 1.5rem;
-            transition: none;
-            width: 100%;
+    .card {
+      // padding: 1.5rem;
+      transition: none;
+      width: 100%;
 
-            &:hover {
-                transform: none;
-                // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
-            }
+      &:hover {
+        transform: none;
+        // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
+      }
 
-            ul {
-                padding-bottom: 1.5rem;
-            }
-        }
-
-        .title-wrap {
-            padding: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            border-bottom: 1px solid var(--gray-color-300);
-        }
-
-        .title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .go-detail {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.875rem;
-            color: var(--gray-color-500);
-        }
-
-        .icon.img {
-            svg {
-                width: 1.5rem;
-                height: 1.5rem;
-                margin: 0;
-            }
-        }
-
-        .mail {
-            // padding: 1.5rem 0;
-            // border-top: 1px solid var(--gray-color-300);
-            padding: 0.75rem 0.5rem;
-            cursor: pointer;
-
-            &:hover {
-                background-color: var(--primary-color-25);
-            }
-        }
-
-        .link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0 1.5rem;
-            font-size: 0.875rem;
-            line-height: 1.2;
-            color: var(--gray-color-500);
-
-            > * {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                display: -webkit-box;
-                -webkit-line-clamp: 1;
-                -webkit-box-orient: vertical;
-            }
-        }
-
-        .from {
-            font-weight: 600;
-            color: var(--gray-color-900);
-            flex: none;
-            width: 100px;
-        }
-
-        .mail-title {
-            font-weight: 600;
-            color: var(--gray-color-900);
-        }
-
-        .mail-cont {
-            font-size: 0.75rem;
-            color: var(--gray-color-400);
-            margin-right: 1rem;
-            flex: 1;
-        }
-
-        .attachment {
-            .icon {
-                svg {
-                    width: 1rem;
-                    height: 1rem;
-                    fill: var(--gray-color-400);
-                }
-            }
-        }
-
-        .mail-date {
-            font-size: 0.75rem;
-            margin-left: auto;
-            flex: none;
-        }
+      ul {
+        padding-bottom: 1.5rem;
+      }
     }
 
-    .empty {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 4px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--gray-color-500);
-        line-height: 1.4;
-        min-height: 150px;
-        text-align: center;
-        padding-top: 1.5rem;
-
-        .icon {
-            flex: none;
-        }
+    .title-wrap {
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--gray-color-300);
     }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .go-detail {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.875rem;
+      color: var(--gray-color-500);
+    }
+
+    .icon.img {
+      svg {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin: 0;
+      }
+    }
+
+    .mail {
+      // padding: 1.5rem 0;
+      // border-top: 1px solid var(--gray-color-300);
+      padding: 0.75rem 0.5rem;
+      cursor: pointer;
+
+      &:hover {
+        background-color: var(--primary-color-25);
+      }
+    }
+
+    .link {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 1.5rem;
+      font-size: 0.875rem;
+      line-height: 1.2;
+      color: var(--gray-color-500);
+
+      > * {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+      }
+    }
+
+    .from {
+      font-weight: 600;
+      color: var(--gray-color-900);
+      flex: none;
+      width: 100px;
+    }
+
+    .mail-title {
+      font-weight: 600;
+      color: var(--gray-color-900);
+    }
+
+    .mail-cont {
+      font-size: 0.75rem;
+      color: var(--gray-color-400);
+      margin-right: 1rem;
+      flex: 1;
+    }
+
+    .attachment {
+      .icon {
+        svg {
+          width: 1rem;
+          height: 1rem;
+          fill: var(--gray-color-400);
+        }
+      }
+    }
+
+    .mail-date {
+      font-size: 0.75rem;
+      margin-left: auto;
+      flex: none;
+    }
+  }
+
+  .empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gray-color-500);
+    line-height: 1.4;
+    min-height: 150px;
+    text-align: center;
+    padding-top: 1.5rem;
+
+    .icon {
+      flex: none;
+    }
+  }
 }
 
 .warning-msg {
-    display: flex;
-    align-items: flex-start;
-    gap: 4px;
-    line-height: 1.2;
-    margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.2;
+  margin-bottom: 1rem;
 
-    .icon {
-        padding: 0;
-        flex: none;
-        position: relative;
-        top: 2px;
+  .icon {
+    padding: 0;
+    flex: none;
+    position: relative;
+    top: 2px;
 
-        svg {
-            width: 16px;
-            height: 16px;
-            fill: var(--warning-color-400);
-        }
+    svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--warning-color-400);
     }
-    p {
-        font-size: 0.8rem;
-        color: var(--warning-color-500);
-    }
+  }
+  p {
+    font-size: 0.8rem;
+    color: var(--warning-color-500);
+  }
 }
 
 // @media (max-width: 1200px) {
@@ -530,32 +555,32 @@ onMounted(async() => {
 // }
 
 @media (max-width: 768px) {
-    .profComp-wrap {
-        .profile-wrap {
-            position: relative;
-            border: 0;
-            box-shadow: none;
-            height: unset;
-            align-items: end;
-            padding-right: 4rem;
+  .profComp-wrap {
+    .profile-wrap {
+      position: relative;
+      border: 0;
+      box-shadow: none;
+      height: unset;
+      align-items: end;
+      padding-right: 4rem;
 
-            .thumbnail {
-                position: absolute;
-                top: 50%;
-                right: 0;
-                transform: translateY(-50%);
-            }
-        }
-        .company-wrap {
-            display: none;
-        }
+      .thumbnail {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+      }
     }
-    .mo-btn-wrap {
-        display: block;
-        display: flex;
+    .company-wrap {
+      display: none;
     }
-    .card-wrap {
-        display: none !important;
-    }
+  }
+  .mo-btn-wrap {
+    display: block;
+    display: flex;
+  }
+  .card-wrap {
+    display: none !important;
+  }
 }
 </style>
