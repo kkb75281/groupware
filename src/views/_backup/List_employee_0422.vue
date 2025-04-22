@@ -1,6 +1,6 @@
 <template lang="pug">
 .inner
-    div(style="display: flex; gap: 1rem; margin-bottom: 0.5rem;")
+    div(style="display: flex; gap: 1rem")
         //- h1.title(v-if="user.access_group > 98") 직원 관리
         //- h1.title(v-else) 직원 목록
         .input-wrap(v-if="user.access_group > 98" style="max-width: 370px;width: 100%;")
@@ -8,6 +8,9 @@
                 option(value="직원목록") 직원목록
                 option(value="초청여부") 초청여부
                 option(value="숨김여부") 숨김여부
+
+            br
+            br
 
     //- hr
 
@@ -100,14 +103,11 @@
                                             input(type="checkbox" name="checkbox" :checked="selectedList.includes(emp.user_id)" @click.stop="toggleSelect(emp.user_id)")
                                             span.label-checkbox
                                 td.list-num(v-show="isDesktop") {{ index + 1 }}
-                                td 
-                                    .list.position
-                                        .list-item.position(v-for="(division, index) in getEmployeeDivisions(emp)" :key="index")
-                                            span {{ division.position || '-' }}
-                                td
-                                    .list.division
-                                        .list-item.division(v-for="(division, index) in getEmployeeDivisions(emp)" :key="index")
-                                            span {{ divisionNameList?.[division.division] || '-' }}
+                                td {{ emp?.position }}
+                                td {{ divisionNameList?.[emp?.division] }}
+                                //- template(v-if='user.access_group > 98')
+                                //-     td {{ emp.name }}
+                                //- template(v-else)
                                 td
                                     .name-wrap
                                         .img-wrap(style="width: 36px; height: 36px;")
@@ -349,135 +349,24 @@ watch(searchValue, (nv) => {
   }
 });
 
-// 직원의 모든 부서/직책 정보를 가져오는 함수
-const getEmployeeDivisions = (emp) => {
-  // 다중 부서
-  if (emp.divisions && Array.isArray(emp.divisions) && emp.divisions.length > 0) {
-    return emp.divisions;
-  }
-
-  // 단일 부서
-  return [
-    {
-      division: emp.division || '',
-      position: emp.position || '-'
-    }
-  ];
-};
-
 async function arrangeEmpDivisionPosition(li) {
-  // 결과를 저장할 배열
-  let toReturn = [];
-
-  // 각 직원에 대해 처리
-  for (const employee of li) {
-    if (!employee) continue;
-
-    try {
-      // 기본 직원 정보 가져오기
-      const empWithBasicDivision = await getEmpDivisionPosition(employee);
-
-      // 직원의 모든 부서/직책 정보 가져오기
-      const userIdSafe = makeSafe(employee.user_id);
-
-      try {
-        // 모든 부서 ID 가져오기
-        const empDivs = await skapi.getUniqueId({
-          unique_id: `[emp_position_current]${userIdSafe}`,
-          condition: '>='
-        });
-
-        if (empDivs && empDivs.list && empDivs.list.length > 0) {
-          // 각 부서 ID에 대한 세부 정보 가져오기
-          const divisions = await Promise.all(
-            empDivs.list.map(async (record) => {
-              if (!record || !record.unique_id) return null;
-
-              const parts = record.unique_id.split(':');
-              if (parts.length < 2) return null;
-
-              const divisionId = parts[1];
-
-              // 세부 정보 가져오기
-              try {
-                const divisionDetails = await skapi.getRecords({
-                  table: {
-                    name: 'emp_position_current',
-                    access_group: 1
-                  },
-                  unique_id: record.unique_id
-                });
-
-                if (divisionDetails && divisionDetails.list && divisionDetails.list.length > 0) {
-                  const detail = divisionDetails.list[0];
-                  let positionName = '-';
-
-                  // index.name에서 추출 시도
-                  if (detail.index && detail.index.name) {
-                    const nameParts = detail.index.name.split('.');
-                    if (nameParts.length >= 2) {
-                      positionName = nameParts[1];
-                    }
-                  }
-
-                  return {
-                    division: divisionId,
-                    position: positionName
-                  };
-                }
-              } catch (error) {
-                console.warn(`부서 세부 정보 조회 중 오류 (${record.unique_id}):`, error);
-              }
-
-              return null;
-            })
-          );
-
-          // null 제거 및 유효한 부서 정보만 추출
-          const validDivisions = divisions.filter((div) => div !== null);
-
-          // 직원 객체에 divisions 속성 추가
-          empWithBasicDivision.divisions = validDivisions;
-        }
-      } catch (error) {
-        console.error(`직원(${employee.user_id}) 부서 정보 조회 중 오류:`, error);
-        // 오류 발생 시 기본 부서 정보만 사용
-        empWithBasicDivision.divisions = [
-          {
-            division: empWithBasicDivision.division || '',
-            position: empWithBasicDivision.position || '-'
-          }
-        ];
+  // console.log({li})
+  let list = await Promise.all(
+    li.map((l) => {
+      if (l) {
+        return getEmpDivisionPosition(l).catch((err) => err);
       }
-
-      // 결과 배열에 추가
-      toReturn.push(empWithBasicDivision);
-    } catch (error) {
-      console.error(`직원 정보 처리 중 오류:`, error);
+      return null;
+    })
+  );
+  let toReturn = [];
+  list.forEach((l) => {
+    if (l) {
+      toReturn.push(l);
     }
-  }
-
+  });
   return toReturn;
 }
-
-// async function arrangeEmpDivisionPosition(li) {
-//   // console.log({li})
-//   let list = await Promise.all(
-//     li.map((l) => {
-//       if (l) {
-//         return getEmpDivisionPosition(l).catch((err) => err);
-//       }
-//       return null;
-//     })
-//   );
-//   let toReturn = [];
-//   list.forEach((l) => {
-//     if (l) {
-//       toReturn.push(l);
-//     }
-//   });
-//   return toReturn;
-// }
 
 async function getEmpList(type, refresh = false) {
   loading.value = true;
@@ -1295,29 +1184,9 @@ onUnmounted(() => {
   }
 }
 
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  .list-item {
-    padding: 2px 0;
-
-    .list-item:not(:first-child) {
-      border-top: 1px dashed var(--gray-color-200);
-    }
-  }
-}
-
 @media (max-width: 768px) {
   .inner {
     padding: 1rem;
-  }
-
-  .list {
-    .list-item {
-      font-size: 0.9rem;
-    }
   }
 }
 </style>

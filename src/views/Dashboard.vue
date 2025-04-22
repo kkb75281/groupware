@@ -34,7 +34,7 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             .name {{ user.name }}
-            .division {{ userDvsPstn }}
+            .division(v-for="dvs in userDvsPstn" :key="dvs") {{ dvs }}
         .company-wrap
             img(src="@/assets/img/rh.png" alt="회사사진")
 
@@ -199,7 +199,7 @@ const route = useRoute();
 let loading = ref(false);
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const encodedEmail = encodeURIComponent(user.email);
-let userDvsPstn = ref('');
+const userDvsPstn = ref([]);
 
 // google login
 function googleLogin() {
@@ -234,34 +234,36 @@ let showMailDoc = (e, rt) => {
 };
 
 let getUserPositionCurrent = async () => {
-  const userDvsList = await skapi.getRecords({
-    table: {
-      name: 'emp_division' + makeSafe(user.user_id),
-      access_group: 1
-    },
-    tag: '[emp_id]' + makeSafe(user.user_id)
+  const userIdSafe = makeSafe(user.user_id);
+
+  // 모든 현재 부서/직책 정보 가져오기
+  const empAllDvs = await skapi.getUniqueId({
+    unique_id: `[emp_position_current]${userIdSafe}`,
+    condition: '>='
   });
-  const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
-  const userDvs = currentUserDvs.tags[0].split(']')[1];
 
-  skapi
-    .getRecords({
-      table: {
-        name: 'emp_position_current',
-        access_group: 1
-      },
-      unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${userDvs}`
-    })
-    .then((r) => {
-      if (r && r.list && r.list.length > 0) {
-        let dvs = r.list[0]?.index?.name.split('.')[0];
-        let pst = r.list[0]?.index?.name.split('.')[1];
+  if (empAllDvs.list && empAllDvs.list.length > 0) {
+    // 각 부서 정보 처리
+    const promises = empAllDvs.list.map(async (record) => {
+      if (record && record.unique_id) {
+        const parts = record.unique_id.split(':');
+        if (parts.length) {
+          const divisionId = parts[1];
 
-        userDvsPstn.value = divisionNameList.value[dvs] + ' / ' + pst;
-      } else {
-        userDvsPstn.value = '부서, 직책 미정';
+          const getPosition = await skapi.getRecords({
+            unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
+          });
+          const divisionName = getPosition.list[0].index?.name?.split('.')[0] || '';
+          const positionName = getPosition.list[0].index?.name?.split('.')[1] || '';
+
+          // 모든 부서/직책 정보 넣기
+          userDvsPstn.value.push(`${divisionNameList.value[divisionId]} / ${positionName}`);
+        }
       }
     });
+
+    // await Promise.all(promises);
+  }
 };
 
 onMounted(async () => {

@@ -191,6 +191,7 @@ const getEmpList = async () => {
         },
         tag: '[emp_id]' + makeSafe(emp.user_id)
       });
+      console.log('=== userDvsList ===', userDvsList);
       const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
       const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
 
@@ -202,6 +203,7 @@ const getEmpList = async () => {
         },
         unique_id: `[emp_position_current]${user_id_safe}:${userDvs}`
       });
+      console.log('=== res ===', res);
 
       // 현재 날짜와 시간 가져오기
       let now = new Date();

@@ -52,7 +52,7 @@ export async function getOrganigram(refresh = false, myDepartment = false) {
         if (typeof fullName !== 'string') continue;
 
         // 사용자의 최상위 부서로 시작하는 모든 부서를 표시
-        if (fullName.startsWith(currentUserDepartment)) {
+        if (currentUserDepartment.some((dept) => fullName.startsWith(dept))) {
           console.log('=== 추가되는 부서: ===', fullName);
           const path = fullName.split('/');
           await addDepartment(path, division, organigram.value);
@@ -116,43 +116,50 @@ function recalculateTotals(departments: Organigram[]): number {
 // 현재 사용자의 부서 정보를 가져오는 함수
 async function getCurrentUserDepartment() {
   try {
-    const userDvsList = await skapi.getRecords({
-      table: {
-        name: 'emp_division' + makeSafe(user.user_id),
-        access_group: 1
-      },
-      tag: '[emp_id]' + makeSafe(user.user_id)
+    const userDvsList = await skapi.getUniqueId({
+      unique_id: `[emp_position_current]${makeSafe(user.user_id)}`,
+      condition: '>='
     });
-    const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
-    const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
+    console.log('=== userDvsList ===', userDvsList);
 
-    // 현재 사용자의 위치 정보 가져오기
-    const userPositionData = await skapi.getRecords({
-      table: {
-        name: 'emp_position_current',
-        access_group: 1
-      },
-      unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${userDvs}`
-    });
+    const rootDepartments = [];
 
-    if (userPositionData.list.length > 0) {
-      // 사용자의 부서 인덱스 가져오기
-      const userDeptIndex = userPositionData.list[0].index.name;
-      console.log('=== userDeptIndex ===', userDeptIndex);
+    // 사용자가 속한 부서가 없는 경우
+    if (userDvsList.list && userDvsList.list.length > 0) {
+      // 각 부서 정보 가져오기
+      const promises = userDvsList.list.map(async (record) => {
+        if (record && record.unique_id) {
+          const parts = record.unique_id.split(':');
+          if (parts.length) {
+            const divisionId = parts[1];
 
-      // 부서 코드에서 실제 부서 경로 찾기
-      for (const division in divisionNameList.value) {
-        if (userDeptIndex.startsWith(division)) {
-          // 사용자가 속한 부서의 전체 경로 찾기
-          const fullPath = divisionNameList.value[division];
-          // 최상위 부서 반환 (예: '스카피' 또는 '스카피/디자인팀'의 경우 '스카피')
-          const rootDepartment = fullPath.split('/')[0];
-          console.log('=== 사용자 최상위 부서 ===', rootDepartment);
-          return rootDepartment;
+            const getPosition = await skapi.getRecords({
+              unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
+            });
+            console.log('=== getPosition ===', getPosition);
+
+            // 사용자의 부서 인덱스 가져오기
+            const userDeptIndex = getPosition.list[0]?.index?.name;
+
+            // 부서 코드에서 실제 부서 경로 찾기
+            for (const division in divisionNameList.value) {
+              if (userDeptIndex.startsWith(division)) {
+                // 사용자가 속한 부서의 전체 경로 찾기
+                const fullPath = divisionNameList.value[division];
+                // 최상위 부서 반환 (예: '스카피' 또는 '스카피/디자인팀'의 경우 '스카피')
+                const rootDepartment = fullPath.split('/')[0];
+                console.log('=== 사용자 최상위 부서 ===', rootDepartment);
+                rootDepartments.push(rootDepartment);
+                console.log('rootDepartments', rootDepartments);
+              }
+            }
+          }
         }
-      }
+      });
+
+      await Promise.all(promises);
     }
-    return null;
+    return rootDepartments;
   } catch (error) {
     console.error('=== getCurrentUserDepartment === error : ', error);
     return null;

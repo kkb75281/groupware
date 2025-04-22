@@ -23,8 +23,13 @@
 			input(type="text" name="picture" id='_el_picture_input' hidden)
 			#position
 				.input-wrap
-					p.label 부서
-					input(v-model="userPosition" type="text" name="position" disabled)
+					p.label 부서/직책
+					.list-area(v-for="(division, index) in userDivisions" :key="index")
+						.list.division
+							input(type="text" :value="division.divisionName || '-'" readonly name="divisionName")
+						.list.position
+							input(type="text" :value="division.position || '-'" readonly name="position")
+							
 
 				.input-wrap
 					p.label 권한
@@ -224,6 +229,7 @@ const googleAccountCheck = ref(localStorage.getItem('accessToken') ? true : fals
 let optionsBtn = ref(null);
 let getFileInfo = ref(null);
 let userPosition = ref(null);
+let userDivisions = ref([]); // 새로운 다중 부서 배열 추가
 let uploadedFile = ref([]);
 let backupUploadFile = ref([]);
 let removeFileList = ref([]);
@@ -282,50 +288,41 @@ function makeSafe(str) {
 }
 
 let getUserDivision = async () => {
-  // // 부서 이름 가져오기
-  // await skapi.getRecords({
-  //     unique_id: '[division_name_list]',
-  //     table: {
-  //         name: 'divisionNames',
-  //         access_group: 1
-  //     },
-  // }).then(r => {
-  //     divisionNameList.value = r.list[0].data;
-  // })
+  try {
+    const userIdSafe = makeSafe(user.user_id);
 
-  // user position 가져오기
-  skapi
-    .getRecords(
-      {
-        table: {
-          name: 'emp_division' + makeSafe(user.user_id),
-          access_group: 1
-        },
-        tag: '[emp_id]' + makeSafe(user.user_id)
-      },
-      {
-        limit: 1,
-        ascending: false
-      }
-    )
-    .then((r) => {
-      let result = r.list[0];
-
-      if (result) {
-        let emp_dvs = result.tags
-          .filter((t) => t.includes('[emp_dvs]'))[0]
-          .replace('[emp_dvs]', '');
-        let emp_id = result.tags
-          .filter((t) => t.includes('[emp_id]'))[0]
-          .replace('[emp_id]', '')
-          .replaceAll('_', '-');
-        let emp_pst = result.tags
-          .filter((t) => t.includes('[emp_pst]'))[0]
-          .replace('[emp_pst]', '');
-
-        userPosition.value = divisionNameList.value[emp_dvs];
-      }
+    // 모든 현재 부서/직책 정보 가져오기
+    const empAllDvs = await skapi.getUniqueId({
+      unique_id: `[emp_position_current]${userIdSafe}`,
+      condition: '>='
     });
+
+    if (empAllDvs.list && empAllDvs.list.length > 0) {
+      // 각 부서 정보 처리
+      empAllDvs.list.forEach(async (record) => {
+        if (record && record.unique_id) {
+          const parts = record.unique_id.split(':');
+          if (parts.length) {
+            const divisionId = parts[1];
+
+            const getPosition = await skapi.getRecords({
+              unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
+            });
+            const positionName = getPosition.list[0].index?.name?.split('.')[1] || '';
+
+            // 부서 목록에 추가
+            userDivisions.value.push({
+              division: divisionId,
+              divisionName: divisionNameList.value[divisionId] || divisionId,
+              position: positionName
+            });
+          }
+        }
+      });
+    }
+  } catch (error) {
+    console.error('추가 부서 정보를 가져오는 중 오류 발생:', error);
+  }
 };
 getUserDivision();
 
@@ -1606,6 +1603,16 @@ onUnmounted(() => {
   margin-left: auto;
 }
 
+.list-area {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+
+  .list {
+    flex: 1;
+  }
+}
+
 @media (max-width: 950px) {
   .stamp-wrap {
     grid-template-columns: repeat(3, 1fr);
@@ -1618,6 +1625,7 @@ onUnmounted(() => {
     }
   }
 }
+
 @media (max-width: 768px) {
   .inner {
     padding: 1rem;

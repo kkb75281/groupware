@@ -39,7 +39,7 @@
                       p.desc(v-if="user.access_group > 98 && !dvs.division") 부서를 등록해주세요.
 
                     .item.position
-                      input(type="text" :name="'position-' + index" v-model="dvs.position" :readonly="disabled" :disabled="disabled && !dvs.position")
+                      input(type="text" :name="'position-' + index" v-model="dvs.position" :disabled="disabled" :readonly="disabled")
                       p.desc(v-if="user.access_group > 98 && !dvs.position") 직책을 등록해주세요.
 
                   button.btn-delete(type="button" @click="removeDivision(index)" v-show="!disabled && employeeDivisions.length > 1")
@@ -298,6 +298,7 @@ let getAdditionalData = () => {
       reference: '[emp_additional_data]' + makeSafe(userId)
     })
     .then((res) => {
+      console.log('추가자료 == res : ', res);
       if (res.list.length > 0) {
         let fileList = [];
 
@@ -386,8 +387,6 @@ const addDvsInput = () => {
     division: '',
     position: ''
   });
-
-  console.log('== 부서 추가 ==', employeeDivisions.value);
 };
 
 // 부서 삭제
@@ -395,7 +394,6 @@ const removeDivision = (index) => {
   // 적어도 하나의 부서는 유지
   if (employeeDivisions.value.length > 1) {
     employeeDivisions.value.splice(index, 1);
-    console.log('== 부서 삭제 ==', employeeDivisions.value);
   }
 };
 
@@ -426,7 +424,10 @@ let registerEmp = async (e) => {
     // 각 부서/직책 데이터 저장
     for (const dvs of employeeDivisions.value) {
       // 빈 부서/직책은 저장하지 않음
-      if (!dvs.division || !dvs.position) continue;
+      if (!dvs.division || !dvs.position) {
+        employeeDivisions.value = employeeDivisions.value.filter((item) => item !== dvs);
+        continue;
+      }
 
       // 부서/직책 히스토리 저장
       await skapi.postRecord(null, {
@@ -455,12 +456,6 @@ let registerEmp = async (e) => {
         }
       );
     }
-
-    // 메인 부서/직책 설정 (첫 번째 부서를 기본으로 설정)
-    // if (employeeDivisions.value.length > 0) {
-    //   currentEmp.value.division = employeeDivisions.value[0].division;
-    //   currentEmp.value.position = employeeDivisions.value[0].position;
-    // }
 
     // 권한 업데이트
     if (currentEmpOriginal.access_group !== currentEmp.value.access_group) {
@@ -870,13 +865,6 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .inner {
     padding: 1rem;
-  }
-}
-
-@media (max-width: 500px) {
-  .list-item {
-    flex-direction: column;
-    gap: 0.25rem;
   }
 }
 </style>
