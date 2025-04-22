@@ -24,19 +24,29 @@
                         span 이메일전송
 
             .input-wrap
-                p.label 직책
-                input(type="text" name="position" v-model="currentEmpTags.emp_pst" :readonly="disabled" :disabled="disabled && currentEmpTags.emp_pst === ''")
-                p.desc(v-if="user.access_group > 98 && currentEmpTags.emp_pst === ''") 직책을 등록해주세요.
+                .top-area
+                  p.label 부서/직책
+                  button.btn.outline.sm.btn-add(type="button" @click="addDvsInput" v-show="!disabled") + 부서 추가
+                .list-area(v-for="(dvs, index) in employeeDivisions" :key="index")
+                  .list-item
+                    .item.division
+                      template(v-if="disabled")
+                          input(type="text" name="division" readonly :disabled="disabled" :value="divisionNameList[dvs.division] || '-' ")
+                      template(v-else)
+                          select(:name="'division-' + index" required v-model="dvs.division")
+                              option(value="" disabled) 부서 선택
+                              option(v-for="(name, key) in divisionNameList" :key="key" :value="key") {{ name }}
+                      p.desc(v-if="user.access_group > 98 && !dvs.division") 부서를 등록해주세요.
 
-            .input-wrap
-                p.label 부서
-                template(v-if="disabled")
-                    input(type="text" name="division" :disabled="!divisionNameList[currentEmp?.division]" :value="divisionNameList[currentEmp?.division]" :placeholder="divisionNameList[currentEmp?.division]" readonly)
-                template(v-else)
-                    select(name="division" required disabled v-model="currentEmpTags.emp_dvs")
-                        option(value="" disabled) 부서 선택
-                p.desc(v-if="user.access_group > 98 && currentEmpTags.emp_dvs === ''") 부서를 등록해주세요.
-            
+                    .item.position
+                      input(type="text" :name="'position-' + index" v-model="dvs.position" :readonly="disabled" :disabled="disabled && !dvs.position")
+                      p.desc(v-if="user.access_group > 98 && !dvs.position") 직책을 등록해주세요.
+
+                  button.btn-delete(type="button" @click="removeDivision(index)" v-show="!disabled && employeeDivisions.length > 1")
+                    .icon
+                      svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+
             .input-wrap
                 p.label 권한
                 template(v-if="disabled")
@@ -138,12 +148,10 @@ import { getStampList, uploadedStamp } from '@/stamp.ts';
 const router = useRouter();
 const route = useRoute();
 
-let currentEmp = ref(null);
+const currentEmp = ref(null);
 let currentEmpOriginal = {};
-let currentEmpTags = ref({
-  emp_dvs: '',
-  emp_pst: ''
-});
+const employeeDivisions = ref([]); // 직원 부서/직책 목록 (다중)
+const employeeDivisionsOriginal = ref([]); // 수정 취소 시 복원용
 let uploadFile = ref([]);
 let backupUploadFile = ref([]);
 let disabled = ref(true);
@@ -157,20 +165,120 @@ let access_group = {
 let mainStamp = ref({}); // 대표 도장 정보
 
 const userId = route.params.userId;
-getUsers({ searchFor: 'user_id', value: userId })
-  .then((li) => Promise.all(li.map((l) => getEmpDivisionPosition(l))))
-  .then((res) => {
-    if (res.length === 0) {
+
+// 직원 정보 및 부서/직책 가져오기
+const fetchEmployeeData = async () => {
+  try {
+    // 직원 정보 가져오기
+    const employeeList = await getUsers({ searchFor: 'user_id', value: userId });
+    const employeeWithDivisions = await Promise.all(
+      employeeList.map((emp) => getEmpDivisionPosition(emp))
+    );
+
+    if (employeeWithDivisions.length === 0) {
       window.alert('해당 직원을 찾을 수 없습니다.');
       router.push('/list-employee');
+      return;
     }
 
-    let emp = res[0];
+    let emp = employeeWithDivisions[0];
     currentEmp.value = emp;
 
-    currentEmpTags.value.emp_dvs = emp.division || '';
-    currentEmpTags.value.emp_pst = emp.position || '';
-  });
+    // 직원 부서/직책 목록 초기화 (기본 부서/직책 추가)
+    // employeeDivisions.value = [
+    //   {
+    //     division: emp.division || '',
+    //     position: emp.position || ''
+    //   }
+    // ];
+
+    // 다중 부서 정보 가져오기
+    await fetchEmployeeDivisions(userId);
+  } catch (error) {
+    console.error('직원 정보를 가져오는 중 오류 발생:', error);
+  }
+};
+
+// 직원의 다중 부서/직책 정보 가져오기
+const fetchEmployeeDivisions = async (userId) => {
+  const userIdSafe = makeSafe(userId);
+
+  try {
+    const empLists = await skapi
+      .getUniqueId({
+        unique_id: `[emp_position_current]${userIdSafe}`,
+        condition: '>='
+      })
+      .then((res) => res.list);
+
+    if (!empLists || empLists.length === 0) {
+      return;
+    }
+
+    const response = await Promise.all(
+      empLists.map(
+        async (emp) =>
+          await skapi
+            .getRecords({
+              table: {
+                name: 'emp_position_current',
+                access_group: 1
+              },
+              unique_id: emp.unique_id
+            })
+            .then((res) => res.list[0] ?? [])
+      )
+    );
+
+    // 이미 기본 부서/직책은 추가되어 있으므로 employeeDivisions 초기화
+    if (response && response.length > 0) {
+      // 첫 번째 부서는 이미 추가되어 있으므로 초기화
+
+      response.forEach((res) => {
+        const str = res.index.name.split('.');
+        const division = str[0] || '';
+        const position = str[1] || '';
+
+        employeeDivisions.value.push({
+          division,
+          position
+        });
+
+        // 기본 부서가 아닌 경우에만 추가
+        // if (item.unique_id !== `[emp_position_current]${userIdSafe}:${currentEmp.value.division}`) {
+        //   const divisionId = item.unique_id.split(':')[1];
+        //   const positionName = item.index?.name?.split('.')[1] || '';
+
+        //   // 중복 체크 후 추가
+        //   const exists = employeeDivisions.value.some((d) => d.division === divisionId);
+        //   if (!exists && divisionId) {
+        //     employeeDivisions.value.push({
+        //       division: divisionId,
+        //       position: positionName
+        //     });
+        //   }
+        // }
+      });
+    }
+
+    console.log('== 직원 부서 정보 ==', employeeDivisions.value);
+
+    return;
+
+    // const response = await skapi.getRecords({
+    //   table: {
+    //     name: 'emp_position_current',
+    //     access_group: 1
+    //   },
+    //   unique_id: `[emp_position_current]${userIdSafe}:*`
+    // });
+  } catch (error) {
+    console.error('직원 부서 정보를 가져오는 중 오류 발생:', error);
+  }
+};
+
+// 페이지 초기화
+fetchEmployeeData();
 
 // 부서 목록 가져오기
 getDivisionNames();
@@ -217,53 +325,8 @@ let getAdditionalData = () => {
 };
 getAdditionalData();
 
-// 부서 목록 옵션으로 가져오기 (회원 수정시 사용)
-let displayDivisionOptions = () => {
-  let divisionList = document.querySelector(`select[name="division"]`);
-
-  // 기존 옵션을 제거하지 않고 새로운 옵션을 추가
-  divisionList.innerHTML = ''; // 기존 옵션 초기화
-
-  const allOption = document.createElement('option');
-  const defaultOption = document.createElement('option');
-
-  let matchFound = false;
-
-  // 기본 옵션 추가
-  defaultOption.disabled = true;
-  defaultOption.selected = true;
-  defaultOption.innerText = '부서 선택';
-  divisionList.appendChild(defaultOption);
-
-  // 동적으로 부서 옵션 추가
-  for (let key in divisionNameList.value) {
-    if (divisionNameList.value[key] !== '') {
-      const option = document.createElement('option');
-      option.value = key;
-      option.innerText = divisionNameList.value[key];
-
-      // 선택된 부서 처리
-      if (key === currentEmp.value.division) {
-        option.selected = true;
-        matchFound = true;
-      }
-
-      divisionList.appendChild(option);
-    }
-  }
-
-  // 일치하는 키가 없으면 기본 옵션에 selected 추가
-  if (!matchFound) {
-    defaultOption.selected = true;
-  }
-
-  // 선택박스 활성화
-  divisionList.disabled = false;
-};
-
 let sendMail = async (mail) => {
   const maillink = encodeURIComponent(mail);
-
   openGmailAppOrWeb(maillink);
 };
 
@@ -289,15 +352,15 @@ let updateFileList = (e) => {
 // 수정 시작
 let startEditEmp = async () => {
   disabled.value = false;
+
+  // 현재 상태 저장
   currentEmpOriginal = { ...currentEmp.value };
-  currentEmpOriginal.division = currentEmpTags.value.emp_dvs;
-  currentEmpOriginal.position = currentEmpTags.value.emp_pst;
+
+  // 부서/직책 원본 저장 (깊은 복사)
+  employeeDivisionsOriginal.value = JSON.parse(JSON.stringify(employeeDivisions.value));
+
   fileNames.value = [];
   removeFileList.value = [];
-
-  nextTick(() => {
-    displayDivisionOptions();
-  });
 
   if (uploadFile.value) {
     backupUploadFile.value = [...uploadFile.value];
@@ -308,11 +371,32 @@ let startEditEmp = async () => {
 let cancelEdit = () => {
   disabled.value = true;
   currentEmp.value = { ...currentEmpOriginal };
-  currentEmpTags.value.emp_dvs = currentEmpOriginal.division;
-  currentEmpTags.value.emp_pst = currentEmpOriginal.position;
+
+  // 부서/직책 정보 복원
+  employeeDivisions.value = JSON.parse(JSON.stringify(employeeDivisionsOriginal.value));
+
   fileNames.value = [];
   removeFileList.value = [];
   uploadFile.value = [...backupUploadFile.value];
+};
+
+// 부서 추가란 추가
+const addDvsInput = () => {
+  employeeDivisions.value.push({
+    division: '',
+    position: ''
+  });
+
+  console.log('== 부서 추가 ==', employeeDivisions.value);
+};
+
+// 부서 삭제
+const removeDivision = (index) => {
+  // 적어도 하나의 부서는 유지
+  if (employeeDivisions.value.length > 1) {
+    employeeDivisions.value.splice(index, 1);
+    console.log('== 부서 삭제 ==', employeeDivisions.value);
+  }
 };
 
 // 수정사항 저장
@@ -322,117 +406,114 @@ let registerEmp = async (e) => {
   disabled.value = true;
 
   let user_id_safe = makeSafe(currentEmp.value.user_id);
-  let needUpdate = false;
 
-  // 부서, 직책 업데이트 (history/current)
-  if (
-    currentEmpOriginal.division !== currentEmpTags.value.emp_dvs ||
-    currentEmpOriginal.position !== currentEmpTags.value.emp_pst
-  ) {
-    skapi
-      .postRecord(null, {
+  try {
+    // console.log('== employeeDivisions == : ', employeeDivisions.value);
+    // console.log('== employeeDivisionsOriginal == : ', employeeDivisionsOriginal.value);
+
+    // 기존 부서/직책 데이터 삭제
+    await Promise.all(
+      employeeDivisionsOriginal.value.map(async (dvs) => {
+        return await skapi.deleteRecords({
+          unique_id: `[emp_position_current]${user_id_safe}:${dvs.division}`
+        });
+        // .then((res) => {
+        //   console.log('== 부서/직책 삭제 ==', res);
+        // });
+      })
+    );
+
+    // 각 부서/직책 데이터 저장
+    for (const dvs of employeeDivisions.value) {
+      // 빈 부서/직책은 저장하지 않음
+      if (!dvs.division || !dvs.position) continue;
+
+      // 부서/직책 히스토리 저장
+      await skapi.postRecord(null, {
         table: {
           name: 'emp_division' + user_id_safe,
           access_group: 1
         },
-        tags: [
-          '[emp_pst]' + currentEmpTags.value.emp_pst,
-          '[emp_id]' + user_id_safe,
-          '[emp_dvs]' + currentEmpTags.value.emp_dvs
-        ]
-      })
-      .then((r) => {
-        // console.log('history 부서직책업데이트', r);
+        tags: ['[emp_pst]' + dvs.position, '[emp_id]' + user_id_safe, '[emp_dvs]' + dvs.division]
       });
 
-    await skapi
-      .deleteRecords({
-        unique_id: `[emp_position_current]${user_id_safe}:${currentEmpTags.value.emp_dvs}`
-      })
-      .then((r) => {
-        // console.log(r)
-      })
-      .catch((err) => err);
-
-    await skapi
-      .postRecord(
+      // 현재 부서/직책 저장
+      await skapi.postRecord(
         {
           user_id: currentEmp.value.user_id
         },
         {
-          unique_id: `[emp_position_current]${user_id_safe}:${currentEmpTags.value.emp_dvs}`,
+          unique_id: `[emp_position_current]${user_id_safe}:${dvs.division}`,
           table: {
             name: 'emp_position_current',
             access_group: 1
           },
           index: {
-            name: currentEmpTags.value.emp_dvs + '.' + currentEmpTags.value.emp_pst,
+            name: dvs.division + '.' + dvs.position,
             value: currentEmp.value.name
           }
         }
-      )
-      .then((r) => {
-        // console.log('current 부서직책업데이트', r);
-      });
+      );
+    }
 
-    needUpdate = true;
-  }
+    // 메인 부서/직책 설정 (첫 번째 부서를 기본으로 설정)
+    // if (employeeDivisions.value.length > 0) {
+    //   currentEmp.value.division = employeeDivisions.value[0].division;
+    //   currentEmp.value.position = employeeDivisions.value[0].position;
+    // }
 
-  // 권한 업데이트
-  if (currentEmpOriginal.access_group !== currentEmp.value.access_group) {
-    skapi
-      .grantAccess({
+    // 권한 업데이트
+    if (currentEmpOriginal.access_group !== currentEmp.value.access_group) {
+      await skapi.grantAccess({
         user_id: currentEmp.value.user_id,
         access_group: currentEmp.value.access_group
-      })
-      .then((r) => {
-        // console.log('권한업데이트' ,r)
-      });
-  }
-
-  // 추가자료 업데이트
-  let filebox = document.querySelector('input[name=additional_data]');
-
-  if (filebox && filebox.files.length) {
-    for (let file of filebox.files) {
-      const formData = new FormData();
-
-      formData.append('additional_data', file);
-
-      await skapi.postRecord(formData, {
-        table: {
-          name: 'emp_additional_data',
-          access_group: 99
-        },
-        reference: '[emp_additional_data]' + makeSafe(currentEmp.value.user_id)
       });
     }
 
-    if (uploadFile.value && uploadFile.value.length) {
-      backupUploadFile.value = [...uploadFile.value];
-    }
-  }
+    // 추가자료 업데이트
+    let filebox = document.querySelector('input[name=additional_data]');
 
-  if (removeFileList.value.length) {
-    await skapi.deleteRecords({ record_id: removeFileList.value }).then((r) => {
+    if (filebox && filebox.files.length) {
+      for (let file of filebox.files) {
+        const formData = new FormData();
+        formData.append('additional_data', file);
+
+        await skapi.postRecord(formData, {
+          table: {
+            name: 'emp_additional_data',
+            access_group: 99
+          },
+          reference: '[emp_additional_data]' + user_id_safe
+        });
+      }
+
+      if (uploadFile.value && uploadFile.value.length) {
+        backupUploadFile.value = [...uploadFile.value];
+      }
+    }
+
+    // 파일 삭제 목록 처리
+    if (removeFileList.value.length) {
+      await skapi.deleteRecords({ record_id: removeFileList.value });
       uploadFile.value = uploadFile.value.filter(
         (file) => !removeFileList.value.includes(file.record_id)
       );
-
       removeFileList.value = [];
-    });
+    }
+
+    // 직원 정보 업데이트
+    employeeDict[currentEmp.value.user_id] = currentEmp.value;
+
+    // 변경사항 저장 후 데이터 다시 가져오기
+    getAdditionalData();
+    window.alert('직원 정보 수정이 완료되었습니다.');
+  } catch (error) {
+    console.error('직원 정보 수정 중 오류 발생:', error);
+    window.alert('직원 정보 수정 중 오류가 발생했습니다.');
+  } finally {
+    disabled.value = true;
+    mainPageLoading.value = false;
   }
-
-  currentEmp.value.division = currentEmpTags.value.emp_dvs;
-  currentEmp.value.position = currentEmpTags.value.emp_pst;
-
-  employeeDict[currentEmp.value.user_id] = currentEmp.value;
-
-  getAdditionalData();
-  window.alert('직원 정보 수정이 완료되었습니다.');
-
-  disabled.value = true;
-  mainPageLoading.value = false;
 };
 
 // 도장 이미지 URL 가져오기
@@ -482,7 +563,6 @@ onMounted(async () => {
       }
     })
     .then(async (res) => {
-      console.log('== onMounted == 도장 res : ', res);
       if (res.list.length > 0) {
         mainStamp.value = await skapi.getFile(res.list[0].data, {
           dataType: 'endpoint'
@@ -523,9 +603,10 @@ onMounted(async () => {
     align-items: center;
     justify-content: center;
   }
+
   .input-wrap {
     position: relative;
-    margin-top: 16px;
+    margin-top: 1rem;
 
     input {
       border-color: var(--primary-color-400);
@@ -733,9 +814,69 @@ onMounted(async () => {
   }
 }
 
+.top-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+
+  .label {
+    margin-bottom: 0;
+  }
+}
+
+.list-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+
+  .list-item {
+    display: flex;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .item {
+    flex: 1;
+  }
+
+  .btn-delete {
+    flex: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    .icon {
+      position: relative !important;
+      bottom: initial !important;
+      padding: 0;
+
+      &:hover {
+        svg {
+          transform: scale(1) !important;
+        }
+      }
+
+      svg {
+        fill: var(--warning-color-400) !important;
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .inner {
     padding: 1rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .list-item {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 }
 </style>

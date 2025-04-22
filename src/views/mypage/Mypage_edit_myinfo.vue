@@ -43,8 +43,8 @@
 				button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
 			
 			//- .input-wrap
-			//-     p.label 비밀번호
-			//-     button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('change-password')") 비밀번호 변경
+					p.label 비밀번호
+					button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('/change-password')") 비밀번호 변경
 
 			//- br
 

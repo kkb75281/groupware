@@ -274,6 +274,8 @@ const currentEmpDivision = async (data) => {
 
     return await postRecord({ user_id }, params).then((res) => {
       console.log('== currentEmpDivision : res == : ', res);
+
+      return res;
     });
   } catch (error) {
     console.log('== currentEmpDivision : error == : ', { error });

@@ -254,7 +254,6 @@ let getUserPositionCurrent = async () => {
     })
     .then((r) => {
       if (r && r.list && r.list.length > 0) {
-        console.log('emp_position_current:', r.list[0]);
         let dvs = r.list[0]?.index?.name.split('.')[0];
         let pst = r.list[0]?.index?.name.split('.')[1];
 

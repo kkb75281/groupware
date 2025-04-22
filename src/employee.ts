@@ -12,7 +12,6 @@ export const empInfo: {
 } = reactive({});
 
 export const getEmpDivisionPosition = async (user: any, refresh: boolean = false) => {
-  console.log('getEmpDivisionPosition : ', user);
   let userId = user.user_id;
   if (user.picture) {
     skapi
@@ -36,7 +35,6 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
     });
     const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
     const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
-    console.log('11111userDvsList : ', userDvsList);
 
     if (!userDvs) {
       const userDvsList = await skapi.getRecords({
@@ -46,7 +44,6 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
         },
         tag: '[emp_id]' + makeSafe(userId)
       });
-      console.log('2222userDvsList : ', userDvsList);
       const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
       const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
       //   return user;
@@ -62,32 +59,7 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
         };
       });
 
-    console.log('record : ', record);
-
     if (!record.list[0]) return user;
-
-    // // 만약 없으면 새로 생성
-    // if (!record.list[0] || record.list.length === 0) {
-    //   await skapi
-    //     .postRecord(null, {
-    //       unique_id: `[emp_position_current]${makeSafe(userId)}:${userDvs}`,
-    //       table: {
-    //         name: 'emp_position_current',
-    //         access_group: 1
-    //       }
-    //     })
-    //     .then((res) => {
-    //       record = res;
-    //       console.log('res : ', res);
-    //     })
-    //     .catch((err) => {
-    //       return {
-    //         list: [] as any[]
-    //       };
-    //     });
-    // }
-
-    // console.log('record : ', record);
 
     let emp_dvs = record.list[0]?.index?.name?.split('.')[0];
     let emp_pst = record.list[0]?.index?.name?.split('.')[1].replaceAll('_', ' ');
