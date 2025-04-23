@@ -171,13 +171,23 @@ const getWorkTime = async () => {
     // console.log('=== getWorkTime === res : ', res);
     // console.log('divisionNameList : ', divisionNameList.value);
 
+    const userDvsList = await skapi.getRecords({
+      table: {
+        name: 'emp_division' + makeSafe(user.user_id),
+        access_group: 1
+      },
+      tag: '[emp_id]' + makeSafe(user.user_id)
+    });
+    const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
+    const userDvs = currentUserDvs.tags[0].split(']')[1];
+
     // 직원의 부서, 직급 정보 가져오기
     const getDvs = await skapi.getRecords({
       table: {
         name: 'emp_position_current',
         access_group: 1
       },
-      unique_id: '[emp_position_current]' + makeSafe(user.user_id)
+      unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${userDvs}`
     });
 
     // 현재 로그인한 유저의 부서 근무시간 찾기

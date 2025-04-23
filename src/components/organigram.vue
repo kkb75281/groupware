@@ -52,6 +52,8 @@ const props = defineProps({
   }
 });
 
+console.log('== props == : ', props);
+
 const checkedUsers = ref([]);
 
 // 모든 부서와 멤버의 체크박스 상태를 초기화하는 함수 추가
@@ -80,6 +82,36 @@ function resetAllCheckStatus() {
   });
 }
 
+// 부서 체크박스 상태를 재계산하는 함수 추가
+function recalculateDepartmentCheckStatus() {
+  // 모든 부서를 재귀적으로 검사하는 함수
+  const checkDepartmentStatus = (department) => {
+    // 먼저 하위 부서의 상태를 재귀적으로 확인
+    if (department.subDepartments && department.subDepartments.length > 0) {
+      department.subDepartments.forEach((subDept) => {
+        checkDepartmentStatus(subDept);
+      });
+    }
+
+    // 모든 멤버가 체크되었는지 확인
+    const allMembersChecked =
+      department.members.length === 0 || department.members.every((member) => member.isChecked);
+
+    // 모든 하위 부서가 체크되었는지 확인
+    const allSubDepartmentsChecked =
+      department.subDepartments.length === 0 ||
+      department.subDepartments.every((subDept) => subDept.isChecked);
+
+    // 부서의 체크 상태 업데이트
+    department.isChecked = allMembersChecked && allSubDepartmentsChecked;
+  };
+
+  // 최상위 부서부터 시작하여 모든 부서의 체크 상태 재계산
+  organigram.value.forEach((department) => {
+    checkDepartmentStatus(department);
+  });
+}
+
 onMounted(() => {
   excludeCurrentUser.value = props.excludeCurrentUser;
   onlyMyDepartment.value = props.onlyMyDepartment;
@@ -87,9 +119,9 @@ onMounted(() => {
 
 watch(excludeCurrentUser, (nv, ov) => {
   if (!ov || (ov && nv !== ov)) {
-    getOrganigram(true);
+    getOrganigram(true, props.onlyMyDepartment);
   } else {
-    getOrganigram();
+    getOrganigram(false, props.onlyMyDepartment);
   }
 });
 
@@ -229,19 +261,31 @@ watch(
   () => props.selectedEmployees,
   async (nv, ov) => {
     if (!ov) {
-      //
-
       // 모달 열었을때 체크된 사용자가 있을 경우
       if (nv && nv.length > 0) {
         await nextTick();
 
-        nv.forEach((user) => {
-          onDepartmentCheck({ type: 'member', target: user, isChecked: true });
-        });
+        // 먼저 모든 체크박스 상태 초기화
+        resetAllCheckStatus();
+
+        // 선택된 사용자들에 대해 체크 상태 설정
+        for (const user of nv) {
+          // 직원 객체 찾기
+          const employeeToCheck = findEmployeeInOrganigram(user.data.user_id);
+          if (employeeToCheck) {
+            employeeToCheck.isChecked = true;
+
+            // 체크된 사용자를 checkedUsers 배열에 추가
+            if (!checkedUsers.value.some((u) => u.data.user_id === user.data.user_id)) {
+              checkedUsers.value.push(employeeToCheck);
+            }
+          }
+        }
+
+        // 부서 체크박스 상태 재계산
+        recalculateDepartmentCheckStatus();
       }
     } else {
-      //
-
       if (nv.length !== ov.length) {
         // 삭제된 유저 찾기 (oldValue에는 있지만 newValue에는 없는 항목)
         const removedUsers = ov.filter(
@@ -250,13 +294,56 @@ watch(
 
         if (removedUsers.length > 0) {
           await nextTick();
-          onDepartmentCheck({ type: 'member', target: removedUsers[0], isChecked: false });
+
+          for (const user of removedUsers) {
+            const employeeToUncheck = findEmployeeInOrganigram(user.data.user_id);
+            if (employeeToUncheck) {
+              employeeToUncheck.isChecked = false;
+
+              // 체크 해제된 멤버를 checkedUsers 배열에서 제거
+              const index = checkedUsers.value.findIndex(
+                (u) => u.data.user_id === user.data.user_id
+              );
+              if (index !== -1) {
+                checkedUsers.value.splice(index, 1);
+              }
+            }
+          }
+
+          // 부서 체크박스 상태 재계산
+          recalculateDepartmentCheckStatus();
         }
       }
     }
   },
   { immediate: true, deep: true }
 );
+
+// 조직도에서 특정 사용자 ID를 가진 직원 객체를 찾는 함수
+function findEmployeeInOrganigram(userId) {
+  // 재귀적으로 모든 부서를 검색하는 내부 함수
+  function searchInDepartment(department) {
+    // 현재 부서의 멤버 중에서 찾기
+    const foundMember = department.members.find((member) => member.data.user_id === userId);
+    if (foundMember) return foundMember;
+
+    // 하위 부서에서 찾기
+    for (const subDept of department.subDepartments) {
+      const found = searchInDepartment(subDept);
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  // 최상위 부서부터 검색 시작
+  for (const topDept of organigram.value) {
+    const found = searchInDepartment(topDept);
+    if (found) return found;
+  }
+
+  return null;
+}
 </script>
 
 <style lang="less" scoped></style>

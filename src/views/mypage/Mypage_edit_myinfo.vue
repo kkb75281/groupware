@@ -23,8 +23,13 @@
 			input(type="text" name="picture" id='_el_picture_input' hidden)
 			#position
 				.input-wrap
-					p.label 부서
-					input(v-model="userPosition" type="text" name="position" disabled)
+					p.label 부서/직책
+					.list-area(v-for="(division, index) in userDivisions" :key="index")
+						.list.division
+							input(type="text" :value="division.divisionName || '-'" readonly name="divisionName")
+						.list.position
+							input(type="text" :value="division.position || '-'" readonly name="position")
+							
 
 				.input-wrap
 					p.label 권한
@@ -43,8 +48,8 @@
 				button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
 			
 			//- .input-wrap
-			//-     p.label 비밀번호
-			//-     button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('change-password')") 비밀번호 변경
+					p.label 비밀번호
+					button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('/change-password')") 비밀번호 변경
 
 			//- br
 
@@ -80,11 +85,11 @@
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
 
 			.input-wrap.upload-file
-				p.label 자료 관리
+				p.label 기타자료
 				.file-wrap
 					.btn-upload-file
 						input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
-						label.btn.outline.btn-upload(for="file") 파일 올리기
+						label.btn.outline.btn-upload(for="file") 파일 추가
 
 					ul.upload-file-list
 						li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
@@ -224,6 +229,7 @@ const googleAccountCheck = ref(localStorage.getItem('accessToken') ? true : fals
 let optionsBtn = ref(null);
 let getFileInfo = ref(null);
 let userPosition = ref(null);
+let userDivisions = ref([]); // 새로운 다중 부서 배열 추가
 let uploadedFile = ref([]);
 let backupUploadFile = ref([]);
 let removeFileList = ref([]);
@@ -282,54 +288,44 @@ function makeSafe(str) {
 }
 
 let getUserDivision = async () => {
-  // // 부서 이름 가져오기
-  // await skapi.getRecords({
-  //     unique_id: '[division_name_list]',
-  //     table: {
-  //         name: 'divisionNames',
-  //         access_group: 1
-  //     },
-  // }).then(r => {
-  //     divisionNameList.value = r.list[0].data;
-  // })
+  try {
+    const userIdSafe = makeSafe(user.user_id);
 
-  // user position 가져오기
-  skapi
-    .getRecords(
-      {
-        table: {
-          name: 'emp_division',
-          access_group: 1
-        },
-        tag: '[emp_id]' + makeSafe(user.user_id)
-      },
-      {
-        limit: 1,
-        ascending: false
-      }
-    )
-    .then((r) => {
-      let result = r.list[0];
-
-      if (result) {
-        let emp_dvs = result.tags
-          .filter((t) => t.includes('[emp_dvs]'))[0]
-          .replace('[emp_dvs]', '');
-        let emp_id = result.tags
-          .filter((t) => t.includes('[emp_id]'))[0]
-          .replace('[emp_id]', '')
-          .replaceAll('_', '-');
-        let emp_pst = result.tags
-          .filter((t) => t.includes('[emp_pst]'))[0]
-          .replace('[emp_pst]', '');
-
-        userPosition.value = divisionNameList.value[emp_dvs];
-      }
+    // 모든 현재 부서/직책 정보 가져오기
+    const empAllDvs = await skapi.getUniqueId({
+      unique_id: `[emp_position_current]${userIdSafe}`,
+      condition: '>='
     });
+
+    if (empAllDvs.list && empAllDvs.list.length > 0) {
+      // 각 부서 정보 처리
+      empAllDvs.list.forEach(async (record) => {
+        if (record && record.unique_id) {
+          const parts = record.unique_id.split(':');
+          if (parts.length) {
+            const divisionId = parts[1];
+
+            const getPosition = await skapi.getRecords({
+              unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
+            });
+            const positionName = getPosition.list[0].index?.name?.split('.')[1] || '';
+
+            // 부서 목록에 추가
+            userDivisions.value.push({
+              division: divisionId,
+              divisionName: divisionNameList.value[divisionId] || divisionId,
+              position: positionName
+            });
+          }
+        }
+      });
+    }
+  } catch (error) {
+    console.error('추가 부서 정보를 가져오는 중 오류 발생:', error);
+  }
 };
 getUserDivision();
 
-// user additional data 가져오기
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = () => {
   skapi
@@ -341,6 +337,7 @@ const getAdditionalData = () => {
       reference: '[emp_additional_data]' + makeSafe(user.user_id)
     })
     .then((res) => {
+      console.log('== getAdditionalData == res : ', res);
       let fileList = [];
 
       if (res.list.length === 0) {
@@ -351,7 +348,17 @@ const getAdditionalData = () => {
           if (item.bin.additional_data && item.bin.additional_data.length > 0) {
             function getFileUserId(str) {
               if (!str) return '';
+
               return str.split('/')[3];
+            }
+
+            async function getFileFunc(url) {
+              if (!url) return '';
+              url = url.split('?')[0];
+              await skapi.getFile(url, { dataType: 'endpoint' }).then((res) => {
+                console.log('res : ', res);
+                return res;
+              });
             }
 
             const result = item.bin.additional_data.map((el) => ({
@@ -364,6 +371,7 @@ const getAdditionalData = () => {
           }
         });
         uploadedFile.value = fileList;
+        console.log('uploadedFile.value : ', uploadedFile.value);
       }
     })
     .catch((err) => {
@@ -447,44 +455,35 @@ const handleCountrySelect = (country) => {
 
 // 도장 이미지 URL 가져오기
 const getStampImageSrc = (mainStamp) => {
-  console.log('uploadedStamp.value : ', uploadedStamp.value);
-  console.log('mainStamp : ', mainStamp);
-
   // 도장 목록이 비어있으면 빈 문자열 반환
   if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
-    console.log('1111');
     return '';
   }
 
   // 레코드에서 로드된 도장인지 확인 (문자열인 경우)
   if (typeof mainStamp === 'string') {
-    console.log('2222');
     return mainStamp;
   }
 
   // 모달에서 선택된 도장인 경우 (객체로 url 속성을 가진 경우)
   else if (mainStamp && mainStamp.value && mainStamp.value.url) {
-    console.log('3333');
     return mainStamp.value.url;
   }
 
   // 객체 자체에 url 속성이 있는 경우
   else if (mainStamp && mainStamp.url) {
-    console.log('4444');
     return mainStamp.url;
   }
 
   // 대표 도장이 없고 도장 목록이 있는 경우, 첫 번째 도장을 기본값으로 사용
   else if (uploadedStamp.value && uploadedStamp.value.length > 0) {
-    console.log('5555 - 첫 번째 도장을 기본값으로 사용');
-    // mainStamp 객체에 첫 번째 도장 정보 할당 (참조 변경)
+    // mainStamp 객체에 첫 번째 도장 정보 할당
     if (mainStamp !== uploadedStamp.value[0]) {
       mainStamp = uploadedStamp.value[0];
     }
     return uploadedStamp.value[0].url;
   }
 
-  console.log('6666');
   // 아무 것도 없으면 빈 문자열 반환
   return '';
 };
@@ -616,9 +615,6 @@ let registerMypage = async (e) => {
       }
     };
 
-    console.log('data : ', data);
-    console.log('config : ', config);
-
     try {
       // 기존 대표 도장 레코드 삭제
       await skapi.deleteRecords({
@@ -630,12 +626,10 @@ let registerMypage = async (e) => {
 
       // 새 대표 도장 저장
       const saveMainStamp = await skapi.postRecord(data, config);
-      console.log('대표 도장 저장 완료:', saveMainStamp);
     } catch (error) {
       console.error('대표 도장 저장 중 오류:', error);
     }
   } else if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
-    console.log('도장 목록이 비어있어 대표 도장 레코드 삭제');
     // 도장 목록이 비어있으면 대표 도장 레코드 삭제
     try {
       await skapi.deleteRecords({
@@ -644,13 +638,10 @@ let registerMypage = async (e) => {
           access_group: 1
         }
       });
-      console.log('도장 목록이 비어있어 대표 도장 레코드 삭제');
     } catch (error) {
       console.error('대표 도장 레코드 삭제 중 오류:', error);
     }
   }
-
-  console.log({ e });
 
   // 프로필 정보를 업데이트
   await skapi
@@ -685,8 +676,6 @@ let registerMypage = async (e) => {
   misc.country = selectedCountry.value;
 
   await skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => err);
-
-  console.log({ user });
 
   getAdditionalData();
 
@@ -861,21 +850,6 @@ let deleteStamp = async (stamp) => {
   } finally {
     deleteStampRunning.value = false;
   }
-
-  //   try {
-  //     await skapi.postRecord(null, post_params);
-  //     // getStampList();
-  //     // alert('도장이 삭제되었습니다.');
-  //     deleteStampStep.value++;
-  //     uploadedStamp.value = uploadedStamp.value.filter((stamp) => stamp.url !== deleteStampUrl);
-  //   } catch (e) {
-  //     // console.log({e});
-  //     deleteStampStep.value = 1;
-  //     alert('도장 삭제 중 오류가 발생했습니다.');
-  //   } finally {
-  //     // selectedStamp.value = null;
-  //     deleteStampRunning.value = false;
-  //   }
 };
 
 const selectAsMainStamp = (stamp) => {
@@ -891,8 +865,6 @@ const refresh = async () => {
 // 도장 관리 :: e
 
 onMounted(async () => {
-  console.log('AA == onMounted == user : ', user);
-
   document.addEventListener('click', closeOptions);
 
   resetCropImage();
@@ -953,7 +925,6 @@ onMounted(async () => {
       }
     })
     .then(async (res) => {
-      console.log('== onMounted == 도장 res : ', res);
       if (res.list.length > 0) {
         mainStamp.value = await skapi.getFile(res.list[0].data, {
           dataType: 'endpoint'
@@ -977,8 +948,6 @@ onMounted(async () => {
         mainStamp.value = null;
       }
     });
-
-  console.log('BB == onMounted == user : ', user);
 });
 
 onUnmounted(() => {
@@ -1011,9 +980,9 @@ onUnmounted(() => {
 
 <style scoped lang="less">
 .inner {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .title {
@@ -1606,6 +1575,16 @@ onUnmounted(() => {
   margin-left: auto;
 }
 
+.list-area {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+
+  .list {
+    flex: 1;
+  }
+}
+
 @media (max-width: 950px) {
   .stamp-wrap {
     grid-template-columns: repeat(3, 1fr);
@@ -1618,10 +1597,11 @@ onUnmounted(() => {
     }
   }
 }
+
 @media (max-width: 768px) {
-	.inner {
-        padding: 1rem;
-    }
+  .inner {
+    padding: 1rem;
+  }
   .stamp-wrap {
     grid-template-columns: repeat(2, 1fr);
 
