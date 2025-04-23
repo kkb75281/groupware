@@ -71,7 +71,7 @@
                                     span.label-checkbox
                         th(v-show="isDesktop" scope="col") NO
                         template(v-if="empListType !== '초청여부'")
-                            th(scope="col") 직책<br>(직급)
+                            th(scope="col") 직급
                             th(scope="col") 부서
                         th(scope="col") 이름
                         th(v-show="isDesktop" scope="col") 이메일
@@ -459,25 +459,6 @@ async function arrangeEmpDivisionPosition(li) {
 
   return toReturn;
 }
-
-// async function arrangeEmpDivisionPosition(li) {
-//   // console.log({li})
-//   let list = await Promise.all(
-//     li.map((l) => {
-//       if (l) {
-//         return getEmpDivisionPosition(l).catch((err) => err);
-//       }
-//       return null;
-//     })
-//   );
-//   let toReturn = [];
-//   list.forEach((l) => {
-//     if (l) {
-//       toReturn.push(l);
-//     }
-//   });
-//   return toReturn;
-// }
 
 async function getEmpList(type, refresh = false) {
   loading.value = true;

@@ -58,8 +58,14 @@
                         td.list-num {{ index + 1 }}
                         td.user-name
                                 span {{ emp.name }}
-                        td.dvs {{ emp?.position }}
-                        td.dvs {{ emp?.divisionName }}
+                        td.dvs
+                          .list.position
+                            .list-item.position(v-for="(division, index) in getEmployeeDivisions(emp)" :key="index")
+                              span {{ division.position || '-' }}
+                        td.dvs
+                          .list.division
+                            .list-item.division(v-for="(division, index) in getEmployeeDivisions(emp)" :key="index")
+                              span {{ divisionNameList[division.division] || '-' }}
                         td.startWork
                             span.time {{ extractTimeFromDateTime(emp.startWork) }}
                         td.endWork
@@ -81,6 +87,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { skapi } from '@/main.ts';
 import { loading, divisionNameList, getDivisionData } from '@/division.ts';
 import { user, makeSafe } from '@/user.ts';
+import { getEmpDivisionPosition } from '@/employee.ts';
 
 import Loading from '@/components/loading.vue';
 
@@ -143,6 +150,22 @@ watch(searchValue, (nv) => {
   }
 });
 
+// 직원의 모든 부서/직책 정보를 가져오는 함수
+const getEmployeeDivisions = (emp) => {
+  // 다중 부서
+  if (emp.divisions && Array.isArray(emp.divisions) && emp.divisions.length > 0) {
+    return emp.divisions;
+  }
+
+  // 단일 부서
+  return [
+    {
+      division: emp.division || '',
+      position: emp.position || '-'
+    }
+  ];
+};
+
 // 출퇴근 관련 직원 목록 가져오기
 const getEmpList = async () => {
   const newEmpList = [];
@@ -151,7 +174,15 @@ const getEmpList = async () => {
   try {
     const empList = await skapi.getUsers();
 
-    empList.list.pop(); // 최고 마스터 제거
+    if (!empList || !empList.list || empList.list.length === 0) {
+      loading.value = false;
+      return [];
+    }
+
+    // 최고 마스터 제거
+    if (empList.list.length > 0) {
+      empList.list.pop();
+    }
 
     // 부서별 설정된 출퇴근시간 가져오기
     const workTime = await skapi.getRecords({
@@ -166,108 +197,146 @@ const getEmpList = async () => {
       return [];
     }
 
-    // 기준 근무시간 가져오기
-    const getTimestampFromTimeString = (timeString) => {
-      // 현재 날짜 가져오기
-      const today = new Date();
-
-      // 입력된 시간 문자열 분리 (시, 분, 초)
-      const [hours, minutes, seconds] = timeString.split(':').map(Number);
-
-      // 오늘 날짜에 입력된 시간 설정
-      today.setHours(hours, minutes, seconds, 0);
-
-      // 타임스탬프 반환 (밀리초 기준)
-      return today.getTime();
-    };
-
+    // 직원 정보 처리
     const empPromises = empList.list.map(async (emp) => {
-      const user_id_safe = makeSafe(emp.user_id);
+      try {
+        // 기본 직원 정보 복사
+        const empInfo = { ...emp };
 
-      const userDvsList = await skapi.getRecords({
-        table: {
-          name: 'emp_division' + makeSafe(emp.user_id),
-          access_group: 1
-        },
-        tag: '[emp_id]' + makeSafe(emp.user_id)
-      });
-      console.log('=== userDvsList ===', userDvsList);
-      const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
-      const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
+        // 직원의 모든 부서/직책 정보 가져오기
+        const userIdSafe = makeSafe(emp.user_id);
 
-      // 직원의 부서, 직급 정보 가져오기
-      const res = await skapi.getRecords({
-        table: {
-          name: 'emp_position_current',
-          access_group: 1
-        },
-        unique_id: `[emp_position_current]${user_id_safe}:${userDvs}`
-      });
-      console.log('=== res ===', res);
+        try {
+          // 모든 부서 ID 가져오기
+          const empDivs = await skapi.getUniqueId({
+            unique_id: `[emp_position_current]${userIdSafe}`,
+            condition: '>='
+          });
 
-      // 현재 날짜와 시간 가져오기
-      let now = new Date();
+          if (empDivs && empDivs.list && empDivs.list.length > 0) {
+            // 각 부서 ID에 대한 세부 정보 가져오기
+            const divisions = await Promise.all(
+              empDivs.list.map(async (record) => {
+                if (!record || !record.unique_id) return null;
 
-      // 오늘 날짜의 0시로 설정
-      let todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const parts = record.unique_id.split(':');
+                if (parts.length < 2) return null;
 
-      // timestamp (밀리초 단위)로 변환
-      let todaytimestamp = todayStart.getTime();
+                const divisionId = parts[1];
 
-      // 직원별 출퇴근 기록 가져오기 (기존 출근시간 이후의 데이터만 == 오늘 출근 기록만 가져오기)
-      const query = {
-        table: {
-          name: 'commute_record',
-          access_group: 98
-        },
-        index: {
-          name: '$uploaded',
-          value: todaytimestamp,
-          condition: '>='
-        },
-        reference: 'emp_id:' + makeSafe(emp.user_id)
-      };
+                // 세부 정보 가져오기
+                try {
+                  const divisionDetails = await skapi.getRecords({
+                    table: {
+                      name: 'emp_position_current',
+                      access_group: 1
+                    },
+                    unique_id: record.unique_id
+                  });
 
-      const fetchOptions = {
-        ascending: false
-      };
+                  if (divisionDetails && divisionDetails.list && divisionDetails.list.length > 0) {
+                    const detail = divisionDetails.list[0];
+                    let positionName = '-';
 
-      // 직원별 출퇴근 기록 가져오기
-      const commuteRecords = await skapi.getRecords(query, fetchOptions);
-      const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
+                    // index.name에서 추출 시도
+                    if (detail.index && detail.index.name) {
+                      const nameParts = detail.index.name.split('.');
+                      if (nameParts.length >= 2) {
+                        positionName = nameParts[1];
+                      }
+                    }
 
-      if (commuteList && commuteList.length > 0) {
-        if (commuteList.length > 1) {
-          const lastCommute = commuteList[commuteList.length - 1];
-          emp.startWork = lastCommute?.data?.startTime || '-';
-          emp.endWork = lastCommute?.data?.endTime || '-';
-        } else {
-          const lastCommute = commuteList[0];
-          emp.startWork = lastCommute?.data?.startTime || '-';
-          emp.endWork = lastCommute?.data?.endTime || '-';
+                    return {
+                      division: divisionId,
+                      position: positionName
+                    };
+                  }
+                } catch (error) {
+                  console.warn(`부서 세부 정보 조회 중 오류 (${record.unique_id}):`, error);
+                }
+
+                return null;
+              })
+            );
+
+            // null 제거 및 유효한 부서 정보만 추출
+            const validDivisions = divisions.filter((div) => div !== null);
+
+            // 직원 객체에 divisions 속성 추가
+            if (validDivisions.length > 0) {
+              empInfo.divisions = validDivisions;
+
+              // 첫 번째 부서 정보를 기본 부서/직책으로 설정 (이전 코드와의 호환성)
+              empInfo.division = validDivisions[0].division;
+              empInfo.position = validDivisions[0].position;
+            }
+          }
+        } catch (error) {
+          console.error(`직원(${emp.user_id}) 부서 정보 조회 중 오류:`, error);
         }
-      } else {
-        emp.startWork = '-';
-        emp.endWork = '-';
+
+        // 현재 날짜와 시간 가져오기
+        let now = new Date();
+
+        // 오늘 날짜의 0시로 설정
+        let todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        // timestamp (밀리초 단위)로 변환
+        let todaytimestamp = todayStart.getTime();
+
+        // 직원별 출퇴근 기록 가져오기
+        try {
+          const query = {
+            table: {
+              name: 'commute_record',
+              access_group: 98
+            },
+            index: {
+              name: '$uploaded',
+              value: todaytimestamp,
+              condition: '>='
+            },
+            reference: 'emp_id:' + userIdSafe
+          };
+
+          const fetchOptions = {
+            ascending: false
+          };
+
+          // 직원별 출퇴근 기록 가져오기
+          const commuteRecords = await skapi.getRecords(query, fetchOptions);
+          const commuteList = commuteRecords?.list?.sort((a, b) => a.uploaded - b.uploaded);
+
+          if (commuteList && commuteList.length > 0) {
+            if (commuteList.length > 1) {
+              const lastCommute = commuteList[commuteList.length - 1];
+              empInfo.startWork = lastCommute?.data?.startTime || '-';
+              empInfo.endWork = lastCommute?.data?.endTime || '-';
+            } else {
+              const lastCommute = commuteList[0];
+              empInfo.startWork = lastCommute?.data?.startTime || '-';
+              empInfo.endWork = lastCommute?.data?.endTime || '-';
+            }
+          } else {
+            empInfo.startWork = '-';
+            empInfo.endWork = '-';
+          }
+        } catch (error) {
+          console.log(`직원(${emp.user_id}) 출퇴근 기록 조회 중 오류:`, error);
+          empInfo.startWork = '-';
+          empInfo.endWork = '-';
+        }
+
+        return empInfo;
+      } catch (error) {
+        console.error(`직원 처리 중 오류:`, error);
+        return null;
       }
-
-      if (res && res.list.length > 0) {
-        const empInfo = res.list[0].index.name;
-        const empSplit = empInfo.split('.');
-
-        return {
-          ...emp,
-          position: empSplit[1],
-          division: empSplit[0],
-          divisionName: divisionNameList.value[empSplit[0]]
-        };
-      }
-
-      return emp;
     });
 
     const results = await Promise.all(empPromises);
-    newEmpList.push(...results);
+    const filteredResults = results.filter((emp) => emp !== null);
+    newEmpList.push(...filteredResults);
 
     return newEmpList;
   } catch (error) {

@@ -338,6 +338,7 @@ const getAdditionalData = () => {
       reference: '[emp_additional_data]' + makeSafe(user.user_id)
     })
     .then((res) => {
+      console.log('== getAdditionalData == res : ', res);
       let fileList = [];
 
       if (res.list.length === 0) {
@@ -348,7 +349,18 @@ const getAdditionalData = () => {
           if (item.bin.additional_data && item.bin.additional_data.length > 0) {
             function getFileUserId(str) {
               if (!str) return '';
+              console.log('str : ', str);
+              console.log('str : ', str.split('/')[3]);
               return str.split('/')[3];
+            }
+
+            async function getFileFunc(url) {
+              if (!url) return '';
+              url = url.split('?')[0];
+              await skapi.getFile(url, { dataType: 'endpoint' }).then((res) => {
+                console.log('res : ', res);
+                return res;
+              });
             }
 
             const result = item.bin.additional_data.map((el) => ({
@@ -361,6 +373,7 @@ const getAdditionalData = () => {
           }
         });
         uploadedFile.value = fileList;
+        console.log('uploadedFile.value : ', uploadedFile.value);
       }
     })
     .catch((err) => {
