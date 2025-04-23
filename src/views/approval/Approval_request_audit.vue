@@ -198,7 +198,12 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 														li.file-item(v-for="(file, index) in uploadedFile" :key="index" style="border: none; padding: 0;")
 															a.file-name(:href="file.url" download target="_blank") {{ file.filename }}
 													template(v-else)
-														li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+														//- li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+														li.file-name(v-for="(name, index) in fileNames" :key="index")
+															span.text {{ name }}
+															button.btn-remove.icon(type="button" @click.stop="removeFile(file, index)")
+																svg
+																	use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
 			//- .reject-setting
 				label.checkbox
@@ -1099,21 +1104,32 @@ const exportWysiwygData = (content) => {
   editorContent.value = content && content.trim() !== '' ? content : '<p><br></p>';
 };
 
-// 업로드 파일 삭제
-let removeFile = (item) => {
-  removeFileList.value.push(item.record_id);
+// 첨부파일 삭제
+let removeFile = (file, index) => {
+  console.log('AA == fileNames.value : ', fileNames.value);
+  fileNames.value.splice(index, 1);
+  console.log('BB == fileNames.value : ', fileNames.value);
+
+  console.log('AA == uploadedFile.value : ', uploadedFile.value);
+  uploadedFile.value.splice(index, 1);
+  console.log('BB == uploadedFile.value : ', uploadedFile.value);
+
+  const fileInput = document.getElementById('file');
+  console.log('fileInput : ', fileInput);
 };
 
-let cancelRemoveFile = (item) => {
-  removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
-};
+// let cancelRemoveFile = (item) => {
+//   removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
+// };
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
   let target = e.target;
+  console.log('target : ', target);
 
   if (target.files) {
     fileNames.value = Array.from(target.files).map((file) => file.name);
+    console.log('fileNames.value : ', fileNames.value);
   }
 };
 
@@ -1683,15 +1699,15 @@ const saveMyDocForm = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
-    console.log('filebox : ', filebox);
-    console.log('uploadedFile.value : ', uploadedFile.value);
-
     if (filebox && filebox.files.length) {
       Array.from(filebox.files).forEach((file) => {
         console.log('file:', file);
         formData.append('form_data', file);
       });
     }
+
+    console.log('filebox : ', filebox);
+    console.log('uploadedFile.value : ', uploadedFile.value);
 
     if (uploadedFile.value.length) {
       for (const file of uploadedFile.value) {
@@ -1709,6 +1725,7 @@ const saveMyDocForm = async () => {
         const fileData = await skapi.getFile(file.url, {
           dataType: 'endpoint'
         });
+        console.log('fileData : ', fileData);
 
         // 가져온 파일 데이터를 Blob으로 변환
         const blob = await fetch(fileData.url).then((res) => res.blob());
@@ -1803,11 +1820,11 @@ const tempSaveMyDoc = async () => {
         console.log('file:', file);
 
         // file.url ?를 기준으로 [0]만 가져오기
-        const fileUrl = file.url.split('?')[0];
-        console.log('fileUrl : ', fileUrl);
+        // const fileUrl = file.url.split('?')[0];
+        // console.log('fileUrl : ', fileUrl);
 
         // 파일 데이터를 서버에서 가져옴
-        const fileData = await skapi.getFile(fileUrl, {
+        const fileData = await skapi.getFile(file.url, {
           dataType: 'endpoint'
         });
         console.log('fileData : ', fileData);
@@ -2887,6 +2904,25 @@ onUnmounted(() => {
       .file-name {
         margin-top: 16px;
       }
+    }
+  }
+
+  li.file-name {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+
+    .text {
+      margin-left: 0;
+    }
+  }
+
+  .icon {
+    padding: 0;
+
+    svg {
+      fill: var(--warning-color-500);
     }
   }
 }
