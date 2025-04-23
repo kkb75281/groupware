@@ -313,7 +313,8 @@ const createReference = async (data) => {
   const res = await postRecord(null, params);
 
   const access_group_value = document.querySelector('select[name=access_group]').value;
-  const files = document.querySelector('input[name=additional_data]').files;
+  const files = document.querySelector('input[name=additional_data]');
+  console.log('files : ', files);
 
   // 마스터가 아니면 직원이므로 직원에게 접근권한을 부여한다. (마스터는 모든 레코드를 볼수 있으므로)
   if (access_group_value !== '99') {
@@ -324,10 +325,13 @@ const createReference = async (data) => {
     });
   }
 
-  if (files.length) {
-    for (let file of files) {
-      const formData = new FormData();
+  if (files && files.files.length) {
+    console.log('AAAA');
 
+    for (let file of files.files) {
+      console.log('file : ', file);
+
+      const formData = new FormData();
       formData.append('additional_data', file);
 
       const params = {
@@ -338,9 +342,13 @@ const createReference = async (data) => {
         reference: '[emp_additional_data]' + user_id_safe
       };
 
-      await postRecord(formData, params).catch((err) => {
-        console.log('== createReference : err == : ', { err });
-      });
+      await postRecord(formData, params)
+        .then((res) => {
+          console.log('== createReference : res == : ', res);
+        })
+        .catch((err) => {
+          console.log('== createReference : err == : ', { err });
+        });
     }
   }
 };
@@ -384,7 +392,9 @@ const registerEmp = async (e) => {
     await currentEmpDivision({ user_id, user_id_safe, user_division_name, user_name });
 
     // 직원과 마스터만 볼수 있는 자료방 reference 레코드를 마련한다.
-    await createReference({ user_id_safe, user_division_name, user_id });
+    await createReference({ user_id_safe, user_division_name, user_id }).then((res) => {
+      console.log('== createReference : res == : ', res);
+    });
 
     const invitations = await getInvitations(true); // refresh invitation list
 

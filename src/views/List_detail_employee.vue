@@ -92,12 +92,11 @@
 
             .input-wrap.upload-file(v-if="user.access_group > 98 || user.user_id === currentEmp?.user_id")
                 p.label(style="margin-bottom: 0;") 기타자료
-                template(v-if="!disabled")
-                    .btn-upload-file
-                        input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
-                        label.btn.outline.btn-upload(for="file") 파일 추가
-                        ul.upload-file-list
-                            li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
+                .btn-upload-file
+                    input#file(type="file" name="additional_data" multiple :disabled="disabled" @change="updateFileList" hidden)
+                    label.btn.outline.btn-upload(for="file") 파일 추가
+                    ul.upload-file-list
+                        li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 
                 .file-wrap
                     ul.file-list
@@ -184,14 +183,6 @@ const fetchEmployeeData = async () => {
     let emp = employeeWithDivisions[0];
     currentEmp.value = emp;
 
-    // 직원 부서/직책 목록 초기화 (기본 부서/직책 추가)
-    // employeeDivisions.value = [
-    //   {
-    //     division: emp.division || '',
-    //     position: emp.position || ''
-    //   }
-    // ];
-
     // 다중 부서 정보 가져오기
     await fetchEmployeeDivisions(userId);
   } catch (error) {
@@ -243,35 +234,9 @@ const fetchEmployeeDivisions = async (userId) => {
           division,
           position
         });
-
-        // 기본 부서가 아닌 경우에만 추가
-        // if (item.unique_id !== `[emp_position_current]${userIdSafe}:${currentEmp.value.division}`) {
-        //   const divisionId = item.unique_id.split(':')[1];
-        //   const positionName = item.index?.name?.split('.')[1] || '';
-
-        //   // 중복 체크 후 추가
-        //   const exists = employeeDivisions.value.some((d) => d.division === divisionId);
-        //   if (!exists && divisionId) {
-        //     employeeDivisions.value.push({
-        //       division: divisionId,
-        //       position: positionName
-        //     });
-        //   }
-        // }
       });
     }
-
-    console.log('== 직원 부서 정보 ==', employeeDivisions.value);
-
     return;
-
-    // const response = await skapi.getRecords({
-    //   table: {
-    //     name: 'emp_position_current',
-    //     access_group: 1
-    //   },
-    //   unique_id: `[emp_position_current]${userIdSafe}:*`
-    // });
   } catch (error) {
     console.error('직원 부서 정보를 가져오는 중 오류 발생:', error);
   }
@@ -298,7 +263,8 @@ let getAdditionalData = () => {
       reference: '[emp_additional_data]' + makeSafe(userId)
     })
     .then((res) => {
-      console.log('추가자료 == res : ', res);
+      console.log('추가자료 가져오기 == res : ', res);
+
       if (res.list.length > 0) {
         let fileList = [];
 
@@ -345,8 +311,11 @@ let copy = (text) => {
 // 파일 업로드 리스트 업데이트
 let updateFileList = (e) => {
   let target = e.target;
+  console.log('updateFileList');
   if (target.files) {
+    console.log('target.files : ', target.files);
     fileNames.value = Array.from(target.files).map((file) => file.name);
+    console.log('fileNames : ', fileNames.value);
   }
 };
 
@@ -406,18 +375,12 @@ let registerEmp = async (e) => {
   let user_id_safe = makeSafe(currentEmp.value.user_id);
 
   try {
-    // console.log('== employeeDivisions == : ', employeeDivisions.value);
-    // console.log('== employeeDivisionsOriginal == : ', employeeDivisionsOriginal.value);
-
     // 기존 부서/직책 데이터 삭제
     await Promise.all(
       employeeDivisionsOriginal.value.map(async (dvs) => {
         return await skapi.deleteRecords({
           unique_id: `[emp_position_current]${user_id_safe}:${dvs.division}`
         });
-        // .then((res) => {
-        //   console.log('== 부서/직책 삭제 ==', res);
-        // });
       })
     );
 
@@ -465,8 +428,10 @@ let registerEmp = async (e) => {
       });
     }
 
+    console.log('AAAA');
+
     // 추가자료 업데이트
-    let filebox = document.querySelector('input[name=additional_data]');
+    let filebox = document.querySelector('input[name="additional_data"]');
 
     if (filebox && filebox.files.length) {
       for (let file of filebox.files) {
@@ -485,6 +450,9 @@ let registerEmp = async (e) => {
       if (uploadFile.value && uploadFile.value.length) {
         backupUploadFile.value = [...uploadFile.value];
       }
+
+      document.querySelector('input[name="additional_data"]').value = '';
+      fileNames.value = [];
     }
 
     // 파일 삭제 목록 처리

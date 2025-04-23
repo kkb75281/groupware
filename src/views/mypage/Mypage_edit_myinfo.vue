@@ -85,11 +85,11 @@
 								use(xlink:href="@/assets/icon/material-icon.svg#icon-edit")
 
 			.input-wrap.upload-file
-				p.label 자료 관리
+				p.label 기타자료
 				.file-wrap
 					.btn-upload-file
 						input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
-						label.btn.outline.btn-upload(for="file") 파일 올리기
+						label.btn.outline.btn-upload(for="file") 파일 추가
 
 					ul.upload-file-list
 						li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
@@ -326,7 +326,6 @@ let getUserDivision = async () => {
 };
 getUserDivision();
 
-// user additional data 가져오기
 // 추가자료 업로드 한 것 가져오기
 const getAdditionalData = () => {
   skapi
@@ -349,8 +348,7 @@ const getAdditionalData = () => {
           if (item.bin.additional_data && item.bin.additional_data.length > 0) {
             function getFileUserId(str) {
               if (!str) return '';
-              console.log('str : ', str);
-              console.log('str : ', str.split('/')[3]);
+
               return str.split('/')[3];
             }
 
@@ -457,44 +455,35 @@ const handleCountrySelect = (country) => {
 
 // 도장 이미지 URL 가져오기
 const getStampImageSrc = (mainStamp) => {
-  console.log('uploadedStamp.value : ', uploadedStamp.value);
-  console.log('mainStamp : ', mainStamp);
-
   // 도장 목록이 비어있으면 빈 문자열 반환
   if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
-    console.log('1111');
     return '';
   }
 
   // 레코드에서 로드된 도장인지 확인 (문자열인 경우)
   if (typeof mainStamp === 'string') {
-    console.log('2222');
     return mainStamp;
   }
 
   // 모달에서 선택된 도장인 경우 (객체로 url 속성을 가진 경우)
   else if (mainStamp && mainStamp.value && mainStamp.value.url) {
-    console.log('3333');
     return mainStamp.value.url;
   }
 
   // 객체 자체에 url 속성이 있는 경우
   else if (mainStamp && mainStamp.url) {
-    console.log('4444');
     return mainStamp.url;
   }
 
   // 대표 도장이 없고 도장 목록이 있는 경우, 첫 번째 도장을 기본값으로 사용
   else if (uploadedStamp.value && uploadedStamp.value.length > 0) {
-    console.log('5555 - 첫 번째 도장을 기본값으로 사용');
-    // mainStamp 객체에 첫 번째 도장 정보 할당 (참조 변경)
+    // mainStamp 객체에 첫 번째 도장 정보 할당
     if (mainStamp !== uploadedStamp.value[0]) {
       mainStamp = uploadedStamp.value[0];
     }
     return uploadedStamp.value[0].url;
   }
 
-  console.log('6666');
   // 아무 것도 없으면 빈 문자열 반환
   return '';
 };
@@ -626,9 +615,6 @@ let registerMypage = async (e) => {
       }
     };
 
-    console.log('data : ', data);
-    console.log('config : ', config);
-
     try {
       // 기존 대표 도장 레코드 삭제
       await skapi.deleteRecords({
@@ -640,12 +626,10 @@ let registerMypage = async (e) => {
 
       // 새 대표 도장 저장
       const saveMainStamp = await skapi.postRecord(data, config);
-      console.log('대표 도장 저장 완료:', saveMainStamp);
     } catch (error) {
       console.error('대표 도장 저장 중 오류:', error);
     }
   } else if (uploadedStamp.value === undefined || uploadedStamp.value.length === 0) {
-    console.log('도장 목록이 비어있어 대표 도장 레코드 삭제');
     // 도장 목록이 비어있으면 대표 도장 레코드 삭제
     try {
       await skapi.deleteRecords({
@@ -654,13 +638,10 @@ let registerMypage = async (e) => {
           access_group: 1
         }
       });
-      console.log('도장 목록이 비어있어 대표 도장 레코드 삭제');
     } catch (error) {
       console.error('대표 도장 레코드 삭제 중 오류:', error);
     }
   }
-
-  console.log({ e });
 
   // 프로필 정보를 업데이트
   await skapi
@@ -695,8 +676,6 @@ let registerMypage = async (e) => {
   misc.country = selectedCountry.value;
 
   await skapi.updateProfile({ misc: JSON.stringify(misc) }).catch((err) => err);
-
-  console.log({ user });
 
   getAdditionalData();
 
@@ -871,21 +850,6 @@ let deleteStamp = async (stamp) => {
   } finally {
     deleteStampRunning.value = false;
   }
-
-  //   try {
-  //     await skapi.postRecord(null, post_params);
-  //     // getStampList();
-  //     // alert('도장이 삭제되었습니다.');
-  //     deleteStampStep.value++;
-  //     uploadedStamp.value = uploadedStamp.value.filter((stamp) => stamp.url !== deleteStampUrl);
-  //   } catch (e) {
-  //     // console.log({e});
-  //     deleteStampStep.value = 1;
-  //     alert('도장 삭제 중 오류가 발생했습니다.');
-  //   } finally {
-  //     // selectedStamp.value = null;
-  //     deleteStampRunning.value = false;
-  //   }
 };
 
 const selectAsMainStamp = (stamp) => {
@@ -901,8 +865,6 @@ const refresh = async () => {
 // 도장 관리 :: e
 
 onMounted(async () => {
-  console.log('AA == onMounted == user : ', user);
-
   document.addEventListener('click', closeOptions);
 
   resetCropImage();
@@ -963,7 +925,6 @@ onMounted(async () => {
       }
     })
     .then(async (res) => {
-      console.log('== onMounted == 도장 res : ', res);
       if (res.list.length > 0) {
         mainStamp.value = await skapi.getFile(res.list[0].data, {
           dataType: 'endpoint'
@@ -987,8 +948,6 @@ onMounted(async () => {
         mainStamp.value = null;
       }
     });
-
-  console.log('BB == onMounted == user : ', user);
 });
 
 onUnmounted(() => {
