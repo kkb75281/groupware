@@ -15,8 +15,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 			.reject-setting
 				template(v-if="senderUser.user_id === user.user_id")
-					p.text(v-if="rejectSetting") ※ 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.
-					p.text(v-else) ※ 결재 도중 반려시 해당 결재서류 회수합니다.
+					p.text(v-if="!rejectSetting") ※ 결재 도중 반려시 해당 결재서류 회수합니다.
+					p.text(v-else) ※ 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.
 
 			.table-wrap
 				.tb-overflow
@@ -657,7 +657,7 @@ const getAuditDetail = async () => {
     receivers: []
   };
   isCanceled.value = false;
-  rejectSetting.value = true;
+  rejectSetting.value = false;
 
   if (!auditId.value) {
     getAuditDetailRunning.value = false;
@@ -689,7 +689,7 @@ const getAuditDetail = async () => {
         rejectSetting.value =
           auditDoc.data.reject_setting === 'true' || auditDoc.data.reject_setting === true;
       } else {
-        rejectSetting.value = true;
+        rejectSetting.value = false;
       }
     }
 
