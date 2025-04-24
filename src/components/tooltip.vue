@@ -85,6 +85,7 @@ const handleMouseEnter = (e) => {
 	.tool-icon {
 		display: inline-block;
 		cursor: pointer;
+		padding: 0 16px;
 
 		svg {
 			height: 20px;
@@ -96,8 +97,8 @@ const handleMouseEnter = (e) => {
 	.tip {
 		// min-width: 100%;
 		// max-width: 100%;
-		width: 100%;
-		min-width: 10rem;
+		// width: 100%;
+		// min-width: 10rem;
 		display: none;
 		position: absolute;
 		box-sizing: border-box;
@@ -106,7 +107,8 @@ const handleMouseEnter = (e) => {
 		left: 0;
 		right: unset;
 		z-index: 999;
-		white-space: pre-wrap;
+		// white-space: pre-wrap;
+		white-space: nowrap;
 		text-align: left;
 		// overflow: hidden;
 		

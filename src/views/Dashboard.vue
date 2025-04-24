@@ -55,10 +55,10 @@
         .icon(:class="{'active': route.path.split('/')[1] === 'organigram'}" @click="router.push('/organigram')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
-            p 직원목록
+            p 조직도
         .icon(:class="{'active': route.path.split('/')[1] === 'mypage'}" @click="router.push('/mypage/edit-myinfo')")
             svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             p 마이페이지
         .icon.master(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
             svg

@@ -4,22 +4,46 @@ header#header
         img(src="/img_fgworks_logo.png")
 
     .btn-wrap
-        .icon.btn-noti(:data-count="unreadCount" ref="btnNoti" @click="openNotification")
+        .icon.btn-noti(:data-count="unreadCount" ref="btnNoti" @click="openNotification" style="padding:0 16px")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
         .icon
             a(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-        .icon(:class="{'active': route.path.split('/')[1] === 'approval'}" @click="router.push('/approval/request-audit')" style="padding-bottom:6px")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
+                Tooltip(tip-background-color="black" text-color="white")
+                    template(v-slot:tool)
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+                    template(v-slot:tip) 이메일
+        .icon(:class="{'active': route.path.split('/')[1] === 'approval'}" @click="router.push('/approval/request-audit')")
+            Tooltip(tip-background-color="black" text-color="white")
+                template(v-slot:tool)
+                    svg(style="margin-bottom:6px")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
+                template(v-slot:tip) 전자결재
+        .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
+            Tooltip(tip-background-color="black" text-color="white")
+                template(v-slot:tool)
+                    svg(style="width:26px; height:26px")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
+                template(v-slot:tip) 공지사항
+        .icon(v-if="user.access_group < 98" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
+            Tooltip(tip-background-color="black" text-color="white")
+                template(v-slot:tool)
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
+                template(v-slot:tip) 직원목록
         .icon(:class="{'active': route.path.split('/')[1] === 'organigram'}" @click="router.push('/organigram')")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+            Tooltip(tip-background-color="black" text-color="white")
+                template(v-slot:tool)
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+                template(v-slot:tip) 조직도
         .icon(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
+            Tooltip(tip-background-color="black" text-color="white")
+                template(v-slot:tool)
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
+                template(v-slot:tip) 마스터 페이지
 
         //- button.btn-profile(type="button" ref="btnProfile" @click="openProfile")
             span.user-name {{ user.name }}
@@ -99,8 +123,11 @@ header#header
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
 #popup.profile(v-show="isProfileOpen" @click.stop)
-    //- .popup-header
-        .image
+    .popup-header
+        //- h4 {{ user.name }}
+        //- span {{ user.access_group === 99 ? '마스터' : user.access_group === 98 ? '관리자' : '직원' }}
+        //- p {{ user.email }}
+        //- .image
             template(v-if="profileImage")
                 img(:src="profileImage" alt="img-profile")
             template(v-else)
@@ -230,6 +257,8 @@ import { toggleOpen } from '@/components/navbar.ts';
 import { realtimes, readList, unreadCount, readNoti, unreadEmailNotiMsg } from '@/notifications.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
 import { goToAuditDetail } from '@/audit.ts';
+
+import Tooltip from '@/components/tooltip.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -365,6 +394,7 @@ watch(
 
         .icon {
             cursor: pointer;
+            padding: 0;
 
             svg {
                 fill: var(--gray-color-300);
@@ -504,8 +534,11 @@ watch(
         align-items: center;
         // padding: 0.9rem;
         // gap: 1rem;
-        padding-bottom: 0.9rem;
-        border-bottom: 1px solid var(--gray-color-200);
+        // padding-bottom: 0.9rem;
+        // border-bottom: 1px solid var(--gray-color-200);
+        // background-color: #f4f4f5;
+        // border: 1px solid var(--gray-color-200);
+        border-radius: 12px;
 
         .image {
             width: 64px;
@@ -520,6 +553,8 @@ watch(
         }
 
         .content {
+            padding: 0.7rem;
+
             .user {
                 display: flex;
                 flex-wrap: wrap;
@@ -532,13 +567,13 @@ watch(
 
                 span {
                     color: var(--gray-color-400);
-                    font-size: 0.8rem;
+                    font-size: 0.7rem;
                 }
             }
 
             p {
                 margin-top: 0.5rem;
-                font-size: 0.8rem;
+                font-size: 0.75rem;
                 word-break: break-all;
             }
 
@@ -554,7 +589,7 @@ watch(
             li {
                 // border-top: 1px solid var(--gray-color-200);
                 font-size: 0.8rem;
-				cursor: pointer;
+                cursor: pointer;
 
                 &:first-child {
                     border-top: unset;
@@ -571,7 +606,7 @@ watch(
             align-items: center;
             // justify-content: space-between;
             padding: 0.7rem;
-			border-radius: 8px;
+            border-radius: 8px;
             font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
@@ -593,7 +628,7 @@ watch(
 
     &.notification {
         // right: 124px;
-        right: 300px;
+        right: 355px;
         max-width: 420px;
         width: calc(100% - 16px);
 
@@ -612,7 +647,7 @@ watch(
             ul {
                 max-height: 240px;
                 overflow-y: scroll;
-				padding-top: 8px;
+                padding-top: 8px;
 
                 li {
                     // border-top: none;
@@ -752,10 +787,10 @@ watch(
     &.profile {
         padding: 8px;
 
-		// .router {
-		// 	padding: 0.7rem;
-		// 	border-radius: 8px;
-		// }
+        // .router {
+        // 	padding: 0.7rem;
+        // 	border-radius: 8px;
+        // }
     }
 
     &.menu {
@@ -775,14 +810,14 @@ watch(
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-				cursor: pointer;
+                cursor: pointer;
                 gap: 0.5rem;
-				padding: 0.8rem 0.4rem;
-				border-radius: 16px;
+                padding: 0.8rem 0.4rem;
+                border-radius: 16px;
 
-				&:hover {
-					background-color: var(--primary-color-50);
-				}
+                &:hover {
+                    background-color: var(--primary-color-50);
+                }
 
                 .icon {
                     height: 2rem;
