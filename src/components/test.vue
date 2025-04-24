@@ -41,6 +41,7 @@ h4(style="margin-bottom: 1rem;") {{buildTime}}
 
 <script setup>
 import { createApp } from 'vue';
+import { createVNode, render } from 'vue';
 import { onMounted, ref } from "vue";
 import { subscribeNotification, unsubscribeNotification, pushNotification } from "@/notifications";
 import { skapi, realtimeTestingMsg, buildTime } from "@/main.ts";
@@ -107,16 +108,30 @@ function postRealTimeMsg () {
 
 
 // Function to dynamically load the component
-function loadWysiwygTable(col, row) {
-	// Create a container element
-	const container = document.createElement('div');
-	// container.id = 'wysiwyg-table-container';
+// function loadWysiwygTable(col, row) {
+// 	// Create a container element
+// 	const container = document.createElement('div');
+// 	// container.id = 'wysiwyg-table-container';
 	
-	// Create and mount the Vue component with props
-	const app = createApp(wysiwygTable, { col, row });
-	app.mount(container);
-	console.log({app, container})
-	return container;
+// 	// Create and mount the Vue component with props
+// 	const app = createApp(wysiwygTable, { col, row });
+// 	app.mount(container);
+// 	console.log({app, container})
+// 	return container;
+// }
+function loadWysiwygTable(col, row) {
+    const container = document.createElement('div');
+    container.id = 'wysiwyg-table-container';
+
+    // Create a VNode for the component
+    const vnode = createVNode(wysiwygTable, { col, row });
+
+    // Render the VNode into the container
+    render(vnode, container);
+
+    console.log('loadWysiwygTable 실행됨:', { col, row, container });
+
+    return container;
 }
 
 let wysiwyg = null;
@@ -155,14 +170,27 @@ onMounted(async() => {
 
 		// When set to true, wysiwyg will output DOM mutation data via callback function.
 		logMutation: false
-	})
-})
-let tablePlugin = (col, row) => {
-	wysiwyg.command({
-		element: loadWysiwygTable(col, row),
-		contenteditable: true
 	});
-}
+
+	console.log('WYSIWYG 에디터가 초기화되었습니다.');
+})
+// let tablePlugin = (col, row) => {
+// 	wysiwyg.command({
+// 		element: loadWysiwygTable(col, row),
+// 		contenteditable: true
+// 	});
+// }
+let tablePlugin = (col, row) => {
+    const tableContainer = loadWysiwygTable(col, row);
+
+    // Ensure the container is inserted into the DOM
+    wysiwyg.command({
+        element: tableContainer,
+        contenteditable: true
+    });
+
+	console.log('tablePlugin 실행됨:', { tableContainer });
+};
 </script>
 
 <style scoped lang="less">
