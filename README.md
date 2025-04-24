@@ -2,10 +2,6 @@
 
 일반적인 기업에서 사용 할수 있는 그룹웨어 입니다.
 
-
-
-
-
 # 부서 관련
 
 - ### 부서 이름 업데이트
@@ -19,6 +15,7 @@
     }
 }
 ```
+
 ```typescript
 : { [DVS_NUMBER: string]: string }
 ```
@@ -33,6 +30,7 @@
     }
 }
 ```
+
 ```typescript
 : { [DVS_RECORD_ID: string]: {
     bin?: { [division_logo: string]: {
@@ -96,6 +94,7 @@
     },
 }
 ```
+
 ```typescript
 : {
     division_name: string;
@@ -110,9 +109,6 @@
     }
 }
 ```
-
-
-
 
 # 결재 관련
 
@@ -132,9 +128,10 @@
     source: {
         prevent_multiple_referencing: true,
     },
-    tags: [] // 결재자(들)의 user_id_safe 
+    tags: [] // 결재자(들)의 user_id_safe
 }
 ```
+
 ```typescript
 : {
     to_audit: string; // 결재 사안 제목
@@ -157,6 +154,7 @@
     tags: [결재자 user_id],
 }
 ```
+
 ```typescript
 : {
     audit_id: string; // 결재 서류 record_id
@@ -174,15 +172,12 @@
     },
     reference: audit_id, // 결재 서류 record_id
     tags: user_id_safe, // 결재자 user_id
-}	
+}
 ```
+
 ```typescript
 : {}
 ```
-
-
-
-
 
 # 알람 관련
 
@@ -196,6 +191,7 @@
     }
 }
 ```
+
 ```typescript
 : {
     list: string[] // [읽은 알람 id, ...]
@@ -213,6 +209,7 @@
     },
 }
 ```
+
 ```typescript
 // 결재 요청 알람 경우
 : {
@@ -244,10 +241,6 @@
 }
 ```
 
-
-
-
-
 # 직원 관련
 
 - ### 부서, 직책 업데이트 (history)
@@ -261,6 +254,7 @@
     tags: tag_data // "[emp_pst]" + 직책, "[emp_id]" + user_id_safe, "[emp_dvs]" + 부서
 }
 ```
+
 ```typescript
 {
     bin: {}
@@ -295,13 +289,14 @@
 
 ```typescript
 index_data: {
-    name: string; // 현재 직원 부서 + '.' + 현재 직원 직책
-    value: string; // 직원 이름
+  name: string; // 현재 직원 부서 + '.' + 현재 직원 직책
+  value: string; // 직원 이름
 }
 ```
+
 ```javascript
 {
-    unique_id: "[emp_position_current]" + user_id_safe,
+    unique_id: "[emp_position_current]" + user_id_safe + index_data.name.split(']')[1],
     table: {
         name: 'emp_position_current',
         access_group: 1
@@ -315,6 +310,7 @@ index_data: {
 ```typescript
 reference_data: string; // [emp_additional_data]" + 직원 user_id_safe
 ```
+
 ```javascript
 {
     unique_id: "[emp_additional_data]" + user_id_safe,
@@ -372,18 +368,15 @@ data: {
     dailyCommuteTime: '',
 }
 ```
+
 ```javascript
 data,
-{
+  {
     table: {
-        name: 'commute_record',
-        access_group: 98,
+      name: 'commute_record',
+      access_group: 98
     },
-    tags: ["[emp_id]" + user_id_safe],
-    reference: "emp_id:" + user_id_safe,
-}
+    tags: ['[emp_id]' + user_id_safe],
+    reference: 'emp_id:' + user_id_safe
+  };
 ```
-
-
-
-

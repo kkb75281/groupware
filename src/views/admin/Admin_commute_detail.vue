@@ -1,7 +1,7 @@
 <template lang="pug">
-h1 근태 기록 상세
+//- h1 근태 기록 상세
 
-hr
+//- hr
 
 .table-wrap
     .tb-head-wrap
@@ -117,7 +117,6 @@ onMounted(async () => {
 <style scoped lang="less">
 .table-wrap {
     position: relative;
-    margin-top: 3rem;
 
     #loading {
         position: absolute;

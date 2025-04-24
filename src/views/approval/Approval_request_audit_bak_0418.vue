@@ -4,7 +4,7 @@
 
 hr
 
-template(v-if="step === 1 && showBackStep && !isTemplateMode")
+template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode && !isReRequestMode")
 	.item-wrap
 		.selected-wrap
 			p.label 카테고리 선택
@@ -61,7 +61,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode")
 				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
 				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
-template(v-if="step === 2 || isTemplateMode")
+template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) || (isReRequestMode && temploading)")
 	.form-wrap
 		form#_el_request_form(@submit.prevent="requestAudit")
 			#printArea
@@ -181,7 +181,7 @@ template(v-if="step === 2 || isTemplateMode")
 									th.essential 결재 내용
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
-											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content")
+											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'tempsave' ? tempSaveData?.data?.form_content : route.query.mode === 'reRequest' ? reRequestData?.data?.to_audit_content : selectedForm?.data?.form_content" :showBtn="true")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -211,8 +211,12 @@ template(v-if="step === 2 || isTemplateMode")
 					button.btn(type="button" @click="saveDocForm") 저장
 
 				template(v-else)
-					button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = true") 취소
-					button.btn.outline.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
+					template(v-if="isTempSaveMode")
+						button.btn.bg-gray.btn-cancel(type="button" @click="cancelTempSave") 취소
+					template(v-else)
+						button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = false") 취소
+					button.btn.outline.bg-gray.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
+					button.btn.outline.btn-tempsave(type="button" @click="tempSaveMyDoc") 임시저장
 					button.btn(type="submit") 결재요청
 
 //- Modal - 작성란 추가
@@ -302,15 +306,16 @@ template(v-if="step === 2 || isTemplateMode")
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
-import { skapi, mainPageLoading, RealtimeCallback } from '@/main';
-import { user, makeSafe, verifiedEmail } from '@/user';
-import { divisionNameList } from '@/division';
+import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
+import { user, makeSafe, verifiedEmail } from '@/user.ts';
+import { divisionNameList } from '@/division.ts';
+import { reRequestData } from '@/audit.ts';
 import {
   organigram,
   getOrganigram,
   getOrganigramRunning,
   excludeCurrentUser
-} from '@/components/organigram';
+} from '@/components/organigram.ts';
 
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
@@ -327,12 +332,13 @@ const route = useRoute();
 // 우측에는 sort 기능 버튼 넣어서 사용자가 순서 지정할 수 있게
 // 사용자가 선택한 순서대로 결재, 합의에 숫자 표시되어야 함
 
-// 결재 양식 관리 > 등록 경로인지 확인
-const isTemplateMode = ref(route.query.mode === 'template');
+const isTemplateMode = computed(() => route.query.mode === 'template'); // 결재 양식 관리 > 등록 경로인지 확인
+const isTempSaveMode = computed(() => route.query.mode === 'tempsave'); // 임시 저장 경로인지 확인
+const isReRequestMode = computed(() => route.query.mode === 'reRequest'); // 재요청 모드인지 확인
 
 // 페이지 제목 변경
 const pageTitle = computed(() => {
-  return isTemplateMode.value ? '결재 양식 등록' : '결재 작성';
+  return route.query.mode === 'template' ? '결재 양식 등록' : '결재 작성';
 });
 
 const isModalOpen = ref(false);
@@ -354,8 +360,9 @@ const formCategory = ref('master'); // 결재 양식 카테고리
 const masterForms = ref([]); // 기본 결재 양식
 const myForms = ref([]); // 나의 결재 양식
 const selectedForm = ref([]); // 선택된 결재 양식
+const tempSaveData = ref([]); // 임시 저장된 결재 양식
 const isFormSelected = ref(false); // 양식이 선택되었는지 여부
-const rejectSetting = ref(true); // 반려 설정 관련 체크박스
+const rejectSetting = ref(false); // 반려 설정 관련 체크박스
 
 const prevSelected = ref([]);
 const backupSelected = ref(null); // 선택된 결재자 백업
@@ -371,10 +378,22 @@ const addRows = ref([]);
 let step = ref(1);
 const auditTitle = ref('');
 const disabled = ref(false);
+const temploading = ref(false);
 
 // 에디터 상태 관리
 const editorContent = ref('');
 const editorIsReady = ref(false);
+
+// 에디터 내용이 변경 감지
+watch(editorContent, (newContent) => {
+  if (!newContent || newContent === '') {
+    // 내용이 완전히 비어있는 경우 기본 p 태그 추가
+    const editorElement = document.getElementById('myeditor');
+    if (editorElement && (!editorElement.innerHTML || editorElement.innerHTML === '')) {
+      editorElement.innerHTML = '<p><br></p>';
+    }
+  }
+});
 
 // 결재라인 모달 열기
 const openModal = () => {
@@ -382,19 +401,24 @@ const openModal = () => {
   if (isTemplateMode.value) return;
 
   // 열렸을 때 selectedAuditors 전체를 original로 백업
-  console.log('== selectedAuditors.value == : ', selectedAuditors.value);
-
   backupSelected.value = {
     approvers: [...selectedAuditors.value.approvers],
     agreers: [...selectedAuditors.value.agreers],
     receivers: [...selectedAuditors.value.receivers]
   };
 
-  // selectedAuditors 에 있는 모든 유저를 selectedUsers에 추가
+  // selectedAuditors에 있는 모든 유저를 selectedUsers에 추가
   selectedUsers.value = [];
 
-  for (const key in selectedAuditors.value) {
-    selectedUsers.value.push(...selectedAuditors.value[key]);
+  // selectedAuditors의 각 역할에 따라 selectedUsers에 추가
+  for (const role in selectedAuditors.value) {
+    selectedAuditors.value[role].forEach((user) => {
+      const userCopy = JSON.parse(JSON.stringify(user)); // 깊은 복사 하여 참조를 끊어줌
+
+      userCopy.role = role;
+      userCopy.sortable = role !== 'receivers';
+      selectedUsers.value.push(userCopy);
+    });
   }
 
   selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
@@ -411,6 +435,11 @@ const closeModal = () => {
       agreers: [...backupSelected.value.agreers],
       receivers: [...backupSelected.value.receivers]
     };
+
+    // // 모든 사용자의 role을 '결재'로 초기화
+    // selectedUsers.value.forEach((user) => {
+    //   user.role = 'approvers';
+    // });
   } else {
     selectedAuditors.value = {
       approvers: [],
@@ -431,6 +460,7 @@ const closeRowModal = () => {
   isRowModalOpen.value = false;
 };
 
+// 작성란 삭제
 const removeRow = (event, index) => {
   addRows.value.splice(index, 1);
 };
@@ -589,22 +619,16 @@ const handleOrganigramSelection = (users) => {
     }
   });
 
-  console.log('selectedUsers', selectedUsers.value);
-
   // 선택된 유저들의 순서 저장
   selectedUsersOrder.value = selectedUsers.value.map((user) => ({
     user_id: user.data.user_id,
     order: user.order,
     type: user.role
   }));
-
-  console.log('selectedUsersOrder', selectedUsersOrder.value);
 };
 
 // 수신참조자로 선택되면 선택된 결재자에서 가장 아래로 이동
 const checkRole = (user) => {
-  console.log('== checkRole == user : ', user);
-
   // 이전 역할 저장
   const previousRole = user.role;
 
@@ -687,17 +711,15 @@ const getAllSelectedUserIds = () => {
 
 // 결재자 저장
 const saveAuditor = () => {
-  console.log('== saveAuditor == selectedUsersOrder : ', selectedUsersOrder.value);
-
   selectedAuditors.value.agreers = [];
   selectedAuditors.value.approvers = [];
   selectedAuditors.value.receivers = [];
 
-  // user.role 에 따라 approvers, agreers, receivers에 추가
+  // user.role에 따라 approvers, agreers, receivers에 추가
   selectedUsers.value.forEach((user) => {
-    selectedAuditors.value[user.role].push(user);
+    const userCopy = JSON.parse(JSON.stringify(user)); // 깊은 복사 하여 참조를 끊어줌
+    selectedAuditors.value[user.role].push(userCopy);
   });
-  console.log('== saveAuditor == selectedAuditors', selectedAuditors.value);
 
   backupSelected.value = null;
   isModalOpen.value = false;
@@ -710,14 +732,358 @@ const removeAuditor = (user, type) => {
   selectedUsers.value = newAuditors;
 };
 
-// 에디터 준비
+// 에디터 준비 후 테이블 편집 기능 활성화
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
+
+  // 에디터가 준비되었을 때
+  if (status) {
+    setTimeout(() => {
+      const editorElement = document.getElementById('myeditor');
+      if (editorElement) {
+        if (
+          (isTempSaveMode.value && tempSaveData.value?.data?.form_content) ||
+          (isReRequestMode.value && reRequestData.value?.data?.to_audit_content) ||
+          selectedForm.value?.data?.form_content
+        ) {
+          console.log('에디터 준비 완료');
+          activateTableEditing(editorElement);
+        }
+      }
+    }, 500);
+  }
+};
+
+// 테이블 편집 기능 활성화 함수
+const activateTableEditing = (editorElement) => {
+  // 테이블 찾기
+  const tables = editorElement.querySelectorAll('table');
+
+  tables.forEach((table) => {
+    // 테이블 클래스 추가
+    if (!table.classList.contains('wysiwyg-table')) {
+      table.classList.add('wysiwyg-table');
+    }
+
+    // 테이블에 리사이즈 속성 추가
+    table.setAttribute('data-resizable', 'true');
+
+    // 테이블 내 모든 셀을 편집 가능하게 설정
+    const cells = table.querySelectorAll('td');
+    cells.forEach((cell) => {
+      cell.contentEditable = 'true';
+      cell.removeAttribute('disabled');
+
+      // 포커스 이벤트 추가
+      cell.addEventListener('focus', () => {
+        cell.style.outline = '2px solid #4a90e2';
+      });
+
+      cell.addEventListener('blur', () => {
+        cell.style.outline = 'none';
+      });
+    });
+
+    // 테이블 컨테이너 확인 또는 생성
+    let tableWrap = table.closest('.wysiwyg-table-wrap');
+    if (!tableWrap) {
+      // 테이블을 컨테이너로 감싸기
+      tableWrap = document.createElement('div');
+      tableWrap.className = 'wysiwyg-table-wrap';
+      table.parentNode.insertBefore(tableWrap, table);
+      tableWrap.appendChild(table);
+    }
+
+    // 기존 컨트롤 버튼과 리사이저 제거
+    const existingControls = tableWrap.querySelectorAll('.btn-control-wrap, .table-resizer');
+    existingControls.forEach((control) => control.remove());
+
+    // 테이블 리사이저 추가
+    addTableResizers(table, tableWrap);
+
+    // 행 컨트롤 버튼 그룹 생성
+    const rowControlWrap = document.createElement('div');
+    rowControlWrap.contentEditable = 'false';
+    rowControlWrap.tabIndex = '-1';
+    rowControlWrap.className = 'btn-control-wrap control-row';
+
+    // 행 추가 버튼
+    const addRowBtn = document.createElement('button');
+    addRowBtn.className = 'btn-add';
+    addRowBtn.type = 'button';
+    addRowBtn.textContent = '+';
+
+    // 행 추가 이벤트
+    addRowBtn.addEventListener('click', () => {
+      const tr = document.createElement('tr');
+
+      // 현재 테이블의 첫 번째 행을 기준으로 열 수 가져오기
+      const tbody = table.querySelector('tbody') || table;
+      const currentCols = tbody.firstChild ? tbody.firstChild.childNodes.length : 3;
+
+      for (let c = 0; c < currentCols; c++) {
+        const td = document.createElement('td');
+        td.contentEditable = 'true';
+        td.innerHTML = '&nbsp;';
+
+        // 포커스 이벤트
+        td.addEventListener('focus', () => {
+          td.style.outline = '2px solid #4a90e2';
+        });
+
+        td.addEventListener('blur', () => {
+          td.style.outline = 'none';
+        });
+
+        tr.appendChild(td);
+      }
+
+      tbody.appendChild(tr);
+
+      // 행 추가 후 리사이저 업데이트
+      addTableResizers(table, tableWrap);
+    });
+
+    // 행 삭제 버튼
+    const removeRowBtn = document.createElement('button');
+    removeRowBtn.className = 'btn-remove';
+    removeRowBtn.type = 'button';
+    removeRowBtn.textContent = '-';
+
+    // 행 삭제 이벤트
+    removeRowBtn.addEventListener('click', () => {
+      const tbody = table.querySelector('tbody') || table;
+      if (tbody.childNodes.length > 1) {
+        tbody.removeChild(tbody.lastChild);
+
+        // 행 삭제 후 리사이저 업데이트
+        addTableResizers(table, tableWrap);
+      }
+    });
+
+    // 열 컨트롤 버튼 그룹 생성
+    const colControlWrap = document.createElement('div');
+    colControlWrap.contentEditable = 'false';
+    colControlWrap.tabIndex = '-1';
+    colControlWrap.className = 'btn-control-wrap control-col';
+
+    // 열 추가 버튼
+    const addColBtn = document.createElement('button');
+    addColBtn.className = 'btn-add';
+    addColBtn.type = 'button';
+    addColBtn.textContent = '+';
+
+    // 열 추가 이벤트
+    addColBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const rows = table.rows;
+      for (let i = 0; i < rows.length; i++) {
+        const td = document.createElement('td');
+        td.contentEditable = 'true';
+        td.innerHTML = '&nbsp;';
+
+        td.addEventListener('focus', () => {
+          td.style.outline = '2px solid #4a90e2';
+        });
+
+        td.addEventListener('blur', () => {
+          td.style.outline = 'none';
+        });
+
+        rows[i].appendChild(td);
+      }
+
+      // 열 추가 후 리사이저 업데이트
+      addTableResizers(table, tableWrap);
+    });
+
+    // 열 삭제 버튼
+    const removeColBtn = document.createElement('button');
+    removeColBtn.className = 'btn-remove';
+    removeColBtn.type = 'button';
+    removeColBtn.textContent = '-';
+
+    // 열 삭제 이벤트
+    removeColBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const rows = table.rows;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i].childNodes.length > 1) {
+          rows[i].removeChild(rows[i].lastChild);
+        }
+      }
+
+      // 열 삭제 후 리사이저 업데이트
+      addTableResizers(table, tableWrap);
+    });
+
+    // 컨트롤 버튼 추가
+    rowControlWrap.appendChild(addRowBtn);
+    rowControlWrap.appendChild(removeRowBtn);
+
+    colControlWrap.appendChild(addColBtn);
+    colControlWrap.appendChild(removeColBtn);
+
+    // 모든 컨트롤 추가
+    tableWrap.appendChild(rowControlWrap);
+    tableWrap.appendChild(colControlWrap);
+  });
+};
+
+// 테이블 리사이저 추가 함수
+const addTableResizers = (table, tableWrap) => {
+  // 기존 리사이저 제거
+  const existingResizers = tableWrap.querySelectorAll('.table-resizer');
+  existingResizers.forEach((resizer) => resizer.remove());
+
+  // 열 리사이저 추가
+  if (table.rows.length > 0) {
+    const firstRow = table.rows[0];
+    const cellCount = firstRow.cells.length;
+
+    for (let i = 0; i < cellCount - 1; i++) {
+      const cell = firstRow.cells[i];
+
+      const resizer = document.createElement('div');
+      resizer.className = 'table-resizer col-resizer';
+      resizer.setAttribute('data-col-index', i);
+
+      // 위치 계산 및 설정
+      const left = cell.offsetLeft + cell.offsetWidth + 4;
+
+      resizer.style.left = `${left}px`;
+      resizer.style.height = `${table.offsetHeight}px`;
+
+      // 드래그 이벤트 설정
+      resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        tableWrap.classList.add('resizing-table');
+
+        const startX = e.clientX;
+        const startWidthCell = cell.offsetWidth;
+        const nextCell = firstRow.cells[i + 1];
+        const startWidthNextCell = nextCell.offsetWidth;
+
+        resizer.classList.add('active');
+
+        function onMouseMove(e) {
+          const diffX = e.clientX - startX;
+
+          // 최소 너비 제한
+          if (startWidthCell + diffX < 30 || startWidthNextCell - diffX < 30) return;
+
+          // 모든 행의 해당 열 셀 크기 변경
+          for (let j = 0; j < table.rows.length; j++) {
+            const currentCell = table.rows[j].cells[i];
+            const currentNextCell = table.rows[j].cells[i + 1];
+
+            currentCell.style.width = `${startWidthCell + diffX}px`;
+            currentNextCell.style.width = `${startWidthNextCell - diffX}px`;
+          }
+
+          // 리사이저 위치 업데이트
+          const newLeft = currentCell.offsetLeft + currentCell.offsetWidth - 4;
+          resizer.style.left = `${newLeft}px`;
+        }
+
+        function onMouseUp() {
+          resizer.classList.remove('active');
+          tableWrap.classList.remove('resizing-table');
+
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+
+          // 리사이저 위치 업데이트
+          addTableResizers(table, tableWrap);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+
+      tableWrap.appendChild(resizer);
+    }
+  }
+
+  // 행 리사이저 추가
+  const rowCount = table.rows.length;
+
+  // 행 리사이저 추가 부분 수정
+  for (let i = 0; i < rowCount; i++) {
+    const row = table.rows[i];
+
+    const resizer = document.createElement('div');
+    resizer.className = 'table-resizer row-resizer';
+    resizer.setAttribute('data-row-index', i);
+
+    // 위치 계산 및 설정
+    const top = row.offsetTop + row.offsetHeight + 2;
+    const left = row.offsetLeft + 5;
+
+    resizer.style.top = `${top}px`;
+    resizer.style.left = `${left}px`;
+    resizer.style.width = `${table.offsetWidth}px`;
+
+    // 드래그 이벤트 설정
+    resizer.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      tableWrap.classList.add('resizing-table');
+
+      const startY = e.clientY;
+      const startHeight = row.offsetHeight;
+
+      resizer.classList.add('active');
+
+      function onMouseMove(e) {
+        const diffY = e.clientY - startY;
+
+        // 최소 높이 제한
+        if (startHeight + diffY < 20) return;
+
+        // 셀들의 높이 지정
+        const cells = row.cells;
+        for (let j = 0; j < cells.length; j++) {
+          cells[j].style.height = `${startHeight + diffY}px`;
+        }
+
+        // 전체 행의 높이도 설정
+        row.style.height = `${startHeight + diffY}px`;
+
+        // 리사이저 위치 업데이트
+        resizer.style.top = `${row.offsetTop + row.offsetHeight - 4}px`;
+      }
+
+      function onMouseUp() {
+        resizer.classList.remove('active');
+        tableWrap.classList.remove('resizing-table');
+
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        // 리사이저 위치 업데이트
+        setTimeout(() => {
+          addTableResizers(table, tableWrap);
+        }, 0);
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    tableWrap.appendChild(resizer);
+  }
 };
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
-  editorContent.value = content;
+  // 내용이 비어있을 때 기본 p 태그 유지
+  editorContent.value = content && content.trim() !== '' ? content : '<p><br></p>';
 };
 
 // 업로드 파일 삭제
@@ -788,8 +1154,15 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
 
     // 만약 첨부파일이 있는 결재 양식 선택시
     if (uploadedFile.value.length) {
+      console.log('uploadedFile.value : ', uploadedFile.value);
       for (const file of uploadedFile.value) {
-        // console.log('Processing file:', file);
+        // file.url에 '?'가 포함되어 있을 경우 제거
+        if (file.url.includes('?')) {
+          file.url = file.url.split('?')[0];
+        } else {
+          file.url = file.url;
+        }
+        console.log('file.url : ', file.url);
 
         // 파일 데이터를 서버에서 가져옴
         const fileData = await skapi.getFile(file.url, {
@@ -843,7 +1216,14 @@ const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
 };
 
 // 결재 요청을 생성하고 알림을 보내는 함수
-const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, send_auditors) => {
+const createAuditRequest = async (
+  { audit_id, auditor_id, role, audit_title },
+  send_auditors,
+  isNotificationTarget = false
+) => {
+  console.log('send_auditors : ', send_auditors);
+  console.log('auditor_id : ', auditor_id);
+
   if (!audit_id || !auditor_id) return;
 
   // 결재 요청
@@ -868,56 +1248,78 @@ const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, s
       }
     }
   );
+  console.log('res : ', res);
 
   skapi.grantPrivateRecordAccess({
     record_id: res.record_id,
     user_id: auditor_id
   });
 
-  let to_audit = document.getElementById('to_audit').value;
+  //   // 결재자/합의자를 순서대로 정렬
+  //   const approversAndAgreers = [
+  //     ...selectedAuditors.value.approvers,
+  //     ...selectedAuditors.value.agreers
+  //   ].sort((a, b) => a.order - b.order);
+  //   console.log('approversAndAgreers : ', approversAndAgreers);
 
-  let postRealtimeBody = {
-    text: `${user.name}님께서 결재를 올렸습니다.`,
-    type: 'audit',
-    id: audit_id
-  };
+  //   // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
+  //   const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
+  //   console.log('sendFirstNoti : ', sendFirstNoti);
+
+  //   // Id만 추출
+  //   const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id.replaceAll('-', '_'));
+  //   console.log('sendFirstNotiId : ', sendFirstNotiId);
+
+  //   //sendFirstNotiId string으로 변환
+  //   const sendFirstNotiIdString = sendFirstNotiId.join(',');
+  //   console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
 
   // 실시간 알림 보내기
-  skapi
-    .postRealtime(
-      {
-        audit_request: {
-          noti_id: res.record_id,
-          noti_type: 'audit',
-          send_date: new Date().getTime(),
-          send_user: user.user_id,
-          audit_info: {
-            audit_type: 'request',
-            to_audit: to_audit,
-            audit_doc_id: audit_id,
-            audit_request_id: res.record_id,
-            send_auditors: send_auditors
+  if (isNotificationTarget) {
+    let to_audit = document.getElementById('to_audit').value;
+
+    let postRealtimeBody = {
+      text: `${user.name}님께서 결재를 올렸습니다.`,
+      type: 'audit',
+      id: audit_id
+    };
+
+    skapi
+      .postRealtime(
+        {
+          audit_request: {
+            noti_id: res.record_id,
+            noti_type: 'audit',
+            send_date: new Date().getTime(),
+            send_user: user.user_id,
+            audit_info: {
+              audit_type: 'request',
+              to_audit: to_audit,
+              audit_doc_id: audit_id,
+              audit_request_id: res.record_id,
+              send_auditors: send_auditors
+            }
+          }
+        },
+        auditor_id,
+        {
+          title: '[그룹웨어]',
+          // body: JSON.stringify(postRealtimeBody)
+          body: `${user.name}님께서 결재를 올렸습니다.`,
+          config: {
+            always: true // 무조건 알림 받기
           }
         }
-      },
-      auditor_id,
-      {
-        title: '[그룹웨어]',
-        // body: JSON.stringify(postRealtimeBody)
-        body: `${user.name}님께서 결재를 올렸습니다.`,
-        config: {
-          always: true // 무조건 알림 받기
-        }
-      }
-    )
-    .then((res) => {})
-    .catch(async (err) => {
-      console.error(err);
-    });
+      )
+      .then((res) => {
+        // console.log('실시간 알림 == res : ', res);
+      })
+      .catch(async (err) => {
+        console.error(err);
+      });
 
-  // 실시간 못 받을 경우 알림 기록 저장
-  skapi
-    .postRecord(
+    // 실시간 못 받을 경우 알림 기록 저장
+    skapi.postRecord(
       {
         noti_id: res.record_id,
         noti_type: 'audit',
@@ -938,14 +1340,20 @@ const createAuditRequest = async ({ audit_id, auditor_id, role, audit_title }, s
           access_group: 'authorized'
         }
       }
-    )
-    .then((res) => {});
+    );
+  }
 
   return res;
 };
 
 // 결재 요청 Alarm
-const postAuditDocRecordId = async (auditId, auditTitle, userId, role) => {
+const postAuditDocRecordId = async (
+  auditId,
+  auditTitle,
+  userId,
+  role,
+  isNotificationTarget = false
+) => {
   try {
     // 권한 부여
     await grantAuditorAccess({
@@ -962,12 +1370,38 @@ const postAuditDocRecordId = async (auditId, auditTitle, userId, role) => {
         role: role,
         audit_title: auditTitle
       },
-      send_auditors_arr
+      send_auditors_arr,
+      isNotificationTarget
     );
   } catch (error) {
     console.error(error);
     throw error;
   }
+};
+
+const removeButtonTags = (content) => {
+  if (!content) return '';
+
+  // 임시 DOM 요소 생성
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = content;
+
+  // 버튼 요소들 선택
+  const buttons = tempDiv.querySelectorAll('button');
+
+  // 버튼 요소들 제거
+  buttons.forEach((button) => {
+    button.remove();
+  });
+
+  // 컨트롤 버튼 그룹 요소 제거 (btn-control-wrap 클래스를 가진 요소)
+  const controlWraps = tempDiv.querySelectorAll('.btn-control-wrap');
+  controlWraps.forEach((wrap) => {
+    wrap.remove();
+  });
+
+  // 변경된 HTML 반환
+  return tempDiv.innerHTML;
 };
 
 // 결재 요청
@@ -982,7 +1416,7 @@ const requestAudit = async (e) => {
 
   try {
     const formData = new FormData(e.target);
-    formData.set('inp_content', editorContent.value); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
+    formData.set('inp_content', removeButtonTags(editorContent.value)); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
 
     const formValues = Object.fromEntries(formData.entries());
@@ -1023,7 +1457,33 @@ const requestAudit = async (e) => {
     const auditId = auditDoc.record_id; // 결재 문서 ID
     const auditTitle = to_audit; // 결재 제목
 
-    // 각 역할별 권한 부여 및 알림 전송
+    // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
+    // 결재자/합의자를 순서대로 정렬
+    // const approversAndAgreers = [
+    //   ...selectedAuditors.value.approvers,
+    //   ...selectedAuditors.value.agreers
+    // ].sort((a, b) => a.order - b.order);
+    // console.log('approversAndAgreers : ', approversAndAgreers);
+
+    // // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
+    // const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
+    // console.log('sendFirstNoti : ', sendFirstNoti);
+
+    // // Id만 추출
+    // const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id);
+    // console.log('sendFirstNotiId : ', sendFirstNotiId);
+
+    // //sendFirstNotiId string으로 변환
+    // const sendFirstNotiIdString = sendFirstNotiId.join(',');
+    // console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
+
+    // const processRoles = sendFirstNoti.map((auditor) => ({
+    //   userId: auditor.data.user_id,
+    //   role: auditor.role,
+    //   order: auditor.order
+    // }));
+    // console.log('processRoles : ', processRoles);
+
     const processRoles = [
       // 결재
       ...selectedAuditors.value.approvers.map((auditor, index) => ({
@@ -1046,12 +1506,42 @@ const requestAudit = async (e) => {
         order: auditor.order
       }))
     ];
+    console.log('processRoles : ', processRoles);
 
+    // const res = await Promise.all(
+    //   processRoles.map((roleInfo) =>
+    //     postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
+    //   )
+    // );
+
+    // 결재자와 합의자를 순서대로 통합 정렬
+    const approversAndAgreers = [
+      ...selectedAuditors.value.approvers,
+      ...selectedAuditors.value.agreers
+    ].sort((a, b) => a.order - b.order);
+
+    // 통합된 목록에서 첫 번째 사람과 모든 수신참조자
+    const notificationTargets = [
+      // 첫 번째 결재/합의자 (전체 목록 중 첫 번째)
+      ...(approversAndAgreers.length > 0 ? [approversAndAgreers[0]] : []),
+      // 모든 수신참조자
+      ...selectedAuditors.value.receivers
+    ];
+
+    // 모든 결재자에게 문서 권한 및 요청 레코드 생성
     const res = await Promise.all(
-      processRoles.map((roleInfo) =>
-        postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
+      processRoles.map((roleInfo, index) =>
+        postAuditDocRecordId(
+          auditId,
+          auditTitle,
+          roleInfo.userId,
+          roleInfo.role,
+          // 알림 대상인지 여부 확인
+          notificationTargets.some((target) => target.data.user_id === roleInfo.userId)
+        )
       )
     );
+    console.log('promiseall : ', res);
 
     // 결재라인 select option '결재'로 초기화
     selectedUsers.value.forEach((user) => {
@@ -1095,6 +1585,7 @@ const saveDocForm = async () => {
     }
 
     if (uploadedFile.value.length) {
+      console.log('uploadedFile.value : ', uploadedFile.value);
       for (const file of uploadedFile.value) {
         // console.log('Processing file:', file);
 
@@ -1179,15 +1670,27 @@ const saveMyDocForm = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
+    console.log('filebox : ', filebox);
+    console.log('uploadedFile.value : ', uploadedFile.value);
+
     if (filebox && filebox.files.length) {
       Array.from(filebox.files).forEach((file) => {
+        console.log('file:', file);
         formData.append('form_data', file);
       });
     }
 
     if (uploadedFile.value.length) {
       for (const file of uploadedFile.value) {
-        // console.log('Processing file:', file);
+        console.log('file:', file);
+
+        // // file.url '?' 포함되어 있을 경우 제거
+        // if (file.url.includes('?')) {
+        //   file.url = file.url.split('?')[0];
+        // } else {
+        //   file.url = file.url;
+        // }
+        // console.log('file.url : ', file.url);
 
         // 파일 데이터를 서버에서 가져옴
         const fileData = await skapi.getFile(file.url, {
@@ -1199,6 +1702,9 @@ const saveMyDocForm = async () => {
 
         // Blob에 원래 파일 이름을 붙여 File 객체 생성
         const fileObject = new File([blob], file.filename, { type: blob.type });
+
+        console.log('blob : ', blob);
+        console.log('fileObject : ', fileObject);
 
         // FormData에 추가
         formData.append('form_data', fileObject);
@@ -1222,6 +1728,125 @@ const saveMyDocForm = async () => {
   } catch (error) {
     console.error('결재 양식 저장 중 오류 발생: ', error);
     alert('결재 양식 저장 중 오류가 발생했습니다.');
+  }
+};
+
+// 임시 저장
+const tempSaveMyDoc = async () => {
+  // 결재 제목이 없을 경우 저장 불가
+  if (!auditTitle.value) {
+    alert('결재 제목을 입력해주세요.');
+    return;
+  }
+
+  try {
+    // 첨부파일 업로드
+    const filebox = document.querySelector('input[name="additional_data"]');
+    const formData = new FormData();
+
+    formData.append('form_title', auditTitle.value);
+    formData.append('form_content', editorContent.value);
+    formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
+    formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
+
+    // 결재자 정보 저장
+    const auditorData = {
+      approvers: selectedAuditors.value.approvers.map((user) => ({
+        user_id: user.data.user_id,
+        name: user.index.value,
+        position: user.index.name.split('.')[1],
+        division: user.index.name.split('.')[0],
+        order: user.order // 순서 정보 추가
+      })),
+      agreers: selectedAuditors.value.agreers.map((user) => ({
+        user_id: user.data.user_id,
+        name: user.index.value,
+        position: user.index.name.split('.')[1],
+        division: user.index.name.split('.')[0],
+        order: user.order // 순서 정보 추가
+      })),
+      receivers: selectedAuditors.value.receivers.map((user) => ({
+        user_id: user.data.user_id,
+        name: user.index.value,
+        position: user.index.name.split('.')[1],
+        division: user.index.name.split('.')[0],
+        order: user.order // 순서 정보 추가
+      }))
+    };
+
+    formData.append('auditors', JSON.stringify(auditorData ?? []));
+
+    if (filebox && filebox.files.length) {
+      Array.from(filebox.files).forEach((file) => {
+        formData.append('form_data', file);
+      });
+    }
+
+    console.log('filebox : ', filebox);
+    console.log('uploadedFile.value : ', uploadedFile.value);
+
+    if (uploadedFile.value.length) {
+      for (const file of uploadedFile.value) {
+        console.log('file:', file);
+
+        // file.url ?를 기준으로 [0]만 가져오기
+        const fileUrl = file.url.split('?')[0];
+        console.log('fileUrl : ', fileUrl);
+
+        // 파일 데이터를 서버에서 가져옴
+        const fileData = await skapi.getFile(fileUrl, {
+          dataType: 'endpoint'
+        });
+        console.log('fileData : ', fileData);
+
+        // 가져온 파일 데이터를 Blob으로 변환
+        const blob = await fetch(fileData.url).then((res) => res.blob());
+
+        // Blob에 원래 파일 이름을 붙여 File 객체 생성
+        const fileObject = new File([blob], file.filename, { type: blob.type });
+
+        // FormData에 추가
+        formData.append('form_data', fileObject);
+      }
+    }
+
+    const options = {
+      table: {
+        name: 'my_tempsave_audit',
+        access_group: 'private'
+      },
+      index: {
+        name: 'form_title', // 제목별 검색을 위한 인덱싱
+        value: auditTitle.value.replaceAll('.', '_')
+      }
+    };
+
+    // 임시 저장된 결재 양식이 있는지 확인
+    const res = await skapi.getRecords({
+      table: {
+        name: 'my_tempsave_audit',
+        access_group: 'private'
+      },
+      record_id: route.query.record_id
+    });
+
+    if (route.query.record_id === res.list[0].record_id) {
+      await skapi.postRecord(formData, {
+        table: {
+          name: 'my_tempsave_audit',
+          access_group: 'private'
+        },
+        record_id: res.list[0].record_id
+      });
+    } else if (route.query.record_id === undefined) {
+      const res = await skapi.postRecord(formData, options);
+    }
+
+    alert('임시 저장되었습니다.');
+    router.push({ path: '/approval/audit-list-tempsave' });
+  } catch (error) {
+    console.error('임시 저장 중 오류 발생: ', error);
+    alert('임시 저장 중 오류가 발생했습니다.');
   }
 };
 
@@ -1259,9 +1884,100 @@ const getMyDocForm = async () => {
   }
 };
 
+// 임시 저장 리스트 가져오기
+const getTempSaveMyDocList = async () => {
+  try {
+    const res = await skapi.getRecords({
+      table: {
+        name: 'my_tempsave_audit',
+        access_group: 'private'
+      }
+    });
+
+    return res;
+  } catch (error) {
+    console.error('결재 양식 가져오기 중 오류 발생: ', error);
+  }
+};
+
+// 임시 저장 내용 가져오기
+const getTempSaveMyDocCont = async () => {
+  if (route.query.mode === 'tempsave' && route.query.record_id) {
+    try {
+      const res = await skapi.getRecords({
+        table: {
+          name: 'my_tempsave_audit',
+          access_group: 'private'
+        },
+        record_id: route.query.record_id
+      });
+
+      temploading.value = true;
+
+      if (res.list && res.list.length > 0) {
+        tempSaveData.value = res.list[0];
+
+        // 폼 데이터 채우기
+        auditTitle.value = tempSaveData.value.data.form_title;
+        editorContent.value = tempSaveData.value.data.form_content;
+
+        // 반려 설정
+        if (tempSaveData.value.data.reject_setting !== undefined) {
+          rejectSetting.value =
+            tempSaveData.value.data.reject_setting === 'true' ||
+            tempSaveData.value.data.reject_setting === true;
+        }
+
+        // 추가 행 데이터
+        if (tempSaveData.value.data.custom_rows) {
+          addRows.value = JSON.parse(tempSaveData.value.data.custom_rows);
+        }
+
+        // 결재자 정보
+        if (tempSaveData.value.data.auditors) {
+          const auditors = JSON.parse(tempSaveData.value.data.auditors);
+          console.log('auditors : ', auditors);
+
+          // 순서 정보를 포함한 결재자 변환 함수
+          const convertAuditorFormatWithOrder = (auditors, role) => {
+            return auditors.map((auditor) => ({
+              data: { user_id: auditor.user_id },
+              index: {
+                value: auditor.name,
+                name: `${auditor.division}.${auditor.position}`
+              },
+              role: role,
+              order: auditor.order || 0,
+              sortable: role !== 'receivers'
+            }));
+          };
+
+          selectedAuditors.value = {
+            approvers: convertAuditorFormatWithOrder(auditors.approvers || [], 'approvers'),
+            agreers: convertAuditorFormatWithOrder(auditors.agreers || [], 'agreers'),
+            receivers: convertAuditorFormatWithOrder(auditors.receivers || [], 'receivers')
+          };
+
+          // 결재자 순서대로 정렬
+          selectedAuditors.value.approvers.sort((a, b) => (a.order || 0) - (b.order || 0));
+          selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
+        }
+
+        // 첨부파일이 있는 경우
+        if (tempSaveData.value.bin && tempSaveData.value.bin.form_data) {
+          uploadedFile.value = tempSaveData.value.bin.form_data;
+        }
+      }
+
+      return res;
+    } catch (error) {
+      console.error('임시 저장 내용 불러오기 중 오류 발생:', error);
+    }
+  }
+};
+
 // 결재자 정보 변환 함수
 const convertAuditorFormat = (auditors, role) => {
-  console.log('auditors : ', auditors);
   return auditors.map((auditor) => ({
     data: { user_id: auditor.user_id },
     index: {
@@ -1323,6 +2039,7 @@ const moveUser = (user, direction) => {
     reorderUsers();
   }
 };
+
 // 결재 양식 선택
 const selDocForm = async (e) => {
   // 선택된 record_id로 양식 찾기
@@ -1397,10 +2114,10 @@ const selDocForm = async (e) => {
     // 체크박스 설정 불러오기
     if (selectedForm.value.data.reject_setting !== undefined) {
       rejectSetting.value =
-        selectedForm.value.data.reject_setting === 'true' ||
-        selectedForm.value.data.reject_setting === true;
+        selectedForm.value.data.reject_setting === 'false' ||
+        selectedForm.value.data.reject_setting === false;
     } else {
-      rejectSetting.value = true;
+      rejectSetting.value = false;
     }
   }
 };
@@ -1420,7 +2137,7 @@ const newWriteAudit = () => {
   addRows.value = [];
   uploadedFile.value = [];
   fileNames.value = [];
-  rejectSetting.value = true;
+  rejectSetting.value = false;
 
   // 결재라인 select option '결재'로 초기화
   selectedUsers.value.forEach((user) => {
@@ -1434,16 +2151,136 @@ const newWriteAudit = () => {
   selectedAuditors.value.receivers = [];
 };
 
+// isTempSaveMode에서 취소버튼 클릭시
+const cancelTempSave = () => {
+  console.log('임시저장 취소');
+
+  router.push({ path: '/approval/audit-list-tempsave' });
+  formCategory.value = 'master';
+  rejectSetting.value = false;
+
+  alert('해당 페이지에서 벗어나면 수정 내용이 저장되지 않습니다.');
+};
+
 const dateValue = ref(new Date().toISOString().substring(0, 10));
 
 const updateScreenSize = () => {
   isDesktop.value = window.innerWidth > 768;
 };
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('resize', updateScreenSize);
   getDocForm();
   getMyDocForm();
+
+  // 임시 저장 모드인 경우 해당 내용 불러오기
+  if (isTempSaveMode.value) {
+    getTempSaveMyDocCont();
+  }
+
+  // 재요청 모드인 경우 바로 step 2로 이동
+  if (isReRequestMode.value && reRequestData.value && reRequestData.value.data) {
+    step.value = 2;
+    temploading.value = true;
+    console.log('== onMounted == reRequestData : ', reRequestData.value);
+
+    // 결재 제목 설정
+    auditTitle.value = reRequestData.value.data.to_audit;
+
+    // 에디터 내용 설정
+    editorContent.value = reRequestData.value.data.to_audit_content;
+
+    // 반려 설정 불러오기
+    if (reRequestData.value.data.reject_setting !== undefined) {
+      rejectSetting.value =
+        reRequestData.value.data.reject_setting === 'true' ||
+        reRequestData.value.data.reject_setting === true;
+    }
+
+    // 추가 행 데이터 불러오기
+    if (reRequestData.value.data.custom_rows) {
+      try {
+        addRows.value = JSON.parse(reRequestData.value.data.custom_rows);
+      } catch (e) {
+        console.error('Custom rows parsing error:', e);
+        addRows.value = [];
+      }
+    }
+
+    // 첨부파일이 있는 경우
+    if (reRequestData.value.bin && reRequestData.value.bin.additional_data) {
+      uploadedFile.value = reRequestData.value.bin.additional_data;
+      console.log('uploadedFile : ', uploadedFile.value);
+    }
+
+    // 결재자 정보 불러오기
+    if (reRequestData.value.data.auditors) {
+      try {
+        // 직원 목록 조회
+        const empList = await skapi.getRecords({
+          table: {
+            name: 'emp_position_current',
+            access_group: 1
+          }
+        });
+
+        // 직원 정보 맵 생성
+        const empMap = {};
+        if (empList && empList.list) {
+          empList.list.forEach((emp) => {
+            if (emp.data && emp.data.user_id) {
+              // 전체 직원 정보를 저장
+              empMap[emp.data.user_id] = {
+                division: emp.index.name.split('.')[0],
+                name: emp.index.value,
+                user_id: emp.data.user_id,
+                position: emp.index.name.split('.')[1]
+              };
+            }
+          });
+        }
+
+        // 결재자 정보 파싱
+        const auditors = JSON.parse(reRequestData.value.data.auditors);
+
+        // 결재자 데이터 변환 함수
+        const convertAuditors = (auditorsList, role) => {
+          return (auditorsList || []).map((auditor) => {
+            const userId = auditor.user_id.replaceAll('_', '-');
+
+            return {
+              data: { user_id: userId },
+              index: {
+                value: empMap[userId] ? empMap[userId].name : '',
+                name: empMap[userId] ? `${empMap[userId].division}.${empMap[userId].position}` : ''
+              },
+              role: role,
+              order: auditor.order || 0, // 순서 정보 추가
+              sortable: role !== 'receivers' // receivers는 정렬 불가능
+            };
+          });
+        };
+
+        // 결재자 정보 설정
+        selectedAuditors.value = {
+          approvers: convertAuditors(auditors.approvers, 'approvers'),
+          agreers: convertAuditors(auditors.agreers, 'agreers'),
+          receivers: convertAuditors(auditors.receivers, 'receivers')
+        };
+        console.log('selectedAuditors : ', selectedAuditors.value);
+
+        // 결재자 순서대로 정렬
+        selectedAuditors.value.approvers.sort((a, b) => (a.order || 0) - (b.order || 0));
+        selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        console.log('결재자 정보 설정 완료:', selectedAuditors.value);
+      } catch (error) {
+        console.error('결재자 정보 처리 중 오류:', error);
+      }
+    }
+
+    isFormSelected.value = true;
+  }
 });
 
 onUnmounted(() => {
@@ -1658,7 +2495,8 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  max-width: 900px;
+  // max-width: 960px;
+  max-width: 992px;
 
   .title {
     position: relative;
@@ -2154,6 +2992,14 @@ onUnmounted(() => {
         border: 1px solid var(--warning-color-500);
       }
     }
+  }
+}
+
+.wysiwyg-table {
+  tr,
+  th,
+  td {
+    height: auto;
   }
 }
 

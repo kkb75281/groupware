@@ -1,8 +1,8 @@
 <template lang="pug">
-div(style="display: flex; gap: 1rem")
-	h1.title 출퇴근 관리
+//- div(style="display: flex; gap: 1rem")
+//- 	h1.title 출퇴근 관리
 
-hr
+//- hr
 
 .itembox
 	.title-wrap(style="margin-bottom: 0;")
@@ -12,6 +12,8 @@ hr
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-clock")
 		| {{ timeRecords.date }}
+
+br
 
 .itembox-wrap
 	.itembox
@@ -28,38 +30,44 @@ hr
 		span.monthlyWorkTime 총 근무시간 : {{ monthlyWorkTime }}
 	.table-wrap
 		.tb-overflow
-				template(v-if="loading")
-						Loading#loading
-				table.table#tb-record-commute
-						colgroup
-								col(style="width: 8%;")
-								col(style="width: 5%;")
-								col(style="width: 5%;")
-								col(style="width: 10%;")
-								col(style="width: 10%;")
-								
-						thead
-								tr
-									th(scope="col") 날짜
-									th(scope="col") 출근
-									th(scope="col") 퇴근
-									th(scope="col") 근무시간
-									th(scope="col") 비고
-						tbody
-								template(v-if="loading")
-									tr(v-for="i in 5")
-								template(v-else-if="!commuteRecords")
-									tr
-										td(colspan="5") 데이터가 없습니다.
-								template(v-else)
-										tr(v-for="record in commuteRecords")
-											td.date {{ record.data.date }}
-											td.start-time {{ extractTimeFromDateTime(record.data.startTime) }}
-											td.end-time {{ extractTimeFromDateTime(record.data.endTime) }}
-											td.work-time {{ record.data.dailyCommuteTime }}
-											td.remark
-												.input-wrap
-													input(type="text" v-model="record.data.remark" @blur="updateDesc(record)")
+			template(v-if="loading")
+				Loading#loading
+			table.table#tb-record-commute
+				colgroup
+					col(style="width: 8%;")
+					col(style="width: 5%;")
+					col(style="width: 5%;")
+					col(style="width: 10%;")
+					col(style="width: 10%;")
+						
+				thead
+					tr
+						th(scope="col") 날짜
+						th(scope="col") 출근
+						th(scope="col") 퇴근
+						th(scope="col") 근무시간
+						th(scope="col") 비고
+				tbody
+					template(v-if="loading")
+						tr(v-for="i in 5")
+					template(v-else-if="!commuteRecords")
+						tr
+							td(colspan="5") 데이터가 없습니다.
+					template(v-else)
+						tr(v-for="record in commuteRecords")
+							td.date {{ record.data.date }}
+							td.start-time {{ extractTimeFromDateTime(record.data.startTime) }}
+							td.end-time {{ extractTimeFromDateTime(record.data.endTime) }}
+							td.work-time {{ record.data.dailyCommuteTime }}
+							td.remark
+								.remark-wrap(style="display: flex; gap: 0.5rem;")
+									.input-wrap
+										input(type="text" placeholder="입력해주세요." v-model="record.data.remark")
+									.btn-wrap
+										button.btn-save(type="button" @click="saveDesc(record)")
+											.icon
+												svg
+													use(xlink:href="@/assets/icon/material-icon.svg#icon-check-circle-fill")
 
 //- 테스트용 삭제 버튼 (추후 삭제)
 //- button.btn.sm(@click="testDelete") delete
@@ -95,7 +103,7 @@ const route = useRoute();
 //   res.list.forEach((record) => {
 //     console.log(record.data.date);
 
-//     if (record.data.date === '2025-04-04') {
+//     if (record.data.date === '2025-04-10') {
 //       const config = {
 //         record_id: record.record_id
 //       };
@@ -132,6 +140,7 @@ const commuteRecords = ref([]); // 출퇴근 기록
 const timeRecords = ref(initWorkFormat); // 출퇴근 시간 기록
 const monthlyWorkTime = ref(''); // 한 달 총 근무시간
 const commuted = ref(false); // 출근 가능 여부
+const isEdit = ref(false); // 비고란 수정 여부
 
 let commuteStorage = []; // 직원별 출퇴근 정보 저장소
 
@@ -164,13 +173,23 @@ const getWorkTime = async () => {
     // console.log('=== getWorkTime === res : ', res);
     // console.log('divisionNameList : ', divisionNameList.value);
 
+    const userDvsList = await skapi.getRecords({
+      table: {
+        name: 'emp_division' + makeSafe(user.user_id),
+        access_group: 1
+      },
+      tag: '[emp_id]' + makeSafe(user.user_id)
+    });
+    const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
+    const userDvs = currentUserDvs.tags[0].split(']')[1];
+
     // 직원의 부서, 직급 정보 가져오기
     const getDvs = await skapi.getRecords({
       table: {
         name: 'emp_position_current',
         access_group: 1
       },
-      unique_id: '[emp_position_current]' + makeSafe(user.user_id)
+      unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${userDvs}`
     });
 
     // 현재 로그인한 유저의 부서 근무시간 찾기
@@ -527,10 +546,8 @@ const endWork = async () => {
 
 let totalWorkTimeMs = 0; // 총 근무시간
 
-// 비고란 작성 내용 업데이트
-let timeoutId;
-
-const updateDesc = async (record) => {
+// 비고란 저장
+const saveDesc = async (record) => {
   try {
     const values = {
       ...record.data,
@@ -548,22 +565,13 @@ const updateDesc = async (record) => {
       record_id: record.record_id,
       data: values
     };
+
+    alert('비고 내용이 저장되었습니다.');
   } catch (error) {
     alert('비고 내용 저장에 실패했습니다.');
     console.error(error);
   }
 };
-
-// 1200ms마다 한 번씩만 실행되도록 설정
-function autoUpdateDesc(record) {
-  // 이전 타이머가 있다면 제거
-  if (timeoutId) window.clearTimeout(timeoutId);
-
-  // 새로운 타이머 설정
-  timeoutId = window.setTimeout(() => {
-    updateDesc(record);
-  }, 1200);
-}
 
 // 출퇴근 기록 조회
 const fetchCommuteRecords = async (userId = null, options = {}) => {
@@ -656,8 +664,9 @@ onMounted(async () => {
       currentTimestamp <= masterStartTime.maxTimestamp
     );
 
-    // DB에서 기록 조회
+    // 출퇴근 기록 가져오기
     const res = await fetchCommuteRecords();
+
     if (res.list && Array.isArray(res.list)) {
       commuteStorage = [...res.list].sort((a, b) => b.uploaded - a.uploaded); // uploaded(레코드 최초 생성순) 기준으로 정렬해야 함.
 
@@ -719,7 +728,6 @@ onMounted(async () => {
   box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.15);
   border-radius: 16px;
   padding: 1.5rem;
-  margin-top: 1.5rem;
   line-height: 1.2;
   flex: 1;
 
@@ -770,6 +778,32 @@ onMounted(async () => {
 
   .icon {
     padding: 0;
+  }
+}
+
+.remark {
+  .btn-wrap {
+    flex-wrap: nowrap;
+
+    button {
+      width: 1.5rem;
+      height: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      &:hover {
+        .icon {
+          svg {
+            fill: var(--primary-color-400);
+          }
+        }
+      }
+    }
+
+    .icon {
+      padding: 0;
+    }
   }
 }
 

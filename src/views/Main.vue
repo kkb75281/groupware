@@ -1,6 +1,6 @@
 <template lang="pug">
 Header
-Navbar
+//- Navbar
 main#main
 	.wrap(ref="mainWrap" :class="{ loading: mainPageLoading }")
 		Loading#loading(v-if="mainPageLoading") 
@@ -36,13 +36,14 @@ watch(mainPageLoading, (nv) => {
 <style scoped lang="less">
 #main {
 	padding-top: calc(var(--header-height));
-	padding-left: calc(var(--navbar-width));
+	// padding-left: calc(var(--navbar-width));
 	transition: padding-left 0.15s linear;
 
 	.wrap {
 		// padding: 3rem 2.4rem 0;
 		position: relative;
-		padding: 3rem 2.4rem;
+		// padding: 3rem 2.4rem;
+		// padding: 1rem;
 
 		&.loading {
 			&::after {
@@ -72,7 +73,7 @@ watch(mainPageLoading, (nv) => {
 	}
 
 	#main {
-		padding-left: calc(var(--navbar-fold-width));
+		// padding-left: calc(var(--navbar-fold-width));
 
 		.wrap {
 			padding: 3rem 2.4rem 0;
@@ -104,12 +105,12 @@ watch(mainPageLoading, (nv) => {
 	}
 
 	#main {
-		padding-left: 0;
+		// padding-left: 0;
 
-		.wrap {
-			padding-left: 16px;
-			padding-right: 16px;
-		}
+		// .wrap {
+		// 	padding-left: 16px;
+		// 	padding-right: 16px;
+		// }
 	}
 
 	.fold {

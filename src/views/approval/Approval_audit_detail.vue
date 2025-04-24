@@ -1,9 +1,9 @@
 <template lang="pug">
-.title
-	h1 결재 문서
-	span(v-if="isCanceled" style="color:var(--warning-color-400)") 현재 문서는 회수된 문서입니다.
+//- .title
+//- 	h1 결재 문서
+span(v-if="isCanceled" style="color:var(--warning-color-400)") 현재 문서는 회수된 문서입니다.
 
-hr
+//- hr
 
 Loading#loading(v-if="getAuditDetailRunning")
 
@@ -139,6 +139,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="isCanceled") 회수
+			button.btn.outline.btn-re-request(type="button" v-if="senderUser.user_id === user.user_id" @click="reRequestAudit") 재요청
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -159,7 +160,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 			template(v-if="approvalStep === 2")
 				.tab-menu
 					ul(:class="{ 'stamp': stempType === 'stamp', 'sign': stempType === 'sign' }")
-						li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 도장/서명 선택
+						//- li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 도장/서명 선택
+						li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; getMainStamp()") 도장/서명 선택
 						li(:class="{ 'active': stempType === 'sign', 'disabled' : makeStampComplete || makeSignComplete }" @click="stempType = 'sign'; openStampModal = true; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 직접 서명
 				br
 				.tab-cont
@@ -189,8 +191,9 @@ Loading#loading(v-if="getAuditDetailRunning")
 							Loading#loading
 		.modal-footer(style="margin: 0")
 			template(v-if="approvalStep === 1")
-				button.btn.warning.btn-edit(type="button" @click="rejectAudit") 반려하기
-				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getStampList(true)") 승인하기
+				//- button.btn.warning.btn-edit(type="button" @click="rejectAudit") 반려하기
+				button.btn.warning.btn-edit(type="button" @click="rejectAudit" :disabled="auditorList.some(a => a.approved === 'approve' && a.order === Math.max(...auditorList.filter(auditor => auditor.approved_type === 'approvers' || auditor.approved_type === 'agreers').map(auditor => auditor.order)))") 반려하기
+				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getMainStamp()") 승인하기
 			template(v-if="approvalStep === 2")
 				button.btn.bg-gray.btn-edit(v-if="stempType === 'sign' ? handleStampBlobComplete : true" type="button" @click="approvalStep--") 이전
 				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재승인
@@ -203,7 +206,7 @@ import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { skapi, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe } from '@/user.ts';
 import { getUserInfo } from '@/employee.ts';
-import { auditList } from '@/audit.ts';
+import { auditList, reRequestData } from '@/audit.ts';
 import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp.ts';
 import {
   openStampModal,
@@ -258,6 +261,7 @@ const isRejected = computed(() => {
   return allAudited && hasRejector;
 });
 
+// 결재 완료 여부 확인
 const isApprovalOrder = computed(() => {
   if (isCanceled.value) return false;
 
@@ -267,6 +271,18 @@ const isApprovalOrder = computed(() => {
   // 현재 사용자가 결재자 목록에 없으면 false 반환
   const currentUser = auditorList.value.find((auditor) => auditor.user_id === user.user_id);
   if (!currentUser) return false;
+
+  // 가장 마지막 결재자의 order
+  const lastOrder = Math.max(
+    ...auditorList.value
+      .filter(
+        (auditor) => auditor.approved_type === 'approvers' || auditor.approved_type === 'agreers'
+      )
+      .map((auditor) => auditor.order)
+  );
+
+  // lastOrder는 항상 결재 가능
+  if (currentUser.order === lastOrder) return true;
 
   // 결재 완료한 사람들 목록을 가져와서 order 순서가 낮은 사람들이 모두 결재했는지 확인
   const lowerOrderAuditors = auditorList.value.filter(
@@ -284,31 +300,16 @@ const isApprovalOrder = computed(() => {
 
 // 결재 회수 가능 여부 확인
 const isCancelPossible = computed(() => {
-  console.log('결재자 리스트 === isCancelPossible === auditorList : ', auditorList.value);
-
   // 모든 결재자가 결재를 완료한 경우
   if (auditorList.value.every((auditor) => auditor.approved)) {
-    console.log('모두 결재 완료!!');
-
     // 모든 결재자가 결재를 완료했고 반려자가 있는 경우 회수 불가
     if (auditorList.value.some((auditor) => auditor.approved === 'reject')) {
-      console.log('반려자가 있고 모두 결재 완료!!');
       return false;
     }
-
     return false;
   } else {
-    console.log('결재 진행중!!');
     return true;
   }
-
-  // if (auditorList.value.every((auditor) => auditor.approved)) {
-  //   console.log('모두 결재 완료!!');
-  //   return false;
-  // } else {
-  //   console.log('결재 진행중!!');
-  //   return true;
-  // }
 });
 
 // 결재자 정보 저장
@@ -329,8 +330,6 @@ watch(
 );
 
 watch(auditDoContent, () => {
-  console.log({ auditList });
-  console.log({ auditDoContent });
   let userId = auditDoContent.value?.user_id;
 
   if (userId) {
@@ -415,7 +414,6 @@ const goToPrev = () => {
 
 function formatTimestampToDate(timestamp) {
   const date = new Date(timestamp); // timestamp를 Date 객체로 변환
-
   const year = date.getFullYear(); // 연도 가져오기
   const month = String(date.getMonth() + 1).padStart(2, '0'); // 월 가져오기 (0부터 시작하므로 +1)
   const day = String(date.getDate()).padStart(2, '0'); // 일 가져오기
@@ -450,11 +448,8 @@ let uploadCreatedStamp = async (file) => {
 
   let stampImageData = new FormData();
   stampImageData.append('stamp_data', file);
-  console.log({ stampImageData });
-  console.log({ stamp_postParams });
 
   const res = await skapi.postRecord(stampImageData, stamp_postParams);
-  console.log({ res });
 
   return res;
 };
@@ -462,8 +457,6 @@ let uploadCreatedStamp = async (file) => {
 // 직접 서명
 let uploadStampImage = async (imageUrl) => {
   makeStampRunning.value = true;
-
-  console.log({ imageUrl });
 
   await handleStampBlob(imageUrl);
 
@@ -473,7 +466,6 @@ let uploadStampImage = async (imageUrl) => {
 
   try {
     uploadGeneratedStamp.value = await uploadCreatedStamp(onlyStampFile.value);
-    console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
   } catch (e) {
     alert('도장 등록 중 오류가 발생했습니다.');
     throw e;
@@ -533,7 +525,6 @@ let createStamp = () => {
     ctx.fillStyle = 'red';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    //   ctx.fillText(name, centerX, centerY);
     const textOffsetY = radius * 0.05; // 텍스트를 약간 위로 올림
     ctx.fillText(name, centerX, centerY + textOffsetY);
   }
@@ -547,9 +538,7 @@ let createStamp = () => {
     if (uploadedStamp.value && uploadedStamp.value.length) {
       // 도장 이미지가 있을때 각각의 도장 이름 중 generated-stamp-가 있는지 확인
       const stampNames = uploadedStamp.value.map((stamp) => stamp.filename);
-      console.log(stampNames);
       const generatedStamp = stampNames.filter((name) => name.includes('generated-stamp-'));
-      console.log(generatedStamp);
 
       // generatedStamp가 있으면 그 다음 숫자를 찾아서 도장 이름을 만들어줌
       if (generatedStamp.length) {
@@ -572,7 +561,6 @@ let createStamp = () => {
 
     try {
       uploadGeneratedStamp.value = await uploadCreatedStamp(file);
-      console.log('uploadGeneratedStamp.value : ', uploadGeneratedStamp.value);
     } catch (e) {
       alert('도장 등록 중 오류가 발생했습니다.');
       throw e;
@@ -597,6 +585,33 @@ let createStamp = () => {
     makeStampRunning.value = false;
     makeStampComplete.value = true;
   }, 'image/png');
+};
+
+// 대표 도장 가져오기
+const getMainStamp = async () => {
+  try {
+    const res = await skapi.getRecords({
+      table: {
+        name: 'main_stamp_' + user.user_id.replaceAll('-', '_'),
+        access_group: 1
+      }
+    });
+
+    if (res.list && res.list.length) {
+      const stampUrl = await skapi.getFile(res.list[0].data, {
+        dataType: 'endpoint'
+      });
+
+      previewStamp.value = stampUrl;
+      selectedStamp.value = stampUrl;
+      selectedStampComplete.value = true;
+      gettingStampList.value = false;
+    } else {
+      gettingStampList.value = false;
+    }
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 let selectStamp = (url) => {
@@ -655,7 +670,6 @@ const getAuditDetail = async () => {
         record_id: auditId.value
       })
     ).list[0];
-
     console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
 
     if (auditDoc) {
@@ -687,8 +701,6 @@ const getAuditDetail = async () => {
         }
       })
       .then((res) => {
-        console.log('=== getAuditDetail === res : ', res);
-
         if (res.list && res.list.length) {
           // 수동 회수 또는 자동 회수 중 rejectSetting이 false인 경우만 실제 회수 상태로 설정
           const cancelRecord = res.list[0];
@@ -708,7 +720,6 @@ const getAuditDetail = async () => {
       });
 
     const auditors = JSON.parse(auditDoc.data.auditors);
-    console.log('결재자 === auditors : ', auditors);
 
     let getAuditorInfo = async (uid) => {
       let user_id = uid.user_id.replaceAll('_', '-');
@@ -756,7 +767,38 @@ const getAuditDetail = async () => {
     getAuditDetailRunning.value = false;
 
     const approvals = await approvedAudit();
-    console.log('결재완료자 === getAuditDetail === approvals : ', approvals);
+
+    // 최종결재자 정보 확인
+    const allApprovers = [
+      ...(auditors.approvers || []).map((a) => ({ ...a, type: 'approvers' })),
+      ...(auditors.agreers || []).map((a) => ({ ...a, type: 'agreers' }))
+    ];
+
+    if (allApprovers.length > 0) {
+      const maxOrder = Math.max(...allApprovers.map((a) => a.order));
+      const finalApproverData = allApprovers.find((a) => a.order === maxOrder);
+
+      if (finalApproverData) {
+        const finalApproverId = finalApproverData.user_id.replaceAll('_', '-');
+
+        // 최종결재자의 결재 정보 확인
+        const finalApproval = approvals.find((a) => a.user_id === finalApproverId);
+
+        // 최종결재자의 결재 상태 확인 (또는 문서 상태 필드가 있는 경우)
+        const statusApproval = approvals.find((a) => a.data.documentStatus);
+
+        if (statusApproval && statusApproval.data.documentStatus) {
+          // 문서 상태 필드가 있는 경우
+          auditDoContent.value.documentStatus = statusApproval.data.documentStatus;
+          console.log('문서 상태 : ', auditDoContent.value.documentStatus);
+        } else if (finalApproval && finalApproval.data.approved) {
+          // 최종결재자가 결재했으면 문서 상태 설정
+          auditDoContent.value.documentStatus =
+            finalApproval.data.approved === 'approve' ? '완료됨' : '반려됨';
+          console.log('최종결재자 결재 상태 : ', auditDoContent.value.documentStatus);
+        }
+      }
+    }
 
     const approvalUserList = [];
     const newTags = auditDoc.tags.map((a) => a.replaceAll('_', '-')); // 모든 결재자
@@ -774,8 +816,6 @@ const getAuditDetail = async () => {
 
         if (approval) {
           const approvedStr = approval.data.approved ? '결재함' : '반려함';
-          console.log('approvedStr : ', approvedStr);
-          console.log('approval : ', approval);
 
           let stampFile;
 
@@ -809,8 +849,6 @@ const getAuditDetail = async () => {
       })
     );
 
-    console.log('결재 결과 === getAuditDetail === approvalUserList : ', approvalUserList);
-
     const userIds = approvalUserList.map((auditor) => auditor.user_id);
     const userList = await Promise.all(userIds.map(async (auditor) => await getUserInfo(auditor)));
     const userInfoList = userList.map((user) => (user.list.length ? user.list[0] : null));
@@ -825,11 +863,8 @@ const getAuditDetail = async () => {
       }))
       .sort((a, b) => a.order - b.order);
 
-    console.log('전체 결재자 리스트 === getAuditDetail === newAuditUserList : ', newAuditUserList);
-
     // 전체 결재자 리스트
     auditorList.value = newAuditUserList;
-    // console.log('auditorList.value : ', auditorList.value);
 
     // auditorList 결재, 합의 순서대로
     auditorList.value.sort((a, b) => {
@@ -843,9 +878,6 @@ const getAuditDetail = async () => {
       (auditor) => auditor.approved_type === 'approvers'
     );
     agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreers');
-
-    // console.log('approverList.value : ', approverList.value);
-    // console.log('agreerList.value : ', agreerList.value);
 
     // 모든 결재자가 결재를 완료했는지 확인
     const allAudited = auditorList.value.every((auditor) => auditor.approved);
@@ -870,18 +902,6 @@ const getAuditDetail = async () => {
         isLastRejector = true;
       }
     }
-
-    // // 회수 상태 결정
-    // // - 모든 결재자가 결재를 완료했고, 마지막 결재자가 반려했으면 회수하지 않음 (반려 상태)
-    // // - 결재 도중 반려자가 있으면 회수 상태
-    // if (hasRejector && !allAudited) {
-    //   isCanceled.value = true; // 결재 도중 반려 - 회수 처리
-    // } else if (hasRejector && allAudited && !isLastRejector) {
-    //   isCanceled.value = true; // 마지막 결재자가 아닌 사람이 반려 - 회수 처리
-    // } else {
-    //   // 마지막 결재자가 반려했거나 모두 승인 - 회수 안함
-    //   isCanceled.value = isCanceled.value; // 기존 회수 상태 유지 (수동 회수만 반영)
-    // }
 
     // 자동 회수 관련 로직 업데이트
     if (hasRejector && !allAudited && !rejectSetting.value) {
@@ -931,12 +951,43 @@ const postApproval = async () => {
       return;
     }
 
+    // 최종결재자 여부 확인
+    const approverAgreesList = auditorList.value.filter(
+      (auditor) => auditor.approved_type === 'approvers' || auditor.approved_type === 'agreers'
+    );
+
+    const maxOrder = Math.max(...approverAgreesList.map((auditor) => auditor.order));
+    console.log('maxOrder : ', maxOrder);
+
+    const currentUser = auditorList.value.find((auditor) => auditor.user_id === user.user_id);
+    const isFinalApprover =
+      currentUser &&
+      currentUser.order === maxOrder &&
+      (currentUser.approved_type === 'approvers' || currentUser.approved_type === 'agreers');
+    console.log('isFinalApprover : ', isFinalApprover);
+
+    // 이미 '완료됨' 상태인 문서에 대한 반려 방지 (최종결재자가 승인했는지 확인)
+    const finalApprover = approverAgreesList.find((auditor) => auditor.order === maxOrder);
+    console.log('finalApprover : ', finalApprover);
+    if (finalApprover && finalApprover.approved === 'approve' && approved === 'reject') {
+      alert('이미 최종 승인된 문서는 반려할 수 없습니다.');
+      isPosting = false;
+      return;
+    }
+
     const data = {
       approved: approved,
       comment: approvedComment.value,
       stamp: selectedStamp.value,
       date: approvedDate
     };
+
+    // 최종결재자인 경우 문서 상태 필드 추가
+    if (isFinalApprover) {
+      data.isFinalApprover = true;
+      data.documentStatus = approved === 'approve' ? '완료됨' : '반려됨';
+      console.log('data : ', data);
+    }
 
     // 결재 하는 요청
     const res = await skapi.postRecord(data, {
@@ -947,7 +998,7 @@ const postApproval = async () => {
       reference: auditId.value,
       tags: [userId.replaceAll('-', '_')]
     });
-    console.log('결재요청 === postApproval === res : ', res);
+    console.log('=== postApproval === res : ', res);
 
     // 기안자에게 결재 알림
     let postRealtimeBody = {
@@ -1113,7 +1164,7 @@ const postApproval = async () => {
         resultMessage = '반려 처리되었습니다.';
       }
     } else {
-      resultMessage = '결재가 완료되었습니다.';
+      resultMessage = isFinalApprover ? '최종 결재가 완료되었습니다.' : '결재가 완료되었습니다.';
     }
 
     window.alert(resultMessage);
@@ -1439,6 +1490,20 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   }
 
   await nextTick();
+};
+
+// 기안자의 재요청
+const reRequestAudit = () => {
+  reRequestData.value = auditDoContent.value;
+  console.log('reRequestData : ', reRequestData.value);
+
+  router.push({
+    path: '/approval/request-audit',
+    query: {
+      mode: 'reRequest',
+      isReRequest: true
+    }
+  });
 };
 
 onMounted(() => {

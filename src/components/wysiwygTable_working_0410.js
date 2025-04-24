@@ -113,11 +113,20 @@ export const createTable = (col, row) => {
 };
 
 // 위즈윅 테이블 삽입
-export function loadWysiwygTable(col, row) {
+export function loadWysiwygTable({ rows, cols }) {
   const container = document.createElement('div');
 
-  const app = createApp(wysiwygTable, { col, row });
+  const app = createApp(wysiwygTable, { col: cols, row: rows });
+  // const vm = app.mount(container);
   app.mount(container);
 
   return container;
+
+  // return {
+  //   el: container,
+  //   addRow: vm.addRow,
+  //   removeRow: vm.removeRow,
+  //   addColumn: vm.addColumn,
+  //   removeColumn: vm.removeColumn
+  // };
 }

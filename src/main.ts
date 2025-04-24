@@ -30,7 +30,7 @@ export let buildTime = import.meta.env.VITE_BUILD_TIME;
 
 let serviceID = import.meta.env.VITE_SERVICE_ID;
 
-console.log('바뀐 버전 입니다. 0407 09:51');
+console.log('바뀐 버전 입니다. 0418 18:00');
 
 const skapi = new Skapi(import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID, {
   autoLogin: window.localStorage.getItem('remember') === 'true',
@@ -102,87 +102,82 @@ export function resetBadgeCount() {
   // console.log(`[Main App] Badge count reset to ${currentBadgeCount}`);
 }
 
-let currentVersion:any = null; // 현재 활성화된 서비스 워커의 버전
-let newWorkerWaiting = false;   // 새로운 서비스 워커가 대기 중인지 여부
+let currentVersion: string | null = null; // 현재 활성화된 서비스 워커의 버전
+let newWorkerWaiting = false; // 새로운 서비스 워커가 대기 중인지 여부
+export let newVersionAvailable = ref(false); // 새로운 버전이 있는지 여부
+export let newVersion = ref(''); // 새로운 버전이 있는지 여부
 
 // 앱 시작 시 버전 정보 로드
 fetch('/version.json')
-    .then((response) => response.json())
-    .then((data) => {
-        currentVersion = data.version;
-        console.log('[Main] Current Service Worker Version:', currentVersion);
-    });
+  .then((response) => response.json())
+  .then((data) => {
+    currentVersion = data.version;
+    console.log('[Main] Current Service Worker Version:', currentVersion);
+  });
 
 if ('serviceWorker' in navigator) {
-    // Service Worker로부터 메시지 수신
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        // 뱃지 업데이트 처리
-        if (event.data && event.data.type === 'BADGE_UPDATED') {
-            const newBadgeCount = event.data.badgeCount;
-            currentBadgeCount = newBadgeCount;
-        }
+  // Service Worker 등록
+  navigator.serviceWorker
+    .register(`/wrk.${serviceID}.js`)
+    .then((registration) => {
+      console.log('Service Worker registered:', registration);
 
-        // 새로운 버전 알림 처리
-        if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
-            const newVersion = event.data.version;
-            console.log('[Main] New version available:', newVersion);
+      // 새로운 서비스 워커 감지
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        console.log('[Main] New Service Worker Found');
 
-            // 사용자에게 업데이트 확인 창 표시
-            if (!newWorkerWaiting) {
-                newWorkerWaiting = true;
-                if (confirm(`새로운 버전(${newVersion})이 준비되었습니다. 지금 업데이트하시겠습니까?`)) {
-                    // 사용자가 업데이트를 승인한 경우
-                    navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
-                    window.location.reload(); // 페이지 새로고침
-                }
+        newWorker?.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed') {
+            console.log('[Main] New Service Worker Installed and Waiting');
+            newWorkerWaiting = true;
+
+            // 첫 방문 시 자동으로 업데이트
+            if (!localStorage.getItem('hasVisitedBefore')) {
+              console.log('[Main] First visit, skipping waiting...');
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              window.location.reload();
             }
-        }
-    });
-
-    // Service Worker 등록
-    navigator.serviceWorker.register(`/wrk.${serviceID}.js`)
-        .then((registration) => {
-        console.log('Service Worker registered:', registration);
-        
-        registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            console.log('[Main] New Service Worker Found');
-
-            // 새로운 서비스 워커 감지
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                console.log('[Main] New Service Worker Found');
-
-                newWorker?.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed') {
-                        console.log('[Main] New Service Worker Installed and Waiting');
-                        newWorker.postMessage({ type: 'CHECK_VERSION' }); // 새 버전 확인 요청
-                    }
-                });
-            });
-
-            // newWorker.addEventListener('statechange', () => {
-            //     if (newWorker.state === 'installed') {
-            //         // 새로운 버전 확인
-            //         fetch('/version.json')
-            //             .then((response) => response.json())
-            //             .then((data) => {
-            //                 const newVersion = data.version;
-            //                 console.log('[Main] New Service Worker Version:', newVersion);
-
-            //                 // 버전이 다를 경우에만 알림 표시
-            //                 if (currentVersion && currentVersion !== newVersion) {
-            //                     alert('새로운 버전이 준비되었습니다. 앱을 종료하고 다시 실행해 주세요.');
-            //                     currentVersion = newVersion; // 현재 버전 업데이트
-            //                 }
-            //             });
-            //     }
-            // });
+          }
         });
-    }).catch((error) => {
+      });
+    })
+    .catch((error) => {
       console.error('Service Worker registration failed:', error);
     });
+
+  // Service Worker로부터 메시지 수신
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    // 뱃지 업데이트 처리
+    if (event.data && event.data.type === 'BADGE_UPDATED') {
+      const newBadgeCount = event.data.badgeCount;
+      currentBadgeCount = newBadgeCount;
+    }
+
+    // 새로운 버전 알림 처리
+    if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
+      newVersion.value = event.data.version;
+      if (currentVersion !== newVersion.value) {
+        newVersionAvailable.value = true;
+        console.log('[Main] New version available:', newVersion.value);
+        // alert(`새로운 버전(${newVersion})이 준비되었습니다. 새로고침 후 사용해 주세요.`);
+      }
+    }
+  });
 }
+
+// 설정 페이지에서 업데이트 적용
+export function applyUpdate() {
+  navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' });
+  newVersionAvailable.value = false; // 업데이트 후 상태 초기화
+  window.location.reload();
+}
+
+window.addEventListener('load', () => {
+  if (!localStorage.getItem('hasVisitedBefore')) {
+    localStorage.setItem('hasVisitedBefore', 'true');
+  }
+});
 
 export let RealtimeCallback = async (rt: any) => {
   if (rt.type === 'error' || rt.type === 'close') {

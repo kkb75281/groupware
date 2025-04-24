@@ -1,56 +1,57 @@
 <template lang="pug">
-.title
-	h1 공지사항
+//- .title
+//- 	h1 공지사항
 
-hr
+//- hr
 
-.table-wrap
-	.tb-head-wrap(v-if="user.access_group > 98")
-		form#searchForm(@submit.prevent="searchNewsletter")
-			.input-wrap.what
-				select(v-model="searchFor" :disabled="loading || !newsletterList")
-					option(value="subject") 제목
-					//- option(value="timestamp") 작성일
-					//- option(value="message_id") 
-					//- option(value="read") 
-					//- option(value="complaint") 
-			.input-wrap.search(v-if="searchFor == 'subject'")
-				input(v-model="searchValue.subject" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList")
-				button.btn-search
-			.input-wrap.date(v-else-if="searchFor == 'timestamp'")
-				input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList")
-				span ~
-				input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
-		.tb-toolbar
-			.btn-wrap
-				button.btn.outline.refresh-icon(:disabled="loading" @click="searchNewsletter(true)")
-					svg(:class="{'rotate' : loading}")
-						use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-				button.btn.outline.md(v-if="user.access_group > 98" type="button" @click="sendAdminNewsletter") 등록
-	.tb-overflow
-		table.table#newsletter_list
-			colgroup
-				col(style="width:5%")
-				col(style="width: 50%")
-				col(style="width: 10%")
-			thead
-				tr
-					th NO
-					th.left 제목
-					th 작성일
-			tbody
-				template(v-if="loading")
-					tr.nohover.loading
-						td(colspan="10")
-							Loading#loading
-				template(v-else-if="!newsletterList || newsletterList.length === 0")
-					tr.nohover
-						td(colspan="4") 등록된 공지사항이 없습니다.
-				template(v-else)
-					tr.hover(v-for="(news, index) in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
-						td {{ newsletterList.length - index }}
-						td.left {{ news.subject }}
-						td {{ convertTimestampToDateMillis(news.timestamp) }}
+.inner
+	.table-wrap
+		.tb-head-wrap(v-if="user.access_group > 98")
+			form#searchForm(@submit.prevent="searchNewsletter")
+				.input-wrap.what
+					select(v-model="searchFor" :disabled="loading || !newsletterList")
+						option(value="subject") 제목
+						//- option(value="timestamp") 작성일
+						//- option(value="message_id") 
+						//- option(value="read") 
+						//- option(value="complaint") 
+				.input-wrap.search(v-if="searchFor == 'subject'")
+					input(v-model="searchValue.subject" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList")
+					button.btn-search
+				.input-wrap.date(v-else-if="searchFor == 'timestamp'")
+					input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList")
+					span ~
+					input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
+			.tb-toolbar
+				.btn-wrap
+					button.btn.outline.refresh-icon(:disabled="loading" @click="searchNewsletter(true)")
+						svg(:class="{'rotate' : loading}")
+							use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+					button.btn.outline.md(v-if="user.access_group > 98" type="button" @click="sendAdminNewsletter") 등록
+		.tb-overflow
+			table.table#newsletter_list
+				colgroup
+					col(style="width:5%")
+					col(style="width: 50%")
+					col(style="width: 10%")
+				thead
+					tr
+						th NO
+						th.left 제목
+						th 작성일
+				tbody
+					template(v-if="loading")
+						tr.nohover.loading
+							td(colspan="10")
+								Loading#loading
+					template(v-else-if="!newsletterList || newsletterList.length === 0")
+						tr.nohover
+							td(colspan="4") 등록된 공지사항이 없습니다.
+					template(v-else)
+						tr.hover(v-for="(news, index) in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
+							td {{ newsletterList.length - index }}
+							td.left {{ news.subject }}
+							td {{ convertTimestampToDateMillis(news.timestamp) }}
 </template>
 
 <script setup>
@@ -141,9 +142,13 @@ onMounted(async() => {
 </script>
 
 <style lang="less" scoped>
-.table-wrap {
-    margin-top: 3rem;
+.inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
 
+.table-wrap {
 	#searchForm {
         display: flex;
         flex-wrap: wrap;
@@ -172,5 +177,11 @@ onMounted(async() => {
 			transform: translate(-50%, -50%);
 		}
 	}
+}
+
+@media (max-width: 768px) {
+    .inner {
+        padding: 1rem;
+    }
 }
 </style>

@@ -1,8 +1,8 @@
 <template lang="pug">
-.title
-    h1 부서 수정
+//- .title
+//-     h1 부서 수정
 
-hr
+//- hr
 
 .form-wrap(v-if="!loading")
     form#_el_comp_form(@submit.prevent="editDivision")

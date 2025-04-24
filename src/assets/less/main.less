@@ -1120,22 +1120,30 @@
 // modal alert
 .alert-modal {
   .content-wrap {
-    padding: 2rem 3rem;
+    width: 16.875rem;
+    padding: 2rem 1rem;
 
     .title {
+      width: fit-content;
+      display: inline-block;
+
       &.warning {
         color: var(--warning-color-400);
       }
+
       &.success {
         color: var(--primary-color-400);
       }
     }
+
     .desc {
-      margin-top: 1rem;
       color: var(--gray-color-400);
       font-size: 0.8rem;
+      width: fit-content;
+      margin: 1rem auto 0;
     }
   }
+
   .button-wrap {
     display: flex;
     align-items: center;
@@ -1178,7 +1186,7 @@
 
   svg {
     width: 25px;
-	height: 25px;
+    height: 25px;
     fill: var(--primary-color-400-dark);
 
     &.rotate {
@@ -1196,14 +1204,14 @@
 
   .card {
     background-color: #fff;
-    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
     border-radius: 16px;
     overflow: hidden;
     // transition: all 0.2s ease-in-out;
 
     &:hover {
       // transform: translateY(-6px);
-      box-shadow: 1px 1px 10px rgba(72, 127, 242, 0.8);
+      box-shadow: 0px 0px 5px rgba(72, 127, 242, 0.8);
     }
 
     .router {
@@ -1327,7 +1335,7 @@
   //     }
   //   }
   // }
-  
+
   .input-wrap {
     &.upload-file {
       .btn-upload-file {
@@ -1353,6 +1361,14 @@
     .modal-footer {
       margin-top: 20px;
       padding-top: 20px;
+    }
+  }
+
+  .alert-modal {
+    width: 100%;
+
+    .content-wrap {
+      width: 100%;
     }
   }
 }
