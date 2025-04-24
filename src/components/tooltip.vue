@@ -106,7 +106,7 @@ const handleMouseEnter = (e) => {
 		top: unset;
 		left: 0;
 		right: unset;
-		z-index: 999;
+		z-index: 9999;
 		// white-space: pre-wrap;
 		white-space: nowrap;
 		text-align: left;

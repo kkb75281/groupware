@@ -526,7 +526,7 @@ watch(
     border: 1px solid rgba(0, 0, 0, 0.05);
     box-shadow: 1px 1px 20px 0px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    z-index: 99999;
+    z-index: 9998;
     padding: 1rem;
 
     .popup-header {

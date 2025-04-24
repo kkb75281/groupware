@@ -1,8 +1,8 @@
 <template lang="pug">
-div(style="display: flex; gap: 1rem")
-	h1.title 출퇴근 관리
+//- div(style="display: flex; gap: 1rem")
+//- 	h1.title 출퇴근 관리
 
-hr
+//- hr
 
 .itembox
 	.title-wrap(style="margin-bottom: 0;")
@@ -12,6 +12,8 @@ hr
 			svg
 				use(xlink:href="@/assets/icon/material-icon.svg#icon-clock")
 		| {{ timeRecords.date }}
+
+br
 
 .itembox-wrap
 	.itembox
@@ -726,7 +728,6 @@ onMounted(async () => {
   box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.15);
   border-radius: 16px;
   padding: 1.5rem;
-  margin-top: 1.5rem;
   line-height: 1.2;
   flex: 1;
 
