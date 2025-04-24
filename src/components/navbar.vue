@@ -239,7 +239,8 @@ watch(() => route.name, (nv) => {
 			display: flex;
 			flex-wrap: nowrap;
 			align-items: center;
-			justify-content: center;
+			gap: 4px;
+			// justify-content: center;
 			// padding: 1.2rem 1.25rem 1.2rem 0.75rem;
 			// padding: 1.2rem 0.875rem 1.2rem 0.25rem;
 			padding: 1rem 0.5rem;
@@ -248,7 +249,7 @@ watch(() => route.name, (nv) => {
 			cursor: pointer;
 
 			.text {
-				flex-grow: 1;
+				// flex-grow: 1;
 				display: flex;
 				align-items: center;
 				// justify-content: space-between;
