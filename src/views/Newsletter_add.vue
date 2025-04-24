@@ -1,6 +1,6 @@
 <template lang="pug">
 .title
-	h1 공지사항
+	h1 공지사항 등록
 
 hr
 

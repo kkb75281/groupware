@@ -352,15 +352,6 @@ const getAdditionalData = () => {
               return str.split('/')[3];
             }
 
-            async function getFileFunc(url) {
-              if (!url) return '';
-              url = url.split('?')[0];
-              await skapi.getFile(url, { dataType: 'endpoint' }).then((res) => {
-                console.log('res : ', res);
-                return res;
-              });
-            }
-
             const result = item.bin.additional_data.map((el) => ({
               ...el,
               user_id: getFileUserId(el.path),
