@@ -18,7 +18,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode 
 			p.label 결재 양식 선택
 			select(v-if="formCategory === 'master'" name="masterForms" :disabled="!masterForms.length" @change="(e) => selDocForm(e)")
 				option(value="" disabled selected) {{ masterForms.length ? "기본 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
-				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
+				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.docform_title }}
 
 			select(v-else-if="formCategory === 'mine'" name="myForms" :disabled="!myForms.length" @change="(e) => selDocForm(e)")
 				option(value="" disabled selected) {{ myForms.length ? "나의 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
@@ -67,7 +67,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 			#printArea
 				.title
 					.input-wrap.input-title
-						input#to_audit(v-model="auditTitle" type="text" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
+						input#docform_title(v-model="formTitle" type="text" name="docform_title" placeholder="결재 제목을 입력해주세요." required)
 
 				.table-wrap
 					.tb-overflow
@@ -75,45 +75,38 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 							colgroup
 								col(style="width: 13%")
 								col
-								col(style="width: 15%")
-								col(style="width: 20%")
+								template(v-if="isTemplateMode")
+									col(style="width: 15%")
+									col(style="width: 20%")
 
 							tbody
 								//- 작성일자 기안사 :: s
-								tr.pc(v-show="isDesktop")
+								tr.pc(v-if="isDesktop && !isTemplateMode")
 									th 작성 일자
 									td
-										template(v-if="isTemplateMode")
-											.input-wrap
-												input#inp_date(type="text" name="inp_date" readonly)
-
-										template(v-else)
-											.input-wrap
-												input#inp_date(type="date" name="inp_date" v-model="dateValue")
-									th 기안자
-									td
-										template(v-if="isTemplateMode")
-											span.drafter
-										
-										template(v-else)
-											span.drafter {{ user.name }}
-
-								//- 모바일 경우 레이아웃
-								tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
-									th 작성 일자
-									td(colspan="3")
 										.input-wrap
 											input#inp_date(type="date" name="inp_date" v-model="dateValue")
-								tr.mo(v-show="!isDesktop")
 									th 기안자
-									td(colspan="3" style="text-align: left")
+									td
+										span.drafter {{ user.name }}
+
+								//- 모바일 경우 레이아웃
+								tr.mo(v-if="!isTemplateMode && !isDesktop")
+									th 작성 일자
+									td
+										.input-wrap
+											input#inp_date(type="date" name="inp_date" v-model="dateValue")
+
+								tr.mo(v-if="!isTemplateMode && !isDesktop")
+									th 기안자
+									td
 										span.drafter {{ user.name }}
 								//- 작성일자 기안사 :: e
 
 								tr(v-if="selectedAuditors.approvers.length === 0 && selectedAuditors.agreers.length === 0 && selectedAuditors.receivers.length === 0" style="height: 119px;")
 									th.essential 결재 라인
 									td.left(colspan="3")
-										span.empty(@click="openModal" :style="{ cursor: isTemplateMode ? 'default' : 'pointer' }") 이곳을 눌러 [ 결재/합의/수신참조 ] 라인을 추가해주세요.
+										span.empty(@click="openModal" style="cursor: pointer;") 이곳을 눌러 [ 결재/합의/수신참조 ] 라인을 추가해주세요.
 
 								tr.approval(v-if="selectedAuditors.approvers.length > 0")
 									th 결재
@@ -168,7 +161,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 														use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 										
 
-								tr
+								tr(v-if="!isTemplateMode")
 									th.essential 제목
 										.add-btn(@click="isRowModalOpen = true")
 											.icon
@@ -176,9 +169,13 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 									td(colspan="3")
 										.input-wrap
-											input(type="text" v-model="auditTitle" placeholder="결재 제목을 입력해주세요.")
+											input#to_audit(type="text" v-model="auditTitle" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
 								tr
 									th.essential 결재 내용
+										.add-btn(v-if="isTemplateMode" @click="isRowModalOpen = true")
+											.icon
+												svg
+													use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
 											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'tempsave' ? tempSaveData?.data?.form_content : route.query.mode === 'reRequest' ? reRequestData?.data?.to_audit_content : selectedForm?.data?.form_content" :showBtn="true")
@@ -194,7 +191,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 													label.btn.sm.outline.btn-upload(for="file") 파일 올리기
 
 												ul.upload-file-list
-													template(v-if="uploadedFile.length > 0 && isFormSelected")
+													template(v-if="(uploadedFile.length > 0 && isFormSelected) || uploadedFile.length > 0")
 														li.file-item(v-for="(file, index) in uploadedFile" :key="index" style="border: none; padding: 0;")
 															a.file-name(v-if="file.url" :href="file.url" download target="_blank") {{ file.filename }}
 															span.only-text(v-else) {{ file.name || file.filename }}
@@ -310,7 +307,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
 			button.btn.btn-save(type="submit" @click="saveAuditor") 저장
 
-button.btn.outline.btn-new(type="button" @click="testDelete") delete
+// button.btn.outline.btn-new(type="button" @click="testDelete") delete
 </template>
 
 <script setup>
@@ -340,11 +337,15 @@ const isTemplateMode = computed(() => route.query.mode === 'template'); // 결�
 const isTempSaveMode = computed(() => route.query.mode === 'tempsave'); // 임시 저장 경로인지 확인
 const isReRequestMode = computed(() => route.query.mode === 'reRequest'); // 재요청 모드인지 확인
 
-const testDelete = () => {
-  skapi.deleteRecords({
-    record_id
-  });
-};
+// const testDelete = () => {
+//   skapi
+//     .deleteRecords({
+//       record_id: 'UjHCkckVC1ogfDF6'
+//     })
+//     .then((res) => {
+//       console.log('삭제완');
+//     });
+// };
 
 // 페이지 제목 변경
 const pageTitle = computed(() => {
@@ -386,7 +387,8 @@ const fileNames = ref([]);
 
 const addRows = ref([]);
 let step = ref(1);
-const auditTitle = ref('');
+const formTitle = ref(''); // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
+const auditTitle = ref(''); // 결재건 제목
 const disabled = ref(false);
 const temploading = ref(false);
 
@@ -408,7 +410,7 @@ watch(editorContent, (newContent) => {
 // 결재라인 모달 열기
 const openModal = () => {
   // isTemplateMode 경우에는 결재라인 선택 불가
-  if (isTemplateMode.value) return;
+  // if (isTemplateMode.value) return;
 
   // 열렸을 때 selectedAuditors 전체를 original로 백업
   backupSelected.value = {
@@ -432,6 +434,7 @@ const openModal = () => {
   }
 
   selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
+  console.log('selectedUsers.value : ', selectedUsers.value);
   prevSelected.value = selectedUsers.value;
 
   // 모달이 열릴 때 본인 부서 직원만 보이도록 새로 조직도 데이터 가져오기
@@ -1144,7 +1147,7 @@ let updateFileList = (e) => {
 };
 
 // 결재 서류 레코드 생성 (결재자 순서 지정)
-const postAuditDoc = async ({ to_audit, to_audit_content }) => {
+const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
   // order 추가한 결재자 정보
   const send_auditors_data = {
     approvers: selectedAuditors.value.approvers.map((user) => ({
@@ -1177,54 +1180,66 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     const filebox = document.querySelector('input[name="additional_data"]');
     const additionalFormData = new FormData();
 
+    additionalFormData.append('docform_title', docform_title);
     additionalFormData.append('to_audit', to_audit);
     additionalFormData.append('auditors', JSON.stringify(send_auditors_data));
     additionalFormData.append('to_audit_content', to_audit_content);
     additionalFormData.append('reject_setting', rejectSetting.value);
     additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
 
-    // if (filebox && filebox.files.length) {
-    //   Array.from(filebox.files).forEach((file) => {
-    //     additionalFormData.append('additional_data', file);
+    // 만약 첨부파일이 있는 결재 양식 선택시
+    // for (const file of uploadedFile.value) {
+    //   // 가져온 파일 데이터를 Blob으로 변환
+    //   const blob = await skapi.getFile(file.url, {
+    //     dataType: 'blob'
     //   });
+
+    //   console.log('blob : ', blob);
+
+    //   console.log('AA : ', file.filename, { type: blob.type });
+
+    //   // Blob에 원래 파일 이름을 붙여 File 객체 생성
+    //   const fileObject = new File([blob], file.filename, { type: blob.type });
+
+    //   // FormData에 추가
+    //   additionalFormData.append('additional_data', fileObject);
     // }
 
-    // 만약 첨부파일이 있는 결재 양식 선택시
-    // if (uploadedFile.value.length) {
-    //   console.log('uploadedFile.value : ', uploadedFile.value);
-    for (const file of uploadedFile.value) {
-      // // file.url에 '?'가 포함되어 있을 경우 제거
-      // if (file.url.includes('?')) {
-      //   file.url = file.url.split('?')[0];
-      // } else {
-      //   file.url = file.url;
-      // }
-      console.log('file.url : ', file.url);
+    if (uploadedFile.value.length) {
+      const filePromises = uploadedFile.value.map(async (file) => {
+        // 이미 File 객체인 경우 그대로 반환
+        if (file instanceof File) {
+          return file;
+        }
 
-      // 파일 데이터를 서버에서 가져옴
-      // const fileData = await skapi.getFile(file.url, {
-      //   dataType: 'endpoint'
-      // });
+        // URL이 있는 경우 (기존 파일) 파일을 가져와서 변환
+        if (file.url) {
+          try {
+            const blob = await skapi.getFile(file.url, { dataType: 'blob' });
+            return new File([blob], file.filename, { type: blob.type });
+          } catch (error) {
+            console.error('파일 가져오기 실패:', file.filename, error);
+            return null;
+          }
+        }
 
-      // console.log('fileData : ', fileData);
-
-      // 가져온 파일 데이터를 Blob으로 변환
-      // const blob = await fetch(file.url).then((res) => res.blob());
-      const blob = await skapi.getFile(file.url, {
-        dataType: 'blob'
+        // URL도 없고 File 객체도 아닌 경우
+        return null;
       });
 
-      console.log('blob : ', blob);
+      console.log('filePromises : ', filePromises);
 
-      console.log('AA : ', file.filename, { type: blob.type });
+      // 모든 파일 변환이 끝날 때까지 기다림
+      const fileObjects = await Promise.all(filePromises);
+      console.log('fileObjects : ', fileObjects);
 
-      // Blob에 원래 파일 이름을 붙여 File 객체 생성
-      const fileObject = new File([blob], file.filename, { type: blob.type });
-
-      // FormData에 추가
-      additionalFormData.append('additional_data', fileObject);
+      // null이 아닌 파일만 필터링하여 FormData에 추가
+      fileObjects
+        .filter((file) => file !== null)
+        .forEach((file) => {
+          additionalFormData.append('form_data', file);
+        });
     }
-    // }
 
     const options = {
       readonly: true, // 결재 올리면 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
@@ -1345,6 +1360,7 @@ const createAuditRequest = async (
             send_user: user.user_id,
             audit_info: {
               audit_type: 'request',
+              docform_title: docform_title,
               to_audit: to_audit,
               audit_doc_id: audit_id,
               audit_request_id: res.record_id,
@@ -1378,6 +1394,7 @@ const createAuditRequest = async (
         send_user: user.user_id,
         audit_info: {
           audit_type: 'request',
+          docform_title: docform_title,
           to_audit: to_audit,
           audit_doc_id: audit_id,
           audit_request_id: res.record_id,
@@ -1400,6 +1417,7 @@ const createAuditRequest = async (
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (
   auditId,
+  formTitle,
   auditTitle,
   userId,
   role,
@@ -1410,6 +1428,7 @@ const postAuditDocRecordId = async (
     await grantAuditorAccess({
       audit_id: auditId,
       auditor_id: userId,
+      form_title: formTitle,
       audit_title: auditTitle
     });
 
@@ -1419,6 +1438,7 @@ const postAuditDocRecordId = async (
         audit_id: auditId,
         auditor_id: userId,
         role: role,
+        form_title: formTitle,
         audit_title: auditTitle
       },
       send_auditors_arr,
@@ -1474,7 +1494,7 @@ const requestAudit = async (e) => {
 
     if (!formValues) return;
 
-    const { to_audit, inp_content: to_audit_content } = formValues;
+    const { docform_title, to_audit, inp_content: to_audit_content } = formValues;
 
     // 선택된 결재자 확인
     const totalSelectedCount = Object.values(selectedAuditors.value).reduce(
@@ -1499,6 +1519,7 @@ const requestAudit = async (e) => {
 
     // 결재 문서 생성
     const auditDoc = await postAuditDoc({
+      docform_title,
       to_audit,
       to_audit_content,
       // roles: getAllSelectedUserIds() // ID 목록만 전달
@@ -1506,7 +1527,8 @@ const requestAudit = async (e) => {
     });
 
     const auditId = auditDoc.record_id; // 결재 문서 ID
-    const auditTitle = to_audit; // 결재 제목
+    const formTitle = docform_title; // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
+    const auditTitle = to_audit; // 결재건 제목
 
     // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
     // 결재자/합의자를 순서대로 정렬
@@ -1584,6 +1606,7 @@ const requestAudit = async (e) => {
       processRoles.map((roleInfo, index) =>
         postAuditDocRecordId(
           auditId,
+          formTitle,
           auditTitle,
           roleInfo.userId,
           roleInfo.role,
@@ -1623,8 +1646,10 @@ const requestAudit = async (e) => {
 
 // 기존 결재 양식 저장 (마스터가 저장한 결재 양식)
 const saveDocForm = async () => {
+  console.log('마스터 결재양식 저장');
+
   // 결재 제목이 없을 경우 저장 불가
-  if (!auditTitle.value) {
+  if (!formTitle.value) {
     alert('결재 제목을 입력해주세요.');
     return;
   }
@@ -1633,6 +1658,7 @@ const saveDocForm = async () => {
     // 첨부파일 업로드
     const formData = new FormData();
 
+    formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
@@ -1665,8 +1691,64 @@ const saveDocForm = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
-    for (const file of uploadedFile.value) {
-      formData.append('form_data', file);
+    console.log('uploadedFile.value : ', uploadedFile.value);
+
+    // for (const file of uploadedFile.value) {
+    //   formData.append('form_data', file);
+    // }
+
+    // if (uploadedFile.value.length) {
+    //   const filePromises = uploadedFile.value.map(async (file) => {
+    //     // 파일 데이터 가져오기
+    //     const blob = await skapi.getFile(file.url, { dataType: 'blob' });
+
+    //     // file 객체 생성
+    //     return new File([blob], file.filename, { type: blob.type });
+    //   });
+
+    //   // 모든 파일 변환이 끝날 때까지 기다림
+    //   const fileObjects = await Promise.all(filePromises);
+
+    //   // FormData에 한 번에 추가
+    //   fileObjects.forEach((file) => {
+    //     formData.append('form_data', file);
+    //   });
+    // }
+
+    if (uploadedFile.value.length) {
+      const filePromises = uploadedFile.value.map(async (file) => {
+        // 이미 File 객체인 경우 그대로 반환
+        if (file instanceof File) {
+          return file;
+        }
+
+        // URL이 있는 경우 (기존 파일) 파일을 가져와서 변환
+        if (file.url) {
+          try {
+            const blob = await skapi.getFile(file.url, { dataType: 'blob' });
+            return new File([blob], file.filename, { type: blob.type });
+          } catch (error) {
+            console.error('파일 가져오기 실패:', file.filename, error);
+            return null;
+          }
+        }
+
+        // URL도 없고 File 객체도 아닌 경우
+        return null;
+      });
+
+      console.log('filePromises : ', filePromises);
+
+      // 모든 파일 변환이 끝날 때까지 기다림
+      const fileObjects = await Promise.all(filePromises);
+      console.log('fileObjects : ', fileObjects);
+
+      // null이 아닌 파일만 필터링하여 FormData에 추가
+      fileObjects
+        .filter((file) => file !== null)
+        .forEach((file) => {
+          formData.append('form_data', file);
+        });
     }
 
     const options = {
@@ -1676,11 +1758,15 @@ const saveDocForm = async () => {
       },
       index: {
         name: 'form_title', // 결재 양식 제목. 제목별 검색을 위한 인덱싱
-        value: auditTitle.value.replaceAll('.', '_')
+        value: formTitle.value.replaceAll('.', '_')
       }
     };
 
+    console.log('마스터 == formData : ', formData);
+    console.log('마스터 == options : ', options);
+
     const res = await skapi.postRecord(formData, options);
+    console.log('마스터 == res : ', res);
 
     alert('결재 양식이 저장되었습니다.');
     router.push('/admin/list-form');
@@ -1694,7 +1780,7 @@ const saveMyDocForm = async () => {
   console.log('내 결재양식 저장');
 
   // 결재 제목이 없을 경우 저장 불가
-  if (!auditTitle.value) {
+  if (!formTitle.value || !auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
     return;
   }
@@ -1703,6 +1789,7 @@ const saveMyDocForm = async () => {
     // 첨부파일 업로드
     const formData = new FormData();
 
+    formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
@@ -1735,41 +1822,45 @@ const saveMyDocForm = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
-    for (const file of uploadedFile.value) {
-      formData.append('form_data', file);
-    }
-
-    // if (uploadedFile.value.length) {
-    //   for (const file of uploadedFile.value) {
-    //     console.log('file:', file);
-
-    //     // file.url '?' 포함되어 있을 경우 제거
-    //     if (file.url.includes('?')) {
-    //       file.url = file.url.split('?')[0];
-    //     } else {
-    //       file.url = file.url;
-    //     }
-    //     console.log('file.url : ', file.url);
-
-    //     // 파일 데이터를 서버에서 가져옴
-    //     const fileData = await skapi.getFile(file.url, {
-    //       dataType: 'endpoint'
-    //     });
-    //     console.log('fileData : ', fileData);
-
-    //     // 가져온 파일 데이터를 Blob으로 변환
-    //     const blob = await fetch(fileData.url).then((res) => res.blob());
-
-    //     // Blob에 원래 파일 이름을 붙여 File 객체 생성
-    //     const fileObject = new File([blob], file.filename, { type: blob.type });
-
-    //     console.log('blob : ', blob);
-    //     console.log('fileObject : ', fileObject);
-
-    //     // FormData에 추가
-    //     formData.append('form_data', fileObject);
-    //   }
+    // for (const file of uploadedFile.value) {
+    //   formData.append('form_data', file);
     // }
+
+    if (uploadedFile.value.length) {
+      const filePromises = uploadedFile.value.map(async (file) => {
+        // 이미 File 객체인 경우 그대로 반환
+        if (file instanceof File) {
+          return file;
+        }
+
+        // URL이 있는 경우 (기존 파일) 파일을 가져와서 변환
+        if (file.url) {
+          try {
+            const blob = await skapi.getFile(file.url, { dataType: 'blob' });
+            return new File([blob], file.filename, { type: blob.type });
+          } catch (error) {
+            console.error('파일 가져오기 실패:', file.filename, error);
+            return null;
+          }
+        }
+
+        // URL도 없고 File 객체도 아닌 경우
+        return null;
+      });
+
+      console.log('filePromises : ', filePromises);
+
+      // 모든 파일 변환이 끝날 때까지 기다림
+      const fileObjects = await Promise.all(filePromises);
+      console.log('fileObjects : ', fileObjects);
+
+      // null이 아닌 파일만 필터링하여 FormData에 추가
+      fileObjects
+        .filter((file) => file !== null)
+        .forEach((file) => {
+          formData.append('form_data', file);
+        });
+    }
 
     const options = {
       table: {
@@ -1781,11 +1872,11 @@ const saveMyDocForm = async () => {
         value: auditTitle.value.replaceAll('.', '_')
       }
     };
-    console.log('formData : ', formData);
-    console.log('options : ', options);
+    console.log('내 양식 == formData : ', formData);
+    console.log('내 양식 == options : ', options);
 
     const res = await skapi.postRecord(formData, options);
-    console.log('res : ', res);
+    console.log('내 양식 == res : ', res);
 
     alert('결재 양식이 저장되었습니다.');
   } catch (error) {
@@ -1799,7 +1890,7 @@ const tempSaveMyDoc = async () => {
   console.log('임시 저장');
 
   // 결재 제목이 없을 경우 저장 불가
-  if (!auditTitle.value) {
+  if (!formTitle.value || !auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
     return;
   }
@@ -1809,6 +1900,7 @@ const tempSaveMyDoc = async () => {
     const filebox = document.querySelector('input[name="additional_data"]');
     const formData = new FormData();
 
+    formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
@@ -1841,44 +1933,38 @@ const tempSaveMyDoc = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
-    // if (filebox && filebox.files.length) {
-    //   Array.from(filebox.files).forEach((file) => {
-    //     formData.append('form_data', file);
-    //   });
-    // }
-    console.log('AA == uploadedFile.value : ', uploadedFile.value);
+    if (uploadedFile.value.length) {
+      const filePromises = uploadedFile.value.map(async (file) => {
+        // 이미 File 객체인 경우 그대로 반환
+        if (file instanceof File) {
+          return file;
+        }
 
-    for (const file of uploadedFile.value) {
-      formData.append('form_data', file);
+        // URL이 있는 경우 (기존 파일) 파일을 가져와서 변환
+        if (file.url) {
+          try {
+            const blob = await skapi.getFile(file.url, { dataType: 'blob' });
+            return new File([blob], file.filename, { type: blob.type });
+          } catch (error) {
+            console.error('파일 가져오기 실패:', file.filename, error);
+            return null;
+          }
+        }
+
+        // URL도 없고 File 객체도 아닌 경우
+        return null;
+      });
+
+      // 모든 파일 변환이 끝날 때까지 기다림
+      const fileObjects = await Promise.all(filePromises);
+
+      // null이 아닌 파일만 필터링하여 FormData에 추가
+      fileObjects
+        .filter((file) => file !== null)
+        .forEach((file) => {
+          formData.append('form_data', file);
+        });
     }
-
-    console.log('filebox : ', filebox);
-    console.log('BB == uploadedFile.value : ', uploadedFile.value);
-
-    // if (uploadedFile.value.length) {
-    //   for (const file of uploadedFile.value) {
-    //     console.log('file:', file);
-
-    //     // file.url ?를 기준으로 [0]만 가져오기
-    //     // const fileUrl = file.url.split('?')[0];
-    //     // console.log('fileUrl : ', fileUrl);
-
-    //     // 파일 데이터를 서버에서 가져옴
-    //     const fileData = await skapi.getFile(file.url, {
-    //       dataType: 'endpoint'
-    //     });
-    //     console.log('fileData : ', fileData);
-
-    //     // 가져온 파일 데이터를 Blob으로 변환
-    //     const blob = await fetch(fileData.url).then((res) => res.blob());
-
-    //     // Blob에 원래 파일 이름을 붙여 File 객체 생성
-    //     const fileObject = new File([blob], file.filename, { type: blob.type });
-
-    //     // FormData에 추가
-    //     formData.append('form_data', fileObject);
-    //   }
-    // }
 
     const options = {
       table: {
@@ -1906,18 +1992,21 @@ const tempSaveMyDoc = async () => {
 
     if (res.list.length === 0 || route.query.record_id === undefined) {
       const res = await skapi.postRecord(formData, options);
-      console.log('결재양식 없음 == res : ', res);
+      console.log('새로 임시저장됨 == res : ', res);
     } else if (route.query.record_id === res.list[0].record_id) {
+      await skapi.deleteRecords({ record_id: res.list[0].record_id }).then((res) => {
+        console.log('삭제완');
+      });
+
       await skapi
         .postRecord(formData, {
           table: {
             name: 'my_tempsave_audit',
             access_group: 'private'
-          },
-          record_id: res.list[0].record_id
+          }
         })
         .then((res) => {
-          console.log('BB == res : ', res);
+          console.log('이전 임시저장 해둬서 업뎃 == res : ', res);
         });
     }
 
@@ -1992,6 +2081,7 @@ const getTempSaveMyDocCont = async () => {
         },
         record_id: route.query.record_id
       });
+      console.log('임시저장 내용 == res : ', res);
 
       temploading.value = true;
 
@@ -1999,6 +2089,7 @@ const getTempSaveMyDocCont = async () => {
         tempSaveData.value = res.list[0];
 
         // 폼 데이터 채우기
+        formTitle.value = tempSaveData.value.data.docform_title;
         auditTitle.value = tempSaveData.value.data.form_title;
         editorContent.value = tempSaveData.value.data.form_content;
 
@@ -2046,9 +2137,14 @@ const getTempSaveMyDocCont = async () => {
           selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
         }
 
+        console.log('tempSaveData.value : ', tempSaveData.value);
+
         // 첨부파일이 있는 경우
         if (tempSaveData.value.bin && tempSaveData.value.bin.form_data) {
+          console.log('AAA');
+          console.log('isFormSelected.value : ', isFormSelected.value);
           uploadedFile.value = tempSaveData.value.bin.form_data;
+          console.log('uploadedFile.value : ', uploadedFile.value);
         }
       }
 
@@ -2139,7 +2235,8 @@ const selDocForm = async (e) => {
 
   // 선택된 양식이 있으면 데이터 채우기
   if (selectedForm.value) {
-    auditTitle.value = selectedForm.value.data.form_title;
+    formTitle.value = selectedForm.value.data.docform_title;
+    auditTitle.value = selectedForm.value.data.form_title || '';
     editorContent.value = selectedForm.value.data.form_content;
 
     // 결재자
@@ -2209,6 +2306,7 @@ const selDocForm = async (e) => {
 const newWriteAudit = () => {
   step.value = 2;
 
+  formTitle.value = '';
   auditTitle.value = '';
   editorContent.value = '';
   selectedForm.value = [];
@@ -2268,6 +2366,7 @@ onMounted(async () => {
     console.log('== onMounted == reRequestData : ', reRequestData.value);
 
     // 결재 제목 설정
+    formTitle.value = reRequestData.value.data.docform_title;
     auditTitle.value = reRequestData.value.data.to_audit;
 
     // 에디터 내용 설정
@@ -2293,8 +2392,8 @@ onMounted(async () => {
     }
 
     // 첨부파일이 있는 경우
-    if (reRequestData.value.bin && reRequestData.value.bin.additional_data) {
-      uploadedFile.value = reRequestData.value.bin.additional_data;
+    if (reRequestData.value.bin && reRequestData.value.bin.form_data) {
+      uploadedFile.value = reRequestData.value.bin.form_data;
       console.log('uploadedFile : ', uploadedFile.value);
     }
 
@@ -2971,6 +3070,12 @@ onUnmounted(() => {
     }
   }
 
+  .btn-remove {
+    width: initial;
+    height: initial;
+    border: none;
+  }
+
   .icon {
     padding: 0;
 
@@ -3119,8 +3224,6 @@ onUnmounted(() => {
   }
 
   .input-title {
-    margin-bottom: 2rem;
-
     input {
       font-size: 1.5rem;
 

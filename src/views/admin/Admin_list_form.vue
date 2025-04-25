@@ -51,7 +51,7 @@
                         td.list-num {{ docFormList.length - index }}
                         td.left
                             router-link.go-detail(:to="{ name: 'form-detail', query: { record_id: docForm.record_id } }")
-                                span {{ docForm.data.form_title }}
+                                span {{ docForm.data.docform_title || docForm.data.form_title }}
 </template>
 
 <script setup>

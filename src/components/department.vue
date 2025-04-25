@@ -55,15 +55,15 @@ import { computed, onMounted } from 'vue';
 const props = defineProps({
   department: {
     type: Object,
-    required: true,
+    required: true
   },
   modalType: {
     type: String,
-    required: false,
+    required: false
   },
   selectedAuditors: {
     type: Object,
-    required: false,
+    required: false
   },
   useCheckbox: {
     type: Boolean,
@@ -73,25 +73,41 @@ const props = defineProps({
 
 // 초기 체크 상태 설정
 const initializeCheckState = () => {
-    // 현재 모달 타입의 선택된 사용자들 가져오기
-    const selectedUsers = [];
-    for (const key in props.selectedAuditors) {
-        selectedUsers.push(...props.selectedAuditors[key]);
-    }
-    const selectedUserIds = selectedUsers.map(user => user.data.user_id);
+  // 현재 모달 타입의 선택된 사용자들 가져오기
+  const selectedUsers = [];
+  for (const key in props.selectedAuditors) {
+    selectedUsers.push(...props.selectedAuditors[key]);
+  }
 
-    // 부서 멤버들의 체크 상태 설정
-    props.department.members.forEach(member => {
-        member.isChecked = selectedUserIds.includes(member.data.user_id);
-    });
+  // const selectedUserIds = selectedUsers.map((user) => user.data.user_id);
 
-    // 모든 멤버가 선택된 경우 부서 체크박스도 체크
-    if (props.department.members.length > 0 && 
-        props.department.members.every(member => member.isChecked)) {
-        props.department.isChecked = true;
-    } else {
-        props.department.isChecked = false;
-    }
+  const selectedUserIds = {};
+  selectedUsers.forEach((user) => {
+    const key = user.index.name.split('.')[0];
+    const value = user.data.user_id;
+    selectedUserIds[key] = value; // {부서: 유저아이디}
+  });
+  console.log({ selectedUserIds });
+
+  // 부서 멤버들의 체크 상태 설정
+  props.department.members.forEach((member) => {
+    console.log(member);
+    // member.isChecked = selectedUserIds.includes(member.data.user_id) && (member.index.name.split('.')[0] === );
+
+    // selectedUserIds의 key와 value와 모두 일치하는 멤버 저장
+    member.isChecked = selectedUserIds[member.index.name.split('.')[0]] === member.data.user_id;
+    console.log('member.isChecked : ', member.isChecked);
+  });
+
+  // 모든 멤버가 선택된 경우 부서 체크박스도 체크
+  if (
+    props.department.members.length > 0 &&
+    props.department.members.every((member) => member.isChecked)
+  ) {
+    props.department.isChecked = true;
+  } else {
+    props.department.isChecked = false;
+  }
 };
 
 // 사용자가 이미 다른 역할에 선택되었는지 확인하는 함수
@@ -102,8 +118,8 @@ const isUserDisabled = (item) => {
   // 다른 역할들 체크
   let keys = [];
   for (const key in props.selectedAuditors) {
-    if(key !== item.role) {
-        keys.push(key);
+    if (key !== item.role) {
+      keys.push(key);
     }
   }
 
@@ -112,21 +128,23 @@ const isUserDisabled = (item) => {
 
 // 다른 역할에서 선택되었는지 확인하는 헬퍼 함수
 const isSelectedInOtherRoles = (userId, rolesToCheck) => {
-  return rolesToCheck.some(role => 
-    props.selectedAuditors[role].some(user => user.data.user_id === userId)
+  return rolesToCheck.some((role) =>
+    props.selectedAuditors[role].some((user) => user.data.user_id === userId)
   );
 };
 
 // 부서 전체가 disabled 되어야 하는지 확인하는 computed 속성
 const isDepartmentDisabled = computed(() => {
   // 부서에 속한 모든 직원들의 상태를 확인
-  const allMembersDisabled = props.department.members.length > 0 && 
-    props.department.members.every(member => isUserDisabled(member));
-  
+  const allMembersDisabled =
+    props.department.members.length > 0 &&
+    props.department.members.every((member) => isUserDisabled(member));
+
   // 하위 부서가 있는 경우, 모든 하위 부서의 상태도 확인
-  const allSubDepartmentsEmpty = props.department.subDepartments.length === 0 || 
-    props.department.subDepartments.every(sub => 
-      sub.members.length === 0 || sub.members.every(member => isUserDisabled(member))
+  const allSubDepartmentsEmpty =
+    props.department.subDepartments.length === 0 ||
+    props.department.subDepartments.every(
+      (sub) => sub.members.length === 0 || sub.members.every((member) => isUserDisabled(member))
     );
 
   // 모든 구성원이 disabled이고 하위 부서도 비어있거나 모든 구성원이 disabled인 경우
@@ -135,7 +153,7 @@ const isDepartmentDisabled = computed(() => {
 
 // 컴포넌트 마운트 시 초기화
 onMounted(() => {
-    initializeCheckState();
+  initializeCheckState();
 });
 </script>
 
@@ -156,9 +174,9 @@ summary {
   &::-webkit-details-marker {
     display: none;
   }
-  
+
   &::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 50%;
     left: 0;
@@ -188,7 +206,7 @@ summary {
 .disabled-department {
   > summary {
     opacity: 0.5;
-    
+
     .checkbox input {
       cursor: default;
     }
@@ -202,13 +220,13 @@ summary {
 .disabled-member {
   opacity: 0.5;
   pointer-events: none;
-  
-  input[type="checkbox"] {
+
+  input[type='checkbox'] {
     cursor: default;
   }
 }
 
-input[type="checkbox"]:disabled + .label-checkbox {
+input[type='checkbox']:disabled + .label-checkbox {
   cursor: default;
 }
 
@@ -230,7 +248,7 @@ details {
 }
 
 ul {
-  li {    
+  li {
     &.member {
       display: flex;
       flex-wrap: nowrap;
@@ -242,7 +260,7 @@ ul {
 
       .icon {
         padding: 0;
-        
+
         svg {
           width: 1.2rem;
           height: 1.2rem;
