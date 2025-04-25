@@ -2279,8 +2279,6 @@ onUnmounted(() => {
         width: 100%;
       }
     }
-    &.upload-stamp {
-    }
   }
 }
 </style>

@@ -161,7 +161,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 														use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 										
 
-								tr
+								tr(v-if="!isTemplateMode")
 									th.essential 제목
 										.add-btn(@click="isRowModalOpen = true")
 											.icon
@@ -172,6 +172,10 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 											input(type="text" v-model="auditTitle" placeholder="결재 제목을 입력해주세요.")
 								tr
 									th.essential 결재 내용
+										.add-btn(v-if="isTemplateMode" @click="isRowModalOpen = true")
+											.icon
+												svg
+													use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
 											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'tempsave' ? tempSaveData?.data?.form_content : route.query.mode === 'reRequest' ? reRequestData?.data?.to_audit_content : selectedForm?.data?.form_content" :showBtn="true")

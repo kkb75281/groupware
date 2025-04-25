@@ -14,43 +14,66 @@
 				colgroup
 					col(style="width: 13%")
 					col
-					col(style="width: 15%")
-					col(style="width: 20%")
+					//- col(style="width: 15%")
+					//- col(style="width: 20%")
 
 				tbody
 					//- 작성일자 기안사 :: s
-					tr.pc(v-show="isDesktop")
-						th 작성 일자
-						td
-							.input-wrap
-								input#inp_date(type="text" name="inp_date" readonly)
-						th 기안자
-						td
-							span.drafter
-					//- 모바일 경우 레이아웃
-					tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
-						th 작성 일자
-						td(colspan="3")
-							.input-wrap
-								input#inp_date(type="text" name="inp_date" readonly)
-					tr.mo(v-show="!isDesktop")
-						th 기안자
-						td(colspan="3" style="text-align: left")
-							span.drafter
+					//- tr.pc(v-show="isDesktop")
+					//- 	th 작성 일자
+					//- 	td
+					//- 		.input-wrap
+					//- 			input#inp_date(type="text" name="inp_date" readonly)
+					//- 	th 기안자
+					//- 	td
+					//- 		span.drafter
+					//- //- 모바일 경우 레이아웃
+					//- tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
+					//- 	th 작성 일자
+					//- 	td(colspan="3")
+					//- 		.input-wrap
+					//- 			input#inp_date(type="text" name="inp_date" readonly)
+					//- tr.mo(v-show="!isDesktop")
+					//- 	th 기안자
+					//- 	td(colspan="3" style="text-align: left")
+					//- 		span.drafter
 					//- 작성일자 기안사 :: e
 
-					tr(style="height: 119px;")
+					tr(v-if="selectedAuditors.approvers.length === 0 && selectedAuditors.agreers.length === 0 && selectedAuditors.receivers.length === 0" style="height: 119px;")
 						th.essential 결재 라인
 						td.left(colspan="3")
-							span.empty(style="cursor: default;") 이곳을 눌러 [ 결재/합의/수신참조 ] 라인을 추가해주세요.
+							span.empty(style="cursor: default;") 선택된 결재자가 없습니다.
+
+					tr.approval(v-if="selectedAuditors.approvers.length > 0")
+						th 결재
+						td.left(colspan="3" style="padding: 0; height: 119px;")
+							ul.approver-wrap
+								li.approver-list(v-for="(approver, index) in selectedAuditors.approvers" :key="approver.data.user_id")
+									span.num {{ approver.order }}
+									span.approver {{ approver.index.value }}
+
+					tr.approval(v-if="selectedAuditors.agreers.length > 0")
+						th 합의
+						td.left(colspan="3" style="padding: 0; height: 119px;")
+							ul.approver-wrap
+								li.approver-list(v-for="(agreer, index) in selectedAuditors.agreers" :key="agreer.data.user_id")
+									span.num {{ agreer.order }}
+									span.approver {{ agreer.index.value }}
+
+					tr.reference(v-if="selectedAuditors.receivers.length > 0")
+						th 수신 참조
+						td.left(colspan="3")
+							ul.reference-wrap
+								li.reference-list(v-for="(receiver, index) in selectedAuditors.receivers" :key="receiver.data.user_id")
+									span.referencer {{ receiver.index.value }}
 
 					tr
 						th.essential 제목
-							.add-btn
+							//- .add-btn
 								.icon
 									svg
 										use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
-						td.left(colspan="3") {{ docFormCont?.data?.form_title }}
+						td.left(colspan="3")
 
 					tr
 						th.essential 결재 내용
@@ -68,11 +91,6 @@
 												a.file-name(:href="file.url" download target="_blank") {{ file.filename }}
 										template(v-if="uploadedFile.length === 0")
 											li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
-
-	//- .reject-setting
-		label.checkbox
-			input#setReject(type="checkbox" name="checkbox" v-model="rejectSetting")
-			span.label-checkbox 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.<br>(미체크 경우, 결재 도중 반려시 해당 결재서류 회수)
 
 	.button-wrap
 		button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/admin/list-form')") 목록
@@ -95,6 +113,25 @@ const formRecordId = ref(''); // 결재 양식 record_id
 const uploadedFile = ref([]); // 첨부 파일 목록
 const addRows = ref([]);
 const rejectSetting = ref(false); // 반려 설정 관련 체크박스
+
+// 결재자 정보 저장
+const selectedAuditors = ref({
+  approvers: [], // 결재
+  agreers: [], // 합의
+  receivers: [] // 수신참조
+});
+
+// 결재자 데이터 변환 함수
+const convertAuditorFormatWithOrder = (auditors) => {
+  return auditors.map((auditor) => ({
+    data: { user_id: auditor.user_id },
+    index: {
+      value: auditor.name,
+      name: `${auditor.division}.${auditor.position}`
+    },
+    order: auditor.order || 0
+  }));
+};
 
 // 에디터 편집 불가 처리
 function disableContentEditable(htmlString) {
@@ -130,7 +167,6 @@ const getDocFormDetail = async () => {
     console.log('=== getDocFormDetail === formDetail : ', formDetail);
 
     docFormCont.value = formDetail.list[0];
-    console.log('=== getDocFormDetail === docFormCont : ', docFormCont.value.bin);
 
     // 체크박스 상태 가져오기
     if (docFormCont.value.data.reject_setting !== undefined) {
@@ -139,6 +175,39 @@ const getDocFormDetail = async () => {
         docFormCont.value.data.reject_setting === true;
     } else {
       rejectSetting.value = false; // 기본값 false
+    }
+
+    // 결재자 정보 가져오기
+    if (docFormCont.value.data && docFormCont.value.data.auditors) {
+      try {
+        const auditors = JSON.parse(docFormCont.value.data.auditors);
+
+        // 각 결재 타입별로 변환
+        selectedAuditors.value = {
+          approvers: convertAuditorFormatWithOrder(auditors.approvers || []),
+          agreers: convertAuditorFormatWithOrder(auditors.agreers || []),
+          receivers: convertAuditorFormatWithOrder(auditors.receivers || [])
+        };
+
+        // 결재자 순서대로 정렬
+        selectedAuditors.value.approvers.sort((a, b) => (a.order || 0) - (b.order || 0));
+        selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        console.log('selectedAuditors.value : ', selectedAuditors.value);
+      } catch (error) {
+        console.error('결재자 정보 파싱 오류:', error);
+        selectedAuditors.value = {
+          approvers: [],
+          agreers: [],
+          receivers: []
+        };
+      }
+    } else {
+      selectedAuditors.value = {
+        approvers: [],
+        agreers: [],
+        receivers: []
+      };
     }
 
     // 첨부 파일 목록 가져오기
@@ -159,7 +228,6 @@ const getDocFormDetail = async () => {
       fileList.push(...result);
 
       uploadedFile.value = fileList;
-      console.log('=== getDocFormDetail === uploadedFile : ', uploadedFile.value);
     } else {
       uploadedFile.value = [];
     }
@@ -268,6 +336,86 @@ onMounted(() => {
   }
 }
 
+.approver-wrap {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  text-align: center;
+  height: 100%;
+
+  .approver-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 100px;
+    min-height: 8rem;
+    border-right: 1px solid var(--gray-color-300);
+    border-bottom: 1px solid var(--gray-color-300);
+    margin-bottom: -1px;
+    position: relative;
+
+    &.noexist {
+      background-color: var(--gray-color-50);
+
+      span {
+        color: var(--gray-color-300);
+      }
+    }
+  }
+
+  .num {
+    border-bottom: 1px solid var(--gray-color-200);
+    padding: 0.25rem;
+  }
+
+  .sign {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    border-bottom: 1px solid var(--gray-color-200);
+  }
+
+  .approver {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.25rem;
+    height: 100%;
+  }
+}
+
+.reference-wrap {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  text-align: center;
+
+  .reference-list {
+    display: flex;
+    justify-content: center;
+    background-color: var(--gray-color-50);
+    border: 1px solid var(--gray-color-300);
+    border-radius: 8px;
+  }
+
+  .referencer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0.25rem;
+    gap: 2px;
+
+    .icon {
+      padding: 0;
+
+      &:hover {
+        cursor: pointer;
+      }
+    }
+  }
+}
+
 #inp_date {
   &:active,
   &:focus,
@@ -287,53 +435,13 @@ onMounted(() => {
   color: var(--gray-color-400);
 }
 
-.reject-setting {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 2rem;
-
-  .checkbox {
-    text-align: right;
-    pointer-events: none;
-
-    input[type='checkbox']:checked ~ .label-checkbox::before {
-      border-color: var(--warning-color-500);
-      background-color: var(--warning-color-500);
-    }
-
-    .label-checkbox {
-      display: inline-block;
-      line-height: 1.4;
-      color: var(--warning-color-500);
-      word-break: keep-all;
-
-      &::before {
-        position: relative;
-        top: 3px;
-        width: 0.9rem;
-        height: 0.9rem;
-      }
-    }
-  }
-}
-
 .button-wrap {
   margin-top: 2rem;
 }
 
 @media (max-width: 768px) {
-  .reject-setting {
-    .checkbox {
-      .label-checkbox {
-        font-size: 0.875rem;
-
-        &::before {
-          width: 0.875rem;
-          height: 0.875rem;
-          top: 2px;
-        }
-      }
-    }
+  .approver-wrap {
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 </style>
