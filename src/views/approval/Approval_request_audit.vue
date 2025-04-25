@@ -18,7 +18,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode 
 			p.label 결재 양식 선택
 			select(v-if="formCategory === 'master'" name="masterForms" :disabled="!masterForms.length" @change="(e) => selDocForm(e)")
 				option(value="" disabled selected) {{ masterForms.length ? "기본 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
-				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
+				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.docform_title }}
 
 			select(v-else-if="formCategory === 'mine'" name="myForms" :disabled="!myForms.length" @change="(e) => selDocForm(e)")
 				option(value="" disabled selected) {{ myForms.length ? "나의 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
@@ -67,7 +67,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 			#printArea
 				.title
 					.input-wrap.input-title
-						input#to_audit(v-model="auditTitle" type="text" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
+						input#docform_title(v-model="formTitle" type="text" name="docform_title" placeholder="결재 제목을 입력해주세요." required)
 
 				.table-wrap
 					.tb-overflow
@@ -169,7 +169,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 									td(colspan="3")
 										.input-wrap
-											input(type="text" v-model="auditTitle" placeholder="결재 제목을 입력해주세요.")
+											input#to_audit(type="text" v-model="auditTitle" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
 								tr
 									th.essential 결재 내용
 										.add-btn(v-if="isTemplateMode" @click="isRowModalOpen = true")
@@ -387,7 +387,8 @@ const fileNames = ref([]);
 
 const addRows = ref([]);
 let step = ref(1);
-const auditTitle = ref('');
+const formTitle = ref(''); // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
+const auditTitle = ref(''); // 결재건 제목
 const disabled = ref(false);
 const temploading = ref(false);
 
@@ -1146,7 +1147,7 @@ let updateFileList = (e) => {
 };
 
 // 결재 서류 레코드 생성 (결재자 순서 지정)
-const postAuditDoc = async ({ to_audit, to_audit_content }) => {
+const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
   // order 추가한 결재자 정보
   const send_auditors_data = {
     approvers: selectedAuditors.value.approvers.map((user) => ({
@@ -1179,6 +1180,7 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     const filebox = document.querySelector('input[name="additional_data"]');
     const additionalFormData = new FormData();
 
+    additionalFormData.append('docform_title', docform_title);
     additionalFormData.append('to_audit', to_audit);
     additionalFormData.append('auditors', JSON.stringify(send_auditors_data));
     additionalFormData.append('to_audit_content', to_audit_content);
@@ -1358,6 +1360,7 @@ const createAuditRequest = async (
             send_user: user.user_id,
             audit_info: {
               audit_type: 'request',
+              docform_title: docform_title,
               to_audit: to_audit,
               audit_doc_id: audit_id,
               audit_request_id: res.record_id,
@@ -1391,6 +1394,7 @@ const createAuditRequest = async (
         send_user: user.user_id,
         audit_info: {
           audit_type: 'request',
+          docform_title: docform_title,
           to_audit: to_audit,
           audit_doc_id: audit_id,
           audit_request_id: res.record_id,
@@ -1413,6 +1417,7 @@ const createAuditRequest = async (
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (
   auditId,
+  formTitle,
   auditTitle,
   userId,
   role,
@@ -1423,6 +1428,7 @@ const postAuditDocRecordId = async (
     await grantAuditorAccess({
       audit_id: auditId,
       auditor_id: userId,
+      form_title: formTitle,
       audit_title: auditTitle
     });
 
@@ -1432,6 +1438,7 @@ const postAuditDocRecordId = async (
         audit_id: auditId,
         auditor_id: userId,
         role: role,
+        form_title: formTitle,
         audit_title: auditTitle
       },
       send_auditors_arr,
@@ -1487,7 +1494,7 @@ const requestAudit = async (e) => {
 
     if (!formValues) return;
 
-    const { to_audit, inp_content: to_audit_content } = formValues;
+    const { docform_title, to_audit, inp_content: to_audit_content } = formValues;
 
     // 선택된 결재자 확인
     const totalSelectedCount = Object.values(selectedAuditors.value).reduce(
@@ -1512,6 +1519,7 @@ const requestAudit = async (e) => {
 
     // 결재 문서 생성
     const auditDoc = await postAuditDoc({
+      docform_title,
       to_audit,
       to_audit_content,
       // roles: getAllSelectedUserIds() // ID 목록만 전달
@@ -1519,7 +1527,8 @@ const requestAudit = async (e) => {
     });
 
     const auditId = auditDoc.record_id; // 결재 문서 ID
-    const auditTitle = to_audit; // 결재 제목
+    const formTitle = docform_title; // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
+    const auditTitle = to_audit; // 결재건 제목
 
     // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
     // 결재자/합의자를 순서대로 정렬
@@ -1597,6 +1606,7 @@ const requestAudit = async (e) => {
       processRoles.map((roleInfo, index) =>
         postAuditDocRecordId(
           auditId,
+          formTitle,
           auditTitle,
           roleInfo.userId,
           roleInfo.role,
@@ -1639,7 +1649,7 @@ const saveDocForm = async () => {
   console.log('마스터 결재양식 저장');
 
   // 결재 제목이 없을 경우 저장 불가
-  if (!auditTitle.value) {
+  if (!formTitle.value) {
     alert('결재 제목을 입력해주세요.');
     return;
   }
@@ -1648,6 +1658,7 @@ const saveDocForm = async () => {
     // 첨부파일 업로드
     const formData = new FormData();
 
+    formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
@@ -1747,7 +1758,7 @@ const saveDocForm = async () => {
       },
       index: {
         name: 'form_title', // 결재 양식 제목. 제목별 검색을 위한 인덱싱
-        value: auditTitle.value.replaceAll('.', '_')
+        value: formTitle.value.replaceAll('.', '_')
       }
     };
 
@@ -1769,7 +1780,7 @@ const saveMyDocForm = async () => {
   console.log('내 결재양식 저장');
 
   // 결재 제목이 없을 경우 저장 불가
-  if (!auditTitle.value) {
+  if (!formTitle.value || !auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
     return;
   }
@@ -1778,6 +1789,7 @@ const saveMyDocForm = async () => {
     // 첨부파일 업로드
     const formData = new FormData();
 
+    formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
@@ -1878,7 +1890,7 @@ const tempSaveMyDoc = async () => {
   console.log('임시 저장');
 
   // 결재 제목이 없을 경우 저장 불가
-  if (!auditTitle.value) {
+  if (!formTitle.value || !auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
     return;
   }
@@ -1888,6 +1900,7 @@ const tempSaveMyDoc = async () => {
     const filebox = document.querySelector('input[name="additional_data"]');
     const formData = new FormData();
 
+    formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
@@ -1981,13 +1994,16 @@ const tempSaveMyDoc = async () => {
       const res = await skapi.postRecord(formData, options);
       console.log('새로 임시저장됨 == res : ', res);
     } else if (route.query.record_id === res.list[0].record_id) {
+      await skapi.deleteRecords({ record_id: res.list[0].record_id }).then((res) => {
+        console.log('삭제완');
+      });
+
       await skapi
         .postRecord(formData, {
           table: {
             name: 'my_tempsave_audit',
             access_group: 'private'
-          },
-          record_id: res.list[0].record_id
+          }
         })
         .then((res) => {
           console.log('이전 임시저장 해둬서 업뎃 == res : ', res);
@@ -2073,6 +2089,7 @@ const getTempSaveMyDocCont = async () => {
         tempSaveData.value = res.list[0];
 
         // 폼 데이터 채우기
+        formTitle.value = tempSaveData.value.data.docform_title;
         auditTitle.value = tempSaveData.value.data.form_title;
         editorContent.value = tempSaveData.value.data.form_content;
 
@@ -2218,7 +2235,8 @@ const selDocForm = async (e) => {
 
   // 선택된 양식이 있으면 데이터 채우기
   if (selectedForm.value) {
-    auditTitle.value = selectedForm.value.data.form_title;
+    formTitle.value = selectedForm.value.data.docform_title;
+    auditTitle.value = selectedForm.value.data.form_title || '';
     editorContent.value = selectedForm.value.data.form_content;
 
     // 결재자
@@ -2288,6 +2306,7 @@ const selDocForm = async (e) => {
 const newWriteAudit = () => {
   step.value = 2;
 
+  formTitle.value = '';
   auditTitle.value = '';
   editorContent.value = '';
   selectedForm.value = [];
@@ -2347,6 +2366,7 @@ onMounted(async () => {
     console.log('== onMounted == reRequestData : ', reRequestData.value);
 
     // 결재 제목 설정
+    formTitle.value = reRequestData.value.data.docform_title;
     auditTitle.value = reRequestData.value.data.to_audit;
 
     // 에디터 내용 설정

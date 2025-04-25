@@ -6,7 +6,7 @@
 
 .form-wrap
 	.title
-		h2 {{ docFormCont?.data?.form_title }}
+		h2 {{ docFormCont?.data?.docform_title || docFormCont?.data?.form_title }}
 
 	.table-wrap
 		.tb-overflow
