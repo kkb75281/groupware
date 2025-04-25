@@ -30,18 +30,38 @@ const props = defineProps({
 });
 const menuList = ref(props.menuList);
 
-watch(() => props.menuList, (nv) => {
-	menuList.value = nv;
-}, { immediate: true });
-
 let navbar = ref(null);
 let activeMenu = ref(null);
 let isSendingValue = ref(false);
-const isadmin = computed(() => user.access_group > 98);
 
 const getIconPath = computed(() => (iconName) => {
 	return `${MaterialIcon}${iconName}`;
 });
+
+let checkRouteName = (routeName) => {
+	if(routeName === 'audit-detail' && isSendingValue.value) {
+		activeMenu.value = 'request-list';
+		return;
+	} else if(routeName === 'audit-detail' && !isSendingValue.value) {
+		activeMenu.value = 'audit-list';
+		return;
+	}
+
+	let childList = menuList.value.filter((item) => item.child);
+	let foundChild = childList.find((item) => item.child.some((child) => child === routeName));
+
+	if (foundChild) {
+		activeMenu.value = foundChild.name;
+		return;
+	}
+
+	activeMenu.value = routeName;
+}
+
+watch(() => props.menuList, (nv) => {
+	menuList.value = nv;
+	checkRouteName(route.name);
+}, { immediate: true });
 
 watch(() => route.query, (nv) => {
 	if(nv.isSending) {
@@ -52,66 +72,7 @@ watch(() => route.query, (nv) => {
 }, { immediate: true });
 
 watch(() => route.name, (nv) => {
-	console.log('activeMenu : ', activeMenu.value);
-
-	// if (nv === 'list-employee') {
-	// 	if (isadmin.value) {
-	// 		activeMenu.value = 'admin';
-	// 		return;
-	// 	} else {
-	// 		activeMenu.value = 'list-employee';
-	// 		return;
-	// 	}
-	// }
-
-	if(nv === 'audit-detail' && isSendingValue.value) {
-		activeMenu.value = 'request-list';
-		return;
-	} else if(nv === 'audit-detail' && !isSendingValue.value) {
-		activeMenu.value = 'audit-list';
-		return;
-	}
-
-	// childList 중에 현재 route.name이 포함되어 있는지 확인
-	let childList = menuList.value.filter((item) => item.child);
-	let foundChild = childList.find((item) => item.child.some((child) => child === nv));
-
-	if (foundChild) {
-		activeMenu.value = foundChild.name;
-		return;
-	}
-
-	// if (nv === 'detail-employee') {
-	// 	if (isadmin.value) {
-	// 		activeMenu.value = 'admin';
-	// 		return;
-	// 	} else {
-	// 		activeMenu.value = 'list-employee';
-	// 		return;
-	// 	}
-	// }
-
-	activeMenu.value = nv;
-
-	// if (nv === 'audit-detail' || nv === 'audit-detail-reference' || nv === 'audit-detail-favorite') {
-	// 	activeMenu.value = 'approval';
-	// 	return;
-	// }
-
-	// if (nv === 'newsletter-detail') {
-	// 	activeMenu.value = 'newsletter';
-	// 	return;
-	// }
-
-	// let foundChild = childList.find((item) => item.child.list.some((child) => child.name === nv));
-
-	// // 현재 route.name이 childList에 포함되어 있으면 activeMenu를 해당 menu의 name으로 설정
-	// if (foundChild) {
-	// 	activeMenu.value = foundChild.name;
-	// 	return;
-	// } else {
-	// 	activeMenu.value = nv;
-	// }
+	checkRouteName(nv);
 },{ immediate: true });
 </script>
 
@@ -129,7 +90,7 @@ watch(() => route.name, (nv) => {
 	// box-shadow: 5px 1px 20px rgba(0, 0, 0, 0.2);
 	border-right: 1px solid rgba(0, 0, 0, 0.1);
 
-	z-index: 9999;
+	z-index: 9998;
 	// transition: width 0.15s linear;
 	// transition: left 0.15s linear;
 	transition: all 0.3s;

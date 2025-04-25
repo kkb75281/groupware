@@ -38,6 +38,12 @@ header#header
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
                 template(v-slot:tip) 조직도
+        .icon(:class="{'active': route.path.split('/')[1] === 'commute'}" @click="router.push('/commute/commute-record')")
+            Tooltip(tip-background-color="black" text-color="white")
+                template(v-slot:tool)
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
+                template(v-slot:tip) 근태관리
         .icon(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
             Tooltip(tip-background-color="black" text-color="white")
                 template(v-slot:tool)
@@ -223,7 +229,13 @@ header#header
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                 p 마이페이지
 
-            router-link.icon-menu(to="/list-employee" @click="closePopup")
+            router-link.icon-menu(v-if="user.access_group < 99" to="/commute/commute-record" @click="closePopup")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
+                p 근태 관리
+
+            router-link.icon-menu(v-if="user.access_group < 99" to="/list-employee" @click="closePopup")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
@@ -520,13 +532,13 @@ watch(
     right: 20px;
     min-width: 200px;
     border: 1px solid var(--gray-color-400);
-    top: calc(8px + var(--header-height));
+    top: calc(10px + var(--header-height));
     background-color: #fff;
     border-radius: 16px;
     border: 1px solid rgba(0, 0, 0, 0.05);
     box-shadow: 1px 1px 20px 0px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    z-index: 9998;
+    z-index: 9999;
     padding: 1rem;
 
     .popup-header {
