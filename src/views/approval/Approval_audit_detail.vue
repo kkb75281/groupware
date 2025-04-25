@@ -743,16 +743,39 @@ const getAuditDetail = async () => {
       processAuditors('receivers')
     ]);
 
-    if (Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
+    // if (Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
+    //   console.log('AA');
+
+    //   let fileList = [];
+    //   let additional_data = auditDoc.bin.additional_data;
+
+    //   function getFileUserId(str) {
+    //     if (!str) return '';
+    //     return str.split('/')[3];
+    //   }
+
+    //   const result = additional_data.map((el) => ({
+    //     ...el,
+    //     user_id: getFileUserId(el.path)
+    //   }));
+
+    //   fileList.push(...result);
+
+    //   uploadedFile.value = fileList;
+    // }
+
+    if (Object.keys(auditDoc.bin).length && auditDoc.bin.form_data.length) {
+      console.log('BB');
+
       let fileList = [];
-      let additional_data = auditDoc.bin.additional_data;
+      let form_data = auditDoc.bin.form_data;
 
       function getFileUserId(str) {
         if (!str) return '';
         return str.split('/')[3];
       }
 
-      const result = additional_data.map((el) => ({
+      const result = form_data.map((el) => ({
         ...el,
         user_id: getFileUserId(el.path)
       }));
@@ -760,7 +783,9 @@ const getAuditDetail = async () => {
       fileList.push(...result);
 
       uploadedFile.value = fileList;
+      console.log('uploadedFile.value : ', uploadedFile.value);
     } else {
+      console.log('CC');
       uploadedFile.value = [];
     }
 
