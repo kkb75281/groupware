@@ -94,7 +94,7 @@ const docFormCont = ref({}); // 결재 양식 내용
 const formRecordId = ref(''); // 결재 양식 record_id
 const uploadedFile = ref([]); // 첨부 파일 목록
 const addRows = ref([]);
-const rejectSetting = ref(true); // 반려 설정 관련 체크박스
+const rejectSetting = ref(false); // 반려 설정 관련 체크박스
 
 // 에디터 편집 불가 처리
 function disableContentEditable(htmlString) {
@@ -138,7 +138,7 @@ const getDocFormDetail = async () => {
         docFormCont.value.data.reject_setting === 'true' ||
         docFormCont.value.data.reject_setting === true;
     } else {
-      rejectSetting.value = true; // 기본값 true로
+      rejectSetting.value = false; // 기본값 false
     }
 
     // 첨부 파일 목록 가져오기

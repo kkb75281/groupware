@@ -55,10 +55,10 @@
 </template>
 
 <script setup>
-import { useRoute, useRouter } from "vue-router";
-import { ref, computed, onMounted } from "vue";
-import { skapi } from "@/main.ts";
-import Loading from "@/components/loading.vue";
+import { useRoute, useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { skapi } from '@/main.ts';
+import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -77,148 +77,153 @@ const docFormList = ref([]); // 결재 양식 리스트
 const formTitle = ref(''); // 검색한 결재 양식 제목
 
 const isAllSelected = computed(() => {
-    if (docFormList.value.length === 0) return false;
+  if (docFormList.value.length === 0) return false;
 
-    return docFormList.value.every(docForm => 
-        Object.keys(selectedList.value).includes(docForm.record_id)
-    );
+  return docFormList.value.every((docForm) =>
+    Object.keys(selectedList.value).includes(docForm.record_id)
+  );
 });
 
 const toggleSelectAll = () => {
-    if (isAllSelected.value) {
-        selectedList.value = {};
-    } else {
-        const newSelectedList = {};
+  if (isAllSelected.value) {
+    selectedList.value = {};
+  } else {
+    const newSelectedList = {};
 
-        docFormList.value.forEach(docForm => {
-            newSelectedList[docForm.record_id] = docForm.data.form_title;
-        });
-        selectedList.value = newSelectedList;
-    }
+    docFormList.value.forEach((docForm) => {
+      newSelectedList[docForm.record_id] = docForm.data.form_title;
+    });
+    selectedList.value = newSelectedList;
+  }
 };
 
 const toggleSelect = (id, name) => {
-    if (selectedList.value[id]) {
-        delete selectedList.value[id];
-        console.log('AA 확인');
-    } else {
-        selectedList.value[id] = name;
-        console.log('BB 확인');
-    }
+  if (selectedList.value[id]) {
+    delete selectedList.value[id];
+  } else {
+    selectedList.value[id] = name;
+  }
 };
 
 // 새로고침
 const refresh = () => {
-    getDocForm();
+  getDocForm();
 };
 
 // 결재 양식 저장한 리스트 가져오기
 const getDocForm = async () => {
-    loading.value = true;
+  loading.value = true;
 
-    const query = {
-        table: {
-            name: 'audit_form',
-            access_group: 1
-        },
+  const query = {
+    table: {
+      name: 'audit_form',
+      access_group: 1
     }
+  };
 
-    const fetchOptions = {
-        ascending: false, // 최신순
-    }
+  const fetchOptions = {
+    ascending: false // 최신순
+  };
 
-    const res = await skapi.getRecords(query, fetchOptions);
-    docFormList.value = res.list;
-    // console.log('=== getDocForm === docFormList.value : ', docFormList.value);
+  const res = await skapi.getRecords(query, fetchOptions);
+  docFormList.value = res.list;
+  console.log('=== getDocForm === docFormList.value : ', docFormList.value);
 
-    loading.value = false;
-    return res;
-}
+  loading.value = false;
+  return res;
+};
 
 // 결재 양식 검색
 const searchDocForm = async () => {
-    loading.value = true;
+  loading.value = true;
 
-    const res = await skapi.getRecords({
-        table: {
-            name: 'audit_form',
-            access_group: 1
-        },
-        index: {
-            name: 'form_title', // 결재 양식 제목으로 검색
-            value: searchValue.value,
-            condition: '>='
-        },
-    });
-
-    if (res.list.length > 0) {
-        docFormList.value = res.list.sort((a, b) => b.data.form_title.localeCompare(a.data.form_title));
-    } else {
-        docFormList.value = [];
+  const res = await skapi.getRecords({
+    table: {
+      name: 'audit_form',
+      access_group: 1
+    },
+    index: {
+      name: 'form_title', // 결재 양식 제목으로 검색
+      value: searchValue.value,
+      condition: '>='
     }
+  });
 
-    if (!searchValue.value) {
-        getDocForm();
-    }
+  if (res.list.length > 0) {
+    docFormList.value = res.list.sort((a, b) => b.data.form_title.localeCompare(a.data.form_title));
+  } else {
+    docFormList.value = [];
+  }
 
-    loading.value = false;
-}
+  if (!searchValue.value) {
+    getDocForm();
+  }
+
+  loading.value = false;
+};
 
 // 결재 양식 삭제
 const deleteDocForm = async () => {
-    console.log('결재 양식 삭제');
+  console.log('결재 양식 삭제');
 
-    if(!Object.keys(selectedList.value).length) {
-        alert('삭제할 결재 양식을 선택해주세요.');
-        loading.value = false;
-        return;
-    }
+  if (!Object.keys(selectedList.value).length) {
+    alert('삭제할 결재 양식을 선택해주세요.');
+    loading.value = false;
+    return;
+  }
 
-    const deleteList = Object.keys(selectedList.value);
-    console.log('=== deleteDocForm === deleteList : ', deleteList);
+  const deleteList = Object.keys(selectedList.value);
+  console.log('=== deleteDocForm === deleteList : ', deleteList);
 
-    let isSuccess = [];
-    let isFail = [];
+  let isSuccess = [];
+  let isFail = [];
 
-    await Promise.all(deleteList.map((record_id) => {
-        return skapi.deleteRecords({
-            record_id: record_id
-        }).then(res => {
-            isSuccess.push(res);
-        }).catch(err => {
-            console.log('결재 양식 삭제 실패 : ', err);
-            isFail.push(err);
-            console.log('isFail : ', isFail);
-            alert("부서 삭제에 실패하였습니다. 관리자에게 문의해주세요.");
-            throw err;
+  await Promise.all(
+    deleteList.map((record_id) => {
+      return skapi
+        .deleteRecords({
+          record_id: record_id
+        })
+        .then((res) => {
+          isSuccess.push(res);
+        })
+        .catch((err) => {
+          console.log('결재 양식 삭제 실패 : ', err);
+          isFail.push(err);
+          console.log('isFail : ', isFail);
+          alert('부서 삭제에 실패하였습니다. 관리자에게 문의해주세요.');
+          throw err;
         });
-    }));
+    })
+  );
 
-    if(isSuccess.length > 0) {
-        alert(`${isSuccess.length}개의 결재 양식이 삭제되었습니다.`);
-        
-        docFormList.value = docFormList.value.filter(docForm => !deleteList.includes(docForm.record_id));
-    } else {
-        alert("결재 양식 삭제에 실패하였습니다.");
-    }
+  if (isSuccess.length > 0) {
+    alert(`${isSuccess.length}개의 결재 양식이 삭제되었습니다.`);
 
-    selectedList.value = {}; // 삭제 버튼 비활성화
-}
+    docFormList.value = docFormList.value.filter(
+      (docForm) => !deleteList.includes(docForm.record_id)
+    );
+  } else {
+    alert('결재 양식 삭제에 실패하였습니다.');
+  }
+
+  selectedList.value = {}; // 삭제 버튼 비활성화
+};
 
 onMounted(() => {
-    getDocForm();
+  getDocForm();
 });
 </script>
 
 <style scoped lang="less">
 .go-detail {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 16px;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 16px;
 
-    span {
-        white-space: nowrap;
-    }
+  span {
+    white-space: nowrap;
+  }
 }
 </style>

@@ -196,11 +196,14 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 												ul.upload-file-list
 													template(v-if="uploadedFile.length > 0 && isFormSelected")
 														li.file-item(v-for="(file, index) in uploadedFile" :key="index" style="border: none; padding: 0;")
-															a.file-name(:href="file.url" download target="_blank") {{ file.filename }}
+															a.file-name(v-if="file.url" :href="file.url" download target="_blank") {{ file.filename }}
+															span.only-text(v-else) {{ file.name || file.filename }}
+															button.btn-remove.icon(type="button" @click.stop="removeFile(file, index)")
+																svg
+																	use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 													template(v-else)
-														//- li.file-name(v-for="(name, index) in fileNames" :key="index") {{ name }}
 														li.file-name(v-for="(name, index) in fileNames" :key="index")
-															span.text {{ name }}
+															span.only-text {{ name }}
 															button.btn-remove.icon(type="button" @click.stop="removeFile(file, index)")
 																svg
 																	use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
@@ -306,6 +309,8 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 		.modal-footer
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
 			button.btn.btn-save(type="submit" @click="saveAuditor") 저장
+
+button.btn.outline.btn-new(type="button" @click="testDelete") delete
 </template>
 
 <script setup>
@@ -315,12 +320,6 @@ import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe, verifiedEmail } from '@/user.ts';
 import { divisionNameList } from '@/division.ts';
 import { reRequestData } from '@/audit.ts';
-import {
-  organigram,
-  getOrganigram,
-  getOrganigramRunning,
-  excludeCurrentUser
-} from '@/components/organigram.ts';
 
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
@@ -340,6 +339,12 @@ const route = useRoute();
 const isTemplateMode = computed(() => route.query.mode === 'template'); // 결재 양식 관리 > 등록 경로인지 확인
 const isTempSaveMode = computed(() => route.query.mode === 'tempsave'); // 임시 저장 경로인지 확인
 const isReRequestMode = computed(() => route.query.mode === 'reRequest'); // 재요청 모드인지 확인
+
+const testDelete = () => {
+  skapi.deleteRecords({
+    record_id
+  });
+};
 
 // 페이지 제목 변경
 const pageTitle = computed(() => {
@@ -1105,17 +1110,12 @@ const exportWysiwygData = (content) => {
 };
 
 // 첨부파일 삭제
-let removeFile = (file, index) => {
-  console.log('AA == fileNames.value : ', fileNames.value);
-  fileNames.value.splice(index, 1);
-  console.log('BB == fileNames.value : ', fileNames.value);
-
-  console.log('AA == uploadedFile.value : ', uploadedFile.value);
+const removeFile = (file, index) => {
   uploadedFile.value.splice(index, 1);
-  console.log('BB == uploadedFile.value : ', uploadedFile.value);
+  fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
 
-  const fileInput = document.getElementById('file');
-  console.log('fileInput : ', fileInput);
+  console.log('uploadedFile.value : ', uploadedFile.value);
+  console.log('fileNames.value : ', fileNames.value);
 };
 
 // let cancelRemoveFile = (item) => {
@@ -1124,13 +1124,23 @@ let removeFile = (file, index) => {
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
-  let target = e.target;
-  console.log('target : ', target);
+  // let target = e.target;
+  // console.log('target : ', target);
 
-  if (target.files) {
-    fileNames.value = Array.from(target.files).map((file) => file.name);
-    console.log('fileNames.value : ', fileNames.value);
-  }
+  // if (target.files) {
+  //   fileNames.value = Array.from(target.files).map((file) => file.name);
+  //   console.log('fileNames.value : ', fileNames.value);
+  // }
+
+  const newFiles = Array.from(e.target.files);
+  uploadedFile.value.push(...newFiles);
+  fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
+  e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
+
+  console.log('newFiles : ', newFiles);
+  console.log('uploadedFile.value : ', uploadedFile.value);
+  console.log('fileNames.value : ', fileNames.value);
+  console.log('isFormSelected.value : ', isFormSelected.value);
 };
 
 // 결재 서류 레코드 생성 (결재자 순서 지정)
@@ -1171,43 +1181,50 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     additionalFormData.append('auditors', JSON.stringify(send_auditors_data));
     additionalFormData.append('to_audit_content', to_audit_content);
     additionalFormData.append('reject_setting', rejectSetting.value);
-
-    // 추가 행 데이터
     additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
 
-    if (filebox && filebox.files.length) {
-      Array.from(filebox.files).forEach((file) => {
-        additionalFormData.append('additional_data', file);
-      });
-    }
+    // if (filebox && filebox.files.length) {
+    //   Array.from(filebox.files).forEach((file) => {
+    //     additionalFormData.append('additional_data', file);
+    //   });
+    // }
 
     // 만약 첨부파일이 있는 결재 양식 선택시
-    if (uploadedFile.value.length) {
-      console.log('uploadedFile.value : ', uploadedFile.value);
-      for (const file of uploadedFile.value) {
-        // file.url에 '?'가 포함되어 있을 경우 제거
-        if (file.url.includes('?')) {
-          file.url = file.url.split('?')[0];
-        } else {
-          file.url = file.url;
-        }
-        console.log('file.url : ', file.url);
+    // if (uploadedFile.value.length) {
+    //   console.log('uploadedFile.value : ', uploadedFile.value);
+    for (const file of uploadedFile.value) {
+      // // file.url에 '?'가 포함되어 있을 경우 제거
+      // if (file.url.includes('?')) {
+      //   file.url = file.url.split('?')[0];
+      // } else {
+      //   file.url = file.url;
+      // }
+      console.log('file.url : ', file.url);
 
-        // 파일 데이터를 서버에서 가져옴
-        const fileData = await skapi.getFile(file.url, {
-          dataType: 'endpoint'
-        });
+      // 파일 데이터를 서버에서 가져옴
+      // const fileData = await skapi.getFile(file.url, {
+      //   dataType: 'endpoint'
+      // });
 
-        // 가져온 파일 데이터를 Blob으로 변환
-        const blob = await fetch(fileData.url).then((res) => res.blob());
+      // console.log('fileData : ', fileData);
 
-        // Blob에 원래 파일 이름을 붙여 File 객체 생성
-        const fileObject = new File([blob], file.filename, { type: blob.type });
+      // 가져온 파일 데이터를 Blob으로 변환
+      // const blob = await fetch(file.url).then((res) => res.blob());
+      const blob = await skapi.getFile(file.url, {
+        dataType: 'blob'
+      });
 
-        // FormData에 추가
-        additionalFormData.append('additional_data', fileObject);
-      }
+      console.log('blob : ', blob);
+
+      console.log('AA : ', file.filename, { type: blob.type });
+
+      // Blob에 원래 파일 이름을 붙여 File 객체 생성
+      const fileObject = new File([blob], file.filename, { type: blob.type });
+
+      // FormData에 추가
+      additionalFormData.append('additional_data', fileObject);
     }
+    // }
 
     const options = {
       readonly: true, // 결재 올리면 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
@@ -1229,10 +1246,15 @@ const postAuditDoc = async ({ to_audit, to_audit_content }) => {
     };
 
     const res = await skapi.postRecord(additionalFormData, options);
+    console.log('== postAuditDoc == res : ', res);
 
     return res;
   } catch (error) {
     console.error(error);
+    if (error?.message?.includes('index.value should not have special characters')) {
+      throw new Error('index.value should not have special characters');
+    }
+    throw error;
   }
 };
 
@@ -1589,7 +1611,11 @@ const requestAudit = async (e) => {
     });
   } catch (error) {
     console.error('결재 요청 중 오류 발생:', error);
-    alert('결재 요청 중 오류가 발생했습니다.');
+    if (error?.message === 'index.value should not have special characters') {
+      alert('제목은 특수문자 [ ] ^ _ ` : ; < = > ? @ 만 포함 가능합니다.');
+    } else {
+      alert('결재 요청 중 오류가 발생했습니다.');
+    }
   } finally {
     mainPageLoading.value = false;
   }
@@ -1597,9 +1623,14 @@ const requestAudit = async (e) => {
 
 // 기존 결재 양식 저장 (마스터가 저장한 결재 양식)
 const saveDocForm = async () => {
+  // 결재 제목이 없을 경우 저장 불가
+  if (!auditTitle.value) {
+    alert('결재 제목을 입력해주세요.');
+    return;
+  }
+
   try {
     // 첨부파일 업로드
-    const filebox = document.querySelector('input[name="additional_data"]');
     const formData = new FormData();
 
     formData.append('form_title', auditTitle.value);
@@ -1607,31 +1638,35 @@ const saveDocForm = async () => {
     formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
 
-    if (filebox && filebox.files.length) {
-      Array.from(filebox.files).forEach((file) => {
-        formData.append('form_data', file);
-      });
-    }
+    // 결재자 정보 저장
+    const auditorData = {
+      approvers: selectedAuditors.value.approvers.map((user) => ({
+        user_id: user.data.user_id,
+        name: user.index.value,
+        position: user.index.name.split('.')[1],
+        division: user.index.name.split('.')[0],
+        order: user.order // 순서 정보 추가
+      })),
+      agreers: selectedAuditors.value.agreers.map((user) => ({
+        user_id: user.data.user_id,
+        name: user.index.value,
+        position: user.index.name.split('.')[1],
+        division: user.index.name.split('.')[0],
+        order: user.order // 순서 정보 추가
+      })),
+      receivers: selectedAuditors.value.receivers.map((user) => ({
+        user_id: user.data.user_id,
+        name: user.index.value,
+        position: user.index.name.split('.')[1],
+        division: user.index.name.split('.')[0],
+        order: user.order // 순서 정보 추가
+      }))
+    };
 
-    if (uploadedFile.value.length) {
-      console.log('uploadedFile.value : ', uploadedFile.value);
-      for (const file of uploadedFile.value) {
-        // console.log('Processing file:', file);
+    formData.append('auditors', JSON.stringify(auditorData ?? []));
 
-        // 파일 데이터를 서버에서 가져옴
-        const fileData = await skapi.getFile(file.url, {
-          dataType: 'endpoint'
-        });
-
-        // 가져온 파일 데이터를 Blob으로 변환
-        const blob = await fetch(fileData.url).then((res) => res.blob());
-
-        // Blob에 원래 파일 이름을 붙여 File 객체 생성
-        const fileObject = new File([blob], file.filename, { type: blob.type });
-
-        // FormData에 추가
-        formData.append('form_data', fileObject);
-      }
+    for (const file of uploadedFile.value) {
+      formData.append('form_data', file);
     }
 
     const options = {
@@ -1656,6 +1691,8 @@ const saveDocForm = async () => {
 
 // 내 결재 양식 저장
 const saveMyDocForm = async () => {
+  console.log('내 결재양식 저장');
+
   // 결재 제목이 없을 경우 저장 불가
   if (!auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
@@ -1664,7 +1701,6 @@ const saveMyDocForm = async () => {
 
   try {
     // 첨부파일 업로드
-    const filebox = document.querySelector('input[name="additional_data"]');
     const formData = new FormData();
 
     formData.append('form_title', auditTitle.value);
@@ -1699,60 +1735,57 @@ const saveMyDocForm = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
-    if (filebox && filebox.files.length) {
-      Array.from(filebox.files).forEach((file) => {
-        console.log('file:', file);
-        formData.append('form_data', file);
-      });
+    for (const file of uploadedFile.value) {
+      formData.append('form_data', file);
     }
 
-    console.log('filebox : ', filebox);
-    console.log('uploadedFile.value : ', uploadedFile.value);
+    // if (uploadedFile.value.length) {
+    //   for (const file of uploadedFile.value) {
+    //     console.log('file:', file);
 
-    if (uploadedFile.value.length) {
-      for (const file of uploadedFile.value) {
-        console.log('file:', file);
+    //     // file.url '?' 포함되어 있을 경우 제거
+    //     if (file.url.includes('?')) {
+    //       file.url = file.url.split('?')[0];
+    //     } else {
+    //       file.url = file.url;
+    //     }
+    //     console.log('file.url : ', file.url);
 
-        // // file.url '?' 포함되어 있을 경우 제거
-        // if (file.url.includes('?')) {
-        //   file.url = file.url.split('?')[0];
-        // } else {
-        //   file.url = file.url;
-        // }
-        // console.log('file.url : ', file.url);
+    //     // 파일 데이터를 서버에서 가져옴
+    //     const fileData = await skapi.getFile(file.url, {
+    //       dataType: 'endpoint'
+    //     });
+    //     console.log('fileData : ', fileData);
 
-        // 파일 데이터를 서버에서 가져옴
-        const fileData = await skapi.getFile(file.url, {
-          dataType: 'endpoint'
-        });
-        console.log('fileData : ', fileData);
+    //     // 가져온 파일 데이터를 Blob으로 변환
+    //     const blob = await fetch(fileData.url).then((res) => res.blob());
 
-        // 가져온 파일 데이터를 Blob으로 변환
-        const blob = await fetch(fileData.url).then((res) => res.blob());
+    //     // Blob에 원래 파일 이름을 붙여 File 객체 생성
+    //     const fileObject = new File([blob], file.filename, { type: blob.type });
 
-        // Blob에 원래 파일 이름을 붙여 File 객체 생성
-        const fileObject = new File([blob], file.filename, { type: blob.type });
+    //     console.log('blob : ', blob);
+    //     console.log('fileObject : ', fileObject);
 
-        console.log('blob : ', blob);
-        console.log('fileObject : ', fileObject);
-
-        // FormData에 추가
-        formData.append('form_data', fileObject);
-      }
-    }
+    //     // FormData에 추가
+    //     formData.append('form_data', fileObject);
+    //   }
+    // }
 
     const options = {
       table: {
         name: 'my_audit_form',
-        access_group: 'private'
+        access_group: 1
       },
       index: {
         name: 'form_title', // 제목별 검색을 위한 인덱싱
         value: auditTitle.value.replaceAll('.', '_')
       }
     };
+    console.log('formData : ', formData);
+    console.log('options : ', options);
 
     const res = await skapi.postRecord(formData, options);
+    console.log('res : ', res);
 
     alert('결재 양식이 저장되었습니다.');
   } catch (error) {
@@ -1763,6 +1796,8 @@ const saveMyDocForm = async () => {
 
 // 임시 저장
 const tempSaveMyDoc = async () => {
+  console.log('임시 저장');
+
   // 결재 제목이 없을 경우 저장 불가
   if (!auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
@@ -1806,39 +1841,44 @@ const tempSaveMyDoc = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
-    if (filebox && filebox.files.length) {
-      Array.from(filebox.files).forEach((file) => {
-        formData.append('form_data', file);
-      });
+    // if (filebox && filebox.files.length) {
+    //   Array.from(filebox.files).forEach((file) => {
+    //     formData.append('form_data', file);
+    //   });
+    // }
+    console.log('AA == uploadedFile.value : ', uploadedFile.value);
+
+    for (const file of uploadedFile.value) {
+      formData.append('form_data', file);
     }
 
     console.log('filebox : ', filebox);
-    console.log('uploadedFile.value : ', uploadedFile.value);
+    console.log('BB == uploadedFile.value : ', uploadedFile.value);
 
-    if (uploadedFile.value.length) {
-      for (const file of uploadedFile.value) {
-        console.log('file:', file);
+    // if (uploadedFile.value.length) {
+    //   for (const file of uploadedFile.value) {
+    //     console.log('file:', file);
 
-        // file.url ?를 기준으로 [0]만 가져오기
-        // const fileUrl = file.url.split('?')[0];
-        // console.log('fileUrl : ', fileUrl);
+    //     // file.url ?를 기준으로 [0]만 가져오기
+    //     // const fileUrl = file.url.split('?')[0];
+    //     // console.log('fileUrl : ', fileUrl);
 
-        // 파일 데이터를 서버에서 가져옴
-        const fileData = await skapi.getFile(file.url, {
-          dataType: 'endpoint'
-        });
-        console.log('fileData : ', fileData);
+    //     // 파일 데이터를 서버에서 가져옴
+    //     const fileData = await skapi.getFile(file.url, {
+    //       dataType: 'endpoint'
+    //     });
+    //     console.log('fileData : ', fileData);
 
-        // 가져온 파일 데이터를 Blob으로 변환
-        const blob = await fetch(fileData.url).then((res) => res.blob());
+    //     // 가져온 파일 데이터를 Blob으로 변환
+    //     const blob = await fetch(fileData.url).then((res) => res.blob());
 
-        // Blob에 원래 파일 이름을 붙여 File 객체 생성
-        const fileObject = new File([blob], file.filename, { type: blob.type });
+    //     // Blob에 원래 파일 이름을 붙여 File 객체 생성
+    //     const fileObject = new File([blob], file.filename, { type: blob.type });
 
-        // FormData에 추가
-        formData.append('form_data', fileObject);
-      }
-    }
+    //     // FormData에 추가
+    //     formData.append('form_data', fileObject);
+    //   }
+    // }
 
     const options = {
       table: {
@@ -1859,17 +1899,26 @@ const tempSaveMyDoc = async () => {
       },
       record_id: route.query.record_id
     });
+    console.log('AA == res : ', res);
 
-    if (route.query.record_id === res.list[0].record_id) {
-      await skapi.postRecord(formData, {
-        table: {
-          name: 'my_tempsave_audit',
-          access_group: 'private'
-        },
-        record_id: res.list[0].record_id
-      });
-    } else if (route.query.record_id === undefined) {
+    console.log('formData : ', formData);
+    console.log('route.query.record_id : ', route.query.record_id);
+
+    if (res.list.length === 0 || route.query.record_id === undefined) {
       const res = await skapi.postRecord(formData, options);
+      console.log('결재양식 없음 == res : ', res);
+    } else if (route.query.record_id === res.list[0].record_id) {
+      await skapi
+        .postRecord(formData, {
+          table: {
+            name: 'my_tempsave_audit',
+            access_group: 'private'
+          },
+          record_id: res.list[0].record_id
+        })
+        .then((res) => {
+          console.log('BB == res : ', res);
+        });
     }
 
     alert('임시 저장되었습니다.');
@@ -1903,11 +1952,12 @@ const getMyDocForm = async () => {
     const res = await skapi.getRecords({
       table: {
         name: 'my_audit_form',
-        access_group: 'private'
+        access_group: 1
       }
     });
 
     myForms.value = res.list || [];
+    console.log('myForms.value : ', myForms.value);
     return res;
   } catch (error) {
     console.error('결재 양식 가져오기 중 오류 발생: ', error);
@@ -1923,6 +1973,7 @@ const getTempSaveMyDocList = async () => {
         access_group: 'private'
       }
     });
+    console.log('임시저장 : ', res);
 
     return res;
   } catch (error) {
@@ -1956,6 +2007,8 @@ const getTempSaveMyDocCont = async () => {
           rejectSetting.value =
             tempSaveData.value.data.reject_setting === 'true' ||
             tempSaveData.value.data.reject_setting === true;
+        } else {
+          rejectSetting.value = false;
         }
 
         // 추가 행 데이터
@@ -2144,8 +2197,8 @@ const selDocForm = async (e) => {
     // 체크박스 설정 불러오기
     if (selectedForm.value.data.reject_setting !== undefined) {
       rejectSetting.value =
-        selectedForm.value.data.reject_setting === 'false' ||
-        selectedForm.value.data.reject_setting === false;
+        selectedForm.value.data.reject_setting === 'true' ||
+        selectedForm.value.data.reject_setting === true;
     } else {
       rejectSetting.value = false;
     }
@@ -2225,6 +2278,8 @@ onMounted(async () => {
       rejectSetting.value =
         reRequestData.value.data.reject_setting === 'true' ||
         reRequestData.value.data.reject_setting === true;
+    } else {
+      rejectSetting.value = false;
     }
 
     // 추가 행 데이터 불러오기
@@ -2884,6 +2939,17 @@ onUnmounted(() => {
 .upload-file {
   .upload-file-list {
     margin-top: 0;
+
+    .only-text {
+      margin-left: 0;
+      width: 100%;
+      border: 1px dashed var(--gray-color-300);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.75rem;
+      color: var(--gray-color-400);
+      text-align: left;
+    }
   }
 
   .file-name {
@@ -2901,20 +2967,7 @@ onUnmounted(() => {
     }
 
     &:first-of-type {
-      .file-name {
-        margin-top: 16px;
-      }
-    }
-  }
-
-  li.file-name {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-
-    .text {
-      margin-left: 0;
+      margin-top: 16px;
     }
   }
 
