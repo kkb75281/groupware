@@ -208,7 +208,7 @@ import {
     onlyUserGesture,
     setNotificationPermission
 } from '@/notifications.ts';
-import { system_worktime, getMyWorktimeStorage, todayWorkStarting, todayWorkEnding, startWork, endWork } from '@/views/commute/worktime.ts';
+import { system_worktime, getSystemWorktime, getMyWorktimeStorage, todayWorkStarting, todayWorkEnding, startWork, endWork } from '@/views/commute/worktime.ts';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
@@ -271,6 +271,7 @@ let checkCommuteRecord = async (router) => {
 onMounted(async () => {
     await Promise.all([
         getUserPositionCurrent(),
+        getSystemWorktime(),
         getMyWorktimeStorage()
     ]);
 
