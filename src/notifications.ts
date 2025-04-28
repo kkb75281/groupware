@@ -396,7 +396,7 @@ export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
 export const getNewsletterList = async (refresh = false) => {
-  console.log('=== getNewsletterList === refresh : ', refresh);
+  // console.log('=== getNewsletterList === refresh : ', refresh);
 };
 
 // export const getNewsletterList = async (refresh = false) => {
