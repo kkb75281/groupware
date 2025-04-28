@@ -110,9 +110,10 @@ let toggleSelect = (id, name) => {
     }
 };
 
-const refresh = () => {
-    getDivisionData(true); // 부서 정보
-    getDivisionNames(true); // 부서명 리스트
+const refresh = async() => {
+    getDivisionData(true).then(r => {
+		getDivisionNames(true);
+	});
 };
 
 let deleteDivision = async () => {
