@@ -114,18 +114,18 @@
 			button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/newsletter')") 취소
 			button.btn(type="submit") 등록
 
-//- Modal - 공개범위 선택
+//- Modal - 공개 범위 선택
 #modal.modal.select-approver(v-if="isModalOpen" @click="closeModal")
 	.modal-cont(@click.stop)
 		.modal-header
-			h2.title 라인 선택
+			h2.title 공개 범위 선택
 			button.btn-close(type="button" @click="closeModal")
 				svg
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 		.modal-body
 			.select-approver-wrap
 				.organigram-wrap
-					Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedMembers" @selection-change="handleOrganigramSelection")
+					Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedMembers" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
 
 				br
 
@@ -142,6 +142,7 @@
 									th 
 									th NO
 									th 부서
+									th 이름
 									
 							tbody
 								tr(v-for="(user, index) in selectedUsers" :key="user.data.user_id")
@@ -152,6 +153,7 @@
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 									td {{ index + 1 }}
 									td {{ divisionNameList[user.index.name.split('.')[0]] }}
+									td {{ user.index.value }}
 
 					span.empty(v-else) 선택된 결재자가 없습니다.
 		.modal-footer
@@ -190,22 +192,15 @@ const route = useRoute();
 
 const isDesktop = ref(window.innerWidth > 768); // 반응형
 const isModalOpen = ref(false); // 공개범위 설정 모달
-const selectedUsers = ref([]); // 조직도에서 선택된 부서
-
-// 결재자 정보 저장
-const selectedMembers = ref({
-  approvers: [], // 결재
-  agreers: [], // 합의
-  receivers: [] // 수신참조
-});
-
+const selectedDivision = ref([]); // 조직도에서 선택된 부서
+const selectedUsers = ref([]); // 조직도에서 선택된 부서의 직원
+const selectedMembers = ref([]); // 공개범위 직원 정보 저장
 const selectedForm = ref([]); // 선택된 결재 양식
 const notiSetting = ref(true); // 알림 설정 관련 체크박스
-const prevSelected = ref([]);
-const backupSelected = ref(null); // 선택된 결재자 백업
+const backupSelected = ref(null); // 선택된 공개범위 직원 백업
 let send_auditors_arr = [];
 
-const uploadedFile = ref([]);
+const uploadedFile = ref([]); // 첨부파일
 const fileNames = ref([]);
 
 const newsTitle = ref(''); // 게시글 제목
@@ -226,58 +221,24 @@ watch(editorContent, (newContent) => {
   }
 });
 
-// 결재라인 모달 열기
+// 공개범위 모달 열기
 const openModal = () => {
   // 열렸을 때 selectedMembers 전체를 original로 백업
-  backupSelected.value = {
-    approvers: [...selectedMembers.value.approvers],
-    agreers: [...selectedMembers.value.agreers],
-    receivers: [...selectedMembers.value.receivers]
-  };
+  backupSelected.value = [...selectedMembers.value];
 
   // selectedMembers에 있는 모든 유저를 selectedUsers에 추가
   selectedUsers.value = [];
-
-  // selectedMembers의 각 역할에 따라 selectedUsers에 추가
-  for (const role in selectedMembers.value) {
-    selectedMembers.value[role].forEach((user) => {
-      const userCopy = JSON.parse(JSON.stringify(user)); // 깊은 복사 하여 참조를 끊어줌
-
-      userCopy.role = role;
-      userCopy.sortable = role !== 'receivers';
-      selectedUsers.value.push(userCopy);
-    });
-  }
-
-  selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
   console.log('selectedUsers.value : ', selectedUsers.value);
-  prevSelected.value = selectedUsers.value;
-
-  // 모달이 열릴 때 본인 부서 직원만 보이도록 새로 조직도 데이터 가져오기
-  // getOrganigram(true, true);
 
   isModalOpen.value = true;
 };
 
-// 결재라인 모달 닫기
+// 공개범위 모달 닫기
 const closeModal = () => {
   if (backupSelected.value) {
-    selectedMembers.value = {
-      approvers: [...backupSelected.value.approvers],
-      agreers: [...backupSelected.value.agreers],
-      receivers: [...backupSelected.value.receivers]
-    };
-
-    // // 모든 사용자의 role을 '결재'로 초기화
-    // selectedUsers.value.forEach((user) => {
-    //   user.role = 'approvers';
-    // });
+    selectedMembers.value = [...backupSelected.value];
   } else {
-    selectedMembers.value = {
-      approvers: [],
-      agreers: [],
-      receivers: []
-    };
+    selectedMembers.value = [];
   }
 
   selectedUsers.value = [];
@@ -316,109 +277,15 @@ const getEmpDivision = async (userId) => {
     });
 };
 
-// 결재라인 모달에서 조직도 선택시
+// 공개범위 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
-  // 선택된 유저들을 초기 처리
-  users.forEach((user) => {
-    // 선택된 유저들에게 role 정보가 없으면 추가
-    if (!user.role) {
-      user.role = 'approvers';
-    }
+  console.log('모달에서 공개 부서 선택');
+  console.log('== handleOrganigramSelection == users : ', users);
 
-    // 결재자 순서 정렬 설정
-    if (user.sortable === undefined) {
-      // receivers 역할이면 정렬 불가능으로 설정
-      user.sortable = user.role !== 'receivers';
-    }
-  });
-
-  // 수신참조자와 그 외(결재자/합의자)로 분리
-  const receiversUsers = users.filter((user) => user.role === 'receivers');
-  const nonReceiversUsers = users.filter((user) => user.role !== 'receivers');
-
-  // 비-receivers 사용자들을 먼저 배치하고, 그 뒤에 receivers 사용자들을 배치
-  selectedUsers.value = [...nonReceiversUsers, ...receiversUsers];
-
-  // 순서(order) 할당
-  // 결재자와 합의자는 현재 배열 순서대로 번호 부여
-  let orderCounter = 1;
-
-  selectedUsers.value.forEach((user) => {
-    if (user.role !== 'receivers') {
-      user.order = orderCounter++;
-    }
-  });
-
-  // 수신참조자는 별도의 카운터로 순서 부여 (선택적)
-  let receiverCounter = 1;
-  selectedUsers.value.forEach((user) => {
-    if (user.role === 'receivers') {
-      user.order = receiverCounter++;
-    }
-  });
-};
-
-// 수신참조자로 선택되면 선택된 결재자에서 가장 아래로 이동
-const checkRole = (user) => {
-  // 이전 역할 저장
-  const previousRole = user.role;
-
-  // 새로운 역할로 변경된 경우
-  if (user.role === 'receivers') {
-    // receivers로 변경된 경우: 배열에서 제거하고 마지막에 추가
-    const index = selectedUsers.value.findIndex((u) => u.data.user_id === user.data.user_id);
-    if (index !== -1) {
-      selectedUsers.value.splice(index, 1);
-      selectedUsers.value.push(user);
-    }
-
-    user.sortable = false;
-
-    // 순서 재할당
-    reorderUsers();
-  } else if (previousRole === 'receivers') {
-    // receivers에서 다른 역할로 변경된 경우
-    user.sortable = true;
-
-    // 비-receivers 그룹 중 마지막에 배치
-    const index = selectedUsers.value.findIndex((u) => u.data.user_id === user.data.user_id);
-    if (index !== -1) {
-      // 현재 사용자를 제거
-      selectedUsers.value.splice(index, 1);
-
-      // receivers와 non-receivers 분리
-      const receivers = selectedUsers.value.filter((u) => u.role === 'receivers');
-      const nonReceivers = selectedUsers.value.filter((u) => u.role !== 'receivers');
-
-      // non-receivers 끝에 현재 사용자 추가 + receivers 추가
-      selectedUsers.value = [...nonReceivers, user, ...receivers];
-
-      // 순서 재할당
-      reorderUsers();
-    }
-  } else {
-    // 두 역할 모두 non-receivers인 경우 (approvers <-> agreers)
-    // 순서는 그대로 유지하고 역할만 변경
-    user.sortable = true;
-  }
-};
-
-// 모든 사용자의 순서를 재할당하는 유틸리티 함수
-const reorderUsers = () => {
-  // 결재자와 합의자 순서 번호 재할당
-  let orderCounter = 1;
-  selectedUsers.value.forEach((user) => {
-    if (user.role !== 'receivers') {
-      user.order = orderCounter++;
-    }
-  });
-
-  // 수신참조자 순서 번호 재할당 (선택적)
-  let receiverCounter = 1;
-  selectedUsers.value.forEach((user) => {
-    if (user.role === 'receivers') {
-      user.order = receiverCounter++;
-    }
+  users.forEach((el) => {
+    console.log('el : ', el);
+    el.index.name.split('.')[0];
+    console.log(divisionNameList[el.index.name.split('.')[0]]);
   });
 };
 
@@ -435,14 +302,11 @@ const getAllSelectedUserIds = () => {
 
 // 결재자 저장
 const saveAuditor = () => {
-  selectedMembers.value.agreers = [];
-  selectedMembers.value.approvers = [];
-  selectedMembers.value.receivers = [];
+  selectedMembers.value = [];
 
-  // user.role에 따라 approvers, agreers, receivers에 추가
   selectedUsers.value.forEach((user) => {
     const userCopy = JSON.parse(JSON.stringify(user)); // 깊은 복사 하여 참조를 끊어줌
-    selectedMembers.value[user.role].push(userCopy);
+    selectedMembers.value.push(userCopy);
   });
 
   backupSelected.value = null;
@@ -451,9 +315,8 @@ const saveAuditor = () => {
 
 // 결재자 제거
 const removeAuditor = (user, type) => {
-  const newAuditors = selectedUsers.value.filter((u) => u.data.user_id !== user.data.user_id);
-
-  selectedUsers.value = newAuditors;
+  const newMembers = selectedUsers.value.filter((u) => u.data.user_id !== user.data.user_id);
+  selectedUsers.value = newMembers;
 };
 
 // 에디터 준비 후 테이블 편집 기능 활성화
@@ -465,7 +328,7 @@ const handleEditorReady = (status) => {
     setTimeout(() => {
       const editorElement = document.getElementById('myeditor');
       if (editorElement) {
-        console.log('에디터 준비 완료');
+        // console.log('에디터 준비 완료');
         activateTableEditing(editorElement);
       }
     }, 500);
@@ -818,25 +681,13 @@ let updateFileList = (e) => {
   e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
 };
 
-// 결재 서류 레코드 생성 (결재자 순서 지정)
-const postAuditDoc = async ({ to_news, to_news_content }) => {
+// 게시글 레코드 생성
+const postNewsRecord = async ({ to_news, to_news_content }) => {
   // order 추가한 결재자 정보
   const send_auditors_data = {
     approvers: selectedMembers.value.approvers.map((user) => ({
       user_id: user.data.user_id.replaceAll('-', '_'),
       order: user.order
-    })),
-
-    // agreers도 마찬가지로 order 정보 추가
-    agreers: selectedMembers.value.agreers.map((user) => ({
-      user_id: user.data.user_id.replaceAll('-', '_'),
-      order: user.order || 0
-    })),
-
-    // receivers는 순서가 중요하지 않을 수 있지만 일관성을 위해 추가
-    receivers: selectedMembers.value.receivers.map((user) => ({
-      user_id: user.data.user_id.replaceAll('-', '_'),
-      order: user.order || 0
     }))
   };
 
@@ -849,14 +700,12 @@ const postAuditDoc = async ({ to_news, to_news_content }) => {
 
   try {
     // 첨부파일 업로드
-    const filebox = document.querySelector('input[name="additional_data"]');
     const additionalFormData = new FormData();
 
     additionalFormData.append('to_news', to_news);
     additionalFormData.append('members', JSON.stringify(send_auditors_data));
     additionalFormData.append('to_news_content', to_news_content);
-    additionalFormData.append('reject_setting', notiSetting.value);
-    additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
+    additionalFormData.append('noti_setting', notiSetting.value);
 
     if (uploadedFile.value.length) {
       const filePromises = uploadedFile.value.map(async (file) => {
@@ -897,24 +746,24 @@ const postAuditDoc = async ({ to_news, to_news_content }) => {
     const options = {
       readonly: true, // 결재 올리면 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
       table: {
-        name: 'audit_doc',
-        access_group: 'private' // 프라빗으로 올려야 결재자만 접근 가능
+        name: 'news_doc',
+        access_group: 'private' // 프라빗으로 올려야 공개범위 직원들만 접근 가능
       },
       index: {
-        name: 'to_news', // 결재 사안 제목. 제목별로 찾을때 위한 인덱싱
+        name: 'to_news', // 게시글 제목. 제목별로 찾을때 위한 인덱싱
         value: to_news.replaceAll('.', '_')
       },
       source: {
         prevent_multiple_referencing: true // 중복 결재 방지
       },
-      tags: send_auditors_arr, // 결재, 합의, 수신참조 태그를 각각 구분,
+      tags: 'send_auditors_arr', // 결재, 합의, 수신참조 태그를 각각 구분,
       data: {
-        reject_setting: notiSetting.value
+        noti_setting: notiSetting.value
       }
     };
 
     const res = await skapi.postRecord(additionalFormData, options);
-    console.log('== postAuditDoc == res : ', res);
+    console.log('== postNewsRecord == res : ', res);
 
     return res;
   } catch (error) {
@@ -1139,7 +988,7 @@ const registerNewsletter = async (e) => {
   try {
     const formData = new FormData(e.target);
     formData.set('inp_content', removeButtonTags(editorContent.value)); // editorContent.value가 이미 현재 에디터 내용을 가지고 있음
-    formData.append('reject_setting', notiSetting.value); // 반려 설정 관련 체크박스
+    formData.append('noti_setting', notiSetting.value); // 반려 설정 관련 체크박스
 
     const formValues = Object.fromEntries(formData.entries());
 
@@ -1169,11 +1018,10 @@ const registerNewsletter = async (e) => {
     mainPageLoading.value = true;
 
     // 결재 문서 생성
-    const auditDoc = await postAuditDoc({
+    const auditDoc = await postNewsRecord({
       to_news,
       to_news_content,
-      // roles: getAllSelectedUserIds() // ID 목록만 전달
-      reject_setting: notiSetting.value // 반려 설정 관련 체크박스 값 전달
+      noti_setting: notiSetting.value // 반려 설정 관련 체크박스 값 전달
     });
 
     const auditId = auditDoc.record_id; // 결재 문서 ID
