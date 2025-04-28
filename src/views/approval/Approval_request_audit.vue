@@ -251,7 +251,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 		.modal-body
 			.select-approver-wrap
 				.organigram-wrap
-					Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedAuditors" :onlyMyDepartment="true" @selection-change="handleOrganigramSelection")
+					Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :onlyDepartment="true" :selectedAuditors="selectedAuditors" :onlyMyDepartment="true" @selection-change="handleOrganigramSelection")
 
 				br
 
@@ -606,6 +606,7 @@ const getEmpDivision = async (userId) => {
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
+	console.log(users)
   // 선택된 유저들을 초기 처리
   users.forEach((user) => {
     // 선택된 유저들에게 role 정보가 없으면 추가

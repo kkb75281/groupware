@@ -34,7 +34,19 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             .name {{ user.name }}
-            .division(v-for="dvs in userDvsPstn" :key="dvs") {{ dvs }}
+            //- .division(v-for="dvs in userDvsPstn" :key="dvs") {{ dvs }}
+            .division {{ userDvsPstn.length > 1 ? userDvsPstn[0] + ' 외 ' + (userDvsPstn.length - 1) + '개'  : userDvsPstn[0] }}
+            br
+            .buttons
+                //- p(v-if="todayWorkStarting && todayWorkEnding" style="font-size:0.7rem;") 출/퇴근 기록 완료
+                button.btn.sm.bg-gray(v-if="todayWorkStarting && todayWorkEnding" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;") 내일 봬요 :)
+                button.btn.sm(v-else-if="!todayWorkStarting" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;" @click="checkCommuteRecord") 출근
+                button.btn.sm.bg-gray(v-else type="button" style="display:inline-block;font-size:0.7rem" @click="checkCommuteRecord") 퇴근
+                //- router-link.router(to="/commute/commute-record" style="display:inline-block;vertical-align:middle")
+                //- button.btn.sm.bg-gray(type="button" @click="router.push('/commute/commute-record')" style="display:inline-block;vertical-align:middle;margin-left:4px") 관리
+                    //- .icon(style="padding:0; padding-left:0.5rem")
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
         .company-wrap
             img(src="@/assets/img/rh.png" alt="회사사진")
 
@@ -52,13 +64,21 @@
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
             p 공지사항
+        .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'commute'}" @click="router.push('/commute/commute-record')")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
+            p 근태관리
+        .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
+            p 직원목록
         .icon(:class="{'active': route.path.split('/')[1] === 'organigram'}" @click="router.push('/organigram')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
-            p 직원목록
+            p 조직도
         .icon(:class="{'active': route.path.split('/')[1] === 'mypage'}" @click="router.push('/mypage/edit-myinfo')")
             svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             p 마이페이지
         .icon.master(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
             svg
@@ -95,33 +115,30 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
                     | 이메일
-                a.go-detail(v-if="googleAccountCheck" :href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
+                a.go-detail(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-                button.btn.outline(v-else @click="googleLogin")
-                    img(src="@/assets/img/icon_google.svg")
-                    | 구글 계정 연동하기
-            template(v-if="googleAccountCheck")
-                //- template(v-if="googleEmailUpdate")
-                //- 	Loading#loading
-                //- template(v-else)
-                ul.unread-mail(v-if="mailList && mailList.length")
-                    li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
-                        .link
-                            span.from {{ mail.from }}
-                            span.mail-title {{ mail.subject }}
-                            p.mail-cont {{ mail.snippet }}
-                            span.attachment(v-if="mail.hasAttachment")
-                                .icon
-                                    svg
-                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
-                            span.mail-date {{ mail.date }}
-                .empty(v-else-if="mailList && !mailList.length")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-                    | 더 이상 읽을 메일이 없습니다.
+
+            //- template(v-if="googleEmailUpdate")
+            //- 	Loading#loading
+            //- template(v-else)
+            ul.unread-mail(v-if="mailList && mailList.length")
+                li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
+                    .link
+                        span.from {{ mail.from }}
+                        span.mail-title {{ mail.subject }}
+                        p.mail-cont {{ mail.snippet }}
+                        span.attachment(v-if="mail.hasAttachment")
+                            .icon
+                                svg
+                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
+                        span.mail-date {{ mail.date }}
+            .empty(v-else-if="mailList && !mailList.length")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+                | 더 이상 읽을 메일이 없습니다.
 
     //- ul.card-wrap
         li.card
@@ -191,6 +208,7 @@ import {
   onlyUserGesture,
   setNotificationPermission
 } from '@/notifications.ts';
+import { getMyWorktimeStorage, todayWorkStarting, todayWorkEnding, startWork, endWork } from '@/views/commute/worktime.ts';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
@@ -201,36 +219,10 @@ let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const encodedEmail = encodeURIComponent(user.email);
 const userDvsPstn = ref([]);
 
-// google login
-function googleLogin() {
-  loading.value = true;
-
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  const REDIRECT_URL = 'http://localhost:5173/login';
-
-  let rnd = Math.random().toString(36).substring(2); // Generate a random string
-
-  let url = 'https://accounts.google.com/o/oauth2/v2/auth';
-  url += '?client_id=' + GOOGLE_CLIENT_ID;
-  url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
-  url += '&response_type=token';
-  url +=
-    '&scope=' +
-    encodeURIComponent(
-      'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly'
-    );
-  url += '&prompt=select_account';
-  url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
-
-  window.location.href = url;
-}
-
 let showMailDoc = (e, rt) => {
   console.log('rt', rt);
   console.log('mailList', mailList.value);
   openGmailAppOrWeb(rt.link, rt.id);
-  // window.open(rt.link, "_blank");
-  // readNoti(rt);
 };
 
 let getUserPositionCurrent = async () => {
@@ -266,9 +258,23 @@ let getUserPositionCurrent = async () => {
   }
 };
 
+let checkCommuteRecord = async(router) => {
+    if(todayWorkStarting.value) {
+        console.log('퇴근');
+        await endWork(router);
+    } else {
+        console.log('출근');
+        await startWork(router);
+    }
+}
+
 onMounted(async () => {
-  await getUserPositionCurrent();
-  getNewsletterList();
+    await Promise.all([
+        getUserPositionCurrent(),
+        getMyWorktimeStorage()
+    ]);
+
+      getNewsletterList();
 });
 </script>
 

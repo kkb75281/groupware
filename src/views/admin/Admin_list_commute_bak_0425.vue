@@ -36,15 +36,14 @@
                 col(style="width: 20%")
                 col
                 col
-                col
             thead
                 tr
                     th(scope="col") NO
                     th(scope="col") 이름
                     th(scope="col") 직급
                     th(scope="col") 부서명
-                    th(scope="col") 출/퇴근시간
-                    th(scope="col") 연차현황
+                    th(scope="col") 출근시간
+                    th(scope="col") 퇴근시간
 
             tbody
                 template(v-if="loading")
@@ -67,10 +66,10 @@
                           .list.division
                             .list-item.division(v-for="(division, index) in getEmployeeDivisions(emp)" :key="index")
                               span {{ divisionNameList[division.division] || '-' }}
-                        td.workTime
-                            span.time {{ !emp.startWork && !emp.endWork ? '-' : extractTimeFromDateTime(emp.startWork) + ' / ' + extractTimeFromDateTime(emp.endWork) }}
-                        td.annualLeave
-                            span {{ emp.annualLeave || '-' }}
+                        td.startWork
+                            span.time {{ extractTimeFromDateTime(emp.startWork) }}
+                        td.endWork
+                            span.time {{ extractTimeFromDateTime(emp.endWork) }}
 
     //- .pagination
         button.btn-prev.icon(type="button") 
@@ -103,7 +102,6 @@ const searchValue = ref('');
 const searchPositionValue = ref('');
 
 const extractTimeFromDateTime = (dateTimeStr) => {
-    console.log('dateTimeStr:', dateTimeStr);
   if (!dateTimeStr) return '';
 
   return dateTimeStr.split(' ')[1]; // 시간만 추출 (ex. 2021-08-01 15:00:00 -> 15:00:00)
@@ -312,21 +310,21 @@ const getEmpList = async () => {
           if (commuteList && commuteList.length > 0) {
             if (commuteList.length > 1) {
               const lastCommute = commuteList[commuteList.length - 1];
-              empInfo.startWork = lastCommute?.data?.startTime || null;
-              empInfo.endWork = lastCommute?.data?.endTime || null;
+              empInfo.startWork = lastCommute?.data?.startTime || '-';
+              empInfo.endWork = lastCommute?.data?.endTime || '-';
             } else {
               const lastCommute = commuteList[0];
-              empInfo.startWork = lastCommute?.data?.startTime || null;
-              empInfo.endWork = lastCommute?.data?.endTime || null;
+              empInfo.startWork = lastCommute?.data?.startTime || '-';
+              empInfo.endWork = lastCommute?.data?.endTime || '-';
             }
           } else {
-            empInfo.startWork = null;
-            empInfo.endWork = null;
+            empInfo.startWork = '-';
+            empInfo.endWork = '-';
           }
         } catch (error) {
           console.log(`직원(${emp.user_id}) 출퇴근 기록 조회 중 오류:`, error);
-          empInfo.startWork = null;
-          empInfo.endWork = null;
+          empInfo.startWork = '-';
+          empInfo.endWork = '-';
         }
 
         return empInfo;

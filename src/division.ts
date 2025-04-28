@@ -33,12 +33,15 @@ export async function getDivisionNames(refresh = false) {
     getDivisionNamesRunning = skapi.getRecords({
         unique_id: '[division_name_list]'
     }).catch(async(err)=>{
+		console.log('err', err);
+		console.log('errcode', err.code);
 		if(err.code === 'NOT_EXISTS') {
 			if(getDivisionDataRunning instanceof Promise){
 				await getDivisionDataRunning;
 			}
 
 			if(Object.keys(divisions.value).length) {
+				console.log('divisions', divisions.value);
 				let updateData: any = {};
 
 				const keys = Object.keys(divisions.value);
@@ -101,7 +104,9 @@ export async function getDivisionData(refresh: boolean = false) {
                 name: 'divisions',
                 access_group: 99
             }
-        }).finally(() => {
+        }).catch((err) => {
+			console.log('err', err);
+		}).finally(() => {
             getDivisionDataRunning = null;
 
             if (getDivisionNamesRunning instanceof Promise) {
@@ -115,7 +120,11 @@ export async function getDivisionData(refresh: boolean = false) {
 
         let res = await getDivisionDataRunning;
 
+		console.log('res', res);
+
         if (res.list.length) {
+			divisions.value = {};
+			
             res.list.forEach((div: any) => {
                 divisions.value[div.record_id] = div;
             })

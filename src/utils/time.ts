@@ -78,7 +78,7 @@ const convertMsToTime = (milliseconds: number): string => {
   const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
 
   // 시간과 분을 문자열로 변환
-  return `${hours}시간 ${minutes}분`;
+  return `${hours > 0 ? hours + '시간' : ''} ${minutes}분`;
 };
 
 export {

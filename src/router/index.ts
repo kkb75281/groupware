@@ -166,48 +166,38 @@ const router = createRouter({
             },
           ]
         },
-		{
-			path: '/mypage/edit-myinfo',
-			name: 'edit-myinfo',
-			component: () => import('@/views/mypage/Mypage_edit_myinfo.vue')
-		},
-		{
-			path: '/mypage/record-commute',
-			name: 'record-commute',
-			component: () => import('@/views/mypage/Mypage_record_commute.vue')
-		},
+        {
+            path: '/mypage/edit-myinfo',
+            name: 'edit-myinfo',
+            component: () => import('@/views/mypage/Mypage_edit_myinfo.vue')
+        },
         // {
-        //   path: '/mypage',
-        //   children: [
-        //     {
-        //       path: '/mypage',
-        //       name: 'mypage',
-        //       component: MainNav,
-        //       children: [
-        //           {
-        //             path: 'edit-myinfo',
-        //             name: 'edit-myinfo',
-        //             component: () => import('@/views/mypage/Mypage_edit_myinfo.vue') // Mypage_edit_myinfo,
-        //           },
-        //         //   {
-        //         //     path: 'edit-mystamp',
-        //         //     name: 'edit-mystamp',
-        //         //     component: () => import('@/views/mypage/Mypage_edit_mystamp.vue')
-        //         //   },
-        //           // {
-        //           // 	path: 'edit-myfile',
-        //           // 	name: 'edit-myfile',
-        //           // 	component: () => import('@/views/mypage/Mypage_edit_myfile.vue'),
-        //           // },
-        //           {
-        //             path: 'record-commute',
-        //             name: 'record-commute',
-        //             component: () => import('@/views/mypage/Mypage_record_commute.vue') // Mypage_record_commute,
-        //           }
-        //       ]
-        //     },
-        //   ]
+        //     path: '/mypage/record-commute',
+        //     name: 'record-commute',
+        //     component: () => import('@/views/mypage/Mypage_record_commute.vue')
         // },
+        {
+            path: '/commute',
+            children: [
+                {
+                    path: '/commute',
+                    name: 'commute',
+                    component: MainNav,
+                    children: [
+                        {
+                            path: 'commute-record',
+                            name: 'commute-record',
+                            component: () => import('@/views/commute/Commute_record.vue')
+                        },
+                        {
+                            path: 'commute-year',
+                            name: 'commute-year',
+                            component: () => import('@/views/commute/Commute_year.vue')
+                        }
+                    ]
+                }
+            ]
+        },
         {
           path: '/admin',
           beforeEnter: (to, from, next) => {

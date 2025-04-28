@@ -110,9 +110,10 @@ let toggleSelect = (id, name) => {
     }
 };
 
-const refresh = () => {
-    getDivisionData(true); // 부서 정보
-    getDivisionNames(true); // 부서명 리스트
+const refresh = async () => {
+    getDivisionData(true).then(r => {
+        getDivisionNames(true);
+    });
 };
 
 let deleteDivision = async () => {
@@ -136,7 +137,7 @@ let deleteDivision = async () => {
             return skapi
                 .deleteRecords({ record_id: el })
                 .then((res) => {
-                    
+
                     isSuccess.push(el);
                     delete divisions.value[el];
                 })
@@ -153,7 +154,7 @@ let deleteDivision = async () => {
     let keys = Object.keys(data); // 'DF1', 'DF2', ...
     let values = Object.values(data); // '부서명1', '부서명2', ...
     let nameSet = new Set(name); // Set으로 변환 (빠른 검색)
-    
+
     // 값 비교 및 제외 로직
     for (let i = 0; i < values.length; i++) {
         if (!nameSet.has(values[i])) {
@@ -235,7 +236,7 @@ const searchDivision = async () => {
 </script>
 
 <style scoped lang="less">
-#divisions_list > a > * {
+#divisions_list>a>* {
     vertical-align: middle;
 }
 

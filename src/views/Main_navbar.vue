@@ -20,6 +20,22 @@ let currentMenuList = ref(null);
 let isadmin = computed(() => user.access_group > 98);
 
 let menuLists = {
+	commute: [
+		{
+			show: true,
+			text: '출퇴근 관리',
+			name: 'commute-record',
+			icon: '#icon-work-history',
+			to: '/commute/commute-record'
+		},
+		{
+			show: true,
+			text: '연차 관리',
+			name: 'commute-year',
+			icon: '#icon-clock',
+			to: '/commute/commute-year'
+		}
+	],
 	approval: [
 		{
 			show: true,

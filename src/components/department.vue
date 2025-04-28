@@ -14,10 +14,11 @@ details
             span.label-checkbox
         .folder
         span.name {{ department.name }} 
-        span.total {{ department.total }}
+        span.total(v-if="!props.onlyDepartment") {{ department.total }}
     ul
         //- 부서 구성원
         li.member(
+			v-if="!props.onlyDepartment"
             v-for="(member, index) in department.members" 
             :key="index"
         )
@@ -44,6 +45,7 @@ details
                 :modalType="modalType"
                 :selectedAuditors="selectedAuditors"
                 :useCheckbox="useCheckbox"
+				:onlyDepartment="onlyDepartment"
                 @update-check="$emit('update-check', $event)"
                 @click.stop
             )
@@ -68,6 +70,10 @@ const props = defineProps({
   useCheckbox: {
     type: Boolean,
     default: false
+  },
+  onlyDepartment: {
+	type: Boolean,
+	default: false
   }
 });
 
@@ -154,6 +160,7 @@ const isDepartmentDisabled = computed(() => {
 // 컴포넌트 마운트 시 초기화
 onMounted(() => {
   initializeCheckState();
+  console.log(props.onlyDepartment)
 });
 </script>
 

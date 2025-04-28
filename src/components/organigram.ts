@@ -9,6 +9,7 @@ import {
   getDivisionDataRunning,
   getDivisionNamesRunning
 } from '@/division.ts';
+import { Console } from 'console';
 
 export type Organigram = {
   division: string | null;
@@ -61,6 +62,7 @@ export async function getOrganigram(refresh = false, myDepartment = false) {
       for (const division in divisionNameList.value) {
         const fullName = divisionNameList.value[division];
         if (typeof fullName !== 'string') continue;
+        if (fullName.length < 1) continue;
 
         const path = fullName.split('/');
         await addDepartment(path, division, organigram.value);
