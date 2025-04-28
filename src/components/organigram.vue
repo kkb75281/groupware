@@ -3,7 +3,7 @@
     template(v-if="getOrganigramRunning")
         Loading
     template(v-else)
-        Department(v-for="(department, index) in organigram" :key="index" :useCheckbox="useCheckbox" :department="department" :selectedAuditors="selectedAuditors" :onlyDepartment="onlyDepartment" @update-check="onDepartmentCheck")
+        Department(v-for="(department, index) in organigram" :key="index" :useCheckbox="useCheckbox" :department="department" :selectedAuditors="selectedAuditors" :onlyDvsName="onlyDvsName" @update-check="onDepartmentCheck")
 </template>
 
 <script setup>
@@ -45,10 +45,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  onlyDepartment: {
-	// 부서만 보기
-	type: Boolean,
-	default: false
+  onlyDvsName: {
+    // 부서만 보기
+    type: Boolean,
+    default: false
   },
   onlyMyDepartment: {
     // 내 부서만 보기
