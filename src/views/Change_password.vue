@@ -33,7 +33,7 @@
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-visibility-off-fill")
 
             .button-wrap
-                button.btn.bg-gray.btn-back(type="button" @click="router.push('/mypage')" :disabled="promiseRunning") 이전
+                button.btn.bg-gray.btn-back(type="button" @click="router.push('/mypage/edit-myinfo')" :disabled="promiseRunning") 이전
                 button.btn.btn-next(type="submit" :disabled="promiseRunning") 다음
 
     template(v-if="step === 2")
@@ -97,7 +97,7 @@ let currPassword = '';
 let newPassword = '';
 let newPasswordConfirm = '';
 
-let login = async(e) => {
+let login = async (e) => {
     promiseRunning.value = true;
     try {
         await skapi.login(e);
@@ -151,9 +151,9 @@ let changePassword = async () => {
         margin-bottom: 1rem;
 
         svg {
-			width: 2rem;
-			height: 2rem;
-		}
+            width: 2rem;
+            height: 2rem;
+        }
     }
 
     .title {

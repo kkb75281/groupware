@@ -64,19 +64,19 @@ template(v-else)
 					tbody
 						//- template(v-if="loading")
 							tr(v-for="i in 5")
-						template(v-if="!my_worktime_storage")
+						template(v-if="!my_worktime_storage_data")
 							tr
 								td(colspan="5") 데이터가 없습니다.
 						template(v-else)
-							tr(v-for="record in my_worktime_storage")
-								td.date {{ record.data.date }}
-								td.start-time {{ extractTimeFromDateTime(record.data.startTime) }}
-								td.end-time {{ extractTimeFromDateTime(record.data.endTime) }}
-								td.work-time {{ record.data.dailyCommuteTime }}
+							tr(v-for="record in my_worktime_storage_data")
+								td.date {{ record.date }}
+								td.start-time {{ extractTimeFromDateTime(record.startTime) }}
+								td.end-time {{ extractTimeFromDateTime(record.endTime) }}
+								td.work-time {{ record.dailyCommuteTime ? convertMsToTime(record.dailyCommuteTime) : '' }}
 								td.remark
 									.remark-wrap(style="display: flex; gap: 0.5rem;")
 										.input-wrap
-											input(type="text" placeholder="입력해주세요." v-model="record.data.remark")
+											input(type="text" placeholder="입력해주세요." v-model="record.remark")
 										.btn-wrap
 											button.btn-save(type="button" @click="saveDesc(record)")
 												.icon
@@ -101,7 +101,7 @@ import {
   convertMsToTime
 } from '@/utils/time.ts';
 import { user, makeSafe } from '@/user.ts';
-import { system_worktime, getSystemWorktime, my_worktime_storage, getMyWorktimeStorage, todayWorkStarting, todayWorkEnding } from '@/views/commute/worktime.ts';
+import { system_worktime, getSystemWorktime, my_worktime_storage_data, getMyWorktimeStorage, todayWorkStarting, todayWorkEnding } from '@/views/commute/worktime.ts';
 // import { divisionNameList } from '@/division';
 // import type { Ref } from 'vue';
 

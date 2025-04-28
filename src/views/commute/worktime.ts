@@ -73,6 +73,7 @@ export let getSystemWorktime = async(refresh = false) => {
 }
 
 export let my_worktime_storage = ref(null);
+export let my_worktime_storage_data = ref(null);
 export let todayWorkStarting = ref(false);
 export let todayWorkEnding = ref(false);
 
@@ -131,10 +132,64 @@ export const getMyWorktimeStorage = async (refresh = false) => {
 		} else {
 			todayWorkEnding.value = false;
 		}
+
+		// my_worktime_storage의 data 부분만 my_worktime_storage_data로 저장
+		let onlyData = my_worktime_storage.value.map((record) => {
+			return {
+				...record.data,
+				uploaded: record.uploaded,
+				record_id: record.record_id
+			};
+		})
+
+		// 그룹화 및 계산
+		my_worktime_storage_data.value = Object.values(
+			onlyData.reduce((acc, item) => {
+				const { date, startTime, endTime, startTimeStamp, endTimeStamp } = item;
+
+				console.log(acc, item)
+			
+				// 유효성 검사
+				if (!date) return acc;
+			
+				// 그룹이 없으면 초기화
+				if (!acc[date]) {
+					acc[date] = {
+						date,
+						startTime: null,
+						endTime: null,
+						startTimeStamp: Infinity,
+						endTimeStamp: -Infinity,
+						dailyCommuteTime: null
+					};
+					console.log('aaa', acc[date])
+				}
+
+				// 출근 기록 처리 (startTimeStamp가 있으면 업데이트)
+				if (startTime && startTimeStamp !== null && startTimeStamp < acc[date].startTimeStamp) {
+					acc[date].startTime = startTime;
+					acc[date].startTimeStamp = startTimeStamp;
+				}
+			
+				// 퇴근 기록 처리 (endTimeStamp가 있으면 업데이트)
+				if (endTime && endTimeStamp !== null && endTimeStamp > acc[date].endTimeStamp) {
+					acc[date].endTime = endTime;
+					acc[date].endTimeStamp = endTimeStamp;
+				}
+			
+				// 출근과 퇴근 기록이 모두 있는 경우 dailyCommuteTime 계산
+				if (acc[date].startTimeStamp !== Infinity && acc[date].endTimeStamp !== -Infinity) {
+					acc[date].dailyCommuteTime = acc[date].endTimeStamp - acc[date].startTimeStamp;
+				}
+			  
+				return acc;
+			}, {})
+		);
 	}
 
 	console.log("todayWorkStarting", todayWorkStarting.value);
 	console.log("my_worktime_storage", my_worktime_storage.value);
+	console.log("my_worktime_storage_data", my_worktime_storage_data.value);
 	
 	return my_worktime_storage.value;
 };
