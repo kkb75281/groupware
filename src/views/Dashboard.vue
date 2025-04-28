@@ -37,7 +37,7 @@
             //- .division(v-for="dvs in userDvsPstn" :key="dvs") {{ dvs }}
             .division {{ userDvsPstn.length > 1 ? userDvsPstn[0] + ' 외 ' + (userDvsPstn.length - 1) + '개'  : userDvsPstn[0] }}
             br
-            .buttons
+            .buttons(v-if="system_worktime")
                 //- p(v-if="todayWorkStarting && todayWorkEnding" style="font-size:0.7rem;") 출/퇴근 기록 완료
                 button.btn.sm.bg-gray(v-if="todayWorkStarting && todayWorkEnding" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;") 내일 봬요 :)
                 button.btn.sm(v-else-if="!todayWorkStarting" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;" @click="checkCommuteRecord") 출근
@@ -198,17 +198,17 @@ import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
 import { divisionNameList } from '@/division.ts';
 import {
-  mailList,
-  serviceWorkerRegistMsg,
-  notificationNotWorkingMsg,
-  readNoti,
-  newsletterList,
-  getNewsletterList,
-  subscribeNotification,
-  onlyUserGesture,
-  setNotificationPermission
+    mailList,
+    serviceWorkerRegistMsg,
+    notificationNotWorkingMsg,
+    readNoti,
+    newsletterList,
+    getNewsletterList,
+    subscribeNotification,
+    onlyUserGesture,
+    setNotificationPermission
 } from '@/notifications.ts';
-import { getMyWorktimeStorage, todayWorkStarting, todayWorkEnding, startWork, endWork } from '@/views/commute/worktime.ts';
+import { system_worktime, getMyWorktimeStorage, todayWorkStarting, todayWorkEnding, startWork, endWork } from '@/views/commute/worktime.ts';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
@@ -220,46 +220,46 @@ const encodedEmail = encodeURIComponent(user.email);
 const userDvsPstn = ref([]);
 
 let showMailDoc = (e, rt) => {
-  console.log('rt', rt);
-  console.log('mailList', mailList.value);
-  openGmailAppOrWeb(rt.link, rt.id);
+    console.log('rt', rt);
+    console.log('mailList', mailList.value);
+    openGmailAppOrWeb(rt.link, rt.id);
 };
 
 let getUserPositionCurrent = async () => {
-  const userIdSafe = makeSafe(user.user_id);
+    const userIdSafe = makeSafe(user.user_id);
 
-  // 모든 현재 부서/직책 정보 가져오기
-  const empAllDvs = await skapi.getUniqueId({
-    unique_id: `[emp_position_current]${userIdSafe}`,
-    condition: '>='
-  });
-
-  if (empAllDvs.list && empAllDvs.list.length > 0) {
-    // 각 부서 정보 처리
-    const promises = empAllDvs.list.map(async (record) => {
-      if (record && record.unique_id) {
-        const parts = record.unique_id.split(':');
-        if (parts.length) {
-          const divisionId = parts[1];
-
-          const getPosition = await skapi.getRecords({
-            unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
-          });
-          const divisionName = getPosition.list[0].index?.name?.split('.')[0] || '';
-          const positionName = getPosition.list[0].index?.name?.split('.')[1] || '';
-
-          // 모든 부서/직책 정보 넣기
-          userDvsPstn.value.push(`${divisionNameList.value[divisionId]} / ${positionName}`);
-        }
-      }
+    // 모든 현재 부서/직책 정보 가져오기
+    const empAllDvs = await skapi.getUniqueId({
+        unique_id: `[emp_position_current]${userIdSafe}`,
+        condition: '>='
     });
 
-    // await Promise.all(promises);
-  }
+    if (empAllDvs.list && empAllDvs.list.length > 0) {
+        // 각 부서 정보 처리
+        const promises = empAllDvs.list.map(async (record) => {
+            if (record && record.unique_id) {
+                const parts = record.unique_id.split(':');
+                if (parts.length) {
+                    const divisionId = parts[1];
+
+                    const getPosition = await skapi.getRecords({
+                        unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
+                    });
+                    const divisionName = getPosition.list[0].index?.name?.split('.')[0] || '';
+                    const positionName = getPosition.list[0].index?.name?.split('.')[1] || '';
+
+                    // 모든 부서/직책 정보 넣기
+                    userDvsPstn.value.push(`${divisionNameList.value[divisionId]} / ${positionName}`);
+                }
+            }
+        });
+
+        // await Promise.all(promises);
+    }
 };
 
-let checkCommuteRecord = async(router) => {
-    if(todayWorkStarting.value) {
+let checkCommuteRecord = async (router) => {
+    if (todayWorkStarting.value) {
         console.log('퇴근');
         await endWork(router);
     } else {
@@ -274,7 +274,7 @@ onMounted(async () => {
         getMyWorktimeStorage()
     ]);
 
-      getNewsletterList();
+    getNewsletterList();
 });
 </script>
 
@@ -290,269 +290,271 @@ onMounted(async () => {
 // }
 
 #dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
 }
 
 .profComp-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1rem;
-
-  > div {
-    height: 250px;
-    background-color: #fff;
-    border: 1px solid var(--gray-color-300);
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-    border-radius: 16px;
-    padding: 1.5rem;
-    text-align: center;
-  }
-
-  .profile-wrap {
-    flex-grow: 1;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
 
-    .thumbnail {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1rem;
-      background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
-      overflow: hidden;
+    >div {
+        height: 250px;
+        background-color: #fff;
+        border: 1px solid var(--gray-color-300);
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+    }
 
-      img {
-        width: 100%;
-        height: 100%;
-        // object-fit: contain;
-        object-fit: cover;
-        z-index: 1;
+    .profile-wrap {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        .thumbnail {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
+            overflow: hidden;
+
+            img {
+                width: 100%;
+                height: 100%;
+                // object-fit: contain;
+                object-fit: cover;
+                z-index: 1;
+                position: relative;
+            }
+
+            svg {
+                fill: var(--gray-color-400);
+            }
+        }
+
+        .division {
+            font-size: 0.8rem;
+            color: var(--gray-color-500);
+            margin-top: 0.5rem;
+        }
+    }
+
+    .company-wrap {
         position: relative;
-      }
+        flex-grow: 3;
+        overflow: hidden;
+        padding: 0;
 
-      svg {
-        fill: var(--gray-color-400);
-      }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
     }
-    .division {
-      font-size: 0.8rem;
-      color: var(--gray-color-500);
-      margin-top: 0.5rem;
-    }
-  }
-
-  .company-wrap {
-    position: relative;
-    flex-grow: 3;
-    overflow: hidden;
-    padding: 0;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 16px;
-      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-    }
-  }
 }
 
 .mo-btn-wrap {
-  display: none;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  justify-content: center;
-
-  .icon {
-    width: 140px;
-    height: 140px;
-    min-width: 140px;
-    flex-grow: 1;
-    display: flex;
+    display: none;
     flex-wrap: wrap;
-    flex-direction: column;
+    gap: 1rem;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--gray-color-300);
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-    border-radius: 1rem;
-    background-color: #fff;
-    cursor: pointer;
-    gap: 8px;
 
-    &.master {
-      // width: 100%;
+    .icon {
+        width: 140px;
+        height: 140px;
+        min-width: 140px;
+        flex-grow: 1;
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--gray-color-300);
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+        border-radius: 1rem;
+        background-color: #fff;
+        cursor: pointer;
+        gap: 8px;
+
+        &.master {
+            // width: 100%;
+        }
     }
-  }
 }
 
 .card-wrap {
-  &.gmail {
-    display: flex;
+    &.gmail {
+        display: flex;
 
-    .card {
-      // padding: 1.5rem;
-      transition: none;
-      width: 100%;
+        .card {
+            // padding: 1.5rem;
+            transition: none;
+            width: 100%;
 
-      &:hover {
-        transform: none;
-        // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
-      }
+            &:hover {
+                transform: none;
+                // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
+            }
 
-      ul {
-        padding-bottom: 1.5rem;
-      }
-    }
-
-    .title-wrap {
-      padding: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-      border-bottom: 1px solid var(--gray-color-300);
-    }
-
-    .title {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .go-detail {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.875rem;
-      color: var(--gray-color-500);
-    }
-
-    .icon.img {
-      svg {
-        width: 1.5rem;
-        height: 1.5rem;
-        margin: 0;
-      }
-    }
-
-    .mail {
-      // padding: 1.5rem 0;
-      // border-top: 1px solid var(--gray-color-300);
-      padding: 0.75rem 0.5rem;
-      cursor: pointer;
-
-      &:hover {
-        background-color: var(--primary-color-25);
-      }
-    }
-
-    .link {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0 1.5rem;
-      font-size: 0.875rem;
-      line-height: 1.2;
-      color: var(--gray-color-500);
-
-      > * {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-      }
-    }
-
-    .from {
-      font-weight: 600;
-      color: var(--gray-color-900);
-      flex: none;
-      width: 100px;
-    }
-
-    .mail-title {
-      font-weight: 600;
-      color: var(--gray-color-900);
-    }
-
-    .mail-cont {
-      font-size: 0.75rem;
-      color: var(--gray-color-400);
-      margin-right: 1rem;
-      flex: 1;
-    }
-
-    .attachment {
-      .icon {
-        svg {
-          width: 1rem;
-          height: 1rem;
-          fill: var(--gray-color-400);
+            ul {
+                padding-bottom: 1.5rem;
+            }
         }
-      }
+
+        .title-wrap {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--gray-color-300);
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .go-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--gray-color-500);
+        }
+
+        .icon.img {
+            svg {
+                width: 1.5rem;
+                height: 1.5rem;
+                margin: 0;
+            }
+        }
+
+        .mail {
+            // padding: 1.5rem 0;
+            // border-top: 1px solid var(--gray-color-300);
+            padding: 0.75rem 0.5rem;
+            cursor: pointer;
+
+            &:hover {
+                background-color: var(--primary-color-25);
+            }
+        }
+
+        .link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0 1.5rem;
+            font-size: 0.875rem;
+            line-height: 1.2;
+            color: var(--gray-color-500);
+
+            >* {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+            }
+        }
+
+        .from {
+            font-weight: 600;
+            color: var(--gray-color-900);
+            flex: none;
+            width: 100px;
+        }
+
+        .mail-title {
+            font-weight: 600;
+            color: var(--gray-color-900);
+        }
+
+        .mail-cont {
+            font-size: 0.75rem;
+            color: var(--gray-color-400);
+            margin-right: 1rem;
+            flex: 1;
+        }
+
+        .attachment {
+            .icon {
+                svg {
+                    width: 1rem;
+                    height: 1rem;
+                    fill: var(--gray-color-400);
+                }
+            }
+        }
+
+        .mail-date {
+            font-size: 0.75rem;
+            margin-left: auto;
+            flex: none;
+        }
     }
 
-    .mail-date {
-      font-size: 0.75rem;
-      margin-left: auto;
-      flex: none;
-    }
-  }
+    .empty {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--gray-color-500);
+        line-height: 1.4;
+        min-height: 150px;
+        text-align: center;
+        padding-top: 1.5rem;
 
-  .empty {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--gray-color-500);
-    line-height: 1.4;
-    min-height: 150px;
-    text-align: center;
-    padding-top: 1.5rem;
-
-    .icon {
-      flex: none;
+        .icon {
+            flex: none;
+        }
     }
-  }
 }
 
 .warning-msg {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  line-height: 1.2;
-  margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    line-height: 1.2;
+    margin-bottom: 1rem;
 
-  .icon {
-    padding: 0;
-    flex: none;
-    position: relative;
-    top: 2px;
+    .icon {
+        padding: 0;
+        flex: none;
+        position: relative;
+        top: 2px;
 
-    svg {
-      width: 16px;
-      height: 16px;
-      fill: var(--warning-color-400);
+        svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--warning-color-400);
+        }
     }
-  }
-  p {
-    font-size: 0.8rem;
-    color: var(--warning-color-500);
-  }
+
+    p {
+        font-size: 0.8rem;
+        color: var(--warning-color-500);
+    }
 }
 
 // @media (max-width: 1200px) {
@@ -562,32 +564,35 @@ onMounted(async () => {
 // }
 
 @media (max-width: 768px) {
-  .profComp-wrap {
-    .profile-wrap {
-      position: relative;
-      border: 0;
-      box-shadow: none;
-      height: unset;
-      align-items: end;
-      padding-right: 4rem;
+    .profComp-wrap {
+        .profile-wrap {
+            position: relative;
+            border: 0;
+            box-shadow: none;
+            height: unset;
+            align-items: end;
+            padding-right: 4rem;
 
-      .thumbnail {
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
-      }
+            .thumbnail {
+                position: absolute;
+                top: 50%;
+                right: 0;
+                transform: translateY(-50%);
+            }
+        }
+
+        .company-wrap {
+            display: none;
+        }
     }
-    .company-wrap {
-      display: none;
+
+    .mo-btn-wrap {
+        display: block;
+        display: flex;
     }
-  }
-  .mo-btn-wrap {
-    display: block;
-    display: flex;
-  }
-  .card-wrap {
-    display: none !important;
-  }
+
+    .card-wrap {
+        display: none !important;
+    }
 }
 </style>
