@@ -10,78 +10,78 @@ div(v-if="!system_worktime" style="text-align: center;line-height: 1.9;")
 		| 출퇴근 사용을 원하시면 FGWORKS 관리자에게 문의하시기 바랍니다.
 
 template(v-else)
-.itembox
-	.title-wrap(style="margin-bottom: 0;")
-		//- h3.title 오늘의 출퇴근 기록을 남겨주세요.
-		h3.title(style="line-height: 1.5;")
-			template(v-if="todayWorkStarting && todayWorkEnding") 
-				| 출/퇴근 기록이 완료되었습니다.
-				br
-				| 오늘도 수고 많으셨습니다.
-			template(v-else-if="!todayWorkStarting && !todayWorkEnding") 출근을 기록해주세요.
-			template(v-else-if="!todayWorkEnding") 퇴근을 기록해주세요.
-	br
-	span.today 
-		.icon
-			svg
-				use(xlink:href="@/assets/icon/material-icon.svg#icon-clock")
-		| {{ getDate() }}
-
-//- br
-
-//- .itembox-wrap
 	.itembox
-		span.time 출근 : #[span.value {{ extractTimeFromDateTime(timeRecords.startTime) }}]
-		button.btn.btn-work(@click="startWork" :class="{'disabled': commuted}") 출근
+		.title-wrap(style="margin-bottom: 0;")
+			//- h3.title 오늘의 출퇴근 기록을 남겨주세요.
+			h3.title(style="line-height: 1.5;")
+				template(v-if="todayWorkStarting && todayWorkEnding") 
+					| 출/퇴근 기록이 완료되었습니다.
+					br
+					| 오늘도 수고 많으셨습니다.
+				template(v-else-if="!todayWorkStarting && !todayWorkEnding") 출근을 기록해주세요.
+				template(v-else-if="!todayWorkEnding") 퇴근을 기록해주세요.
+		br
+		span.today 
+			.icon
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-clock")
+			| {{ getDate() }}
 
-	.itembox
-		span.time 퇴근 : #[span.value {{ extractTimeFromDateTime(timeRecords.endTime) }}]
-		button.btn.btn-work(@click="endWork") 퇴근
+	//- br
 
-.itembox(style="margin-top: 3rem; padding: 0; border-radius: 0; box-shadow: none;")
-	.title-wrap
-		span.title(style="font-size: 1.125rem; font-weight: 700; display: inline-block;") 이전 출퇴근 기록
-		//- span.monthlyWorkTime 총 근무시간 : {{ monthlyWorkTime }}
-	.table-wrap
-		.tb-overflow
-			//- template(v-if="loading")
-				Loading#loading
-			table.table#tb-record-commute
-				colgroup
-					col(style="width: 8%;")
-					col(style="width: 5%;")
-					col(style="width: 5%;")
-					col(style="width: 10%;")
-					col(style="width: 10%;")
-						
-				thead
-					tr
-						th(scope="col") 날짜
-						th(scope="col") 출근
-						th(scope="col") 퇴근
-						th(scope="col") 근무시간
-						th(scope="col") 비고
-				tbody
-					//- template(v-if="loading")
-						tr(v-for="i in 5")
-					template(v-if="!my_worktime_storage")
+	//- .itembox-wrap
+		.itembox
+			span.time 출근 : #[span.value {{ extractTimeFromDateTime(timeRecords.startTime) }}]
+			button.btn.btn-work(@click="startWork" :class="{'disabled': commuted}") 출근
+
+		.itembox
+			span.time 퇴근 : #[span.value {{ extractTimeFromDateTime(timeRecords.endTime) }}]
+			button.btn.btn-work(@click="endWork") 퇴근
+
+	.itembox(style="margin-top: 3rem; padding: 0; border-radius: 0; box-shadow: none;")
+		.title-wrap
+			span.title(style="font-size: 1.125rem; font-weight: 700; display: inline-block;") 이전 출퇴근 기록
+			//- span.monthlyWorkTime 총 근무시간 : {{ monthlyWorkTime }}
+		.table-wrap
+			.tb-overflow
+				//- template(v-if="loading")
+					Loading#loading
+				table.table#tb-record-commute
+					colgroup
+						col(style="width: 8%;")
+						col(style="width: 5%;")
+						col(style="width: 5%;")
+						col(style="width: 10%;")
+						col(style="width: 10%;")
+							
+					thead
 						tr
-							td(colspan="5") 데이터가 없습니다.
-					template(v-else)
-						tr(v-for="record in my_worktime_storage")
-							td.date {{ record.data.date }}
-							td.start-time {{ extractTimeFromDateTime(record.data.startTime) }}
-							td.end-time {{ extractTimeFromDateTime(record.data.endTime) }}
-							td.work-time {{ record.data.dailyCommuteTime }}
-							td.remark
-								.remark-wrap(style="display: flex; gap: 0.5rem;")
-									.input-wrap
-										input(type="text" placeholder="입력해주세요." v-model="record.data.remark")
-									.btn-wrap
-										button.btn-save(type="button" @click="saveDesc(record)")
-											.icon
-												svg
-													use(xlink:href="@/assets/icon/material-icon.svg#icon-check-circle-fill")
+							th(scope="col") 날짜
+							th(scope="col") 출근
+							th(scope="col") 퇴근
+							th(scope="col") 근무시간
+							th(scope="col") 비고
+					tbody
+						//- template(v-if="loading")
+							tr(v-for="i in 5")
+						template(v-if="!my_worktime_storage")
+							tr
+								td(colspan="5") 데이터가 없습니다.
+						template(v-else)
+							tr(v-for="record in my_worktime_storage")
+								td.date {{ record.data.date }}
+								td.start-time {{ extractTimeFromDateTime(record.data.startTime) }}
+								td.end-time {{ extractTimeFromDateTime(record.data.endTime) }}
+								td.work-time {{ record.data.dailyCommuteTime }}
+								td.remark
+									.remark-wrap(style="display: flex; gap: 0.5rem;")
+										.input-wrap
+											input(type="text" placeholder="입력해주세요." v-model="record.data.remark")
+										.btn-wrap
+											button.btn-save(type="button" @click="saveDesc(record)")
+												.icon
+													svg
+														use(xlink:href="@/assets/icon/material-icon.svg#icon-check-circle-fill")
 
 //- 테스트용 삭제 버튼 (추후 삭제)
 //- button.btn.sm(@click="testDelete") delete
