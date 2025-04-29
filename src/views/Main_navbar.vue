@@ -115,7 +115,7 @@ let menuLists = {
     },
     {
       show: isadmin.value,
-      text: '결재 양식 관리',
+      text: '결재양식 관리',
       name: 'list-form',
       icon: '#icon-docs',
       to: '/admin/list-form',
@@ -125,7 +125,7 @@ let menuLists = {
       show: isadmin.value,
       text: '공지사항 관리',
       name: 'list-newsletter',
-      icon: '#icon-docs',
+      icon: '#icon-noti',
       to: '/admin/list-newsletter',
       child: ['news-setting-detail']
     }
