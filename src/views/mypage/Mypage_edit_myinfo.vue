@@ -47,7 +47,7 @@
 				button.btn.outline.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="onlyEmail = true") 이메일만 변경
 				button.btn.warning(type="button" style="width: 100%; margin-top:8px" :disabled="onlyEmail" @click="sendEmail") 이메일 인증
 			
-			//- .input-wrap
+			.input-wrap
 					p.label 비밀번호
 					button.btn.outline(type="button" style="width: 100%" :disabled="verifiedEmail || disabled" @click="router.push('/change-password')") 비밀번호 변경
 

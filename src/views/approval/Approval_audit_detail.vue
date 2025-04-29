@@ -15,8 +15,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 			.reject-setting
 				template(v-if="senderUser.user_id === user.user_id")
-					p.text(v-if="rejectSetting") ※ 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.
-					p.text(v-else) ※ 결재 도중 반려시 해당 결재서류 회수합니다.
+					p.text(v-if="!rejectSetting") ※ 결재 도중 반려시 해당 결재서류 회수합니다.
+					p.text(v-else) ※ 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.
 
 			.table-wrap
 				.tb-overflow
@@ -657,7 +657,7 @@ const getAuditDetail = async () => {
     receivers: []
   };
   isCanceled.value = false;
-  rejectSetting.value = true;
+  rejectSetting.value = false;
 
   if (!auditId.value) {
     getAuditDetailRunning.value = false;
@@ -689,7 +689,7 @@ const getAuditDetail = async () => {
         rejectSetting.value =
           auditDoc.data.reject_setting === 'true' || auditDoc.data.reject_setting === true;
       } else {
-        rejectSetting.value = true;
+        rejectSetting.value = false;
       }
     }
 
@@ -743,16 +743,39 @@ const getAuditDetail = async () => {
       processAuditors('receivers')
     ]);
 
-    if (Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
+    // if (Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
+    //   console.log('AA');
+
+    //   let fileList = [];
+    //   let additional_data = auditDoc.bin.additional_data;
+
+    //   function getFileUserId(str) {
+    //     if (!str) return '';
+    //     return str.split('/')[3];
+    //   }
+
+    //   const result = additional_data.map((el) => ({
+    //     ...el,
+    //     user_id: getFileUserId(el.path)
+    //   }));
+
+    //   fileList.push(...result);
+
+    //   uploadedFile.value = fileList;
+    // }
+
+    if (Object.keys(auditDoc.bin).length && auditDoc.bin.form_data.length) {
+      console.log('BB');
+
       let fileList = [];
-      let additional_data = auditDoc.bin.additional_data;
+      let form_data = auditDoc.bin.form_data;
 
       function getFileUserId(str) {
         if (!str) return '';
         return str.split('/')[3];
       }
 
-      const result = additional_data.map((el) => ({
+      const result = form_data.map((el) => ({
         ...el,
         user_id: getFileUserId(el.path)
       }));
@@ -760,7 +783,9 @@ const getAuditDetail = async () => {
       fileList.push(...result);
 
       uploadedFile.value = fileList;
+      console.log('uploadedFile.value : ', uploadedFile.value);
     } else {
+      console.log('CC');
       uploadedFile.value = [];
     }
 
@@ -2253,8 +2278,6 @@ onUnmounted(() => {
       .file-item {
         width: 100%;
       }
-    }
-    &.upload-stamp {
     }
   }
 }

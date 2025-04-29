@@ -34,9 +34,38 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             .name {{ user.name }}
-            .division(v-for="dvs in userDvsPstn" :key="dvs") {{ dvs }}
-        .company-wrap
-            img(src="@/assets/img/rh.png" alt="회사사진")
+            .division {{ userPositionCurrent.length > 1 ? divisionNameList[userPositionCurrent[0].divisionId] + ' / ' + userPositionCurrent[0].position + ' 외 ' + (userPositionCurrent.length - 1) + '개'  : userPositionCurrent[0] }}
+            br
+            .buttons(v-if="system_worktime")
+                button.btn.sm.bg-gray(v-if="todayWorkStarting && todayWorkEnding" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;") 내일 봬요 :)
+                button.btn.sm(v-else-if="!todayWorkStarting" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;" @click="checkCommuteRecord") 출근
+                button.btn.sm.bg-gray(v-else type="button" style="display:inline-block;font-size:0.7rem" @click="checkCommuteRecord") 퇴근
+
+        .company-wrap(v-if="system_banner || user.access_group > 98" :class="{master: user.access_group > 98, edit: editMode}")
+            img(v-if="system_banner" :src="system_banner" alt="회사사진")
+            p.desc(v-else)
+                | 이곳을 눌러 배너를 설정해주세요.
+                br
+                | 설정하기 전까지 사용자에게 배너가 나타나지 않습니다.
+            button.btn.master(type="button" @click.stop="openModal") 배너 설정
+            //- template(v-if="editMode")
+                .edit-icon-wrap
+                    .change-icon
+                        .icon 세로
+                        .icon 가로
+                        .icon 화면에 맞게
+                        .icon 원사이즈
+                    .save-icon
+                        .icon(@click="editMode = false") 취소
+                        .icon 저장
+                .upload-icon
+                    button.btn 사진 변경
+            //- template(v-else)
+                button.btn.master(type="button" @click.stop="editMode = true") 베인 배너 설정
+                //- .edit-button-wrap(v-if="editMode")
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
 
     .mo-btn-wrap
         .icon
@@ -52,6 +81,14 @@
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
             p 공지사항
+        .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'commute'}" @click="router.push('/commute/commute-record')")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
+            p 근태관리
+        .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
+            p 직원목록
         .icon(:class="{'active': route.path.split('/')[1] === 'organigram'}" @click="router.push('/organigram')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
@@ -95,458 +132,505 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
                     | 이메일
-                a.go-detail(v-if="googleAccountCheck" :href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
+                a.go-detail(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-                button.btn.outline(v-else @click="googleLogin")
-                    img(src="@/assets/img/icon_google.svg")
-                    | 구글 계정 연동하기
-            template(v-if="googleAccountCheck")
-                //- template(v-if="googleEmailUpdate")
-                //- 	Loading#loading
-                //- template(v-else)
-                ul.unread-mail(v-if="mailList && mailList.length")
-                    li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
-                        .link
-                            span.from {{ mail.from }}
-                            span.mail-title {{ mail.subject }}
-                            p.mail-cont {{ mail.snippet }}
-                            span.attachment(v-if="mail.hasAttachment")
-                                .icon
-                                    svg
-                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
-                            span.mail-date {{ mail.date }}
-                .empty(v-else-if="mailList && !mailList.length")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-                    | 더 이상 읽을 메일이 없습니다.
 
-    //- ul.card-wrap
-        li.card
-            router-link.router(to="/approval")
-                .icon.img
+            //- template(v-if="googleEmailUpdate")
+            //- 	Loading#loading
+            //- template(v-else)
+            ul.unread-mail(v-if="mailList && mailList.length")
+                li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
+                    .link
+                        span.from {{ mail.from }}
+                        span.mail-title {{ mail.subject }}
+                        p.mail-cont {{ mail.snippet }}
+                        span.attachment(v-if="mail.hasAttachment")
+                            .icon
+                                svg
+                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
+                        span.mail-date {{ mail.date }}
+            .empty(v-else-if="mailList && !mailList.length")
+                .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
-                h4.name 전자결재
-                .btn-wrap
-                    p.btn-go 바로가기
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-        li.card
-            router-link.router(to="/mypage")
-                .icon.img
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
-                h4.name 마이페이지
-                .btn-wrap
-                    p.btn-go 바로가기
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-        li.card
-            template(v-if="user.access_group > 98")
-                router-link.router(to="/admin")
-                    .icon.img
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
-                    h4.name 마스터 페이지
-                    .btn-wrap
-                        p.btn-go 바로가기
-                        .icon
-                            svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+                | 더 이상 읽을 메일이 없습니다.
 
-            template(v-else)
-                router-link.router(to="/list-employee")
-                    .icon.img
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
-                    h4.name 직원 목록
-                    .btn-wrap
-                        p.btn-go 바로가기
-                        .icon
-                            svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+#modal.modal(v-if="isModalOpen" @click="isModalOpen = false")
+    .modal-cont(@click.stop style="min-width:unset; max-width:unset;")
+        .modal-header
+            h2.modal-title 배너 설정
+            button.btn-close(@click="isModalOpen = false")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+        .modal-body
+            .style-wrap(:class="{disabled: !system_banner}")
+                .style(:class="{selected: bannerStyle === 'contain'}" @click="bannerStyle = 'contain'")
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
+                .style(:class="{selected: bannerStyle === 'cover'}" @click="bannerStyle = 'cover'")
+                    svg(style="transform:rotate(90deg)")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
+                .style(:class="{selected: bannerStyle === 'fill'}" @click="bannerStyle = 'fill'")
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-zoom-out-map")
+                .style(:class="{selected: bannerStyle === 'none'}" @click="bannerStyle = 'none'")
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-aspect-ratio")
+            .image-wrap(:style="{width: `${modalWidth}px`}" style="display: inline-block")
+                template(v-if="system_banner")
+                    img(:src="system_banner" :style="{objectFit: bannerStyle}" alt="회사사진")
+                button.btn.empty(v-else) 사진 등록
+        .modal-footer
+            button.btn.bg-gray.btn-cancel(type="button") 취소
+            button.btn.btn-register(type="submit") 등록
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, ref } from 'vue';
-import { user, makeSafe, profileImage } from '@/user.ts';
-import { skapi, newVersionAvailable, newVersion, applyUpdate } from '@/main.ts';
+import { user, makeSafe, profileImage, getUserPositionCurrent, userPositionCurrent } from '@/user.ts';
+import { skapi, newVersionAvailable, newVersion, applyUpdate, getSystemBanner, system_banner } from '@/main.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
 import { divisionNameList } from '@/division.ts';
 import {
-  mailList,
-  serviceWorkerRegistMsg,
-  notificationNotWorkingMsg,
-  readNoti,
-  newsletterList,
-  getNewsletterList,
-  subscribeNotification,
-  onlyUserGesture,
-  setNotificationPermission
+    mailList,
+    serviceWorkerRegistMsg,
+    notificationNotWorkingMsg,
+    readNoti,
+    newsletterList,
+    getNewsletterList,
+    subscribeNotification,
+    onlyUserGesture,
+    setNotificationPermission
 } from '@/notifications.ts';
+import { system_worktime, getSystemWorktime, getMyWorktimeStorage, todayWorkStarting, todayWorkEnding, startWork, endWork } from '@/views/commute/worktime.ts';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
 const route = useRoute();
 
 let loading = ref(false);
+let editMode = ref(false);
+let isModalOpen = ref(false);
+let modalWidth = ref(0);
+let bannerStyle = ref("contain"); // object-fill (contain, cover, fill, none)
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const encodedEmail = encodeURIComponent(user.email);
-const userDvsPstn = ref([]);
 
-// google login
-function googleLogin() {
-  loading.value = true;
+let openModal = (e) => {
+    let currentTarget = e.currentTarget;
+    let parentElement = document.querySelector('.company-wrap');
 
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  const REDIRECT_URL = 'http://localhost:5173/login';
+    // parentNode의 width 값을 가져와서 모달 안에 .image-wrap의 width을 설정
+    modalWidth.value = parentElement.offsetWidth;
+    console.log(modalWidth.value);
 
-  let rnd = Math.random().toString(36).substring(2); // Generate a random string
-
-  let url = 'https://accounts.google.com/o/oauth2/v2/auth';
-  url += '?client_id=' + GOOGLE_CLIENT_ID;
-  url += '&redirect_uri=' + encodeURIComponent(REDIRECT_URL);
-  url += '&response_type=token';
-  url +=
-    '&scope=' +
-    encodeURIComponent(
-      'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly'
-    );
-  url += '&prompt=select_account';
-  url += '&state=' + encodeURIComponent(rnd); // Include the state parameter
-
-  window.location.href = url;
+    isModalOpen.value = true;
 }
 
 let showMailDoc = (e, rt) => {
-  console.log('rt', rt);
-  console.log('mailList', mailList.value);
-  openGmailAppOrWeb(rt.link, rt.id);
-  // window.open(rt.link, "_blank");
-  // readNoti(rt);
+    console.log('rt', rt);
+    console.log('mailList', mailList.value);
+    openGmailAppOrWeb(rt.link, rt.id);
 };
 
-let getUserPositionCurrent = async () => {
-  const userIdSafe = makeSafe(user.user_id);
-
-  // 모든 현재 부서/직책 정보 가져오기
-  const empAllDvs = await skapi.getUniqueId({
-    unique_id: `[emp_position_current]${userIdSafe}`,
-    condition: '>='
-  });
-
-  if (empAllDvs.list && empAllDvs.list.length > 0) {
-    // 각 부서 정보 처리
-    const promises = empAllDvs.list.map(async (record) => {
-      if (record && record.unique_id) {
-        const parts = record.unique_id.split(':');
-        if (parts.length) {
-          const divisionId = parts[1];
-
-          const getPosition = await skapi.getRecords({
-            unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
-          });
-          const divisionName = getPosition.list[0].index?.name?.split('.')[0] || '';
-          const positionName = getPosition.list[0].index?.name?.split('.')[1] || '';
-
-          // 모든 부서/직책 정보 넣기
-          userDvsPstn.value.push(`${divisionNameList.value[divisionId]} / ${positionName}`);
-        }
-      }
-    });
-
-    // await Promise.all(promises);
-  }
-};
+let checkCommuteRecord = async (router) => {
+    if (todayWorkStarting.value) {
+        console.log('퇴근');
+        await endWork(router);
+    } else {
+        console.log('출근');
+        await startWork(router);
+    }
+}
 
 onMounted(async () => {
-  await getUserPositionCurrent();
-  getNewsletterList();
+    await Promise.all([
+        getUserPositionCurrent(),
+        getSystemWorktime(),
+        getMyWorktimeStorage(),
+    ]);
+
+    getNewsletterList();
 });
 </script>
 
 <style scoped lang="less">
-// .wrap {
-//     padding: 3rem 2.4rem 0;
-// }
-
-// .fold {
-//     .wrap {
-//         padding: 3rem 2.4rem 0;
-//     }
-// }
-
 #dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+#modal {
+    .image-wrap {
+        position: relative;
+        width: 100%;
+        height: 250px;
+        border-radius: 16px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+
+        .empty {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
+
+    .style-wrap {
+        margin-bottom: 0.5rem;
+
+        &.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .style {
+            display: inline-block;
+            padding: 0 8px;
+            cursor: pointer;
+
+            svg {
+                width: 24px;
+                height: 24px;
+                fill: var(--gray-color-300);
+            }
+
+            &.selected {
+                svg {
+                    fill: var(--primary-color-400);
+                }
+            }
+        }
+    }
 }
 
 .profComp-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1rem;
-
-  > div {
-    height: 250px;
-    background-color: #fff;
-    border: 1px solid var(--gray-color-300);
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-    border-radius: 16px;
-    padding: 1.5rem;
-    text-align: center;
-  }
-
-  .profile-wrap {
-    flex-grow: 1;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
 
-    .thumbnail {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1rem;
-      background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
-      overflow: hidden;
+    >div {
+        height: 250px;
+        background-color: #fff;
+        border: 1px solid var(--gray-color-300);
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+    }
 
-      img {
-        width: 100%;
-        height: 100%;
-        // object-fit: contain;
-        object-fit: cover;
-        z-index: 1;
+    .profile-wrap {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        .thumbnail {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
+            overflow: hidden;
+
+            img {
+                width: 100%;
+                height: 100%;
+                // object-fit: contain;
+                object-fit: cover;
+                z-index: 1;
+                position: relative;
+            }
+
+            svg {
+                fill: var(--gray-color-400);
+            }
+        }
+
+        .division {
+            font-size: 0.8rem;
+            color: var(--gray-color-500);
+            margin-top: 0.5rem;
+        }
+    }
+
+    .company-wrap {
         position: relative;
-      }
+        flex-grow: 3;
+        overflow: hidden;
+        padding: 0;
 
-      svg {
-        fill: var(--gray-color-400);
-      }
-    }
-    .division {
-      font-size: 0.8rem;
-      color: var(--gray-color-500);
-      margin-top: 0.5rem;
-    }
-  }
+        &::before {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            content: '';
+            background-color: rgba(0, 0, 0, 0.2);
+            transition: all .3s;
+            opacity: 0;
+        }
 
-  .company-wrap {
-    position: relative;
-    flex-grow: 3;
-    overflow: hidden;
-    padding: 0;
+        .desc {
+            margin-top: 95px;
+            line-height: 1.5;
+            color: var(--gray-color-400);
+            font-size: 0.9rem;
+        }
 
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 16px;
-      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn,
+        .upload-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: max-content;
+        }
+
+        .master {
+            display: none;
+        }
+
+        .edit-icon-wrap {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        &.master {
+            &:hover {
+                &::before {
+                    opacity: 1;
+                }
+
+                .btn.master {
+                    display: block;
+                }
+            }
+        }
+
+        &.edit {
+            &:hover {
+                &::before {
+                    opacity: 0;
+                }
+            }
+        }
     }
-  }
 }
 
 .mo-btn-wrap {
-  display: none;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  justify-content: center;
-
-  .icon {
-    width: 140px;
-    height: 140px;
-    min-width: 140px;
-    flex-grow: 1;
-    display: flex;
+    display: none;
     flex-wrap: wrap;
-    flex-direction: column;
+    gap: 1rem;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--gray-color-300);
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-    border-radius: 1rem;
-    background-color: #fff;
-    cursor: pointer;
-    gap: 8px;
 
-    &.master {
-      // width: 100%;
+    .icon {
+        width: 140px;
+        height: 140px;
+        min-width: 140px;
+        flex-grow: 1;
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--gray-color-300);
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+        border-radius: 1rem;
+        background-color: #fff;
+        cursor: pointer;
+        gap: 8px;
+
+        &.master {
+            // width: 100%;
+        }
     }
-  }
 }
 
 .card-wrap {
-  &.gmail {
-    display: flex;
+    &.gmail {
+        display: flex;
 
-    .card {
-      // padding: 1.5rem;
-      transition: none;
-      width: 100%;
+        .card {
+            // padding: 1.5rem;
+            transition: none;
+            width: 100%;
 
-      &:hover {
-        transform: none;
-        // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
-      }
+            &:hover {
+                transform: none;
+                // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
+            }
 
-      ul {
-        padding-bottom: 1.5rem;
-      }
-    }
-
-    .title-wrap {
-      padding: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-      border-bottom: 1px solid var(--gray-color-300);
-    }
-
-    .title {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .go-detail {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.875rem;
-      color: var(--gray-color-500);
-    }
-
-    .icon.img {
-      svg {
-        width: 1.5rem;
-        height: 1.5rem;
-        margin: 0;
-      }
-    }
-
-    .mail {
-      // padding: 1.5rem 0;
-      // border-top: 1px solid var(--gray-color-300);
-      padding: 0.75rem 0.5rem;
-      cursor: pointer;
-
-      &:hover {
-        background-color: var(--primary-color-25);
-      }
-    }
-
-    .link {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0 1.5rem;
-      font-size: 0.875rem;
-      line-height: 1.2;
-      color: var(--gray-color-500);
-
-      > * {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-      }
-    }
-
-    .from {
-      font-weight: 600;
-      color: var(--gray-color-900);
-      flex: none;
-      width: 100px;
-    }
-
-    .mail-title {
-      font-weight: 600;
-      color: var(--gray-color-900);
-    }
-
-    .mail-cont {
-      font-size: 0.75rem;
-      color: var(--gray-color-400);
-      margin-right: 1rem;
-      flex: 1;
-    }
-
-    .attachment {
-      .icon {
-        svg {
-          width: 1rem;
-          height: 1rem;
-          fill: var(--gray-color-400);
+            ul {
+                padding-bottom: 1.5rem;
+            }
         }
-      }
+
+        .title-wrap {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--gray-color-300);
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .go-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--gray-color-500);
+        }
+
+        .icon.img {
+            svg {
+                width: 1.5rem;
+                height: 1.5rem;
+                margin: 0;
+            }
+        }
+
+        .mail {
+            // padding: 1.5rem 0;
+            // border-top: 1px solid var(--gray-color-300);
+            padding: 0.75rem 0.5rem;
+            cursor: pointer;
+
+            &:hover {
+                background-color: var(--primary-color-25);
+            }
+        }
+
+        .link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0 1.5rem;
+            font-size: 0.875rem;
+            line-height: 1.2;
+            color: var(--gray-color-500);
+
+            >* {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+            }
+        }
+
+        .from {
+            font-weight: 600;
+            color: var(--gray-color-900);
+            flex: none;
+            width: 100px;
+        }
+
+        .mail-title {
+            font-weight: 600;
+            color: var(--gray-color-900);
+        }
+
+        .mail-cont {
+            font-size: 0.75rem;
+            color: var(--gray-color-400);
+            margin-right: 1rem;
+            flex: 1;
+        }
+
+        .attachment {
+            .icon {
+                svg {
+                    width: 1rem;
+                    height: 1rem;
+                    fill: var(--gray-color-400);
+                }
+            }
+        }
+
+        .mail-date {
+            font-size: 0.75rem;
+            margin-left: auto;
+            flex: none;
+        }
     }
 
-    .mail-date {
-      font-size: 0.75rem;
-      margin-left: auto;
-      flex: none;
-    }
-  }
+    .empty {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--gray-color-500);
+        line-height: 1.4;
+        min-height: 150px;
+        text-align: center;
+        padding-top: 1.5rem;
 
-  .empty {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--gray-color-500);
-    line-height: 1.4;
-    min-height: 150px;
-    text-align: center;
-    padding-top: 1.5rem;
-
-    .icon {
-      flex: none;
+        .icon {
+            flex: none;
+        }
     }
-  }
 }
 
 .warning-msg {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  line-height: 1.2;
-  margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    line-height: 1.2;
+    margin-bottom: 1rem;
 
-  .icon {
-    padding: 0;
-    flex: none;
-    position: relative;
-    top: 2px;
+    .icon {
+        padding: 0;
+        flex: none;
+        position: relative;
+        top: 2px;
 
-    svg {
-      width: 16px;
-      height: 16px;
-      fill: var(--warning-color-400);
+        svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--warning-color-400);
+        }
     }
-  }
-  p {
-    font-size: 0.8rem;
-    color: var(--warning-color-500);
-  }
+
+    p {
+        font-size: 0.8rem;
+        color: var(--warning-color-500);
+    }
 }
 
 // @media (max-width: 1200px) {
@@ -556,32 +640,35 @@ onMounted(async () => {
 // }
 
 @media (max-width: 768px) {
-  .profComp-wrap {
-    .profile-wrap {
-      position: relative;
-      border: 0;
-      box-shadow: none;
-      height: unset;
-      align-items: end;
-      padding-right: 4rem;
+    .profComp-wrap {
+        .profile-wrap {
+            position: relative;
+            border: 0;
+            box-shadow: none;
+            height: unset;
+            align-items: end;
+            padding-right: 4rem;
 
-      .thumbnail {
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
-      }
+            .thumbnail {
+                position: absolute;
+                top: 50%;
+                right: 0;
+                transform: translateY(-50%);
+            }
+        }
+
+        .company-wrap {
+            display: none;
+        }
     }
-    .company-wrap {
-      display: none;
+
+    .mo-btn-wrap {
+        display: block;
+        display: flex;
     }
-  }
-  .mo-btn-wrap {
-    display: block;
-    display: flex;
-  }
-  .card-wrap {
-    display: none !important;
-  }
+
+    .card-wrap {
+        display: none !important;
+    }
 }
 </style>

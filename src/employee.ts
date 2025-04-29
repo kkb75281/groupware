@@ -36,18 +36,18 @@ export const getEmpDivisionPosition = async (user: any, refresh: boolean = false
     const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
     const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
 
-    if (!userDvs) {
-      const userDvsList = await skapi.getRecords({
-        table: {
-          name: 'emp_division',
-          access_group: 1
-        },
-        tag: '[emp_id]' + makeSafe(userId)
-      });
-      const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
-      const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
-      //   return user;
-    }
+    // if (!userDvs) {
+    //   const userDvsList = await skapi.getRecords({
+    //     table: {
+    //       name: 'emp_division',
+    //       access_group: 1
+    //     },
+    //     tag: '[emp_id]' + makeSafe(userId)
+    //   });
+    //   const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
+    //   const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
+    //   //   return user;
+    // }
 
     let record = await skapi
       .getRecords({
