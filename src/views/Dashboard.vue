@@ -34,21 +34,38 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             .name {{ user.name }}
-            //- .division(v-for="dvs in userDvsPstn" :key="dvs") {{ dvs }}
             .division {{ userPositionCurrent.length > 1 ? divisionNameList[userPositionCurrent[0].divisionId] + ' / ' + userPositionCurrent[0].position + ' 외 ' + (userPositionCurrent.length - 1) + '개'  : userPositionCurrent[0] }}
             br
             .buttons(v-if="system_worktime")
-                //- p(v-if="todayWorkStarting && todayWorkEnding" style="font-size:0.7rem;") 출/퇴근 기록 완료
                 button.btn.sm.bg-gray(v-if="todayWorkStarting && todayWorkEnding" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;") 내일 봬요 :)
                 button.btn.sm(v-else-if="!todayWorkStarting" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;" @click="checkCommuteRecord") 출근
                 button.btn.sm.bg-gray(v-else type="button" style="display:inline-block;font-size:0.7rem" @click="checkCommuteRecord") 퇴근
-                //- router-link.router(to="/commute/commute-record" style="display:inline-block;vertical-align:middle")
-                //- button.btn.sm.bg-gray(type="button" @click="router.push('/commute/commute-record')" style="display:inline-block;vertical-align:middle;margin-left:4px") 관리
-                    //- .icon(style="padding:0; padding-left:0.5rem")
+
+        .company-wrap(v-if="system_banner || user.access_group > 98" :class="{master: user.access_group > 98, edit: editMode}")
+            img(v-if="system_banner" :src="system_banner" alt="회사사진")
+            p.desc(v-else)
+                | 이곳을 눌러 배너를 설정해주세요.
+                br
+                | 설정하기 전까지 사용자에게 배너가 나타나지 않습니다.
+            button.btn.master(type="button" @click.stop="openModal") 배너 설정
+            //- template(v-if="editMode")
+                .edit-icon-wrap
+                    .change-icon
+                        .icon 세로
+                        .icon 가로
+                        .icon 화면에 맞게
+                        .icon 원사이즈
+                    .save-icon
+                        .icon(@click="editMode = false") 취소
+                        .icon 저장
+                .upload-icon
+                    button.btn 사진 변경
+            //- template(v-else)
+                button.btn.master(type="button" @click.stop="editMode = true") 베인 배너 설정
+                //- .edit-button-wrap(v-if="editMode")
+                    .icon
                         svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
-        .company-wrap
-            img(src="@/assets/img/rh.png" alt="회사사진")
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
 
     .mo-btn-wrap
         .icon
@@ -140,60 +157,41 @@
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
                 | 더 이상 읽을 메일이 없습니다.
 
-    //- ul.card-wrap
-        li.card
-            router-link.router(to="/approval")
-                .icon.img
+#modal.modal(v-if="isModalOpen" @click="isModalOpen = false")
+    .modal-cont(@click.stop style="min-width:unset; max-width:unset;")
+        .modal-header
+            h2.modal-title 배너 설정
+            button.btn-close(@click="isModalOpen = false")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+        .modal-body
+            .style-wrap(:class="{disabled: !system_banner}")
+                .style(:class="{selected: bannerStyle === 'contain'}" @click="bannerStyle = 'contain'")
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
-                h4.name 전자결재
-                .btn-wrap
-                    p.btn-go 바로가기
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-        li.card
-            router-link.router(to="/mypage")
-                .icon.img
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
+                .style(:class="{selected: bannerStyle === 'cover'}" @click="bannerStyle = 'cover'")
+                    svg(style="transform:rotate(90deg)")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
+                .style(:class="{selected: bannerStyle === 'fill'}" @click="bannerStyle = 'fill'")
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
-                h4.name 마이페이지
-                .btn-wrap
-                    p.btn-go 바로가기
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-        li.card
-            template(v-if="user.access_group > 98")
-                router-link.router(to="/admin")
-                    .icon.img
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
-                    h4.name 마스터 페이지
-                    .btn-wrap
-                        p.btn-go 바로가기
-                        .icon
-                            svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
-            template(v-else)
-                router-link.router(to="/list-employee")
-                    .icon.img
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
-                    h4.name 직원 목록
-                    .btn-wrap
-                        p.btn-go 바로가기
-                        .icon
-                            svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-zoom-out-map")
+                .style(:class="{selected: bannerStyle === 'none'}" @click="bannerStyle = 'none'")
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-aspect-ratio")
+            .image-wrap(:style="{width: `${modalWidth}px`}" style="display: inline-block")
+                template(v-if="system_banner")
+                    img(:src="system_banner" :style="{objectFit: bannerStyle}" alt="회사사진")
+                button.btn.empty(v-else) 사진 등록
+        .modal-footer
+            button.btn.bg-gray.btn-cancel(type="button") 취소
+            button.btn.btn-register(type="submit") 등록
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, ref } from 'vue';
 import { user, makeSafe, profileImage, getUserPositionCurrent, userPositionCurrent } from '@/user.ts';
-import { skapi, newVersionAvailable, newVersion, applyUpdate } from '@/main.ts';
+import { skapi, newVersionAvailable, newVersion, applyUpdate, getSystemBanner, system_banner } from '@/main.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
 import { divisionNameList } from '@/division.ts';
@@ -215,9 +213,23 @@ const router = useRouter();
 const route = useRoute();
 
 let loading = ref(false);
+let editMode = ref(false);
+let isModalOpen = ref(false);
+let modalWidth = ref(0);
+let bannerStyle = ref("contain"); // object-fill (contain, cover, fill, none)
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const encodedEmail = encodeURIComponent(user.email);
-const userDvsPstn = ref([]);
+
+let openModal = (e) => {
+    let currentTarget = e.currentTarget;
+    let parentElement = document.querySelector('.company-wrap');
+
+    // parentNode의 width 값을 가져와서 모달 안에 .image-wrap의 width을 설정
+    modalWidth.value = parentElement.offsetWidth;
+    console.log(modalWidth.value);
+
+    isModalOpen.value = true;
+}
 
 let showMailDoc = (e, rt) => {
     console.log('rt', rt);
@@ -239,7 +251,7 @@ onMounted(async () => {
     await Promise.all([
         getUserPositionCurrent(),
         getSystemWorktime(),
-        getMyWorktimeStorage()
+        getMyWorktimeStorage(),
     ]);
 
     getNewsletterList();
@@ -247,20 +259,54 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="less">
-// .wrap {
-//     padding: 3rem 2.4rem 0;
-// }
-
-// .fold {
-//     .wrap {
-//         padding: 3rem 2.4rem 0;
-//     }
-// }
-
 #dashboard {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
+}
+
+#modal {
+    .image-wrap {
+        position: relative;
+        width: 100%;
+        height: 250px;
+        border-radius: 16px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+
+        .empty {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
+
+    .style-wrap {
+        margin-bottom: 0.5rem;
+
+        &.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .style {
+            display: inline-block;
+            padding: 0 8px;
+            cursor: pointer;
+
+            svg {
+                width: 24px;
+                height: 24px;
+                fill: var(--gray-color-300);
+            }
+
+            &.selected {
+                svg {
+                    fill: var(--primary-color-400);
+                }
+            }
+        }
+    }
 }
 
 .profComp-wrap {
@@ -324,12 +370,74 @@ onMounted(async () => {
         overflow: hidden;
         padding: 0;
 
+        &::before {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            content: '';
+            background-color: rgba(0, 0, 0, 0.2);
+            transition: all .3s;
+            opacity: 0;
+        }
+
+        .desc {
+            margin-top: 95px;
+            line-height: 1.5;
+            color: var(--gray-color-400);
+            font-size: 0.9rem;
+        }
+
         img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             border-radius: 16px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn,
+        .upload-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: max-content;
+        }
+
+        .master {
+            display: none;
+        }
+
+        .edit-icon-wrap {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        &.master {
+            &:hover {
+                &::before {
+                    opacity: 1;
+                }
+
+                .btn.master {
+                    display: block;
+                }
+            }
+        }
+
+        &.edit {
+            &:hover {
+                &::before {
+                    opacity: 0;
+                }
+            }
         }
     }
 }

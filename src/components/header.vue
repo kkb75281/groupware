@@ -26,7 +26,7 @@ header#header
                     svg(style="width:26px; height:26px")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
                 template(v-slot:tip) 공지사항
-        .icon(v-if="user.access_group < 98" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
+        .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
             Tooltip(tip-background-color="black" text-color="white")
                 template(v-slot:tool)
                     svg
@@ -47,8 +47,8 @@ header#header
         .icon(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
             Tooltip(tip-background-color="black" text-color="white")
                 template(v-slot:tool)
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
+                    svg(style="width:27px;height:27px")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
                 template(v-slot:tip) 마스터 페이지
 
         //- button.btn-profile(type="button" ref="btnProfile" @click="openProfile")

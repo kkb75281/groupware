@@ -266,6 +266,7 @@ export let startWork = async (router?: any) => {
       router.push('/commute/commute-record');
     }
   } catch (error) {
+    console.log('출근 기록 저장 에러', error);
     alert('출근 기록 저장에 실패했습니다.');
     todayWorkStarting.value = false;
   }
@@ -322,6 +323,7 @@ export let endWork = async (router?: any) => {
       router.push('/commute/commute-record');
     }
   } catch (error) {
+    console.log('퇴근 기록 저장 에러', error);
     alert('퇴근 기록 저장에 실패했습니다.');
     todayWorkStarting.value = true;
   }
