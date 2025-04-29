@@ -35,7 +35,7 @@
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             .name {{ user.name }}
             //- .division(v-for="dvs in userDvsPstn" :key="dvs") {{ dvs }}
-            .division {{ userDvsPstn.length > 1 ? userDvsPstn[0] + ' 외 ' + (userDvsPstn.length - 1) + '개'  : userDvsPstn[0] }}
+            .division {{ userPositionCurrent.length > 1 ? divisionNameList[userPositionCurrent[0].divisionId] + ' / ' + userPositionCurrent[0].position + ' 외 ' + (userPositionCurrent.length - 1) + '개'  : userPositionCurrent[0] }}
             br
             .buttons(v-if="system_worktime")
                 //- p(v-if="todayWorkStarting && todayWorkEnding" style="font-size:0.7rem;") 출/퇴근 기록 완료
@@ -192,7 +192,7 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { onMounted, ref } from 'vue';
-import { user, makeSafe, profileImage } from '@/user.ts';
+import { user, makeSafe, profileImage, getUserPositionCurrent, userPositionCurrent } from '@/user.ts';
 import { skapi, newVersionAvailable, newVersion, applyUpdate } from '@/main.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
@@ -223,39 +223,6 @@ let showMailDoc = (e, rt) => {
     console.log('rt', rt);
     console.log('mailList', mailList.value);
     openGmailAppOrWeb(rt.link, rt.id);
-};
-
-let getUserPositionCurrent = async () => {
-    const userIdSafe = makeSafe(user.user_id);
-
-    // 모든 현재 부서/직책 정보 가져오기
-    const empAllDvs = await skapi.getUniqueId({
-        unique_id: `[emp_position_current]${userIdSafe}`,
-        condition: '>='
-    });
-
-    if (empAllDvs.list && empAllDvs.list.length > 0) {
-        // 각 부서 정보 처리
-        const promises = empAllDvs.list.map(async (record) => {
-            if (record && record.unique_id) {
-                const parts = record.unique_id.split(':');
-                if (parts.length) {
-                    const divisionId = parts[1];
-
-                    const getPosition = await skapi.getRecords({
-                        unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
-                    });
-                    const divisionName = getPosition.list[0].index?.name?.split('.')[0] || '';
-                    const positionName = getPosition.list[0].index?.name?.split('.')[1] || '';
-
-                    // 모든 부서/직책 정보 넣기
-                    userDvsPstn.value.push(`${divisionNameList.value[divisionId]} / ${positionName}`);
-                }
-            }
-        });
-
-        // await Promise.all(promises);
-    }
 };
 
 let checkCommuteRecord = async (router) => {

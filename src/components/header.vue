@@ -283,92 +283,92 @@ let isProfileOpen = ref(false);
 let isMobileMenuOpen = ref(false);
 
 function formatTimeAgo(timestamp) {
-  const now = Date.now(); // 현재 시간 (밀리초)
-  const difference = now - timestamp; // 시간 차이 (밀리초)
+    const now = Date.now(); // 현재 시간 (밀리초)
+    const difference = now - timestamp; // 시간 차이 (밀리초)
 
-  const seconds = Math.floor(difference / 1000); // 초 단위로 변환
-  const minutes = Math.floor(seconds / 60); // 분 단위로 변환
-  const hours = Math.floor(minutes / 60); // 시간 단위로 변환
-  const days = Math.floor(hours / 24); // 일 단위로 변환
+    const seconds = Math.floor(difference / 1000); // 초 단위로 변환
+    const minutes = Math.floor(seconds / 60); // 분 단위로 변환
+    const hours = Math.floor(minutes / 60); // 시간 단위로 변환
+    const days = Math.floor(hours / 24); // 일 단위로 변환
 
-  if (seconds < 60) {
-    return `${seconds}초 전`;
-  } else if (minutes < 60) {
-    return `${minutes}분 전`;
-  } else if (hours < 24) {
-    return `${hours}시간 전`;
-  } else {
-    return `${days}일 전`;
-  }
+    if (seconds < 60) {
+        return `${seconds}초 전`;
+    } else if (minutes < 60) {
+        return `${minutes}분 전`;
+    } else if (hours < 24) {
+        return `${hours}시간 전`;
+    } else {
+        return `${days}일 전`;
+    }
 }
 
 let openNotification = () => {
-  isNotiOpen.value = !isNotiOpen.value;
-  resetBadgeCount();
+    isNotiOpen.value = !isNotiOpen.value;
+    resetBadgeCount();
 };
 
 let closeNotificatiRouter = () => {
-  isNotiOpen.value = false;
+    isNotiOpen.value = false;
 };
 
 let closePopupOutside = (event) => {
-  if (isNotiOpen.value && !btnNoti.value.contains(event.target)) {
-    isNotiOpen.value = false;
-  } else if (isProfileOpen.value && !btnProfile.value.contains(event.target)) {
-    isProfileOpen.value = false;
-  } else if (isMobileMenuOpen.value && !btnMobileMenu.value.contains(event.target)) {
-    isMobileMenuOpen.value = false;
-  }
+    if (isNotiOpen.value && !btnNoti.value.contains(event.target)) {
+        isNotiOpen.value = false;
+    } else if (isProfileOpen.value && !btnProfile.value.contains(event.target)) {
+        isProfileOpen.value = false;
+    } else if (isMobileMenuOpen.value && !btnMobileMenu.value.contains(event.target)) {
+        isMobileMenuOpen.value = false;
+    }
 };
 
 let closeProfileRouter = () => {
-  isProfileOpen.value = false;
+    isProfileOpen.value = false;
 };
 
 let closePopup = () => {
-  isNotiOpen.value = false;
-  isProfileOpen.value = false;
-  isMobileMenuOpen.value = false;
+    isNotiOpen.value = false;
+    isProfileOpen.value = false;
+    isMobileMenuOpen.value = false;
 };
 
 onMounted(() => {
-  document.addEventListener('click', closePopupOutside);
-  router.beforeEach((to, from, next) => {
-    closeNotificatiRouter();
-    closeProfileRouter();
-    closePopup();
-    next();
-  });
+    document.addEventListener('click', closePopupOutside);
+    router.beforeEach((to, from, next) => {
+        closeNotificatiRouter();
+        closeProfileRouter();
+        closePopup();
+        next();
+    });
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', closePopupOutside);
+    document.removeEventListener('click', closePopupOutside);
 });
 
 let showRealtimeNoti = (e, type, rt) => {
-  if (type === 'gmail') {
-    openGmailAppOrWeb(null);
-  } else if (type === 'realtime' && rt) {
-    goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
-    readNoti(rt);
-  }
+    if (type === 'gmail') {
+        openGmailAppOrWeb(null);
+    } else if (type === 'realtime' && rt) {
+        goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
+        readNoti(rt);
+    }
 };
 
 let logout = () => {
-  skapi.logout().then(() => {
-    router.push({ path: '/login' });
-  });
+    skapi.logout().then(() => {
+        router.push({ path: '/login' });
+    });
 };
 
 watch(
-  () => route.path,
-  (newPath, oldPath) => {
-    if (newPath) {
-      if (isProfileOpen.value) {
-        isProfileOpen.value = !isProfileOpen.value;
-      }
+    () => route.path,
+    (newPath, oldPath) => {
+        if (newPath) {
+            if (isProfileOpen.value) {
+                isProfileOpen.value = !isProfileOpen.value;
+            }
+        }
     }
-  }
 );
 </script>
 
@@ -395,7 +395,7 @@ watch(
 
     .img-logo {
         img {
-            width: 200px;
+            height: 2.5rem;
         }
     }
 
@@ -477,11 +477,9 @@ watch(
         height: 3rem;
         // border-radius: 0.5rem;
         border-radius: 30px;
-        background: linear-gradient(
-            90.25deg,
-            var(--primary-color-400) 5%,
-            var(--primary-color-300) 98%
-        );
+        background: linear-gradient(90.25deg,
+                var(--primary-color-400) 5%,
+                var(--primary-color-300) 98%);
         color: #fff;
         font-size: 1rem;
         font-weight: 600;
@@ -495,8 +493,9 @@ watch(
     }
 
     .thumbnail {
-        width: 3rem;
-        height: 3rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-left: 0.5rem;
         // border: 0.1875rem solid #fff;
         border-radius: 50%;
         display: flex;
@@ -507,8 +506,7 @@ watch(
         // right: -4px;
         // background: var(--primary-color-100) url(../images/header/thumb_profile_default.png)
         // center/cover no-repeat;
-        background: #f4f4f5 url(../images/header/thumb_profile_default.png)
-        center/cover no-repeat;
+        background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
         overflow: hidden;
 
         img {
@@ -596,6 +594,7 @@ watch(
     }
 
     .popup-main {
+
         // padding: 0 0.8rem;
         ul {
             li {
@@ -626,6 +625,7 @@ watch(
             &:hover {
                 background-color: var(--primary-color-100);
             }
+
             &.read {
                 opacity: 0.5;
             }
@@ -696,7 +696,7 @@ watch(
                     }
                 }
 
-                > * {
+                >* {
                     white-space: nowrap;
                 }
             }
@@ -867,7 +867,7 @@ watch(
         padding-right: 16px;
 
         .btn-wrap {
-            > *:not(.btn-mo-navbar) {
+            >*:not(.btn-mo-navbar) {
                 display: none;
             }
         }
@@ -894,8 +894,8 @@ watch(
 
             .popup-main {
                 .router {
-                padding-left: 20px;
-                padding-right: 20px;
+                    padding-left: 20px;
+                    padding-right: 20px;
                 }
             }
 
