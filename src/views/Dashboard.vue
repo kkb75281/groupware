@@ -60,7 +60,7 @@
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
             p 전자결재
-        .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
+        .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter-category')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
             p 공지사항
@@ -93,7 +93,7 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
                     | 공지사항
-                router-link.go-detail(to="/newsletter") 더보기
+                router-link.go-detail(to="/newsletter-category") 더보기
                     .icon
                             svg
                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
@@ -208,7 +208,13 @@ import {
   onlyUserGesture,
   setNotificationPermission
 } from '@/notifications.ts';
-import { getMyWorktimeStorage, todayWorkStarting, todayWorkEnding, startWork, endWork } from '@/views/commute/worktime.ts';
+import {
+  getMyWorktimeStorage,
+  todayWorkStarting,
+  todayWorkEnding,
+  startWork,
+  endWork
+} from '@/views/commute/worktime.ts';
 import Loading from '@/components/loading.vue';
 
 const router = useRouter();
@@ -258,23 +264,20 @@ let getUserPositionCurrent = async () => {
   }
 };
 
-let checkCommuteRecord = async(router) => {
-    if(todayWorkStarting.value) {
-        console.log('퇴근');
-        await endWork(router);
-    } else {
-        console.log('출근');
-        await startWork(router);
-    }
-}
+let checkCommuteRecord = async (router) => {
+  if (todayWorkStarting.value) {
+    console.log('퇴근');
+    await endWork(router);
+  } else {
+    console.log('출근');
+    await startWork(router);
+  }
+};
 
 onMounted(async () => {
-    await Promise.all([
-        getUserPositionCurrent(),
-        getMyWorktimeStorage()
-    ]);
+  await Promise.all([getUserPositionCurrent(), getMyWorktimeStorage()]);
 
-      getNewsletterList();
+  getNewsletterList();
 });
 </script>
 

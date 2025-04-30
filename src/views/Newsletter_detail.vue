@@ -14,7 +14,7 @@ template(v-else)
 	br
 
 	.button-wrap
-		button.btn.bg-gray(@click="router.push('/newsletter')") 목록
+		button.btn.bg-gray(@click="router.push('/newsletter-category')") 목록
 </template>
 
 <script setup>
@@ -36,7 +36,7 @@ let htmlContent = ref('');
 
 let getCurrentNewsletter = async () => {
   if (!message_id) {
-    router.push('/newsletter');
+    router.push('/newsletter-category');
     return;
   }
 
