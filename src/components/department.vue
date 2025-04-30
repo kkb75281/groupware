@@ -93,16 +93,16 @@ const initializeCheckState = () => {
     const value = user.data.user_id;
     selectedUserIds[key] = value; // {부서: 유저아이디}
   });
-  console.log({ selectedUserIds });
+  // console.log({ selectedUserIds });
 
   // 부서 멤버들의 체크 상태 설정
   props.department.members.forEach((member) => {
-    console.log(member);
+    // console.log(member);
     // member.isChecked = selectedUserIds.includes(member.data.user_id) && (member.index.name.split('.')[0] === );
 
     // selectedUserIds의 key와 value와 모두 일치하는 멤버 저장
     member.isChecked = selectedUserIds[member.index.name.split('.')[0]] === member.data.user_id;
-    console.log('member.isChecked : ', member.isChecked);
+    // console.log('member.isChecked : ', member.isChecked);
   });
 
   // 모든 멤버가 선택된 경우 부서 체크박스도 체크
@@ -160,7 +160,7 @@ const isDepartmentDisabled = computed(() => {
 // 컴포넌트 마운트 시 초기화
 onMounted(() => {
   initializeCheckState();
-  console.log(props.onlyDvsName);
+  // console.log(props.onlyDvsName);
 });
 </script>
 

@@ -301,6 +301,11 @@
             <path d="M600-120v-120H440v-400h-80v120H80v-320h280v120h240v-120h280v320H600v-120h-80v320h80v-120h280v320H600ZM160-760v160-160Zm520 400v160-160Zm0-400v160-160Zm0 160h120v-160H680v160Zm0 400h120v-160H680v160ZM160-600h120v-160H160v160Z"/>
         </symbol>
 
+        <!-- noti -->
+        <symbol id="icon-noti" viewBox="0 -960 960 960">
+            <path d="M640-440v-80h160v80H640Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM120-360v-240h160l200-200v640L280-360H120Zm280-246-86 86H200v80h114l86 86v-252ZM300-480Z"/>
+        </symbol>
+
 <!-- Login page -->
         <!-- visibility -->
         <symbol id="icon-visibility-fill" viewBox="0 -960 960 960">
