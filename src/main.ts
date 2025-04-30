@@ -98,6 +98,9 @@ if ('serviceWorker' in navigator) {
       if (currentVersion !== receivedVersion) {
         newVersion.value = receivedVersion;
         const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
+        console.log(
+          `[Main] Last updated version: ${lastUpdatedVersion}, Current version: ${currentVersion}, Received version: ${receivedVersion}`
+        );
 
         if (lastUpdatedVersion !== receivedVersion) {
           newVersionAvailable.value = true;
