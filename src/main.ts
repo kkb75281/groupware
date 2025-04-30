@@ -97,10 +97,13 @@ if ('serviceWorker' in navigator) {
 
       if (currentVersion !== receivedVersion) {
         newVersion.value = receivedVersion;
-        newVersionAvailable.value = true;
+        const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
 
-        // localStorage에 저장하여 새로고침 후에도 상태 유지
-        localStorage.setItem('updateAvailable', 'true');
+        if (lastUpdatedVersion !== receivedVersion) {
+          newVersionAvailable.value = true;
+          localStorage.setItem('updateAvailable', 'true');
+          localStorage.removeItem('userDismissedUpdate');
+        }
       }
     }
   });
@@ -116,6 +119,10 @@ export function applyUpdate() {
     // 업데이트 완료 후 상태 초기화
     newVersionAvailable.value = false;
     localStorage.removeItem('updateAvailable');
+
+    if (newVersion.value) {
+      localStorage.setItem('lastUpdatedVersion', newVersion.value);
+    }
 
     window.location.reload();
   };
