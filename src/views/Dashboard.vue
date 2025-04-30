@@ -133,19 +133,20 @@
             .icon
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+        
+        br
         br
         
-        ul.unread-mail(v-if="mailList && mailList.length")
-            li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
-                .link
-                    span.from {{ mail.from }}
-                    span.mail-title {{ mail.subject }}
-                    p.mail-cont {{ mail.snippet }}
-                    span.attachment(v-if="mail.hasAttachment")
-                        .icon
-                            svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
-                    span.mail-date {{ mail.date }}
+        ul.list-wrap
+            li.list.mail
+                span.from groupware
+                span.title '1. 권규비 kkb7528@gmail.com' 폴더가 공유됨
+                p.cont 이병대 (블루벨스튜디오)님이 폴더 1개를 공유함 이병대 (블루벨스튜디오)(bluebell0369@gmail.com)님이 다음 공유 폴더에 참여하도록 초대했습니다. 안녕하세요.
+                span.attachment
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
+                span.date 04/29
 
         //- .empty(v-else)
             .icon
@@ -696,6 +697,65 @@ onMounted(async () => {
     p {
         font-size: 0.8rem;
         color: var(--warning-color-500);
+    }
+}
+
+.list-wrap {}
+
+.mail {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    color: var(--gray-color-500);
+
+    >* {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    &:hover {
+        background-color: var(--primary-color-25);
+    }
+
+    .from {
+        font-weight: 600;
+        color: var(--gray-color-900);
+        flex: none;
+        width: 100px;
+    }
+
+    .title {
+        font-weight: 600;
+        color: var(--gray-color-900);
+    }
+
+    .cont {
+        font-size: 0.75rem;
+        color: var(--gray-color-400);
+        margin-right: 1rem;
+        flex: 1;
+    }
+
+    .attachment {
+        .icon {
+            svg {
+                width: 1rem;
+                height: 1rem;
+                fill: var(--gray-color-400);
+            }
+        }
+    }
+
+    .date {
+        font-size: 0.75rem;
+        margin-left: auto;
+        flex: none;
     }
 }
 
