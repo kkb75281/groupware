@@ -34,7 +34,7 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
             .name {{ user.name }}
-            .division {{ userPositionCurrent.length > 1 ? divisionNameList[userPositionCurrent[0].divisionId] + ' / ' + userPositionCurrent[0].position + ' 외 ' + (userPositionCurrent.length - 1) + '개'  : userPositionCurrent[0] }}
+            .division {{ userPositionCurrent.length > 0 ? divisionNameList[userPositionCurrent[0].divisionId] + ' / ' + userPositionCurrent[0].position + ' 외 ' + (userPositionCurrent.length - 1) + '개'  : userPositionCurrent[0] }}
             br
             .buttons(v-if="system_worktime")
                 button.btn.sm.bg-gray(v-if="todayWorkStarting && todayWorkEnding" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;") 내일 봬요 :)
@@ -127,28 +127,15 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
                     | 등록된 공지사항이 없습니다.
+
     .box-shadow-card.gmail
         a.title-with-icon.alink(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
             h3.title 이메일
             .icon
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-        
-        br
-        br
-        
-        //- ul.list-wrap
-            li.list.mail
-                span.from groupware
-                span.title '1. 권규비 kkb7528@gmail.com' 폴더가 공유됨
-                p.cont 이병대 (블루벨스튜디오)님이 폴더 1개를 공유함 이병대 (블루벨스튜디오)(bluebell0369@gmail.com)님이 다음 공유 폴더에 참여하도록 초대했습니다. 안녕하세요.
-                span.attachment
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
-                span.date 04/29
 
-        ul.list-wrap(v-if="mailList && mailList.length")
+        ul.list-wrap.mail-warp(v-if="mailList && mailList.length")
             li.list.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
                 span.from {{ mail.from }}
                 span.title {{ mail.subject }}
@@ -159,44 +146,11 @@
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
                 span.date {{ mail.date }}
 
-        //- .empty(v-else)
+        .empty(v-else)
             .icon
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
             | 더 이상 읽을 메일이 없습니다.
-
-    //- ul.card-wrap.gmail(v-if="!googleAccountCheck")
-        li.card
-            .title-wrap
-                h3.title 
-                    .icon.img
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-                    | 이메일
-                a.go-detail(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank") 메일 더보기
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
-            //- template(v-if="googleEmailUpdate")
-            //- 	Loading#loading
-            //- template(v-else)
-            ul.unread-mail(v-if="mailList && mailList.length")
-                li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
-                    .link
-                        span.from {{ mail.from }}
-                        span.mail-title {{ mail.subject }}
-                        p.mail-cont {{ mail.snippet }}
-                        span.attachment(v-if="mail.hasAttachment")
-                            .icon
-                                svg
-                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
-                        span.mail-date {{ mail.date }}
-            .empty(v-else-if="mailList && !mailList.length")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-                | 더 이상 읽을 메일이 없습니다.
 
 #modal.modal(v-if="isModalOpen" @click="isModalOpen = false")
     .modal-cont(@click.stop style="min-width:unset; max-width:unset;")
@@ -296,6 +250,10 @@ onMounted(async () => {
     ]);
 
     getNewsletterList();
+
+    console.log({ divisionNameList })
+    console.log('userPositionCurrent', userPositionCurrent.value);
+    console.log(divisionNameList.value[userPositionCurrent.value[0]?.divisionId]);
 });
 </script>
 
@@ -384,6 +342,15 @@ onMounted(async () => {
                 }
             }
         }
+    }
+}
+
+.gmail {
+    padding: 0;
+
+    .title-with-icon {
+        padding: 1.5rem;
+        background-color: unset;
     }
 }
 
@@ -545,146 +512,6 @@ onMounted(async () => {
     }
 }
 
-.card-wrap {
-    &.gmail {
-        display: flex;
-
-        .card {
-            // padding: 1.5rem;
-            transition: none;
-            width: 100%;
-
-            &:hover {
-                transform: none;
-                // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
-            }
-
-            ul {
-                padding-bottom: 1.5rem;
-            }
-        }
-
-        .title-wrap {
-            padding: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            border-bottom: 1px solid var(--gray-color-300);
-        }
-
-        .title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .go-detail {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.875rem;
-            color: var(--gray-color-500);
-        }
-
-        .icon.img {
-            svg {
-                width: 1.5rem;
-                height: 1.5rem;
-                margin: 0;
-            }
-        }
-
-        .mail {
-            // padding: 1.5rem 0;
-            // border-top: 1px solid var(--gray-color-300);
-            padding: 0.75rem 0.5rem;
-            cursor: pointer;
-
-            &:hover {
-                background-color: var(--primary-color-25);
-            }
-        }
-
-        .link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0 1.5rem;
-            font-size: 0.875rem;
-            line-height: 1.2;
-            color: var(--gray-color-500);
-
-            >* {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                display: -webkit-box;
-                -webkit-line-clamp: 1;
-                -webkit-box-orient: vertical;
-            }
-        }
-
-        .from {
-            font-weight: 600;
-            color: var(--gray-color-900);
-            flex: none;
-            width: 100px;
-        }
-
-        .mail-title {
-            font-weight: 600;
-            color: var(--gray-color-900);
-        }
-
-        .mail-cont {
-            font-size: 0.75rem;
-            color: var(--gray-color-400);
-            margin-right: 1rem;
-            flex: 1;
-        }
-
-        .attachment {
-            .icon {
-                svg {
-                    width: 1rem;
-                    height: 1rem;
-                    fill: var(--gray-color-400);
-                }
-            }
-        }
-
-        .mail-date {
-            font-size: 0.75rem;
-            margin-left: auto;
-            flex: none;
-        }
-    }
-
-    .empty {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 4px;
-        font-size: 0.9rem;
-        color: var(--gray-color-400);
-        line-height: 1.4;
-        min-height: 150px;
-        text-align: center;
-        padding-top: 1.5rem;
-
-        .icon {
-            flex: none;
-
-            svg {
-                width: 20px;
-                height: 20px;
-                fill: var(--gray-color-400) !important;
-            }
-        }
-    }
-}
-
 .warning-msg {
     display: flex;
     align-items: flex-start;
@@ -810,7 +637,6 @@ onMounted(async () => {
         display: flex;
     }
 
-    .card-wrap,
     .gmail {
         display: none !important;
     }
