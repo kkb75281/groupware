@@ -1,62 +1,35 @@
-const CACHE_NAME = 'fg-works-cache-v61'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v62'; // 버전 번호를 포함한 캐시 이름
 
-// 서비스 워커 설치 및 활성화
+// 설치 이벤트: 캐시 초기화
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installed');
-
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll([
-        '/', // 메인 페이지
-        '/index.html'
-      ]);
+      return cache.addAll(['/', '/index.html']);
     })
-    // self.skipWaiting(); // 주석 처리 또는 삭제
   );
 });
 
+// 활성화 이벤트: 오래된 캐시 정리
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activated');
-
-  // // 클라이언트 제어는 우선 처리
-  // event.waitUntil(self.clients.claim());
-
-  // // 캐시 정리는 비동기적으로 처리
-  // caches.keys().then((cacheNames) => {
-  //     cacheNames.forEach((cache) => {
-  //         if (cache !== CACHE_NAME) {
-  //             console.log(`[Service Worker] Deleting old cache: ${cache}`);
-  //             caches.delete(cache);
-  //         }
-  //     });
-  // });
-
   event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cache) => {
-            if (cache !== CACHE_NAME) {
-              console.log(`[Service Worker] Deleting old cache: ${cache}`);
-              return caches.delete(cache);
-            }
-          })
-        );
-      })
-      .then(() => self.clients.claim()) // 모든 클라이언트를 즉시 제어
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
   );
 });
 
+// fetch 이벤트: 네트워크 먼저 시도 -> 실패 시 캐시
 self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('/version.json')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(fetch(event.request)); // 무조건 네트워크에서 가져옴
   } else {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        return cachedResponse || fetch(event.request);
-      })
-    );
+    event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
   }
 });
 
@@ -127,7 +100,6 @@ self.addEventListener('message', async function (event) {
       const response = await fetch('/version.json');
       const { version } = await response.json();
 
-      // 메인 스레드로 새 버전 정보 전송
       event.source.postMessage({
         type: 'NEW_VERSION_AVAILABLE',
         version
@@ -138,7 +110,7 @@ self.addEventListener('message', async function (event) {
   }
 
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting(); // 대기 중인 서비스 워커를 즉시 활성화
+    self.skipWaiting(); // 사용자 선택 시 즉시 업데이트
   }
 });
 

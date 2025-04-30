@@ -80,7 +80,7 @@
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
             p 전자결재
-        .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
+        //- .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
             svg
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
             p 공지사항
