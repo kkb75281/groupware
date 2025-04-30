@@ -176,10 +176,10 @@
             .image-wrap(:style="{width: `${modalWidth}px`}" style="display: inline-block")
                 template(v-if="system_banner")
                     img(:src="system_banner" :style="{objectFit: bannerStyle}" alt="회사사진")
-                button.btn.empty(v-else) 사진 등록
+                button.btn.upload(v-else disabled) 사진 등록 (아직 개발중입니다.)
         .modal-footer
-            button.btn.bg-gray.btn-cancel(type="button") 취소
-            button.btn.btn-register(type="submit") 등록
+            button.btn.bg-gray.btn-cancel(type="button" @click="isModalOpen = false") 취소
+            button.btn.btn-register(type="submit" disabled) 등록
 </template>
 
 <script setup>
@@ -272,7 +272,7 @@ onMounted(async () => {
         border-radius: 16px;
         box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
 
-        .empty {
+        .upload {
             position: absolute;
             top: 50%;
             left: 50%;
