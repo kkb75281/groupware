@@ -128,7 +128,7 @@
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
                     | 등록된 공지사항이 없습니다.
 
-    .box-shadow-card.gmail
+    .box-shadow-card.gmail(v-if="googleAccountCheck")
         a.title-with-icon.alink(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
             h3.title 이메일
             .icon
@@ -150,7 +150,7 @@
             .icon
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-            | 더 이상 읽을 메일이 없습니다.
+            | 현재 메일이 없습니다.
 
 #modal.modal(v-if="isModalOpen" @click="isModalOpen = false")
     .modal-cont(@click.stop style="min-width:unset; max-width:unset;")
@@ -602,6 +602,27 @@ onMounted(async () => {
         font-size: 0.75rem;
         margin-left: auto;
         flex: none;
+    }
+}
+
+.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    color: var(--gray-color-400);
+
+    .icon {
+        padding: 0;
+
+        svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--gray-color-400);
+        }
     }
 }
 
