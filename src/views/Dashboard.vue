@@ -25,7 +25,7 @@
         br
 
     .profComp-wrap
-        .profile-wrap
+        .box-shadow-card.profile-wrap
             .thumbnail(ref="btnProfile" @click="openProfile")
                 template(v-if="profileImage")
                     img(:src="profileImage" alt="img-profile")
@@ -41,12 +41,15 @@
                 button.btn.sm(v-else-if="!todayWorkStarting" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;" @click="checkCommuteRecord") 출근
                 button.btn.sm.bg-gray(v-else type="button" style="display:inline-block;font-size:0.7rem" @click="checkCommuteRecord") 퇴근
 
-        .company-wrap(v-if="system_banner || user.access_group > 98" :class="{master: user.access_group > 98, edit: editMode}")
-            img(v-if="system_banner" :src="system_banner" alt="회사사진")
+        .box-shadow-card.company-wrap(:class="{master: user.access_group > 98, edit: editMode}")
+            img.banner-img(v-if="system_banner" :src="system_banner" alt="회사사진")
             p.desc(v-else)
-                | 이곳을 눌러 배너를 설정해주세요.
+                //- | 이곳을 눌러 배너를 설정해주세요.
+                //- br
+                //- | 설정하기 전까지 사용자에게 배너가 나타나지 않습니다.
+                | 안녕하세요. FGWORKS 입니다.
                 br
-                | 설정하기 전까지 사용자에게 배너가 나타나지 않습니다.
+                | 오늘도 좋은 하루 되세요.
             button.btn.master(type="button" @click.stop="openModal") 배너 설정
             //- template(v-if="editMode")
                 .edit-icon-wrap
@@ -102,7 +105,7 @@
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
             p 마스터 페이지
 
-    ul.card-wrap.gmail
+    //- ul.card-wrap.gmail
         li.card
             .title-wrap
                 h3.title
@@ -124,7 +127,33 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
                     | 등록된 공지사항이 없습니다.
-    ul.card-wrap.gmail(v-if="googleAccountCheck")
+    .box-shadow-card.gmail
+        a.title-with-icon.alink(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
+            h3.title 이메일
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+        br
+        
+        ul.unread-mail(v-if="mailList && mailList.length")
+            li.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
+                .link
+                    span.from {{ mail.from }}
+                    span.mail-title {{ mail.subject }}
+                    p.mail-cont {{ mail.snippet }}
+                    span.attachment(v-if="mail.hasAttachment")
+                        .icon
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
+                    span.mail-date {{ mail.date }}
+
+        //- .empty(v-else)
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+            | 더 이상 읽을 메일이 없습니다.
+
+    //- ul.card-wrap.gmail(v-if="!googleAccountCheck")
         li.card
             .title-wrap
                 h3.title 
@@ -309,6 +338,43 @@ onMounted(async () => {
     }
 }
 
+.box-shadow-card {
+    min-height: 250px;
+    background-color: #fff;
+    border: 1px solid var(--gray-color-300);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem;
+
+    .title-with-icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .icon {
+            padding: 0;
+        }
+
+        &.alink {
+            cursor: pointer;
+
+            .icon {
+                svg {
+                    fill: var(--gray-color-300);
+                }
+            }
+
+            &:hover {
+                .icon {
+                    svg {
+                        fill: var(--primary-color-400);
+                    }
+                }
+            }
+        }
+    }
+}
+
 .profComp-wrap {
     display: flex;
     flex-wrap: wrap;
@@ -316,11 +382,6 @@ onMounted(async () => {
     margin-bottom: 1rem;
 
     >div {
-        height: 250px;
-        background-color: #fff;
-        border: 1px solid var(--gray-color-300);
-        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-        border-radius: 16px;
         padding: 1.5rem;
         text-align: center;
     }
@@ -389,7 +450,7 @@ onMounted(async () => {
             font-size: 0.9rem;
         }
 
-        img {
+        .banner-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -593,9 +654,8 @@ onMounted(async () => {
         justify-content: center;
         align-items: center;
         gap: 4px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--gray-color-500);
+        font-size: 0.9rem;
+        color: var(--gray-color-400);
         line-height: 1.4;
         min-height: 150px;
         text-align: center;
@@ -603,6 +663,12 @@ onMounted(async () => {
 
         .icon {
             flex: none;
+
+            svg {
+                width: 20px;
+                height: 20px;
+                fill: var(--gray-color-400) !important;
+            }
         }
     }
 }
@@ -633,13 +699,11 @@ onMounted(async () => {
     }
 }
 
-// @media (max-width: 1200px) {
-//     .wrap {
-//         padding-top: 3rem;
-//     }
-// }
-
 @media (max-width: 768px) {
+    .box-shadow-card {
+        min-height: unset;
+    }
+
     .profComp-wrap {
         .profile-wrap {
             position: relative;
@@ -667,7 +731,8 @@ onMounted(async () => {
         display: flex;
     }
 
-    .card-wrap {
+    .card-wrap,
+    .gmail {
         display: none !important;
     }
 }

@@ -20,7 +20,7 @@ header#header
                     svg(style="margin-bottom:6px")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
                 template(v-slot:tip) 전자결재
-        .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
+        //- .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
             Tooltip(tip-background-color="black" text-color="white")
                 template(v-slot:tool)
                     svg(style="width:26px; height:26px")
