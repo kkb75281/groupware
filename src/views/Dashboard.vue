@@ -137,7 +137,7 @@
         br
         br
         
-        ul.list-wrap
+        //- ul.list-wrap
             li.list.mail
                 span.from groupware
                 span.title '1. 권규비 kkb7528@gmail.com' 폴더가 공유됨
@@ -147,6 +147,17 @@
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
                 span.date 04/29
+
+        ul.list-wrap(v-if="mailList && mailList.length")
+            li.list.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
+                span.from {{ mail.from }}
+                span.title {{ mail.subject }}
+                p.cont {{ mail.snippet }}
+                span.attachment(v-if="mail.hasAttachment")
+                    .icon
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
+                span.date {{ mail.date }}
 
         //- .empty(v-else)
             .icon
@@ -700,7 +711,15 @@ onMounted(async () => {
     }
 }
 
-.list-wrap {}
+.list-wrap {
+    .list {
+        border-bottom: 1px solid var(--gray-color-100);
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+}
 
 .mail {
     display: flex;
