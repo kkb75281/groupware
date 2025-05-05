@@ -575,7 +575,11 @@ watch(
   async (u) => {
     // 로딩되고 로그인되면 무조건 실행
     if (u && Object.keys(u).length) {
-      await Promise.all([getRealtime(), getReadList()]);
+      const res = await Promise.all([getRealtime(), getReadList()]);
+
+      console.log('=== watch user === res : ', res);
+
+      return res;
     }
   },
   { immediate: true }

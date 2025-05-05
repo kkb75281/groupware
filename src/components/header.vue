@@ -20,7 +20,7 @@ header#header
                     svg(style="margin-bottom:6px")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
                 template(v-slot:tip) 전자결재
-        //- .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter-category')")
+        .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter-category')")
             Tooltip(tip-background-color="black" text-color="white")
                 template(v-slot:tool)
                     svg(style="width:26px; height:26px")
@@ -86,14 +86,19 @@ header#header
                         h5.noti-title 읽지 않은 이메일이 있습니다.
                 li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, 'realtime', rt)")
                     .router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
-                        template(v-if="rt.audit_info.audit_type === 'request'")
-                            //- h4.noti-type [{{ rt.audit_info.send_auditors.includes(`receiver:${user.user_id.replaceAll('-', '_')}`) ? '수신참조' : '결재요청' }}]
-                            h4.noti-type [{{(rt.audit_info.send_auditors || []).includes(`receiver:${user.user_id.replaceAll('-', '_')}`) ? '수신참조' : '결재요청'}}]
+                        template(v-if="rt.audit_info && rt.audit_info?.audit_type === 'request'")
+                            h4.noti-type [{{(rt.audit_info?.send_auditors || []).includes(`receiver:${user.user_id.replaceAll('-', '_')}`) ? '수신참조' : '결재요청'}}]
                             h5.noti-title {{ rt.audit_info.to_audit }}
                             p.noti-sender {{ rt.send_name }}
                             p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
-                        template(v-else-if="rt.audit_info.audit_type === 'email'")
+                        template(v-if="rt.noti_type === 'notice'")
+                            h4.noti-type [공지]
+                            h5.noti-title {{ rt.news_info?.news_title }}
+                            p.noti-sender {{ rt.send_name }}
+                            p.upload-time {{ formatTimeAgo(rt.send_date) }}
+
+                        template(v-else-if="rt.audit_info && rt.audit_info?.audit_type === 'email'")
                             h4.noti-type [새이메일]
                             h5.noti-title 읽지 않은 메일이 있습니다.
                             //- h5.noti-title {{ rt.subject }}
@@ -101,16 +106,16 @@ header#header
                             //- p.noti-sender {{ rt.from }}
                             span.upload-time {{ formatTimeAgo(rt.dateTimeStamp) }}
 
-                        template(v-else-if="rt.audit_info.audit_type === 'canceled'")
+                        template(v-else-if="rt.audit_info && rt.audit_info?.audit_type === 'canceled'")
                             h4.noti-type [결재회수]
-                            h5.noti-title {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 회수하였습니다.' }}
+                            h5.noti-title {{ rt.send_name + '님께서 [' + rt.audit_info?.to_audit + '] 문서를 회수하였습니다.' }}
                             p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
                         template(v-else)
                             h4.noti-type [알림]
                             h5.noti-title 
-                                template(v-if="rt.audit_info.approval === 'approve'") {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 승인하였습니다.' }}
-                                template(v-else) {{ rt.send_name + '님께서 [' + rt.audit_info.to_audit + '] 문서를 반려하였습니다.' }}
+                                template(v-if="rt.audit_info?.approval === 'approve'") {{ rt.send_name + '님께서 [' + rt.audit_info?.to_audit + '] 문서를 승인하였습니다.' }}
+                                template(v-else) {{ rt.send_name + '님께서 [' + rt.audit_info?.to_audit + '] 문서를 반려하였습니다.' }}
                             p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
     template(v-else)
@@ -346,11 +351,16 @@ onUnmounted(() => {
 });
 
 let showRealtimeNoti = (e, type, rt) => {
+  console.log('type : ', type);
+  console.log('rt : ', rt);
+
   if (type === 'gmail') {
     openGmailAppOrWeb(null);
-  } else if (type === 'realtime' && rt) {
+  } else if (type === 'realtime' && rt.audit_info) {
     goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
     readNoti(rt);
+  } else if (type === 'realtime' && rt.news_info) {
+    router.push({ path: '/newsletter-detail/' + rt.news_info?.news_id });
   }
 };
 
@@ -843,6 +853,7 @@ watch(
         font-weight: 500;
         color: var(--gray-color-600);
         flex: none;
+        margin-left: auto;
       }
 
       .icon {

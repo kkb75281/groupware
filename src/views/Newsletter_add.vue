@@ -163,6 +163,13 @@ watch(selectedCategory, (n) => {
     const selectedCat = newsCatList.value.find((cat) => cat.record_id === n);
     if (selectedCat) {
       selectedDivision.value = selectedCat.data.access_division;
+
+      // 알림설정 체크박스 상태 가져오기
+      if (selectedCat.data.notiSetting) {
+        notiSetting.value = selectedCat.data.notiSetting;
+      } else {
+        notiSetting.value = true;
+      }
     } else {
       selectedDivision.value = {};
     }
@@ -751,33 +758,78 @@ const createAddNews = async (
   send_newsUser,
   isNotificationTarget = false
 ) => {
-  console.log('send_newsUser : ', send_newsUser);
-  console.log('newsUser_id : ', newsUser_id);
+  console.log('== createAddNews == send_newsUser : ', send_newsUser);
+  console.log('== createAddNews == newsUser_id : ', newsUser_id);
 
   if (!news_id || !newsUser_id) return;
 
-  // 게시글 등록
-  const res = await skapi.postRecord(
-    {
-      news_id,
-      newsUser: newsUser_id,
-      news_title
-    },
-    {
-      unique_id: `add_news:${news_id}:${newsUser_id}`,
-      readonly: true,
-      table: {
-        name: 'add_news',
-        access_group: 'authorized'
-      },
-      reference: `news:${newsUser_id}`,
-      tags: [news_id],
-      index: {
-        name: 'news_title',
-        value: news_title.replaceAll('.', '_')
-      }
+  let recId = null;
+
+  // 레퍼런스가 존재하는지 확인
+  try {
+    const referenceExists = await skapi.getRecord(`news:${newsUser_id}`);
+    console.log('레퍼런스 존재함:', referenceExists);
+  } catch (error) {
+    // 레퍼런스가 존재하지 않으면 새로 생성
+    console.log('레퍼런스가 존재하지 않음, 새로 생성합니다');
+    try {
+      const newReference = await skapi.postRecord(
+        {
+          newsUser_id: newsUser_id,
+          created_at: new Date().getTime()
+        },
+        {
+          // record_id: `news:${newsUser_id}`,
+          // record_id: `news_${newsUser_id}`,
+          readonly: true,
+          table: {
+            name: 'news',
+            access_group: 'authorized'
+          }
+        }
+      );
+
+      recId = newReference.reference_id; // 새로 생성된 레퍼런스 ID 저장
+      console.log('새 레퍼런스 생성 성공:', newReference);
+    } catch (refCreateError) {
+      console.error('레퍼런스 생성 실패:', refCreateError);
+      throw refCreateError;
     }
-  );
+  }
+
+  // 게시글 등록 알림 관련 레코드
+  const res = await skapi
+    .postRecord(
+      {
+        news_id,
+        newsUser: newsUser_id,
+        news_title
+      },
+      {
+        unique_id: `add_news:${news_id}:${newsUser_id}`,
+        readonly: true,
+        table: {
+          name: 'add_news',
+          access_group: 'authorized'
+        },
+        // reference: `news:${newsUser_id}`,
+        reference: recId,
+        tags: [news_id],
+        index: {
+          name: 'news_title',
+          value: news_title.replaceAll('.', '_')
+        }
+      }
+    )
+    .then((res) => {
+      console.log('게시글 등록 성공 : ', res);
+      return res;
+    })
+    .catch((err) => {
+      console.error('게시글 등록 실패 : ', err);
+      throw err;
+    });
+
   console.log('res : ', res);
 
   skapi.grantPrivateRecordAccess({
@@ -857,13 +909,13 @@ const createAddNews = async (
 };
 
 // 결재 요청 Alarm
-const postAuditDocRecordId = async (
-  newsId,
-  newsTitle,
-  userId,
-  role,
-  isNotificationTarget = false
-) => {
+const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTarget = false) => {
+  console.log('== postAuditDocRecordId == newsId : ', newsId);
+  console.log('== postAuditDocRecordId == newsTitle : ', newsTitle);
+  console.log('== postAuditDocRecordId == userId : ', userId);
+  console.log('== postAuditDocRecordId == isNotificationTarget : ', isNotificationTarget);
+  console.log('== postAuditDocRecordId == notiSetting : ', notiSetting);
+
   try {
     // 권한 부여
     await grantNewsUserAccess({
@@ -873,16 +925,19 @@ const postAuditDocRecordId = async (
     });
 
     // 알림 전송
-    return createAddNews(
+    const res = await createAddNews(
       {
         news_id: newsId,
         newsUser_id: userId,
-        role: role,
         news_title: newsTitle
       },
       send_auditors_arr,
       isNotificationTarget
     );
+
+    console.log('== postAuditDocRecordId == res : ', res);
+
+    return res;
   } catch (error) {
     console.error(error);
     throw error;
@@ -964,7 +1019,7 @@ const registerNews = async (e) => {
 
     const processRoles = [
       ...selectedUsers.value.map((user) => ({
-        userId: user.data.user_id
+        userId: user.user_id
       }))
     ];
     console.log('processRoles : ', processRoles);
@@ -972,16 +1027,10 @@ const registerNews = async (e) => {
     // 공개범위에게 게시글 열람 권한 및 등록 레코드 생성
     const res = await Promise.all(
       processRoles.map((roleInfo) =>
-        postAuditDocRecordId(
-          newsId,
-          newsTitle,
-          roleInfo.userId,
-          // 알림 대상인지 여부 확인
-          notificationTargets.some((target) => target.data.user_id === roleInfo.userId)
-        )
+        postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value)
       )
     );
-    console.log('promiseall : ', res);
+    console.log('promiseall res : ', res);
 
     selectedUsers.value = [];
     selectedMembers.value = [];
@@ -1003,14 +1052,13 @@ const registerNews = async (e) => {
 };
 
 // 결재자 정보 변환 함수
-const convertAuditorFormat = (members, role) => {
+const convertAuditorFormat = (members) => {
   return members.map((auditor) => ({
     data: { user_id: auditor.user_id },
     index: {
       value: auditor.name,
       name: `${auditor.division}.${auditor.position}`
-    },
-    role: role
+    }
   }));
 };
 
