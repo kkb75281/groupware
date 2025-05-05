@@ -20,13 +20,17 @@ header#header
                     svg(style="margin-bottom:6px")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
                 template(v-slot:tip) 전자결재
+<<<<<<< HEAD
         .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter-category')")
+=======
+        //- .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
+>>>>>>> upstream/main
             Tooltip(tip-background-color="black" text-color="white")
                 template(v-slot:tool)
                     svg(style="width:26px; height:26px")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
                 template(v-slot:tip) 공지사항
-        .icon(v-if="user.access_group < 98" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
+        .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
             Tooltip(tip-background-color="black" text-color="white")
                 template(v-slot:tool)
                     svg
@@ -47,8 +51,8 @@ header#header
         .icon(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
             Tooltip(tip-background-color="black" text-color="white")
                 template(v-slot:tool)
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
+                    svg(style="width:27px;height:27px")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
                 template(v-slot:tip) 마스터 페이지
 
         //- button.btn-profile(type="button" ref="btnProfile" @click="openProfile")
@@ -217,7 +221,7 @@ header#header
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
                 p 전자결재
 
-            router-link.icon-menu(to="/newsletter-category" @click="closePopup")
+            //- router-link.icon-menu(to="/newsletter-category" @click="closePopup")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
@@ -500,26 +504,142 @@ watch(
     border-radius: 50%;
     display: flex;
     align-items: center;
-    justify-content: center;
-    // position: absolute;
-    // top: 0;
-    // right: -4px;
-    // background: var(--primary-color-100) url(../images/header/thumb_profile_default.png)
-    // center/cover no-repeat;
-    background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
-    overflow: hidden;
+    padding: 0 1rem;
+    transition: padding 0.15s linear;
+    transition: top 0.3s;
+    z-index: 9999;
+    // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid var(--gray-color-300);
 
-    img {
-      width: 100%;
-      height: 100%;
-      // object-fit: contain;
-      object-fit: cover;
-      z-index: 1;
-      position: relative;
+
+    .img-logo {
+        img {
+            height: 2.5rem;
+        }
     }
 
-    svg {
-      fill: var(--gray-color-400);
+    .btn-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .icon {
+            cursor: pointer;
+            padding: 0;
+
+            svg {
+                fill: var(--gray-color-300);
+            }
+
+            &:hover:not(.nohover) {
+                svg {
+                    fill: var(--primary-color-400);
+                }
+            }
+
+            &.active {
+                svg {
+                    fill: var(--primary-color-400);
+                }
+            }
+        }
+    }
+
+    .btn-mo-navbar {
+        display: none;
+        margin-right: auto;
+    }
+
+    .btn-noti {
+        // width: 2.75rem;
+        // height: 2.75rem;
+        // background-color: var(--primary-color-100);
+        position: relative;
+        // margin-right: 2rem;
+        // border-radius: 0.5rem;
+        // border-radius: 50%;
+
+        &::after {
+            content: attr(data-count);
+            display: inline-block;
+            position: absolute;
+            // top: -0.5rem;
+            // right: -14px;
+            // min-width: 1.625rem;
+            // height: 1.625rem;
+            // line-height: 1.625rem;
+            top: -8px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #fff;
+            background-color: var(--primary-color-400);
+            // padding: 0 0.3125rem;
+            // border-radius: 0.75rem;
+            // padding: 0 4px;
+            border-radius: 50%;
+            text-align: center;
+        }
+    }
+
+    .icon-bell {
+        svg {
+            fill: var(--primary-color-400);
+        }
+    }
+
+    .btn-profile {
+        flex: none;
+        height: 3rem;
+        // border-radius: 0.5rem;
+        border-radius: 30px;
+        background: linear-gradient(90.25deg,
+                var(--primary-color-400) 5%,
+                var(--primary-color-300) 98%);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        padding-left: 1.25rem;
+        // padding-right: 2.75rem;
+        padding-right: 3.75rem;
+        position: relative;
+        // margin-right: 1rem;
+        user-select: none;
+        cursor: pointer;
+    }
+
+    .thumbnail {
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-left: 0.5rem;
+        // border: 0.1875rem solid #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        // position: absolute;
+        // top: 0;
+        // right: -4px;
+        // background: var(--primary-color-100) url(../images/header/thumb_profile_default.png)
+        // center/cover no-repeat;
+        background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
+        overflow: hidden;
+
+        img {
+            width: 100%;
+            height: 100%;
+            // object-fit: contain;
+            object-fit: cover;
+            z-index: 1;
+            position: relative;
+        }
+
+        svg {
+            fill: var(--gray-color-400);
+        }
     }
   }
 }
@@ -593,16 +713,153 @@ watch(
     }
   }
 
-  .popup-main {
-    // padding: 0 0.8rem;
-    ul {
-      li {
-        // border-top: 1px solid var(--gray-color-200);
-        font-size: 0.8rem;
-        cursor: pointer;
+    .popup-main {
 
-        &:first-child {
-          border-top: unset;
+        // padding: 0 0.8rem;
+        ul {
+            li {
+                // border-top: 1px solid var(--gray-color-200);
+                font-size: 0.8rem;
+                cursor: pointer;
+
+                &:first-child {
+                    border-top: unset;
+                }
+
+                .icon {
+                    padding-left: 0;
+                }
+            }
+        }
+
+        .router {
+            display: flex;
+            align-items: center;
+            // justify-content: space-between;
+            padding: 0.7rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+
+            &:hover {
+                background-color: var(--primary-color-100);
+            }
+
+            &.read {
+                opacity: 0.5;
+            }
+
+            // .right {
+            // 	display: flex;
+            // 	align-items: center;
+            // 	gap: 10px;
+            // }
+        }
+    }
+
+    &.notification {
+        // right: 124px;
+        right: 355px;
+        max-width: 420px;
+        width: calc(100% - 16px);
+
+        .popup-header {
+            // padding: 34px 30px 24px;
+            // border-bottom: 1px solid var(--gray-color-300);
+
+            .title {
+                font-size: 1.1rem;
+            }
+        }
+
+        .popup-main {
+            // padding-bottom: 1.1rem;
+
+            ul {
+                max-height: 240px;
+                overflow-y: scroll;
+                padding-top: 8px;
+
+                li {
+                    // border-top: none;
+
+                    // &:first-child {
+                    // 	padding-top: 0.5rem;
+                    // }
+                }
+            }
+
+            a,
+            button {
+                transition: none;
+
+                &:hover,
+                &:active,
+                &:focus {
+                    transition: none;
+                }
+            }
+
+            .router {
+                // padding-left: 30px;
+                // padding-right: 30px;
+                gap: 0.8rem;
+
+                &:hover {
+                    background-color: var(--primary-color-100);
+
+                    .icon {
+                        svg {
+                            fill: var(--gray-color-400);
+                        }
+                    }
+                }
+
+                >* {
+                    white-space: nowrap;
+                }
+            }
+
+            .noti-type {
+                font-size: 0.8rem;
+                // color: var(--gray-color-600);
+            }
+
+            .noti-title {
+                font-size: 16px;
+                font-weight: 500;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                // width: 330px;
+            }
+
+            .noti-sender {
+                font-size: 0.8rem;
+                font-weight: 500;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: var(--gray-color-600);
+            }
+
+            .upload-time {
+                font-size: 0.7rem;
+                font-weight: 500;
+                color: var(--gray-color-600);
+                flex: none;
+            }
+
+            .icon {
+                flex: none;
+
+                svg {
+                    fill: #fff;
+                }
+            }
+        }
+
+        .popup-bottom {
+            border-top: 1px solid var(--gray-color-200);
         }
 
         .icon {
@@ -864,6 +1121,7 @@ watch(
     padding-left: 16px;
     padding-right: 16px;
 
+<<<<<<< HEAD
     .btn-wrap {
       > *:not(.btn-mo-navbar) {
         display: none;
@@ -872,6 +1130,46 @@ watch(
 
     .thumbnail {
       display: none;
+=======
+        .btn-wrap {
+            >*:not(.btn-mo-navbar) {
+                display: none;
+            }
+        }
+
+        .thumbnail {
+            display: none;
+        }
+
+        .btn-mo-navbar {
+            display: block;
+        }
+    }
+
+    #popup {
+        right: 16px;
+
+        &.notification {
+            right: 50%;
+            transform: translateX(50%);
+
+            .popup-header {
+                padding: 30px 20px 18px;
+            }
+
+            .popup-main {
+                .router {
+                    padding-left: 20px;
+                    padding-right: 20px;
+                }
+            }
+
+            .view-all {
+                padding: 24px 0;
+                margin: 0 24px;
+            }
+        }
+>>>>>>> upstream/main
     }
 
     .btn-mo-navbar {

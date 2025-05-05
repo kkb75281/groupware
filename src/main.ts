@@ -20,6 +20,10 @@ import { getAuditList } from './audit.ts';
 
 const app = createApp(App);
 
+let serviceID = import.meta.env.VITE_SERVICE_ID;
+let emailCheckInterval: any = null;
+let currentVersion: string | null = null; // 현재 활성화된 서비스 워커의 버전
+let newWorkerWaiting = false; // 새로운 서비스 워커가 대기 중인지 여부
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
 export let mainPageLoading = ref(false);
@@ -27,8 +31,11 @@ export let realtimeTestingMsg = ref('');
 export let realtimeIsConnected = false;
 export let currentBadgeCount = 0; // 현재 뱃지 값을 저장할 변수
 export let buildTime = import.meta.env.VITE_BUILD_TIME;
-
-let serviceID = import.meta.env.VITE_SERVICE_ID;
+export let newVersionAvailable = ref(false); // 새로운 버전이 있는지 여부
+export let newVersion = ref(''); // 새로운 버전이 있는지 여부
+export let getSystemBannerId = ref(null);
+export let getSystemBannerRunning: Promise<any> | null = null;
+export let system_banner = ref(null);
 
 console.log('바뀐 버전 입니다. 0425 18:00');
 
@@ -37,7 +44,41 @@ const skapi = new Skapi(import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OW
   eventListener: { onLogin: loginCheck }
 });
 
-let emailCheckInterval: any = null;
+export let getSystemBanner = async (refresh = false) => {
+  if (getSystemBannerRunning instanceof Promise) {
+    await getSystemBannerRunning;
+    return system_banner.value;
+  }
+
+  if (system_banner.value && Object.keys(system_banner.value).length && !refresh) {
+    return system_banner.value;
+  }
+
+  getSystemBannerRunning = skapi
+    .getRecords({
+      table: {
+        name: 'system_banner',
+        access_group: 1
+      }
+    })
+    .finally(() => {
+      getSystemBannerRunning = null;
+    });
+
+  let res = await getSystemBannerRunning;
+
+  if (res && res.list && res.list.length) {
+    getSystemBannerId.value = res.list[0].record_id;
+
+    if (res.list[0].data) {
+      system_banner.value = res.list[0].data;
+    }
+  }
+
+  console.log('system_banner', system_banner.value);
+
+  return system_banner.value;
+};
 
 function handleVisibilityChange() {
   if (document.visibilityState === 'visible') {
@@ -101,11 +142,6 @@ export function resetBadgeCount() {
 
   // console.log(`[Main App] Badge count reset to ${currentBadgeCount}`);
 }
-
-let currentVersion: string | null = null; // 현재 활성화된 서비스 워커의 버전
-let newWorkerWaiting = false; // 새로운 서비스 워커가 대기 중인지 여부
-export let newVersionAvailable = ref(false); // 새로운 버전이 있는지 여부
-export let newVersion = ref(''); // 새로운 버전이 있는지 여부
 
 // 앱 시작 시 버전 정보 로드
 fetch('/version.json')
@@ -355,6 +391,7 @@ export async function loginCheck(profile: any) {
     Object.assign(user, profile);
 
     refreshAccessToken();
+    getSystemBanner(); // 대시보드 배너 사진
 
     // console.log('메인 페이지 onMounted');
 
