@@ -27,6 +27,7 @@ let emailCheckInterval: any = null;
 export let currentVersion: string | null = null; // 현재 활성화된 서비스 워커의 버전
 export let newVersionAvailable = ref(false); // 새로운 버전이 있는지 여부
 export let newVersion = ref(''); // 새로운 버전이 있는지 여부
+export let isUpdateLoading = ref(false); // 업데이트 로딩 상태
 
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
@@ -74,14 +75,6 @@ if ('serviceWorker' in navigator) {
       registration.addEventListener('updatefound', () => {
         newWorker = registration.installing;
         console.log('[Main] New Service Worker Found but waiting for user approval');
-
-        // newWorker?.addEventListener('statechange', () => {
-        //   if (newWorker.state === 'installed') {
-        //     console.log('[Main] New version ready to activate');
-        //     newVersionAvailable.value = true;
-        //     localStorage.setItem('updateAvailable', 'true');
-        //   }
-        // });
       });
 
       // 앱 실행 시 현재 서비스 워커에게 버전 요청
@@ -129,6 +122,8 @@ export function applyUpdate() {
   if (newWorker) {
     newWorker.postMessage({ type: 'SKIP_WAITING' });
   }
+
+  isUpdateLoading.value = true;
 
   navigator.serviceWorker.oncontrollerchange = () => {
     // 업데이트 완료 후 상태 초기화

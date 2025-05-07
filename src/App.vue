@@ -1,10 +1,10 @@
 <template lang="pug">
-div(v-if='!loaded' style='display: flex;align-items: center;justify-content: center;height: 100vh;position: fixed;width: 100%;')
+div(v-if='!loaded || isUpdateLoading' style='display: flex;align-items: center;justify-content: center;height: 100vh;position: fixed;width: 100%;')
     Loading
 router-view(v-else)
 </template>
 
 <script setup>
-import { loaded } from '@/main.ts'
+import { loaded, isUpdateLoading } from '@/main.ts'
 import Loading from '@/components/loading.vue';
 </script>
