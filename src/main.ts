@@ -44,6 +44,8 @@ console.log('바뀐 버전 입니다. 0425 18:00');
 
 if (localStorage.getItem('updateAvailable') === 'true') {
   newVersionAvailable.value = true;
+} else {
+  newVersionAvailable.value = false;
 }
 
 // 앱 시작 시 버전 정보 로드
@@ -52,6 +54,14 @@ fetch('/version.json')
   .then((data) => {
     currentVersion = data.version;
     console.log('[Main] Current Version:', currentVersion);
+
+    const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
+
+    // 마지막 업데이트 버전이 현재 버전과 같다면, 알림 비활성화
+    if (lastUpdatedVersion === currentVersion) {
+      newVersionAvailable.value = false;
+      localStorage.removeItem('updateAvailable');
+    }
   });
 
 if ('serviceWorker' in navigator) {
@@ -97,7 +107,9 @@ if ('serviceWorker' in navigator) {
 
       if (currentVersion !== receivedVersion) {
         newVersion.value = receivedVersion;
+
         const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
+
         console.log(
           `[Main] Last updated version: ${lastUpdatedVersion}, Current version: ${currentVersion}, Received version: ${receivedVersion}`
         );
@@ -122,6 +134,7 @@ export function applyUpdate() {
     // 업데이트 완료 후 상태 초기화
     newVersionAvailable.value = false;
     localStorage.removeItem('updateAvailable');
+    localStorage.removeItem('userDismissedUpdate');
 
     if (newVersion.value) {
       localStorage.setItem('lastUpdatedVersion', newVersion.value);
