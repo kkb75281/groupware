@@ -262,6 +262,7 @@ export const createReadListRecord = (read = false) => {
 export const readNoti = async (rt: any) => {
   // 기존 readAudit 초기화
   for (let key in readAudit.value) {
+    console.log('readAudit.value : ', readAudit.value);
     delete readAudit.value[key];
   }
 
@@ -401,8 +402,30 @@ export const addEmailNotification = (emailData: any) => {
 export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
-export const getNewsletterList = async (refresh = false) => {
+export const getNewsletterList = async (tag, refresh = false) => {
   // console.log('=== getNewsletterList === refresh : ', refresh);
+  console.log('카테고리 해당 게시글 리스트');
+
+  const getNews = await skapi.getRecords({
+    table: {
+      name: 'newsletter',
+      access_group: 'private'
+    },
+    record_id: 'UkUAZJFriza6fDF6'
+    // tag: tag
+  });
+
+  newsletterList.value = getNews.list;
+
+  const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
+
+  newsletterList.value = newsletterList.value.map((item, index) => {
+    return {
+      ...item,
+      writer: writer[index]?.list?.[0]?.name || '이름 없음'
+    };
+  });
+  console.log('=== getNewsletterList === newsletterList.value : ', newsletterList.value);
 };
 
 // export const getNewsletterList = async (refresh = false) => {

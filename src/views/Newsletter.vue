@@ -31,6 +31,7 @@
           col(style="width:5%")
           col(style="width: 50%")
           col(style="width: 10%")
+          col(style="width: 10%")
         thead
           tr
             th NO
@@ -46,10 +47,10 @@
             tr.nohover
               td(colspan="4") 등록된 공지사항이 없습니다.
           template(v-else)
-            tr.hover(v-for="(news, index) in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
+            tr.hover(v-for="(news, index) in newsletterList" :key="news.record_id" @click="router.push('/newsletter-detail/' + news.record_id)")
               td {{ newsletterList.length - index }}
-              td.left {{ news.subject }}
-              td {{ convertTimestampToDateMillis(news.timestamp) }}
+              td.left {{ news.data.news_title }}
+              td {{ convertTimestampToDateMillis(news.uploaded) }}
               td {{ news.writer }}
 </template>
 
@@ -81,6 +82,7 @@ const router = useRouter();
 const route = useRoute();
 
 const loading = ref(false);
+const cate = ref(route.params.category);
 const searchFor = ref('subject');
 const searchValue = ref({
   subject: '',
@@ -95,7 +97,7 @@ const searchNewsletter = async (refresh = false) => {
   loading.value = true;
 
   if (searchValue.value.subject === '' || refresh) {
-    await getNewsletterList(true);
+    await getNewsletterList(cate.value, true);
     loading.value = false;
     return;
   }
@@ -143,7 +145,7 @@ watch(searchFor, (nv, ov) => {
 
 onMounted(async () => {
   loading.value = true;
-  await getNewsletterList();
+  await getNewsletterList(cate.value);
   loading.value = false;
 });
 </script>

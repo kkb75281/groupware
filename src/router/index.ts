@@ -88,7 +88,7 @@ const router = createRouter({
           component: () => import('@/views/Newsletter_add.vue') // 게시글 작성
         },
         {
-          path: '/newsletter-detail/:messageId',
+          path: '/newsletter-detail/:newsId',
           name: 'newsletter-detail',
           component: () => import('@/views/Newsletter_detail.vue') // 게시글 상세
         },
