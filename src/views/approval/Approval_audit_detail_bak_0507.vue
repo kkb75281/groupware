@@ -118,9 +118,9 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 			h4.sub-title 의견
 
-			//- hr
+			hr
 
-			//- ul.reply-list(v-if="auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '').length > 0")
+			ul.reply-list(v-if="auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '').length > 0")
 				li.reply-item(v-for="(auditor, index) in auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '')")
 					.auditor
 						.info
@@ -130,11 +130,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 								template(v-else) 반려자
 						.date(v-if="auditor?.date") {{ formatTimestampToDate(auditor?.date) }}
 					.comment {{ auditor.comment || '-' }}
-			//- .empty(v-else) 결재 의견이 없습니다.
-
-			// 댓글 작성
-			.input-wrap.input-comment
-				input(type="text" placeholder="결재 의견을 입력해주세요." v-model="approvedComment" style="width: 100%;")
+			.empty(v-else) 결재 의견이 없습니다.
 
 
 		.button-wrap
@@ -1533,11 +1529,6 @@ const reRequestAudit = () => {
       isReRequest: true
     }
   });
-};
-
-// 댓글 작성
-const writeComment = () => {
-  console.log('댓글 작성');
 };
 
 onMounted(() => {
