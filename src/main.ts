@@ -61,6 +61,7 @@ fetch('/version.json')
     console.log('[Main] Current Version:', currentVersion);
 
     const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
+    console.log({ lastUpdatedVersion });
 
     // 마지막 업데이트 버전이 현재 버전과 같다면, 알림 비활성화
     if (lastUpdatedVersion === currentVersion) {
@@ -75,33 +76,23 @@ if ('serviceWorker' in navigator) {
     .then((registration) => {
       console.log('Service Worker registered:', registration);
 
-      // 새로운 서비스 워커 감지
       registration.addEventListener('updatefound', () => {
         newWorker = registration.installing;
-        console.log('[Main] New Service Worker Found but waiting for user approval');
-
-        // 새로운 설치 감지
-        const listener = () => {
-          newWorker = registration.installing;
-          if (!newWorker) return;
-
+        if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed') {
-              console.log('[Main] New version ready to activate');
               newVersionAvailable.value = true;
               localStorage.setItem('updateAvailable', 'true');
             }
           });
-        };
-
-        registration.addEventListener('updatefound', listener);
+        }
       });
     })
     .catch((error) => {
       console.error('Service Worker registration failed:', error);
     });
 
-  // ✅ 앱 실행 시점에 항상 실행 - 현재 활성화된 SW에게 버전 요청
+  // 앱 실행 시점에 항상 실행 - 현재 활성화된 SW에게 버전 요청
   if (navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({ type: 'CHECK_VERSION' });
   } else {
@@ -186,8 +177,13 @@ export function applyUpdate() {
 function startLoadingAndReload() {
   isUpdateLoading.value = true;
 
-  navigator.serviceWorker.oncontrollerchange = () => {
+  // controllerchange 이벤트 등록
+  const controllerChangeHandler = () => {
     if (navigator.serviceWorker.controller) {
+      // 리스너 제거
+      navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
+
+      // 상태 초기화
       newVersionAvailable.value = false;
       localStorage.removeItem('updateAvailable');
       localStorage.removeItem('userDismissedUpdate');
@@ -199,6 +195,9 @@ function startLoadingAndReload() {
       window.location.reload();
     }
   };
+
+  navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
+  navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler);
 }
 
 const skapi = new Skapi(import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID, {
