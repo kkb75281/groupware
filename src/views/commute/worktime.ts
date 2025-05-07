@@ -263,7 +263,7 @@ export let startWork = async (router?: any) => {
     // 지각일 경우, 지각한 사유 적기 위해 저장 후 출퇴근 관리 페이지로 이동
     if (isLate && router) {
       alert('지각하셨습니다. 지각 사유를 적어주세요.');
-      router.push('/commute/commute-record');
+      router.push({ name: 'commute-record' });
     }
   } catch (error) {
     console.log('출근 기록 저장 에러', error);
@@ -320,7 +320,7 @@ export let endWork = async (router?: any) => {
     // 야근일 경우, 야근한 사유 적기 위해 저장 후 출퇴근 관리 페이지로 이동
     if (isOvertime && router) {
       alert('야근하셨습니다. 야근 사유를 적어주세요.');
-      router.push('/commute/commute-record');
+      router.push({ name: 'commute-record' });
     }
   } catch (error) {
     console.log('퇴근 기록 저장 에러', error);
