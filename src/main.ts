@@ -75,6 +75,25 @@ if ('serviceWorker' in navigator) {
       registration.addEventListener('updatefound', () => {
         newWorker = registration.installing;
         console.log('[Main] New Service Worker Found but waiting for user approval');
+
+        newWorker?.addEventListener('statechange', () => {
+          if (newWorker?.state === 'installed') {
+            fetch('/version.json')
+              .then((res) => res.json())
+              .then((data) => {
+                const installedVersion = data.version;
+
+                // lastUpdatedVersion은 사용자가 마지막으로 업데이트한 버전
+                const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
+
+                // 설치된 버전 !== 마지막 업데이트 버전 → 새 버전 감지 시에만 알림
+                if (installedVersion !== lastUpdatedVersion) {
+                  newVersionAvailable.value = true;
+                  localStorage.setItem('updateAvailable', 'true');
+                }
+              });
+          }
+        });
       });
 
       // 앱 실행 시 현재 서비스 워커에게 버전 요청
