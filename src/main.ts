@@ -75,13 +75,13 @@ if ('serviceWorker' in navigator) {
         newWorker = registration.installing;
         console.log('[Main] New Service Worker Found but waiting for user approval');
 
-        newWorker?.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed') {
-            console.log('[Main] New version ready to activate');
-            newVersionAvailable.value = true;
-            localStorage.setItem('updateAvailable', 'true');
-          }
-        });
+        // newWorker?.addEventListener('statechange', () => {
+        //   if (newWorker.state === 'installed') {
+        //     console.log('[Main] New version ready to activate');
+        //     newVersionAvailable.value = true;
+        //     localStorage.setItem('updateAvailable', 'true');
+        //   }
+        // });
       });
 
       // 앱 실행 시 현재 서비스 워커에게 버전 요청
