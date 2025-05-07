@@ -2,15 +2,16 @@
 Header
 //- Navbar
 main#main
-	.wrap(ref="mainWrap" :class="{ loading: mainPageLoading }")
-		Loading#loading(v-if="mainPageLoading") 
-		router-view
+    .wrap(ref="mainWrap" :class="{ loading: mainPageLoading || isUpdateLoading }")
+        #loading-msg(v-if="isUpdateLoading") 새로운 버전으로 업데이트 중입니다.#[br]잠시만 기다려 주세요.
+        Loading#loading(v-if="mainPageLoading || isUpdateLoading") 
+        router-view
 </template>
 
 <script setup>
 import { watch, ref, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { mainPageLoading } from '@/main.ts'
+import { mainPageLoading, isUpdateLoading } from '@/main.ts'
 
 import Header from '@/components/header.vue';
 import Navbar from '@/components/navbar.vue';
@@ -21,110 +22,125 @@ const route = useRoute();
 
 let mainWrap = ref(null);
 
-watch(mainPageLoading, (nv) => {
-	if (nv) {
-		nextTick(() => {
-			const targetElement = document.querySelector('#loading');
-			let scrollLocation = document.documentElement.scrollTop;
+watch([mainPageLoading, isUpdateLoading], (nv) => {
+    if (nv) {
+        nextTick(() => {
+            const loadingElement = document.querySelector('#loading');
+            const msgElement = document.querySelector('#loading-msg');
+            let scrollLocation = document.documentElement.scrollTop;
 
-			targetElement.style.setProperty('--loading-top', `${(window.innerHeight - mainWrap.value.getBoundingClientRect().top + scrollLocation - 200) / 2}px`);
-		})
-	}
+            loadingElement.style.setProperty('--loading-top', `${(window.innerHeight - mainWrap.value.getBoundingClientRect().top + scrollLocation - 200) / 2}px`);
+            msgElement.style.setProperty('--loading-top', `${(window.innerHeight - mainWrap.value.getBoundingClientRect().top + scrollLocation - 80) / 2}px`);
+        })
+    }
 }, { immediate: true });
 </script>
 
 <style scoped lang="less">
 #main {
-	padding-top: calc(var(--header-height));
-	// padding-left: calc(var(--navbar-width));
-	transition: padding-left 0.15s linear;
+    padding-top: calc(var(--header-height));
+    // padding-left: calc(var(--navbar-width));
+    transition: padding-left 0.15s linear;
 
-	.wrap {
-		// padding: 3rem 2.4rem 0;
-		position: relative;
-		// padding: 3rem 2.4rem;
-		// padding: 1rem;
+    .wrap {
+        // padding: 3rem 2.4rem 0;
+        position: relative;
+        // padding: 3rem 2.4rem;
+        // padding: 1rem;
 
-		&.loading {
-			&::after {
-				position: absolute;
-				content: '';
-				width: 100%;
-				height: 100%;
-				top: 0;
-				left: 0;
-				background: rgba(255, 255, 255, 0.6);
-			}
-		}
-	}
+        &.loading {
+            &::after {
+                position: absolute;
+                content: '';
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                background: rgba(255, 255, 255, 0.7);
+                z-index: 999;
+            }
+        }
 
-	#loading {
-		position: absolute;
-		top: var(--loading-top);
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 9999;
-	}
+        #loading-msg {
+            position: absolute;
+            top: var(--loading-top);
+            left: 50%;
+            width: 100%;
+            transform: translateX(-50%);
+            text-align: center;
+            line-height: 1.5;
+            color: var(--color-primary);
+            z-index: 9999;
+        }
+    }
+
+    #loading {
+        position: absolute;
+        top: var(--loading-top);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+    }
 }
 
 .fold {
-	#navbar {
-		width: var(--navbar-fold-width);
-	}
+    #navbar {
+        width: var(--navbar-fold-width);
+    }
 
-	#main {
-		// padding-left: calc(var(--navbar-fold-width));
+    #main {
+        // padding-left: calc(var(--navbar-fold-width));
 
-		.wrap {
-			padding: 3rem 2.4rem 0;
-		}
-	}
+        .wrap {
+            padding: 3rem 2.4rem 0;
+        }
+    }
 
-	#header {
-		padding-left: var(--navbar-fold-width);
-	}
+    #header {
+        padding-left: var(--navbar-fold-width);
+    }
 }
 
 @media (max-width: 1200px) {
-	#header {
-		padding-left: 2.4rem;
-	}
+    #header {
+        padding-left: 2.4rem;
+    }
 
-	#navbar {
-		left: calc(-1 * var(--navbar-width) - 5rem);
-	}
+    #navbar {
+        left: calc(-1 * var(--navbar-width) - 5rem);
+    }
 
-	#main {
-		padding-left: 0;
-	}
+    #main {
+        padding-left: 0;
+    }
 }
 
 @media (max-width: 768px) {
-	#header {
-		padding: 0 16px;
-	}
+    #header {
+        padding: 0 16px;
+    }
 
-	#main {
-		// padding-left: 0;
+    #main {
+        // padding-left: 0;
 
-		// .wrap {
-		// 	padding-left: 16px;
-		// 	padding-right: 16px;
-		// }
-	}
+        // .wrap {
+        // 	padding-left: 16px;
+        // 	padding-right: 16px;
+        // }
+    }
 
-	.fold {
-		#header {
-			padding: 0 16px;
-		}
+    .fold {
+        #header {
+            padding: 0 16px;
+        }
 
-		#navbar {
-			left: calc(-1 * var(--navbar-width) - 5rem);
-		}
+        #navbar {
+            left: calc(-1 * var(--navbar-width) - 5rem);
+        }
 
-		#main {
-			padding-left: 0;
-		}
-	}
+        #main {
+            padding-left: 0;
+        }
+    }
 }
 </style>

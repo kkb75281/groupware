@@ -14,7 +14,7 @@
         p {{ notificationNotWorkingMsg }}
 
     template(v-if="newVersionAvailable")
-        p {{ `새로운 버전(${newVersion})이 준비되었습니다.` }}
+        p 새로운 버전이 준비되었습니다.
         button.btn(@click="applyUpdate") 그룹웨어 업데이트 하기
 
         br
