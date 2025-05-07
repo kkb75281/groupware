@@ -43,6 +43,10 @@ export let system_banner = ref(null);
 
 console.log('바뀐 버전 입니다. 0425 18:00');
 
+window.addEventListener('load', () => {
+  isUpdateLoading.value = false;
+});
+
 if (localStorage.getItem('updateAvailable') === 'true') {
   newVersionAvailable.value = true;
 } else {
@@ -76,34 +80,36 @@ if ('serviceWorker' in navigator) {
         newWorker = registration.installing;
         console.log('[Main] New Service Worker Found but waiting for user approval');
 
-        newWorker?.addEventListener('statechange', () => {
-          if (newWorker?.state === 'installed') {
-            fetch('/version.json')
-              .then((res) => res.json())
-              .then((data) => {
-                const installedVersion = data.version;
+        // 새로운 설치 감지
+        const listener = () => {
+          newWorker = registration.installing;
+          if (!newWorker) return;
 
-                // lastUpdatedVersion은 사용자가 마지막으로 업데이트한 버전
-                const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed') {
+              console.log('[Main] New version ready to activate');
+              newVersionAvailable.value = true;
+              localStorage.setItem('updateAvailable', 'true');
+            }
+          });
+        };
 
-                // 설치된 버전 !== 마지막 업데이트 버전 → 새 버전 감지 시에만 알림
-                if (installedVersion !== lastUpdatedVersion) {
-                  newVersionAvailable.value = true;
-                  localStorage.setItem('updateAvailable', 'true');
-                }
-              });
-          }
-        });
+        registration.addEventListener('updatefound', listener);
       });
-
-      // 앱 실행 시 현재 서비스 워커에게 버전 요청
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: 'CHECK_VERSION' });
-      }
     })
     .catch((error) => {
       console.error('Service Worker registration failed:', error);
     });
+
+  // ✅ 앱 실행 시점에 항상 실행 - 현재 활성화된 SW에게 버전 요청
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'CHECK_VERSION' });
+  } else {
+    // SW가 아직 설치되지 않았다면, 등록 후에도 한 번 더 체크
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.active?.postMessage({ type: 'CHECK_VERSION' });
+    });
+  }
 
   // Service Worker로부터 메시지 수신
   navigator.serviceWorker.addEventListener('message', (event) => {
@@ -137,24 +143,61 @@ if ('serviceWorker' in navigator) {
 }
 
 // 설정 페이지에서 업데이트 적용
+// export function applyUpdate() {
+//   if (newWorker) {
+//     newWorker.postMessage({ type: 'SKIP_WAITING' });
+//   }
+
+//   isUpdateLoading.value = true;
+
+//   navigator.serviceWorker.oncontrollerchange = () => {
+//     // 업데이트 완료 후 상태 초기화
+//     newVersionAvailable.value = false;
+//     localStorage.removeItem('updateAvailable');
+//     localStorage.removeItem('userDismissedUpdate');
+
+//     if (newVersion.value) {
+//       localStorage.setItem('lastUpdatedVersion', newVersion.value);
+//     }
+
+//     window.location.reload();
+//   };
+// }
+
 export function applyUpdate() {
+  // 방법 1: 기존 newWorker 사용
   if (newWorker) {
     newWorker.postMessage({ type: 'SKIP_WAITING' });
+    startLoadingAndReload();
+    return;
   }
 
+  // 방법 2: newWorker가 없으면 직접 getRegistration으로 찾기
+  navigator.serviceWorker.getRegistration().then((registration) => {
+    if (registration && registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      startLoadingAndReload();
+    } else {
+      alert('업데이트 가능한 서비스 워커가 없습니다.');
+    }
+  });
+}
+
+function startLoadingAndReload() {
   isUpdateLoading.value = true;
 
   navigator.serviceWorker.oncontrollerchange = () => {
-    // 업데이트 완료 후 상태 초기화
-    newVersionAvailable.value = false;
-    localStorage.removeItem('updateAvailable');
-    localStorage.removeItem('userDismissedUpdate');
+    if (navigator.serviceWorker.controller) {
+      newVersionAvailable.value = false;
+      localStorage.removeItem('updateAvailable');
+      localStorage.removeItem('userDismissedUpdate');
 
-    if (newVersion.value) {
-      localStorage.setItem('lastUpdatedVersion', newVersion.value);
+      if (newVersion.value) {
+        localStorage.setItem('lastUpdatedVersion', newVersion.value);
+      }
+
+      window.location.reload();
     }
-
-    window.location.reload();
   };
 }
 
