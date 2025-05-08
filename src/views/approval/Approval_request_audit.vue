@@ -1526,10 +1526,28 @@ const requestAudit = async (e) => {
       // roles: getAllSelectedUserIds() // ID 목록만 전달
       reject_setting: rejectSetting.value // 반려 설정 관련 체크박스 값 전달
     });
+    console.log('auditDoc : ', auditDoc);
 
     const auditId = auditDoc.record_id; // 결재 문서 ID
     const formTitle = docform_title; // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
     const auditTitle = to_audit; // 결재건 제목
+
+    // 결재 문서를 레퍼런스하는 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
+    // const commentRecord = await skapi.postRecord(null, {
+    //   table: {
+    //     name: `audit_comment_${auditId}`,
+    //     access_group: 'private'
+    //   },
+    //   reference: `comment:${auditId}`
+    // });
+    // console.log('commentRecord : ', commentRecord);
+
+    // // 권한 부여
+    // const cmtGrantAccess = await grantAuditorAccess({
+    //   audit_id: auditId,
+    //   auditor_id: commentRecord.user_id
+    // });
+    // console.log('cmtGrantAccess : ', cmtGrantAccess);
 
     // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
     // 결재자/합의자를 순서대로 정렬
@@ -2047,7 +2065,6 @@ const getMyDocForm = async () => {
     });
 
     myForms.value = res.list || [];
-    console.log('myForms.value : ', myForms.value);
     return res;
   } catch (error) {
     console.error('결재 양식 가져오기 중 오류 발생: ', error);

@@ -118,23 +118,50 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 			h4.sub-title 의견
 
-			//- hr
-
-			//- ul.reply-list(v-if="auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '').length > 0")
-				li.reply-item(v-for="(auditor, index) in auditorList.filter(auditor => auditor.comment && auditor.comment.trim() !== '')")
-					.auditor
-						.info
-							.name {{ auditor.user_info?.name }}
-							.approved(:class="{ 'reject': auditor.approved === 'reject' }")
-								template(v-if="auditor.approved === 'approve'") 승인자
-								template(v-else) 반려자
-						.date(v-if="auditor?.date") {{ formatTimestampToDate(auditor?.date) }}
-					.comment {{ auditor.comment || '-' }}
-			//- .empty(v-else) 결재 의견이 없습니다.
-
-			// 댓글 작성
 			.input-wrap.input-comment
-				input(type="text" placeholder="결재 의견을 입력해주세요." v-model="approvedComment" style="width: 100%;")
+				input(type="text" placeholder="의견을 입력해주세요." v-model="comment" style="width: 100%;")
+				button.btn(type="button" @click="writeComment") 등록
+
+			//- 댓글
+			ul.comment-list(v-if="commentList.length > 0")
+				li.comment-item(v-for="(comment, index) in commentList" :key="index")
+					.auditor-info
+						.name {{ comment.data.writer_name }}
+						.approved(:class="{ 'reject': comment.data.approval_type === 'reject' }") {{ comment.data.approval_type === 'approve' ? '승인자' : '반려자' }}
+					.text {{ comment.data.comment || '-' }}
+					.etc
+						.date {{ formatTimestampToDate(comment?.data.date) }}
+						button.btn-reply(type="button" @click="toggleReplyInput(index)") 댓글 쓰기
+					//- template(v-if="isReplyOpen === index")
+						.input-wrap.input-reply
+							input(type="text" placeholder="댓글을 입력해주세요." style="width: 100%;")
+							button.btn(type="button" @click="writeReply(index)") 등록
+
+					//- 대댓글 :: s
+					ul.reply-list
+						li.reply-item(v-for="(reply, index) in replyList" :key="index")
+							.icon
+								svg
+									use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
+							.reply
+								.auditor-info
+									.name {{ reply.data.writer_name }}
+									.approved(:class="{ 'reject': comment.data.approval_type === 'reject' }") {{ reply.data.approval_type === 'approve' ? '승인자' : '반려자' }}
+								.text {{ reply.data.comment || '-' }}
+								.etc
+									.date {{ formatTimestampToDate(reply?.data.date) }}
+									button.btn-reply(type="button" @click="toggleReplyInput(index)") 댓글 쓰기
+								template(v-if="isReplyOpen === index")
+									.input-wrap.input-reply
+										input(type="text" placeholder="댓글을 입력해주세요." style="width: 100%;")
+										button.btn(type="button" @click="writeReply") 등록
+					//- 대댓글 :: e
+
+					template(v-if="isReplyOpen === index")
+						.input-wrap.input-reply
+							input(type="text" placeholder="댓글을 입력해주세요." v-model="reply" style="width: 100%;")
+							button.btn(type="button" @click="writeReply(index)") 등록
+			.empty(v-else style="margin-top: 3rem;") 결재 의견이 없습니다.
 
 
 		.button-wrap
@@ -251,6 +278,13 @@ const isCanceled = ref(false); // 결재 회수 여부
 const getAuditDetailRunning = ref(false);
 const customRows = ref([]);
 const rejectSetting = ref(true); // 반려 설정 관련 체크박스
+
+const commentList = ref([]); // 결재 의견 리스트
+const comment = ref(''); // 결재 의견 (댓글)
+const isReplyOpen = ref(false); // 댓글 입력창 열기
+const isSubReplyOpen = ref(false); // 대댓글 입력창 열기
+const replyList = ref([]); // 결재 의견의 댓글 리스트
+const reply = ref(''); // 결재 의견의 댓글 (대댓글)
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -747,30 +781,7 @@ const getAuditDetail = async () => {
       processAuditors('receivers')
     ]);
 
-    // if (Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
-    //   console.log('AA');
-
-    //   let fileList = [];
-    //   let additional_data = auditDoc.bin.additional_data;
-
-    //   function getFileUserId(str) {
-    //     if (!str) return '';
-    //     return str.split('/')[3];
-    //   }
-
-    //   const result = additional_data.map((el) => ({
-    //     ...el,
-    //     user_id: getFileUserId(el.path)
-    //   }));
-
-    //   fileList.push(...result);
-
-    //   uploadedFile.value = fileList;
-    // }
-
     if (Object.keys(auditDoc.bin).length && auditDoc.bin.form_data.length) {
-      console.log('BB');
-
       let fileList = [];
       let form_data = auditDoc.bin.form_data;
 
@@ -787,7 +798,6 @@ const getAuditDetail = async () => {
       fileList.push(...result);
 
       uploadedFile.value = fileList;
-      console.log('uploadedFile.value : ', uploadedFile.value);
     } else {
       console.log('CC');
       uploadedFile.value = [];
@@ -819,7 +829,6 @@ const getAuditDetail = async () => {
         if (statusApproval && statusApproval.data.documentStatus) {
           // 문서 상태 필드가 있는 경우
           auditDoContent.value.documentStatus = statusApproval.data.documentStatus;
-          console.log('문서 상태 : ', auditDoContent.value.documentStatus);
         } else if (finalApproval && finalApproval.data.approved) {
           // 최종결재자가 결재했으면 문서 상태 설정
           auditDoContent.value.documentStatus =
@@ -1535,9 +1544,174 @@ const reRequestAudit = () => {
   });
 };
 
-// 댓글 작성
-const writeComment = () => {
+// 결재 의견 레코드 불러오기
+const getCmtRecord = async () => {
+  console.log('댓글');
+
+  const res = await skapi.getRecords({
+    table: {
+      name: `audit_comment_${auditId.value}`,
+      access_group: 'private'
+    }
+  });
+  console.log('== getCmtRecord == res : ', res);
+};
+
+// 댓글 (결재 의견) 작성
+const writeComment = async () => {
   console.log('댓글 작성');
+  console.log('user : ', user);
+  console.log('auditId : ', auditId.value);
+  console.log('auditorList : ', auditorList.value);
+  console.log('comment : ', comment.value);
+
+  if (!comment.value) {
+    alert('댓글을 입력해주세요.');
+    return;
+  }
+
+  // 결재 의견 작성자 찾기
+  const writer = auditorList.value.find(
+    (auditor) => auditor.user_id.replaceAll('-', '_') === user.user_id.replaceAll('-', '_')
+  );
+
+  try {
+    const data = {
+      comment: comment.value, // 결재 의견 내용
+      writer: writer.user_id, // 작성자 ID
+      writer_name: writer.user_info.name, // 작성자 이름
+      approval_type: writer.approved, // 결재 결과
+      date: new Date().getTime() // 작성일
+    };
+
+    const config = {
+      table: {
+        name: 'audit_comment_test',
+        access_group: 'authorized'
+      }
+      // reference: auditId.value
+    };
+
+    console.log('data : ', data);
+    console.log('config : ', config);
+
+    const res = await skapi.postRecord(data, config);
+    console.log('== writeComment == res : ', res);
+  } catch (error) {
+    console.error('Error writing comment:', error);
+  }
+
+  // 등록 후 초기화
+  comment.value = '';
+
+  // 댓글 목록 갱신
+  getComment();
+};
+
+// 댓글 가져오기
+const getComment = async () => {
+  const res = await skapi.getRecords({
+    table: {
+      name: 'audit_comment_test',
+      access_group: 'authorized'
+    }
+    // reference: auditId.value
+  });
+
+  if (res.list.length > 0) {
+    commentList.value = res.list;
+  } else {
+    commentList.value = [];
+  }
+
+  console.log('commentList : ', commentList.value);
+};
+
+// 대댓글 (결재 의견에 대한 댓글) 입력 영역 toggle
+const toggleReplyInput = (index) => {
+  if (isReplyOpen.value === index) {
+    isReplyOpen.value = null;
+  } else {
+    isReplyOpen.value = index;
+  }
+
+  if (isSubReplyOpen.value === index) {
+    isSubReplyOpen.value = null;
+  } else {
+    isSubReplyOpen.value = index;
+  }
+};
+
+// 대댓글 작성
+const writeReply = async (index) => {
+  console.log('index : ', index);
+  console.log('reply.value : ', reply.value);
+
+  if (!reply.value) {
+    alert('댓글을 입력해주세요.');
+    return;
+  }
+
+  // 대댓글 작성자 찾기
+  const writer = auditorList.value.find(
+    (auditor) => auditor.user_id.replaceAll('-', '_') === user.user_id.replaceAll('-', '_')
+  );
+  console.log('writer : ', writer);
+
+  try {
+    const data = {
+      comment: reply.value, // 대댓글 내용
+      writer: writer.user_id, // 작성자 ID
+      writer_name: writer.user_info.name, // 작성자 이름
+      approval_type: writer.approved, // 결재 결과
+      date: new Date().getTime() // 작성일
+    };
+
+    const config = {
+      table: {
+        name: 'comment_reply_test',
+        access_group: 'authorized'
+      },
+      reference: commentList.value[index].record_id
+    };
+    console.log('data : ', data);
+    console.log('config : ', config);
+
+    const res = await skapi.postRecord(data, config);
+    console.log('== writeReply == res : ', res);
+  } catch (error) {
+    console.log('error : ', error);
+  } finally {
+    // 등록 후 초기화
+    reply.value = '';
+    isReplyOpen.value = null;
+
+    // 댓글 목록 갱신
+    getComment();
+
+    // 대댓글 목록 갱신
+    getReply(index);
+  }
+};
+
+// 대댓글 가져오기
+const getReply = async (id) => {
+  console.log('대댓글 가져오기');
+  const res = await skapi.getRecords({
+    table: {
+      name: 'comment_reply_test',
+      access_group: 'authorized'
+    }
+    // reference: commentList.value[id].record_id
+  });
+
+  if (res.list.length > 0) {
+    replyList.value = res.list;
+  } else {
+    replyList.value = [];
+  }
+
+  console.log('replyList : ', replyList.value);
 };
 
 onMounted(() => {
@@ -1546,6 +1720,9 @@ onMounted(() => {
   auditId.value = route.params.auditId;
   getAuditDetail();
   loadStylesheet();
+  getComment();
+  getReply();
+  // getCmtRecord();
 });
 
 onUnmounted(() => {
@@ -1725,22 +1902,22 @@ onUnmounted(() => {
 
 // 추가의견 영역
 .sub-title {
-  margin-top: 4rem;
+  margin: 4rem 0 1rem;
 }
 
-.reply-list {
-  // margin-bottom: 3rem;
-  // margin-top: 3rem;
+.comment-list {
+  margin-top: 2rem;
 
-  .reply-item {
-    // border: 1px dashed var(--gray-color-300);
-    // border-radius: 8px;
-    // padding: 0.5rem;
-    // display: flex;
-    // align-items: center;
+  .comment-item {
     gap: 0.5rem;
-    // margin-bottom: 0.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    border-top: 1px solid var(--gray-color-200);
+    padding-top: 2rem;
+
+    &:first-of-type {
+      padding-top: 0;
+      border-top: none;
+    }
 
     &:last-of-type {
       margin-bottom: 0;
@@ -1755,54 +1932,6 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 1rem;
-  }
-
-  .auditor {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    padding-left: 0.2rem;
-
-    .info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .name {
-      // display: inline-block;
-      font-size: 0.9rem;
-    }
-    .approved {
-      // display: inline-block;
-      // margin-right: 4px;
-      font-size: 12px;
-      border: 1px solid var(--primary-color-300);
-      padding: 3px 4px;
-      border-radius: 8px;
-      color: var(--primary-color-400);
-
-      &.reject {
-        color: var(--warning-color-400);
-        border-color: var(--warning-color-400);
-      }
-    }
-    .date {
-      font-size: 0.8rem;
-      color: var(--gray-color-400);
-    }
-  }
-
-  .comment {
-    background-color: var(--gray-color-50);
-    padding: 0.8rem 1rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-
-    &.reject {
-      color: var(--warning-color-400);
-    }
   }
 
   .approver {
@@ -1823,6 +1952,91 @@ onUnmounted(() => {
     &.reject {
       color: var(--warning-color-400);
     }
+  }
+
+  .text {
+    background-color: var(--gray-color-50);
+    padding: 0.8rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+
+    &.reject {
+      color: var(--warning-color-400);
+    }
+  }
+}
+
+.reply-list {
+  margin-top: 1.25rem;
+
+  .reply-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    padding: 0 0 0 0.875rem;
+  }
+
+  .icon {
+    svg {
+      fill: var(--gray-color-400);
+    }
+  }
+
+  .reply {
+    flex: 1;
+  }
+}
+
+.auditor-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding-left: 0.2rem;
+
+  .info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .name {
+    font-size: 0.9rem;
+  }
+
+  .approved {
+    // display: inline-block;
+    // margin-right: 4px;
+    font-size: 12px;
+    border: 1px solid var(--primary-color-300);
+    padding: 3px 4px;
+    border-radius: 8px;
+    color: var(--primary-color-400);
+
+    &.reject {
+      color: var(--warning-color-400);
+      border-color: var(--warning-color-400);
+    }
+  }
+}
+
+.etc {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-left: 1rem;
+
+  .date {
+    font-size: 0.75rem;
+    color: var(--gray-color-500);
+  }
+
+  .btn-reply {
+    font-size: 0.75rem;
+    color: var(--gray-color-500);
   }
 }
 
@@ -2143,6 +2357,24 @@ onUnmounted(() => {
   color: var(--warning-color-500);
 }
 
+.input-comment,
+.input-reply {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.input-reply {
+  margin-top: 1.5rem;
+
+  input {
+    height: 2rem;
+  }
+
+  .btn {
+    height: 2rem;
+  }
+}
+
 @media print {
   #main,
   .wrap {
@@ -2176,12 +2408,12 @@ onUnmounted(() => {
     border-bottom: 1px solid var(--gray-color-300);
   }
 
-  .reply-list {
-    .auditor {
+  .comment-list {
+    .auditor-info {
       margin-bottom: 0.75rem;
     }
 
-    .comment {
+    .text {
       border: 1px solid var(--gray-color-300);
       font-size: 0.75rem;
       padding: 0.75rem 1rem;
