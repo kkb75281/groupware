@@ -183,7 +183,7 @@ function startLoadingAndReload() {
   isUpdateLoading.value = true;
 
   const controllerChangeHandler = () => {
-    clearTimeout(timeout); // 타임아웃 제거
+    // clearTimeout(timeout); // 타임아웃 제거
     navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
 
     if (navigator.serviceWorker.controller) {
@@ -205,12 +205,12 @@ function startLoadingAndReload() {
   navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler);
 
   // 타임아웃은 최후의 수단으로만 남기기
-  const timeout = setTimeout(() => {
-    console.warn(
-      "[Fallback] Controllerchange event didn't fire within 5 seconds. Reloading anyway."
-    );
-    window.location.reload(); // 강제 리로드
-  }, 10000);
+  //   const timeout = setTimeout(() => {
+  //     console.warn(
+  //       "[Fallback] Controllerchange event didn't fire within 5 seconds. Reloading anyway."
+  //     );
+  //     window.location.reload(); // 강제 리로드
+  //   }, 10000);
 }
 
 const skapi = new Skapi(import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID, {

@@ -13,7 +13,15 @@
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
         p {{ notificationNotWorkingMsg }}
 
-    template(v-if="showNewVersionAlert")
+    //- .warning-msg(v-if="showNewVersionAlert")
+        .icon
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+        p 새로운 버전이 준비되었습니다.
+        a.updateLink(@click="applyUpdate") 그룹웨어 업데이트 하기
+
+        br
+    //- template(v-if="showNewVersionAlert")
         p 새로운 버전이 준비되었습니다.
         button.btn(@click="applyUpdate" :disabled="isUpdateLoading") 그룹웨어 업데이트 하기
 
@@ -42,33 +50,12 @@
                 button.btn.sm.bg-gray(v-else type="button" style="display:inline-block;font-size:0.7rem" @click="checkCommuteRecord") 퇴근
 
         .box-shadow-card.company-wrap(:class="{master: user.access_group > 98, edit: editMode}")
-            img.banner-img(v-if="system_banner?.url" :src="system_banner?.url" :style="{objectFit: system_banner_style}" alt="회사사진")
+            img.banner-img(v-if="system_banner" :src="system_banner?.url" :style="{objectFit: system_banner_style}" alt="회사사진")
             p.desc(v-else)
-                //- | 이곳을 눌러 배너를 설정해주세요.
-                //- br
-                //- | 설정하기 전까지 사용자에게 배너가 나타나지 않습니다.
                 | 안녕하세요. FGWORKS 입니다.
                 br
                 | 오늘도 좋은 하루 되세요.
             button.btn.master(type="button" @click.stop="openModal") 배너 설정
-            //- template(v-if="editMode")
-                .edit-icon-wrap
-                    .change-icon
-                        .icon 세로
-                        .icon 가로
-                        .icon 화면에 맞게
-                        .icon 원사이즈
-                    .save-icon
-                        .icon(@click="editMode = false") 취소
-                        .icon 저장
-                .upload-icon
-                    button.btn 사진 변경
-            //- template(v-else)
-                button.btn.master(type="button" @click.stop="editMode = true") 베인 배너 설정
-                //- .edit-button-wrap(v-if="editMode")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
 
     .mo-btn-wrap
         .icon
@@ -419,6 +406,12 @@ onMounted(async () => {
             }
         }
     }
+}
+
+.updateLink {
+    color: var(--primary-color-400);
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 .box-shadow-card {
