@@ -67,13 +67,13 @@ fetch('/version.json')
       localStorage.setItem('lastUpdatedVersion', lastUpdatedVersion);
     }
 
-    newVersion.value = currentVersion;
-
     // 버전 비교 로직 개선
     if (lastUpdatedVersion !== currentVersion) {
+      newVersion.value = currentVersion;
       newVersionAvailable.value = true;
       localStorage.setItem('updateAvailable', 'true');
     } else {
+      newVersion.value = '';
       newVersionAvailable.value = false;
       localStorage.removeItem('updateAvailable');
     }
@@ -145,28 +145,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// 설정 페이지에서 업데이트 적용
-// export function applyUpdate() {
-//   if (newWorker) {
-//     newWorker.postMessage({ type: 'SKIP_WAITING' });
-//   }
-
-//   isUpdateLoading.value = true;
-
-//   navigator.serviceWorker.oncontrollerchange = () => {
-//     // 업데이트 완료 후 상태 초기화
-//     newVersionAvailable.value = false;
-//     localStorage.removeItem('updateAvailable');
-//     localStorage.removeItem('userDismissedUpdate');
-
-//     if (newVersion.value) {
-//       localStorage.setItem('lastUpdatedVersion', newVersion.value);
-//     }
-
-//     window.location.reload();
-//   };
-// }
-
 export function applyUpdate() {
   isUpdateLoading.value = true;
 
@@ -209,9 +187,14 @@ function startLoadingAndReload() {
 
     if (navigator.serviceWorker.controller) {
       newVersionAvailable.value = false;
-      localStorage.setItem('lastUpdatedVersion', newVersion.value || currentVersion || '1.0.0');
       localStorage.removeItem('updateAvailable');
-      isUpdateLoading.value = false;
+
+      // newVersion.value가 존재할 때만 저장
+      if (newVersion.value && newVersion.value.trim() !== '') {
+        localStorage.setItem('lastUpdatedVersion', newVersion.value);
+      } else if (currentVersion) {
+        localStorage.setItem('lastUpdatedVersion', currentVersion);
+      }
 
       window.location.reload();
     }
@@ -226,7 +209,7 @@ function startLoadingAndReload() {
       "[Fallback] Controllerchange event didn't fire within 5 seconds. Reloading anyway."
     );
     window.location.reload(); // 강제 리로드
-  }, 5000);
+  }, 10000);
 }
 
 const skapi = new Skapi(import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID, {
