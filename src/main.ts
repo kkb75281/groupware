@@ -156,47 +156,50 @@ if ('serviceWorker' in navigator) {
 // }
 
 export function applyUpdate() {
-  // 방법 1: 기존 newWorker 사용
+  isUpdateLoading.value = true;
+
   if (newWorker) {
     newWorker.postMessage({ type: 'SKIP_WAITING' });
     startLoadingAndReload();
     return;
   }
 
-  // 방법 2: newWorker가 없으면 직접 getRegistration으로 찾기
-  navigator.serviceWorker.getRegistration().then((registration) => {
-    if (registration && registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      startLoadingAndReload();
-    } else {
-      alert('업데이트 가능한 서비스 워커가 없습니다.');
-    }
-  });
+  navigator.serviceWorker
+    .getRegistration()
+    .then((registration) => {
+      if (registration?.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        startLoadingAndReload();
+      } else {
+        alert('업데이트 가능한 서비스 워커가 없습니다.');
+        isUpdateLoading.value = false;
+      }
+    })
+    .catch((err) => {
+      console.error('Failed to get registration:', err);
+      alert('서비스 워커 업데이트 실패');
+      isUpdateLoading.value = false;
+    });
 }
 
 function startLoadingAndReload() {
-  isUpdateLoading.value = true;
+  const timeout = setTimeout(() => {
+    window.location.reload(); // 너무 오래 기다리면 강제 리로드
+  }, 5000);
 
-  // controllerchange 이벤트 등록
   const controllerChangeHandler = () => {
+    clearTimeout(timeout);
+    navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
+
     if (navigator.serviceWorker.controller) {
-      // 리스너 제거
-      navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
-
-      // 상태 초기화
       newVersionAvailable.value = false;
+      localStorage.setItem('lastUpdatedVersion', newVersion.value);
       localStorage.removeItem('updateAvailable');
-      localStorage.removeItem('userDismissedUpdate');
-
-      if (newVersion.value) {
-        localStorage.setItem('lastUpdatedVersion', newVersion.value);
-      }
-
+      isUpdateLoading.value = false;
       window.location.reload();
     }
   };
 
-  navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
   navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler);
 }
 
