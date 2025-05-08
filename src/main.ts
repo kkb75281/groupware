@@ -63,17 +63,17 @@ fetch('/version.json')
 
     // 유효하지 않은 lastUpdatedVersion 처리
     if (!lastUpdatedVersion || lastUpdatedVersion.trim() === '') {
-      lastUpdatedVersion = '1.0.0'; // 기본값 or 첫 배포 버전
+      lastUpdatedVersion = currentVersion; // 기본값으로 현재 버전 설정
       localStorage.setItem('lastUpdatedVersion', lastUpdatedVersion);
     }
 
+    newVersion.value = currentVersion;
+
     // 버전 비교 로직 개선
     if (lastUpdatedVersion !== currentVersion) {
-      newVersion.value = currentVersion;
       newVersionAvailable.value = true;
       localStorage.setItem('updateAvailable', 'true');
     } else {
-      newVersion.value = '';
       newVersionAvailable.value = false;
       localStorage.removeItem('updateAvailable');
     }
@@ -183,14 +183,20 @@ export function applyUpdate() {
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         startLoadingAndReload();
       } else {
-        alert('업데이트 가능한 서비스 워커가 없습니다.');
+        newVersionAvailable.value = false;
+        localStorage.removeItem('updateAvailable');
         isUpdateLoading.value = false;
+
+        alert('업데이트 가능한 서비스 워커가 없습니다.');
       }
     })
     .catch((err) => {
       console.error('Failed to get registration:', err);
-      alert('서비스 워커 업데이트 실패');
+      newVersionAvailable.value = false;
+      localStorage.removeItem('updateAvailable');
       isUpdateLoading.value = false;
+
+      alert('서비스 워커 업데이트 실패');
     });
 }
 
