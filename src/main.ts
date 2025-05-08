@@ -189,32 +189,32 @@ export function applyUpdate() {
 }
 
 function startLoadingAndReload() {
-  const timeout = setTimeout(() => {
-    window.location.reload();
-  }, 5000);
+  isUpdateLoading.value = true;
 
   const controllerChangeHandler = () => {
-    clearTimeout(timeout);
+    clearTimeout(timeout); // 타임아웃 제거
     navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
 
     if (navigator.serviceWorker.controller) {
       newVersionAvailable.value = false;
+      localStorage.setItem('lastUpdatedVersion', newVersion.value || currentVersion || '1.0.0');
       localStorage.removeItem('updateAvailable');
-
-      // 반드시 현재 버전을 저장
-      if (!newVersion.value || newVersion.value.trim() === '') {
-        // newVersion.value가 없으면 currentVersion으로 대체
-        localStorage.setItem('lastUpdatedVersion', currentVersion || '1.0.0');
-      } else {
-        localStorage.setItem('lastUpdatedVersion', newVersion.value);
-      }
-
       isUpdateLoading.value = false;
+
       window.location.reload();
     }
   };
 
+  // controllerchange 감지 시작
   navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler);
+
+  // 타임아웃은 최후의 수단으로만 남기기
+  const timeout = setTimeout(() => {
+    console.warn(
+      "[Fallback] Controllerchange event didn't fire within 5 seconds. Reloading anyway."
+    );
+    window.location.reload(); // 강제 리로드
+  }, 5000);
 }
 
 const skapi = new Skapi(import.meta.env.VITE_SERVICE_ID, import.meta.env.VITE_OWNER_ID, {
