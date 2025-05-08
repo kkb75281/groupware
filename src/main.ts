@@ -41,7 +41,7 @@ export let getSystemBannerId = ref(null);
 export let getSystemBannerRunning: Promise<any> | null = null;
 export let system_banner = ref(null);
 
-console.log('바뀐 버전 입니다. 0425 18:00');
+console.log('바뀐 버전 입니다. 0508 11:22');
 
 window.addEventListener('load', () => {
   isUpdateLoading.value = false;
