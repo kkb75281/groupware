@@ -69,9 +69,11 @@ fetch('/version.json')
 
     // 버전 비교 로직 개선
     if (lastUpdatedVersion !== currentVersion) {
+      newVersion.value = currentVersion;
       newVersionAvailable.value = true;
       localStorage.setItem('updateAvailable', 'true');
     } else {
+      newVersion.value = '';
       newVersionAvailable.value = false;
       localStorage.removeItem('updateAvailable');
     }
