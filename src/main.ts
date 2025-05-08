@@ -63,8 +63,11 @@ fetch('/version.json')
     const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
     console.log({ lastUpdatedVersion });
 
-    // 마지막 업데이트 버전이 현재 버전과 같다면, 알림 비활성화
-    if (lastUpdatedVersion === currentVersion) {
+    // 잘못된 값일 경우 무시하고 기본값으로 설정
+    if (!lastUpdatedVersion || lastUpdatedVersion.trim() === '') {
+      localStorage.setItem('lastUpdatedVersion', currentVersion);
+      newVersionAvailable.value = false;
+    } else if (lastUpdatedVersion === currentVersion) {
       newVersionAvailable.value = false;
       localStorage.removeItem('updateAvailable');
     }

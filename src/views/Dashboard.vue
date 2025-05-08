@@ -13,7 +13,7 @@
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
         p {{ notificationNotWorkingMsg }}
 
-    template(v-if="newVersionAvailable && !isUpdateLoading")
+    template(v-if="newVersionAvailable")
         p 새로운 버전이 준비되었습니다.
         button.btn(@click="applyUpdate" :disabled="isUpdateLoading") 그룹웨어 업데이트 하기
 
