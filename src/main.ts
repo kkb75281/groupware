@@ -58,16 +58,19 @@ fetch('/version.json')
   .then((response) => response.json())
   .then((data) => {
     currentVersion = data.version;
-    console.log('[Main] Current Version:', currentVersion);
 
-    const lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
-    console.log({ lastUpdatedVersion });
+    let lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
 
-    // 잘못된 값일 경우 무시하고 기본값으로 설정
-    if (!lastUpdatedVersion || lastUpdatedVersion.trim() === '') {
-      localStorage.setItem('lastUpdatedVersion', currentVersion);
-      newVersionAvailable.value = false;
-    } else if (lastUpdatedVersion === currentVersion) {
+    if (
+      !lastUpdatedVersion ||
+      lastUpdatedVersion.trim() === '' ||
+      lastUpdatedVersion === 'undefined'
+    ) {
+      lastUpdatedVersion = '1.0.0';
+      localStorage.setItem('lastUpdatedVersion', lastUpdatedVersion);
+    }
+
+    if (lastUpdatedVersion === currentVersion) {
       newVersionAvailable.value = false;
       localStorage.removeItem('updateAvailable');
     }
@@ -187,7 +190,7 @@ export function applyUpdate() {
 
 function startLoadingAndReload() {
   const timeout = setTimeout(() => {
-    window.location.reload(); // 너무 오래 기다리면 강제 리로드
+    window.location.reload();
   }, 5000);
 
   const controllerChangeHandler = () => {
@@ -196,8 +199,16 @@ function startLoadingAndReload() {
 
     if (navigator.serviceWorker.controller) {
       newVersionAvailable.value = false;
-      localStorage.setItem('lastUpdatedVersion', newVersion.value);
       localStorage.removeItem('updateAvailable');
+
+      // 반드시 현재 버전을 저장
+      if (!newVersion.value || newVersion.value.trim() === '') {
+        // newVersion.value가 없으면 currentVersion으로 대체
+        localStorage.setItem('lastUpdatedVersion', currentVersion || '1.0.0');
+      } else {
+        localStorage.setItem('lastUpdatedVersion', newVersion.value);
+      }
+
       isUpdateLoading.value = false;
       window.location.reload();
     }

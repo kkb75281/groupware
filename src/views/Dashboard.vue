@@ -13,7 +13,7 @@
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
         p {{ notificationNotWorkingMsg }}
 
-    template(v-if="newVersionAvailable")
+    template(v-if="showNewVersionAlert")
         p 새로운 버전이 준비되었습니다.
         button.btn(@click="applyUpdate" :disabled="isUpdateLoading") 그룹웨어 업데이트 하기
 
@@ -184,7 +184,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { user, makeSafe, profileImage, getUserPositionCurrent, userPositionCurrent } from '@/user.ts';
 import { skapi, newVersionAvailable, newVersion, applyUpdate, getSystemBanner, system_banner, isUpdateLoading } from '@/main.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
@@ -214,6 +214,9 @@ let modalWidth = ref(0);
 let bannerStyle = ref("contain"); // object-fill (contain, cover, fill, none)
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const encodedEmail = encodeURIComponent(user.email);
+const showNewVersionAlert = computed(() => {
+    return newVersionAvailable.value && newVersion.value && !isUpdateLoading.value;
+});
 
 let openModal = (e) => {
     let currentTarget = e.currentTarget;
