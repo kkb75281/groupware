@@ -40,6 +40,7 @@ export let buildTime = import.meta.env.VITE_BUILD_TIME;
 export let getSystemBannerId = ref(null);
 export let getSystemBannerRunning: Promise<any> | null = null;
 export let system_banner = ref(null);
+export let system_banner_style = ref('contain'); // object-fill (contain, cover, fill, none)
 
 console.log('바뀐 버전 입니다. 0508 11:22');
 
@@ -244,7 +245,8 @@ export let getSystemBanner = async (refresh = false) => {
     getSystemBannerId.value = res.list[0].record_id;
 
     if (res.list[0].data) {
-      system_banner.value = res.list[0].data;
+      system_banner.value = res.list[0]?.bin?.banner_pic[0];
+      system_banner_style.value = res.list[0]?.data?.banner_style;
     }
   }
 
