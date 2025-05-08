@@ -189,8 +189,8 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { computed, onMounted, ref, nextTick } from 'vue';
-import { user, makeSafe, profileImage, getUserPositionCurrent, userPositionCurrent } from '@/user.ts';
+import { computed, onMounted, ref } from 'vue';
+import { user, profileImage, getUserPositionCurrent, userPositionCurrent } from '@/user.ts';
 import { skapi, newVersionAvailable, newVersion, applyUpdate, getSystemBanner, system_banner, isUpdateLoading, getSystemBannerId, system_banner_style } from '@/main.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
@@ -199,10 +199,8 @@ import {
     mailList,
     serviceWorkerRegistMsg,
     notificationNotWorkingMsg,
-    readNoti,
     newsletterList,
     getNewsletterList,
-    subscribeNotification,
     onlyUserGesture,
     setNotificationPermission
 } from '@/notifications.ts';
@@ -221,7 +219,6 @@ import { system_worktime, getSystemWorktime, getMyWorktimeStorage, todayWorkStar
 
 import Loading from '@/components/loading.vue';
 import CropImage from '@/components/crop_image.vue';
-import { sys } from 'typescript';
 
 const router = useRouter();
 const route = useRoute();
