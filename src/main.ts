@@ -61,19 +61,23 @@ fetch('/version.json')
 
     let lastUpdatedVersion = localStorage.getItem('lastUpdatedVersion');
 
-    if (
-      !lastUpdatedVersion ||
-      lastUpdatedVersion.trim() === '' ||
-      lastUpdatedVersion === 'undefined'
-    ) {
-      lastUpdatedVersion = '1.0.0';
+    // 유효하지 않은 lastUpdatedVersion 처리
+    if (!lastUpdatedVersion || lastUpdatedVersion.trim() === '') {
+      lastUpdatedVersion = '1.0.0'; // 기본값 or 첫 배포 버전
       localStorage.setItem('lastUpdatedVersion', lastUpdatedVersion);
     }
 
-    if (lastUpdatedVersion === currentVersion) {
+    // 버전 비교 로직 개선
+    if (lastUpdatedVersion !== currentVersion) {
+      newVersionAvailable.value = true;
+      localStorage.setItem('updateAvailable', 'true');
+    } else {
       newVersionAvailable.value = false;
       localStorage.removeItem('updateAvailable');
     }
+
+    console.log('Current version:', currentVersion);
+    console.log('Last updated version:', lastUpdatedVersion);
   });
 
 if ('serviceWorker' in navigator) {
