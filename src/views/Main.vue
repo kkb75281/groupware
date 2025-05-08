@@ -1,5 +1,5 @@
 <template lang="pug">
-//- #update-window(v-if="isUpdateLoading")
+#update-window(v-if="isUpdateLoading")
     .update-window-cont
         Loading#loading
         .loading-msg 새로운 버전으로 업데이트 중입니다.#[br]잠시만 기다려 주세요.
@@ -8,7 +8,7 @@ main#main
     .wrap(ref="mainWrap" :class="{ loading: mainPageLoading }")
         Loading#loading(v-if="mainPageLoading") 
         router-view        
-//- #update-modal.modal(v-if="showNewVersionAlert")
+#update-modal.modal(v-if="showNewVersionAlert")
     .modal-cont
         .modal-header
             h2.modal-title 업데이트 알림
