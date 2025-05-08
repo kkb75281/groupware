@@ -6,21 +6,16 @@
 Header
 main#main
     .wrap(ref="mainWrap" :class="{ loading: mainPageLoading }")
-        //- #loading-msg(v-if="isUpdateLoading") 새로운 버전으로 업데이트 중입니다.#[br]잠시만 기다려 주세요.
         Loading#loading(v-if="mainPageLoading") 
         router-view        
 #update-modal.modal(v-if="showNewVersionAlert")
     .modal-cont
         .modal-header
             h2.modal-title 업데이트 알림
-            //- button.btn-close
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
         .modal-body
             p 새로운 버전이 있습니다. 업데이트 하시겠습니까?
         .modal-footer
             button.btn(@click="applyUpdate" style="width:100%") 확인
-            //- button.btn(@click="isUpdateLoading = false") 취소
 </template>
 
 <script setup>

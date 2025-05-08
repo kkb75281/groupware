@@ -150,33 +150,34 @@ export function applyUpdate() {
   isUpdateLoading.value = true;
 
   if (newWorker) {
+    console.log('start');
     newWorker.postMessage({ type: 'SKIP_WAITING' });
     startLoadingAndReload();
     return;
   }
 
-  navigator.serviceWorker
-    .getRegistration()
-    .then((registration) => {
-      if (registration?.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        startLoadingAndReload();
-      } else {
-        newVersionAvailable.value = false;
-        localStorage.removeItem('updateAvailable');
-        isUpdateLoading.value = false;
+  //   navigator.serviceWorker
+  //     .getRegistration()
+  //     .then((registration) => {
+  //       if (registration?.waiting) {
+  //         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  //         startLoadingAndReload();
+  //       } else {
+  //         // newVersionAvailable.value = false;
+  //         // localStorage.removeItem('updateAvailable');
+  //         // isUpdateLoading.value = false;
 
-        alert('업데이트 가능한 서비스 워커가 없습니다.');
-      }
-    })
-    .catch((err) => {
-      console.error('Failed to get registration:', err);
-      newVersionAvailable.value = false;
-      localStorage.removeItem('updateAvailable');
-      isUpdateLoading.value = false;
+  //         // alert('업데이트 가능한 서비스 워커가 없습니다.');
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.error('Failed to get registration:', err);
+  //       newVersionAvailable.value = false;
+  //       localStorage.removeItem('updateAvailable');
+  //       isUpdateLoading.value = false;
 
-      alert('서비스 워커 업데이트 실패');
-    });
+  //       alert('서비스 워커 업데이트 실패');
+  //     });
 }
 
 function startLoadingAndReload() {
