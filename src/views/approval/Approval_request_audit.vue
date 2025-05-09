@@ -1533,16 +1533,16 @@ const requestAudit = async (e) => {
     const auditTitle = to_audit; // 결재건 제목
 
     // 결재 문서를 레퍼런스하는 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
-    // const commentRecord = await skapi.postRecord(null, {
-    //   table: {
-    //     name: `audit_comment_${auditId}`,
-    //     access_group: 'private'
-    //   },
-    //   reference: `comment:${auditId}`
-    // });
-    // console.log('commentRecord : ', commentRecord);
+    const commentRecord = await skapi.postRecord(null, {
+      table: {
+        name: `audit_comment_${auditId}`,
+        access_group: 'authorized'
+      },
+      reference: auditId
+    });
+    console.log('commentRecord : ', commentRecord);
 
-    // // 권한 부여
+    // 권한 부여
     // const cmtGrantAccess = await grantAuditorAccess({
     //   audit_id: auditId,
     //   auditor_id: commentRecord.user_id
