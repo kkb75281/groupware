@@ -1639,7 +1639,7 @@ const writeComment = async () => {
     const config = {
       table: {
         name: 'audit_comment',
-        access_group: 'authorized'
+        access_group: 'private'
       },
       reference: cmtRecord.value.record_id
     };
@@ -1665,11 +1665,13 @@ const getComment = async () => {
   const params = {
     table: {
       name: 'audit_comment',
-      access_group: 'authorized'
+      access_group: 'private'
     },
     reference: cmtRecord.value.record_id
   };
-  console.log({ params });
+//   console.log({ params });
+
+  if(!cmtRecord.value.record_id) return;
   const res = await skapi.getRecords(params);
 
   if (res.list.length > 0) {
@@ -1746,7 +1748,7 @@ const writeReply = async (type, index) => {
     const config = {
       table: {
         name: 'comment_reply',
-        access_group: 'authorized'
+        access_group: 'private'
       },
       reference: commentList.value[index].record_id
     };
@@ -1781,7 +1783,7 @@ const getReply = async (index) => {
   const res = await skapi.getRecords({
     table: {
       name: 'comment_reply',
-      access_group: 'authorized'
+      access_group: 'private'
     }
     // reference: commentList.value[index].record_id
   });
@@ -1841,7 +1843,7 @@ const editReply = async (type, index) => {
     const config = {
       table: {
         name: type === 'reply' ? 'audit_comment' : 'comment_reply',
-        access_group: 'authorized'
+        access_group: 'private'
       },
       record_id: originalData.record_id
     };
@@ -1907,7 +1909,7 @@ const deleteReply = async (type, index) => {
         skapi.deleteRecords({
           table: {
             name: table,
-            access_group: 'authorized'
+            access_group: 'private'
           },
           record_id: id
         })
