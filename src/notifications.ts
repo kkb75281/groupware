@@ -86,6 +86,12 @@ export const readAudit: Ref<
       send_auditors?: [];
       approval?: string;
     };
+    news_info?: {
+      news_title: string;
+      news_id: string;
+      news_noti_id?: string;
+      send_newsUser?: [];
+    };
   } & Record<string, any>
 > = ref({
   noti_id: '',

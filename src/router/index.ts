@@ -73,19 +73,24 @@ const router = createRouter({
           component: () => import('@/views/Organ.vue')
         },
         {
+          path: '/newsletter-category',
+          name: 'newsletter-category',
+          component: () => import('@/views/Newsletter_list_category.vue') // 게시글 카테고리 리스트
+        },
+        {
           path: '/newsletter',
           name: 'newsletter',
-          component: () => import('@/views/Newsletter.vue')
+          component: () => import('@/views/Newsletter.vue') // 해당 카테고리 내 게시글 리스트
         },
         {
           path: '/newsletter-add',
           name: 'newsletter-add',
-          component: () => import('@/views/Newsletter_add.vue')
+          component: () => import('@/views/Newsletter_add.vue') // 게시글 작성
         },
         {
           path: '/newsletter-detail/:messageId',
           name: 'newsletter-detail',
-          component: () => import('@/views/Newsletter_detail.vue')
+          component: () => import('@/views/Newsletter_detail.vue') // 게시글 상세
         },
         // {
         //   path: '/list-data',

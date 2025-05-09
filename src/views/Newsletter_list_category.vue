@@ -1,54 +1,45 @@
 <template lang="pug">
-//- h1 게시판 관리
+//- h1 게시판 카테고리 목록
 
 //- hr
 
-.table-wrap
-    .tb-head-wrap
-        form#searchForm(@submit.prevent="searchNewsCat")
-            //- .input-wrap.search
-                input(type="text" v-model="searchValue" placeholder="카테고리명을 입력하세요.")
+.inner
+  .table-wrap
+      .tb-head-wrap
+          form#searchForm(@submit.prevent="searchNewsCat")
+              //- .input-wrap.search
+                  input(type="text" v-model="searchValue" placeholder="카테고리명을 입력하세요.")
 
-        .tb-toolbar
-            .btn-wrap
-                button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
-                    svg(:class="{'rotate' : loading}")
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-                button.btn.outline.warning(:disabled="!Object.keys(selectedList).length || loading" @click="deleteNewsCat") 삭제
-                button.btn.outline(:disabled="loading" @click="router.push('/admin/add-newsCat')") 등록
-    .tb-overflow
-        table.table#tb-newsCat
-            colgroup
-                col(style="width: 3rem")
-                col(style="width: 3rem")
-                col
-            thead
-                tr
-                    th(scope="col")
-                        label.checkbox
-                            input(type="checkbox" name="checkbox" :checked="isAllSelected" @change="toggleSelectAll")
-                            span.label-checkbox
-                    th(scope="col") NO
-                    th.left(scope="col") 카테고리명
+          .tb-toolbar
+              .btn-wrap
+                  button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
+                      svg(:class="{'rotate' : loading}")
+                          use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
+                  button.btn.outline(type="button" @click="router.push('/newsletter-add')" :disabled="loading") 글작성
+      .tb-overflow
+          table.table#tb-newsCat
+              colgroup
+                  col(style="width: 3rem")
+                  col
+              thead
+                  tr
+                      th(scope="col") NO
+                      th.left(scope="col") 카테고리명
 
-            tbody
-                template(v-if="loading")
-                    tr.loading(style="border-bottom: none;")
-                        td(colspan="5" style="padding: 0; height: initial;")
-                            Loading#loading
-                template(v-else-if="Object.keys(newsCatList).length === 0")
-                    tr
-                        td(colspan="5") 데이터가 없습니다.
-                template(v-else)
-                    tr(v-for="(category, key, index) in newsCatList" :key="category.record_id")
-                        td 
-                            label.checkbox
-                                input(type="checkbox" name="checkbox" :checked="Object.keys(selectedList).includes(category.record_id)" @click="toggleSelect(category.record_id, category.data.news_category)")
-                                span.label-checkbox
-                        td.list-num {{ index + 1 }}
-                        td.left 
-                            router-link.go-detail(:to="{ name: 'edit-newsCat', query: { record_id: category.record_id } }")
-                                span {{ category.data.news_category }}
+              tbody
+                  template(v-if="loading")
+                      tr.loading(style="border-bottom: none;")
+                          td(colspan="5" style="padding: 0; height: initial;")
+                              Loading#loading
+                  template(v-else-if="Object.keys(newsCatList).length === 0")
+                      tr
+                          td(colspan="5") 데이터가 없습니다.
+                  template(v-else)
+                      tr(v-for="(category, key, index) in newsCatList" :key="category.record_id")
+                          td.list-num {{ index + 1 }}
+                          td.left 
+                              router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.index.value } }")
+                                  span {{ category.data.news_category }}
 </template>
 
 <script setup>
@@ -91,15 +82,12 @@ let toggleSelect = (id, name) => {
 
 // 게시글 카테고리명 리스트 가져오기
 const getNewsCat = async () => {
-  console.log('게시글 카테고리명 리스트 가져오기');
-
   const res = await skapi.getRecords({
     table: {
       name: 'news_category_list',
       access_group: 1
     }
   });
-  console.log('res : ', res);
 
   newsCatList.value = res.list.reduce((acc, cur) => {
     acc[cur.record_id] = cur;
@@ -205,6 +193,12 @@ onMounted(() => {
 </script>
 
 <style scoped lang="less">
+.inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
 #tb-newsCat > a > * {
   vertical-align: middle;
 }
@@ -215,7 +209,7 @@ onMounted(() => {
   object-fit: contain;
 }
 
-.go-detail {
+.go-news-list {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -238,6 +232,12 @@ onMounted(() => {
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+}
+
+@media (max-width: 768px) {
+  .inner {
+    padding: 1rem;
   }
 }
 </style>
