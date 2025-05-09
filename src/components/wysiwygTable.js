@@ -1,4 +1,17 @@
 export function createTable(cols, rows, isCreate = false) {
+  // 드래그 관련 변수
+  let isDragging = false;
+  let startCell = null;
+  let endCell = null;
+  let showMergeBtn = false;
+  let selectedCellsArray = [];
+  let outlinePosition = {
+    top: 0,
+    left: 0,
+    width: 0,
+    height: 0
+  };
+
   // 전체 테이블 컨테이너 생성
   const tableWrap = document.createElement('div');
   tableWrap.className = 'wysiwyg-table-wrap';
@@ -13,6 +26,102 @@ export function createTable(cols, rows, isCreate = false) {
   // 현재 선택된 행과 열을 추적하기 위한 데이터 속성
   table.setAttribute('data-selected-rows', '-1');
   table.setAttribute('data-selected-cols', '-1');
+
+  // 테이블 스타일 추가
+  const style = document.createElement('style');
+
+  // 셀 병합 버튼
+  const mergeBtn = document.createElement('button');
+  mergeBtn.className = 'btn-merge';
+  mergeBtn.type = 'button';
+  mergeBtn.textContent = 'Merge';
+  mergeBtn.classList.add('hidden'); // 기본적으로 숨김 처리
+
+  mergeBtn.addEventListener('click', () => {
+    console.log('fffff');
+
+    if (!selectedCellsArray.length) {
+      console.warn('병합할 셀이 없습니다.');
+      return;
+    }
+
+    // const firstCell = selectedCellsArray[0];
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    // 최소/최대 행/열 계산
+    let minRow = Infinity,
+      maxRow = -Infinity;
+    let minCol = Infinity,
+      maxCol = -Infinity;
+
+    selectedCellsArray.forEach(({ rowIndex, colIndex }) => {
+      minRow = Math.min(minRow, rowIndex);
+      maxRow = Math.max(maxRow, rowIndex);
+      minCol = Math.min(minCol, colIndex);
+      maxCol = Math.max(maxCol, colIndex);
+    });
+
+    console.log({ minRow, maxRow, minCol, maxCol });
+
+    const startCell = selectedCellsArray[0].cell;
+    if (!startCell) return;
+
+    // 셀 내용 병합
+    // let mergedContent = '';
+    // for (let r = minRow; r <= maxRow; r++) {
+    //   for (let c = minCol; c <= maxCol; c++) {
+    //     const cell = rows[r].querySelector(`td[data-col-index="${c}"]`);
+    //     if (cell) {
+    //       mergedContent += cell.innerText + '\n';
+    //       if (!(r === minRow && c === minCol)) {
+    //         cell.style.display = 'none';
+    //       } else {
+    //         cell.setAttribute('rowspan', maxRow - minRow + 1);
+    //         cell.setAttribute('colspan', maxCol - minCol + 1);
+    //         cell.innerText = mergedContent.trim();
+    //       }
+    //     }
+    //   }
+    // }
+
+    // 🧹 기존 병합 해제 (이미 rowspan/colspan이 있는 경우)
+    const existingMerged = table.querySelectorAll('td[rowspan], td[colspan]');
+    existingMerged.forEach((cell) => {
+      cell.removeAttribute('rowspan');
+      cell.removeAttribute('colspan');
+    });
+
+    // 💡 병합할 셀들의 내용 합치기
+    let mergedContent = '';
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let c = minCol; c <= maxCol; c++) {
+        const cell = rows[r].querySelector(`td[data-col-index="${c}"]`);
+        if (!cell) continue;
+
+        mergedContent += cell.innerHTML + '<br>';
+        if (r !== minRow || c !== minCol) {
+          // 시작 셀만 남기고 나머지는 제거
+          cell.remove(); // 👈 DOM에서 셀 직접 삭제
+        }
+      }
+    }
+
+    // ✅ 시작 셀에 rowspan / colspan 적용
+    startCell.setAttribute('rowspan', maxRow - minRow + 1);
+    startCell.setAttribute('colspan', maxCol - minCol + 1);
+    startCell.classList.add('merged-cell');
+    startCell.contentEditable = 'true'; // ✏️ 편집 가능하게 설정
+    startCell.innerHTML = mergedContent.trim();
+
+    // 🧼 선택 상태 초기화
+    table.querySelectorAll('td').forEach((cell) => {
+      cell.classList.remove('selected-cell');
+    });
+
+    // 🔄 인덱스 갱신
+    updateRowIndexes(tbody);
+    updateColumnIndexes(tbody);
+  });
 
   // 행과 열 생성
   for (let r = 0; r < rows; r++) {
@@ -39,8 +148,19 @@ export function createTable(cols, rows, isCreate = false) {
         // 모든 셀의 선택 상태 해제
         const allCells = table.querySelectorAll('td');
         allCells.forEach((cell) => {
-          cell.classList.remove('selected-cell');
+          cell.classList.remove('selected-cell', 'dragged-cell');
         });
+
+        mergeBtn.classList.remove('active');
+        mergeBtn.classList.add('hidden');
+        console.log({ mergeBtn });
+
+        // // 드래그 영역 외곽선 제거
+        // const dragOutline = table.querySelector('.drag-area-outline');
+        // console.log({ dragOutline });
+        // if (dragOutline) {
+        //   dragOutline.remove();
+        // }
 
         // 현재 셀에 선택 표시
         td.classList.add('selected-cell');
@@ -50,6 +170,28 @@ export function createTable(cols, rows, isCreate = false) {
 
         // 열 컨트롤을 현재 열 옆으로 이동
         updateColControlPosition(table, parseInt(colIndex));
+      });
+
+      td.addEventListener('mousedown', (e) => {
+        if (!isCreate) return;
+
+        isDragging = true;
+        startCell = td;
+        endCell = td;
+
+        // 모든 셀 선택 해제
+        table.querySelectorAll('td').forEach((cell) => {
+          cell.classList.remove('selected-cell', 'dragged-cell');
+        });
+
+        // 시작 셀만 선택 표시
+        // td.classList.add('selected-cell');
+
+        // 데이터 갱신
+        const rowIndex = td.parentElement.getAttribute('data-row-index');
+        const colIndex = td.getAttribute('data-col-index');
+        table.setAttribute('data-selected-row', rowIndex);
+        table.setAttribute('data-selected-col', colIndex);
       });
 
       // 포커스 스타일 추가
@@ -69,6 +211,147 @@ export function createTable(cols, rows, isCreate = false) {
 
   table.appendChild(tbody);
   tableWrap.appendChild(table);
+
+  // 드래그 중: mousemove 이벤트 추가
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging || !startCell) return;
+
+    const target = e.target;
+
+    if (target && target.tagName === 'TD') {
+      endCell = target;
+
+      // 모든 셀 초기화 후 새 영역 표시
+      table.querySelectorAll('td').forEach((cell) => {
+        cell.classList.remove('selected-cell');
+        cell.classList.remove('dragged-cell');
+      });
+
+      selectCellsInRange(startCell, endCell);
+    }
+  });
+
+  // 드래그 종료: mouseup 이벤트 추가
+  document.addEventListener('mouseup', () => {
+    if (!isDragging || !startCell) return;
+
+    isDragging = false;
+
+    const rowIdx = endCell.parentElement.getAttribute('data-row-index');
+    const colIdx = endCell.getAttribute('data-col-index');
+
+    console.log(`드래그가 끝난 셀: 행 ${rowIdx}, 열 ${colIdx}`);
+
+    table.setAttribute('data-selected-row', rowIdx);
+    table.setAttribute('data-selected-col', colIdx);
+
+    // 컨트롤 위치 갱신
+    updateRowControlPosition(table, parseInt(rowIdx));
+    updateColControlPosition(table, parseInt(colIdx));
+
+    if (startCell === endCell) {
+      endCell.classList.add('selected-cell');
+      endCell.classList.remove('dragged-cell');
+    }
+
+    if (selectedCellsArray.length > 1) {
+      document.body.style.setProperty('--merge-btn-top', `${outlinePosition.top - 28}px`);
+      document.body.style.setProperty('--merge-btn-left', `${outlinePosition.left}px`);
+      mergeBtn.classList.remove('hidden');
+      mergeBtn.classList.add('active');
+    } else {
+      mergeBtn.classList.remove('active');
+      mergeBtn.classList.add('hidden');
+    }
+
+    // if (startCell !== endCell) {
+    //   // 드래그 영역 외곽선 엘리먼트 생성
+    //   const dragOutline = document.createElement('div');
+    //   dragOutline.className = 'drag-area-outline';
+
+    //   dragOutline.style.position = 'absolute';
+    //   dragOutline.style.left = `${outlinePosition.left}px`;
+    //   dragOutline.style.top = `${outlinePosition.top}px`;
+    //   dragOutline.style.width = `${outlinePosition.width}px`;
+    //   dragOutline.style.height = `${outlinePosition.height}px`;
+    //   dragOutline.style.pointerEvents = 'none'; // 클릭 방지
+    //   dragOutline.style.zIndex = '9999'; // 최상위로 표시
+    //   dragOutline.style.boxSizing = 'border-box'; // 테두리 포함
+    //   dragOutline.style.border = '1px dashed #487ff2'; // 외곽선 스타일
+    //   dragOutline.style.display = 'block'; // 드래그 영역 표시
+
+    //   table.appendChild(dragOutline);
+    // }
+  });
+
+  // 셀 범위 선택 함수 정의
+  function selectCellsInRange(start, end) {
+    const rows = Array.from(table.querySelectorAll('tr'));
+    const startRow = rows.indexOf(start.parentElement);
+    const endRow = rows.indexOf(end.parentElement);
+    const startCol = Array.from(start.parentElement.children).indexOf(start);
+    const endCol = Array.from(end.parentElement.children).indexOf(end);
+
+    const minRow = Math.min(startRow, endRow);
+    const maxRow = Math.max(startRow, endRow);
+    const minCol = Math.min(startCol, endCol);
+    const maxCol = Math.max(startCol, endCol);
+
+    selectedCellsArray = [];
+
+    // 모든 셀 초기화
+    table.querySelectorAll('td').forEach((cell) => {
+      cell.classList.remove('selected-cell', 'dragged-cell');
+    });
+
+    // 시작 셀은 selected-cell
+    console.log({ start });
+    start.classList.add('selected-cell');
+
+    for (let r = minRow; r <= maxRow; r++) {
+      const cells = rows[r].querySelectorAll('td');
+      for (let c = minCol; c <= maxCol; c++) {
+        if (cells[c]) {
+          cells[c].classList.add('dragged-cell');
+          selectedCellsArray.push({
+            cell: cells[c],
+            rowIndex: r,
+            colIndex: c
+          }); // 선택된 셀 배열에 추가
+        }
+      }
+    }
+
+    // 드래그 영역 외곽선 표시
+    const topLeft = rows[minRow].querySelectorAll('td')[minCol];
+    const bottomRight = rows[maxRow].querySelectorAll('td')[maxCol];
+
+    if (!topLeft || !bottomRight) return;
+
+    const wrapRect = tableWrap.getBoundingClientRect();
+
+    // 셀의 위치
+    const rectTopLeft = topLeft.getBoundingClientRect();
+    const rectBottomRight = bottomRight.getBoundingClientRect();
+
+    // 드래그 영역 좌표 계산
+    const outlineLeft = rectTopLeft.left + window.scrollX;
+    const outlineTop = rectTopLeft.top + window.scrollY;
+    const outlineWidth = rectBottomRight.right - rectTopLeft.left;
+    const outlineHeight = rectBottomRight.bottom - rectTopLeft.top;
+
+    console.log({ outlineLeft, outlineTop, outlineWidth, outlineHeight });
+    console.log({ left: rectTopLeft.left, top: rectTopLeft.top });
+
+    outlinePosition = {
+      top: rectTopLeft.top - wrapRect.top,
+      left: rectTopLeft.left - wrapRect.left,
+      width: outlineWidth,
+      height: outlineHeight
+    };
+
+    // loadingElement.style.setProperty('--loading-top', `${(window.innerHeight - mainWrap.value.getBoundingClientRect().top + scrollLocation - 200) / 2}px`);
+  }
 
   // 행 컨트롤 버튼 그룹 생성
   const rowControlWrap = document.createElement('div');
@@ -112,8 +395,12 @@ export function createTable(cols, rows, isCreate = false) {
         // 모든 셀의 선택 상태 해제
         const allCells = table.querySelectorAll('td');
         allCells.forEach((cell) => {
-          cell.classList.remove('selected-cell');
+          cell.classList.remove('selected-cell', 'dragged-cell');
         });
+
+        // mergeBtn.style.display = 'none';
+        mergeBtn.classList.remove('active');
+        mergeBtn.classList.add('hidden');
 
         // 현재 셀에 선택 표시
         td.classList.add('selected-cell');
@@ -132,6 +419,28 @@ export function createTable(cols, rows, isCreate = false) {
           td.style.width = firstRowCell.style.width;
         }
       }
+
+      td.addEventListener('mousedown', (e) => {
+        if (!isCreate) return;
+
+        isDragging = true;
+        startCell = td;
+        endCell = td;
+
+        // 모든 셀 선택 해제
+        table.querySelectorAll('td').forEach((cell) => {
+          cell.classList.remove('selected-cell', 'dragged-cell');
+        });
+
+        // 시작 셀만 선택 표시
+        // td.classList.add('selected-cell');
+
+        // 데이터 갱신
+        const rowIndex = td.parentElement.getAttribute('data-row-index');
+        const colIndex = td.getAttribute('data-col-index');
+        table.setAttribute('data-selected-row', rowIndex);
+        table.setAttribute('data-selected-col', colIndex);
+      });
 
       td.addEventListener('focus', () => {
         td.style.outline = '2px solid #4a90e2';
@@ -250,8 +559,12 @@ export function createTable(cols, rows, isCreate = false) {
         // 모든 셀의 선택 상태 해제
         const allCells = table.querySelectorAll('td');
         allCells.forEach((cell) => {
-          cell.classList.remove('selected-cell');
+          cell.classList.remove('selected-cell', 'dragged-cell');
         });
+
+        // mergeBtn.style.display = 'none';
+        mergeBtn.classList.remove('active');
+        mergeBtn.classList.add('hidden');
 
         // 현재 셀에 선택 표시
         td.classList.add('selected-cell');
@@ -261,6 +574,28 @@ export function createTable(cols, rows, isCreate = false) {
 
         // 열 컨트롤을 현재 열 옆으로 이동
         updateColControlPosition(table, parseInt(colIndex));
+      });
+
+      td.addEventListener('mousedown', (e) => {
+        if (!isCreate) return;
+
+        isDragging = true;
+        startCell = td;
+        endCell = td;
+
+        // 모든 셀 선택 해제
+        table.querySelectorAll('td').forEach((cell) => {
+          cell.classList.remove('selected-cell', 'dragged-cell');
+        });
+
+        // 시작 셀만 선택 표시
+        // td.classList.add('selected-cell');
+
+        // 데이터 갱신
+        const rowIndex = td.parentElement.getAttribute('data-row-index');
+        const colIndex = td.getAttribute('data-col-index');
+        table.setAttribute('data-selected-row', rowIndex);
+        table.setAttribute('data-selected-col', colIndex);
       });
 
       td.addEventListener('focus', () => {
@@ -348,6 +683,7 @@ export function createTable(cols, rows, isCreate = false) {
   }
 
   // 모든 컨트롤 추가
+  tableWrap.appendChild(mergeBtn);
   tableWrap.appendChild(rowControlWrap);
   tableWrap.appendChild(colControlWrap);
 
@@ -389,21 +725,54 @@ export function createTable(cols, rows, isCreate = false) {
   }
 
   // 선택된 셀, 행, 열에 대한 스타일 추가
-  const style = document.createElement('style');
   style.textContent = `
+    body {
+        --merge-btn-top: 0px;
+        --merge-btn-left: 0px;
+    }
     .wysiwyg-table td.selected-cell {
-      background-color: rgba(74, 144, 226, 0.1);
+      border: 3px solid #487ff2;
       position: relative;
     }
-    
-    .wysiwyg-table .selected-row {
-      background-color: rgba(74, 144, 226, 0.05);
+
+    .wysiwyg-table td.dragged-cell {
+      background-color: rgba(72, 127, 242, 0.1);
     }
-    
-    .wysiwyg-table .selected-col {
-      background-color: rgba(74, 144, 226, 0.05);
+
+    .wysiwyg-table *::selection {
+      background: transparent;
     }
-    
+
+    .btn-merge.active {
+        display: block;
+        position: absolute;
+        top: var(--merge-btn-top);
+        left: var(--merge-btn-left);
+        background-color: #487ff2;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 9999;
+    }
+
+    .btn-merge.hidden {
+        display: none;
+        position: absolute;
+        top: var(--merge-btn-top);
+        left: var(--merge-btn-left);
+        background-color: #487ff2;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 9999;
+    }
+
     /* 행 컨트롤 스타일 개선 */
     .btn-control-wrap.control-row {
       position: absolute;
@@ -493,14 +862,14 @@ function updateRowControlPosition(table, rowIndex) {
     rowControl.style.left = '5px'; // 왼쪽에 배치
 
     // 선택된 행 강조 표시
-    const allRows = table.rows;
-    for (let i = 0; i < allRows.length; i++) {
-      if (i === rowIndex) {
-        allRows[i].classList.add('selected-row');
-      } else {
-        allRows[i].classList.remove('selected-row');
-      }
-    }
+    // const allRows = table.rows;
+    // for (let i = 0; i < allRows.length; i++) {
+    //   if (i === rowIndex) {
+    //     allRows[i].classList.add('selected-row');
+    //   } else {
+    //     allRows[i].classList.remove('selected-row');
+    //   }
+    // }
   }
 }
 
@@ -521,16 +890,16 @@ function updateColControlPosition(table, colIndex) {
     colControl.style.top = '-24px'; // 위에 배치
 
     // 선택된 열 강조 표시
-    for (let i = 0; i < table.rows.length; i++) {
-      const row = table.rows[i];
-      for (let j = 0; j < row.cells.length; j++) {
-        if (j === colIndex) {
-          row.cells[j].classList.add('selected-col');
-        } else {
-          row.cells[j].classList.remove('selected-col');
-        }
-      }
-    }
+    // for (let i = 0; i < table.rows.length; i++) {
+    //   const row = table.rows[i];
+    //   for (let j = 0; j < row.cells.length; j++) {
+    //     if (j === colIndex) {
+    //       row.cells[j].classList.add('selected-col');
+    //     } else {
+    //       row.cells[j].classList.remove('selected-col');
+    //     }
+    //   }
+    // }
   }
 }
 
@@ -547,11 +916,11 @@ function setInitialTableSelection(table) {
     // 모든 셀의 선택 상태 초기화
     const allCells = table.querySelectorAll('td');
     allCells.forEach((cell) => {
-      cell.classList.remove('selected-cell');
+      cell.classList.remove('selected-cell', 'dragged-cell');
     });
 
     // 선택 표시 추가
-    firstCell.classList.add('selected-cell');
+    // firstCell.classList.add('selected-cell');
 
     // 컨트롤 위치 업데이트
     updateRowControlPosition(table, 0);
