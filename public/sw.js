@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fg-works-cache-v87'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v88'; // 버전 번호를 포함한 캐시 이름
 
 // 설치 이벤트: 캐시 초기화
 self.addEventListener('install', (event) => {
@@ -110,7 +110,9 @@ self.addEventListener('message', async function (event) {
   }
 
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('sw.js: SKIP_WAITING started');
     self.skipWaiting(); // 사용자 선택 시 즉시 업데이트
+    console.log('sw.js: SKIP_WAITING completed');
   }
 });
 

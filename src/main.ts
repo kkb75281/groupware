@@ -185,9 +185,12 @@ function startLoadingAndReload() {
 
   const controllerChangeHandler = () => {
     // clearTimeout(timeout); // 타임아웃 제거
+    console.log('controllerChangeHandler: entered');
     navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
+    console.log('controllerChangeHandler: removeEventListener');
 
     if (navigator.serviceWorker.controller) {
+      console.log('controllerChangeHandler: controller exists');
       newVersionAvailable.value = false;
       localStorage.removeItem('updateAvailable');
 
@@ -197,8 +200,12 @@ function startLoadingAndReload() {
       } else if (currentVersion) {
         localStorage.setItem('lastUpdatedVersion', currentVersion);
       }
+      console.log(newVersion.value, currentVersion, localStorage.getItem('lastUpdatedVersion'));
+      console.log('controllerChangeHandler: reload start');
 
       window.location.reload();
+
+      console.log('controllerChangeHandler: reload end');
     }
   };
 
