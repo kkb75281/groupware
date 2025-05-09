@@ -30,13 +30,14 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
+let devModeCheck = import.meta.env.DEV;
 const showNewVersionAlert = computed(() => {
-    return workerRegistered.value && newVersionAvailable.value && newVersion.value && !isUpdateLoading.value;
+    return workerRegistered.value && newVersionAvailable.value && newVersion.value && !isUpdateLoading.value && !devModeCheck;
 });
 
 let mainWrap = ref(null);
 
-watch([mainPageLoading, isUpdateLoading], (nv) => {
+watch(mainPageLoading, (nv) => {
     if (nv) {
         nextTick(() => {
             const loadingElement = document.querySelector('#loading');

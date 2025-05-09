@@ -13,20 +13,6 @@
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
         p {{ notificationNotWorkingMsg }}
 
-    //- .warning-msg(v-if="showNewVersionAlert")
-        .icon
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-        p 새로운 버전이 준비되었습니다.
-        a.updateLink(@click="applyUpdate") 그룹웨어 업데이트 하기
-
-        br
-    //- template(v-if="showNewVersionAlert")
-        p 새로운 버전이 준비되었습니다.
-        button.btn(@click="applyUpdate" :disabled="isUpdateLoading") 그룹웨어 업데이트 하기
-
-        br
-
     template(v-if="onlyUserGesture")
         button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
 
@@ -236,10 +222,8 @@ let banner_pic_input = ref(null);
 let bannerStyle = ref('contain');
 let modalWidth = ref(0);
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
+
 const encodedEmail = encodeURIComponent(user.email);
-const showNewVersionAlert = computed(() => {
-  return newVersionAvailable.value && newVersion.value && !isUpdateLoading.value;
-});
 
 let uploadFile = () => {
   banner_pic_input.value.click();
@@ -278,7 +262,7 @@ let uploadBanner = async () => {
         }
       })
       .catch((err) => {
-        console.log('배너 삭제 중 오류 발생', err);
+        // console.log('배너 삭제 중 오류 발생', err);
         alert('배너 업로드 중 오류 발생');
         return;
       });
@@ -306,19 +290,51 @@ let uploadBanner = async () => {
       }
     })
     .then((res) => {
-      console.log('배너 업로드 성공', res);
+      // console.log('배너 업로드 성공', res);
       alert('배너 업로드 성공');
       getSystemBanner(true);
     })
     .catch((err) => {
-      console.log('배너 업로드 중 오류 발생', err);
+      // console.log('배너 업로드 중 오류 발생', err);
       alert('배너 업로드 중 오류 발생');
-    })
-    .finally(() => {
-      bannerUploading.value = false;
-      cancelBanner();
+      return;
     });
 };
+
+const croppedFile = new File([croppedImages.value['banner_pic']], 'banner_pic.png', {
+  type: croppedImages.value['banner_pic'].type
+});
+
+const imgFormData = new FormData();
+imgFormData.append('banner_pic', croppedFile);
+imgFormData.append('banner_style', bannerStyle.value);
+
+// for (const x of imgFormData.entries()) {
+//     console.log(x);
+// };
+// console.log('croppedFile', croppedFile);
+// console.log('bannerStyle', bannerStyle.value);
+
+await skapi
+  .postRecord(imgFormData, {
+    table: {
+      name: 'system_banner',
+      access_group: 1
+    }
+  })
+  .then((res) => {
+    console.log('배너 업로드 성공', res);
+    alert('배너 업로드 성공');
+    getSystemBanner(true);
+  })
+  .catch((err) => {
+    console.log('배너 업로드 중 오류 발생', err);
+    alert('배너 업로드 중 오류 발생');
+  })
+  .finally(() => {
+    bannerUploading.value = false;
+    cancelBanner();
+  });
 
 let openModal = (e) => {
   let parentElement = document.querySelector('.company-wrap');
@@ -340,12 +356,13 @@ let showMailDoc = (e, rt) => {
   openGmailAppOrWeb(rt.link, rt.id);
 };
 
-let checkCommuteRecord = async (router) => {
+let checkCommuteRecord = async () => {
   if (todayWorkStarting.value) {
     console.log('퇴근');
     await endWork(router);
   } else {
     console.log('출근');
+    console.log('dashboard router:', router);
     await startWork(router);
   }
 };
@@ -354,10 +371,6 @@ onMounted(async () => {
   await Promise.all([getUserPositionCurrent(), getSystemWorktime(), getMyWorktimeStorage()]);
 
   getNewsletterList();
-
-  console.log({ divisionNameList });
-  console.log('userPositionCurrent', userPositionCurrent.value);
-  console.log(divisionNameList.value[userPositionCurrent.value[0]?.divisionId]);
 });
 </script>
 
@@ -376,58 +389,57 @@ onMounted(async () => {
     border-radius: 16px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
 
-        &.opacity {
-            &::after {
-                position: absolute;
-                width: 100%;
-                height: 100%;
-                left: 0;
-                top: 0;
-                content: '';
-                background-color: rgba(255, 255, 255, 0.7);
-                transition: all .3s;
-            }
-        }
-
-        #banner_img {
-            width: 100%;
-            height: 100%;
-            border-radius: 16px;
-        }
-
-        .upload {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1;
-        }
+    &.opacity {
+      &::after {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        top: 0;
+        content: '';
+        background-color: rgba(255, 255, 255, 0.7);
+        transition: all 0.3s;
+      }
     }
 
-    .style {
-      display: inline-block;
-      padding: 0 8px;
-      cursor: pointer;
+    #banner_img {
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+    }
 
+    .upload {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+  }
+
+  .style {
+    display: inline-block;
+    padding: 0 8px;
+    cursor: pointer;
+
+    svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--gray-color-300);
+    }
+
+    &.selected {
       svg {
-        width: 24px;
-        height: 24px;
-        fill: var(--gray-color-300);
-      }
-
-      &.selected {
-        svg {
-          fill: var(--primary-color-400);
-        }
+        fill: var(--primary-color-400);
       }
     }
   }
 }
 
 .updateLink {
-    color: var(--primary-color-400);
-    text-decoration: underline;
-    cursor: pointer;
+  color: var(--primary-color-400);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .box-shadow-card {
@@ -517,90 +529,91 @@ onMounted(async () => {
         overflow: hidden;
         padding: 0;
 
-      svg {
-        fill: var(--gray-color-400);
+        svg {
+          fill: var(--gray-color-400);
+        }
+      }
+
+      .division {
+        font-size: 0.8rem;
+        color: var(--gray-color-500);
+        margin-top: 0.5rem;
       }
     }
 
-    .division {
-      font-size: 0.8rem;
-      color: var(--gray-color-500);
-      margin-top: 0.5rem;
-    }
-  }
+    .company-wrap {
+      position: relative;
+      flex-grow: 3;
+      overflow: hidden;
+      padding: 0;
 
-  .company-wrap {
-    position: relative;
-    flex-grow: 3;
-    overflow: hidden;
-    padding: 0;
+      &::before {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        top: 0;
+        content: '';
+        background-color: rgba(0, 0, 0, 0.2);
+        transition: all 0.3s;
+        opacity: 0;
+      }
 
-    &::before {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      left: 0;
-      top: 0;
-      content: '';
-      background-color: rgba(0, 0, 0, 0.2);
-      transition: all 0.3s;
-      opacity: 0;
-    }
+      .desc {
+        margin-top: 95px;
+        line-height: 1.5;
+        color: var(--gray-color-400);
+        font-size: 0.9rem;
+      }
 
-    .desc {
-      margin-top: 95px;
-      line-height: 1.5;
-      color: var(--gray-color-400);
-      font-size: 0.9rem;
-    }
+      .banner-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 16px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+      }
 
-    .banner-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 16px;
-      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-    }
+      .btn,
+      .upload-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: max-content;
+      }
 
-    .btn,
-    .upload-icon {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: max-content;
-    }
+      .master {
+        display: none;
+      }
 
-    .master {
-      display: none;
-    }
+      .edit-icon-wrap {
+        position: absolute;
+        width: 100%;
+        left: 0;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
 
-    .edit-icon-wrap {
-      position: absolute;
-      width: 100%;
-      left: 0;
-      top: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+      &.master {
+        &:hover {
+          &::before {
+            opacity: 1;
+          }
 
-    &.master {
-      &:hover {
-        &::before {
-          opacity: 1;
-        }
-
-        .btn.master {
-          display: block;
+          .btn.master {
+            display: block;
+          }
         }
       }
-    }
 
-    &.edit {
-      &:hover {
-        &::before {
-          opacity: 0;
+      &.edit {
+        &:hover {
+          &::before {
+            opacity: 0;
+          }
         }
       }
     }
