@@ -4,7 +4,7 @@ dialog(ref="dialog" @keydown.esc.prevent="closeDialog")
         .image-wrap
             .image.crop
                 img(ref="image" :src="imageSrc" alt="Source Image")
-            .image.preview(ref="preview")
+            .image.preview(ref="preview" :class="{ hidden: props.aspectRatio === 'NaN' }")
                 canvas(ref="canvas")
 
         .button-wrap
@@ -20,6 +20,7 @@ import 'cropperjs/dist/cropper.css';
 const props = defineProps({
     open: Boolean,
     imageSrc: String,
+    aspectRatio: Number | String,
 });
 
 const emit = defineEmits(['cropped', 'close']);
@@ -42,7 +43,7 @@ const startCropper = () => {
         zoomable: false,
         movable: true,
         background: false,
-        aspectRatio: 1,
+        aspectRatio: props.aspectRatio || 1,
         cropBoxResizable: true,
         minContainerHeight: 200,
         minCanvasWidth: 200,
@@ -88,12 +89,12 @@ const updatePreview = () => {
 
         // Preview 캔버스에 크롭된 이미지를 그리기
         ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
-        
+
         if (croppedCanvas.width > 0 && croppedCanvas.height > 0) {
             ctx.drawImage(croppedCanvas, 0, 0);
         } else {
             // console.error('Source canvas has no size!');
-            return null;            
+            return null;
         }
     }
 };
@@ -182,6 +183,11 @@ img {
         overflow: hidden;
         background-color: var(--gray-color-400);
 
+        &.hidden {
+            position: absolute;
+            visibility: hidden;
+        }
+
         &::before {
             content: '';
             position: absolute;
@@ -189,8 +195,9 @@ img {
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6); /* 어두운 필터 색상 */
-            mask: radial-gradient(circle, transparent 70%, rgba(0,0,0,0.9) 71%);
+            background-color: rgba(0, 0, 0, 0.6);
+            /* 어두운 필터 색상 */
+            mask: radial-gradient(circle, transparent 70%, rgba(0, 0, 0, 0.9) 71%);
             pointer-events: none;
             z-index: 1;
         }
@@ -222,6 +229,7 @@ dialog {
     overflow: auto;
 
     .btn.outline {
+
         &:active,
         &:hover,
         &:focus {
@@ -237,10 +245,11 @@ dialog {
         width: calc(100% - 32px);
         height: calc(100% - 32px);
     }
+
     .image-wrap {
         .preview {
             display: none;
         }
     }
 }
-</style>  
+</style>

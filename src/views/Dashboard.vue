@@ -13,9 +13,17 @@
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
         p {{ notificationNotWorkingMsg }}
 
-    template(v-if="newVersionAvailable")
-        p {{ `새로운 버전(${newVersion})이 준비되었습니다.` }}
-        button.btn(@click="applyUpdate") 그룹웨어 업데이트 하기
+    //- .warning-msg(v-if="showNewVersionAlert")
+        .icon
+            svg
+                use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+        p 새로운 버전이 준비되었습니다.
+        a.updateLink(@click="applyUpdate") 그룹웨어 업데이트 하기
+
+        br
+    //- template(v-if="showNewVersionAlert")
+        p 새로운 버전이 준비되었습니다.
+        button.btn(@click="applyUpdate" :disabled="isUpdateLoading") 그룹웨어 업데이트 하기
 
         br
 
@@ -42,33 +50,12 @@
                 button.btn.sm.bg-gray(v-else type="button" style="display:inline-block;font-size:0.7rem" @click="checkCommuteRecord") 퇴근
 
         .box-shadow-card.company-wrap(:class="{master: user.access_group > 98, edit: editMode}")
-            img.banner-img(v-if="system_banner" :src="system_banner" alt="회사사진")
+            img.banner-img(v-if="system_banner" :src="system_banner?.url" :style="{objectFit: system_banner_style}" alt="회사사진")
             p.desc(v-else)
-                //- | 이곳을 눌러 배너를 설정해주세요.
-                //- br
-                //- | 설정하기 전까지 사용자에게 배너가 나타나지 않습니다.
                 | 안녕하세요. FGWORKS 입니다.
                 br
                 | 오늘도 좋은 하루 되세요.
             button.btn.master(type="button" @click.stop="openModal") 배너 설정
-            //- template(v-if="editMode")
-                .edit-icon-wrap
-                    .change-icon
-                        .icon 세로
-                        .icon 가로
-                        .icon 화면에 맞게
-                        .icon 원사이즈
-                    .save-icon
-                        .icon(@click="editMode = false") 취소
-                        .icon 저장
-                .upload-icon
-                    button.btn 사진 변경
-            //- template(v-else)
-                button.btn.master(type="button" @click.stop="editMode = true") 베인 배너 설정
-                //- .edit-button-wrap(v-if="editMode")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
 
     .mo-btn-wrap
         .icon
@@ -152,15 +139,15 @@
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
             | 현재 메일이 없습니다.
 
-#modal.modal(v-if="isModalOpen" @click="isModalOpen = false")
+#modal.modal(v-if="isModalOpen" @click="cancelBanner")
     .modal-cont(@click.stop style="min-width:unset; max-width:unset;")
         .modal-header
             h2.modal-title 배너 설정
-            button.btn-close(@click="isModalOpen = false")
+            button.btn-close(@click="cancelBanner")
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
         .modal-body
-            .style-wrap(:class="{disabled: !system_banner}")
+            .style-wrap(:class="{disabled: !uploadSrc.banner_pic || bannerUploading}")
                 .style(:class="{selected: bannerStyle === 'contain'}" @click="bannerStyle = 'contain'")
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
@@ -173,32 +160,34 @@
                 .style(:class="{selected: bannerStyle === 'none'}" @click="bannerStyle = 'none'")
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-aspect-ratio")
-            .image-wrap(:style="{width: `${modalWidth}px`}" style="display: inline-block")
-                template(v-if="system_banner")
-                    img(:src="system_banner" :style="{objectFit: bannerStyle}" alt="회사사진")
-                button.btn.upload(v-else disabled) 사진 등록 (아직 개발중입니다.)
+            input#banner_pic(ref="banner_pic_input" type="file" name="banner_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+            .image-wrap(:class="{opacity: bannerUploading}" :style="{width: `${modalWidth}px`}" style="display: inline-block")
+                img#banner_img(v-if="uploadSrc.banner_pic && !openCropModal" :src="uploadSrc.banner_pic" :style="{objectFit: bannerStyle}" alt="배너 이미지")
+                .upload(v-if="bannerUploading")
+                    Loading
+                button.btn.upload(v-else :class="{'bg-gray': uploadSrc.banner_pic}" @click="uploadFile") 
+                    template(v-if="!uploadSrc.banner_pic") 사진 등록
+                    template(v-else) 사진 변경
+            CropImage(:open="openCropModal" :imageSrc="currentImageSrc" :aspectRatio="'NaN'" @cropped="setCroppedImage" @close="closeCropImageDialog")
         .modal-footer
-            button.btn.bg-gray.btn-cancel(type="button" @click="isModalOpen = false") 취소
-            button.btn.btn-register(type="submit" disabled) 등록
+            button.btn.bg-gray.btn-cancel(type="button" :disabled="bannerUploading" @click="cancelBanner") 취소
+            button.btn.btn-register(type="submit" :disabled="!uploadSrc.banner_pic || bannerUploading" @click="uploadBanner") 등록
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, ref } from 'vue';
-import {
-  user,
-  makeSafe,
-  profileImage,
-  getUserPositionCurrent,
-  userPositionCurrent
-} from '@/user.ts';
+import { computed, onMounted, ref } from 'vue';
+import { user, profileImage, getUserPositionCurrent, userPositionCurrent } from '@/user.ts';
 import {
   skapi,
   newVersionAvailable,
   newVersion,
   applyUpdate,
   getSystemBanner,
-  system_banner
+  system_banner,
+  isUpdateLoading,
+  getSystemBannerId,
+  system_banner_style
 } from '@/main.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
@@ -207,13 +196,22 @@ import {
   mailList,
   serviceWorkerRegistMsg,
   notificationNotWorkingMsg,
-  readNoti,
   newsletterList,
   getNewsletterList,
-  subscribeNotification,
   onlyUserGesture,
   setNotificationPermission
 } from '@/notifications.ts';
+import {
+  openCropModal,
+  croppedImages,
+  uploadSrc,
+  currentImageSrc,
+  resetCropImage,
+  openCropImageDialog,
+  closeCropImageDialog,
+  setCroppedImage,
+  currentTargetId
+} from '@/components/crop_image.ts';
 import {
   system_worktime,
   getSystemWorktime,
@@ -223,7 +221,9 @@ import {
   startWork,
   endWork
 } from '@/views/commute/worktime.ts';
+
 import Loading from '@/components/loading.vue';
+import CropImage from '@/components/crop_image.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -231,18 +231,105 @@ const route = useRoute();
 let loading = ref(false);
 let editMode = ref(false);
 let isModalOpen = ref(false);
+let bannerUploading = ref(false);
+let banner_pic_input = ref(null);
+let bannerStyle = ref('contain');
 let modalWidth = ref(0);
-let bannerStyle = ref('contain'); // object-fill (contain, cover, fill, none)
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const encodedEmail = encodeURIComponent(user.email);
+const showNewVersionAlert = computed(() => {
+  return newVersionAvailable.value && newVersion.value && !isUpdateLoading.value;
+});
+
+let uploadFile = () => {
+  banner_pic_input.value.click();
+};
+
+let cancelBanner = () => {
+  resetCropImage();
+  bannerStyle.value = system_banner_style.value || 'contain';
+  isModalOpen.value = false;
+};
+
+let uploadBanner = async () => {
+  if (!getSystemBannerId.value && !croppedImages.value['banner_pic']) {
+    alert('배너 이미지를 등록해주세요.');
+    return;
+  }
+
+  if (
+    bannerStyle.value !== system_banner_style.value &&
+    system_banner.value.url &&
+    !croppedImages.value['banner_pic']
+  ) {
+    currentTargetId.value = 'banner_pic';
+    await setCroppedImage(system_banner.value.url);
+  }
+
+  bannerUploading.value = true;
+
+  if (getSystemBannerId.value) {
+    await skapi
+      .deleteRecords({
+        record_id: getSystemBannerId.value,
+        table: {
+          name: 'system_banner',
+          access_group: 1
+        }
+      })
+      .catch((err) => {
+        console.log('배너 삭제 중 오류 발생', err);
+        alert('배너 업로드 중 오류 발생');
+        return;
+      });
+  }
+
+  const croppedFile = new File([croppedImages.value['banner_pic']], 'banner_pic.png', {
+    type: croppedImages.value['banner_pic'].type
+  });
+
+  const imgFormData = new FormData();
+  imgFormData.append('banner_pic', croppedFile);
+  imgFormData.append('banner_style', bannerStyle.value);
+
+  // for (const x of imgFormData.entries()) {
+  //     console.log(x);
+  // };
+  // console.log('croppedFile', croppedFile);
+  // console.log('bannerStyle', bannerStyle.value);
+
+  await skapi
+    .postRecord(imgFormData, {
+      table: {
+        name: 'system_banner',
+        access_group: 1
+      }
+    })
+    .then((res) => {
+      console.log('배너 업로드 성공', res);
+      alert('배너 업로드 성공');
+      getSystemBanner(true);
+    })
+    .catch((err) => {
+      console.log('배너 업로드 중 오류 발생', err);
+      alert('배너 업로드 중 오류 발생');
+    })
+    .finally(() => {
+      bannerUploading.value = false;
+      cancelBanner();
+    });
+};
 
 let openModal = (e) => {
-  let currentTarget = e.currentTarget;
   let parentElement = document.querySelector('.company-wrap');
 
   // parentNode의 width 값을 가져와서 모달 안에 .image-wrap의 width을 설정
   modalWidth.value = parentElement.offsetWidth;
-  console.log(modalWidth.value);
+
+  if (system_banner.value?.url) {
+    uploadSrc.value.banner_pic = system_banner.value?.url;
+    bannerStyle.value = system_banner_style.value || 'contain';
+  }
 
   isModalOpen.value = true;
 };
@@ -289,20 +376,32 @@ onMounted(async () => {
     border-radius: 16px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
 
-    .upload {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-  }
+        &.opacity {
+            &::after {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                left: 0;
+                top: 0;
+                content: '';
+                background-color: rgba(255, 255, 255, 0.7);
+                transition: all .3s;
+            }
+        }
 
-  .style-wrap {
-    margin-bottom: 0.5rem;
+        #banner_img {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+        }
 
-    &.disabled {
-      opacity: 0.5;
-      pointer-events: none;
+        .upload {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
     }
 
     .style {
@@ -323,6 +422,12 @@ onMounted(async () => {
       }
     }
   }
+}
+
+.updateLink {
+    color: var(--primary-color-400);
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 .box-shadow-card {
@@ -407,7 +512,10 @@ onMounted(async () => {
         object-fit: cover;
         z-index: 1;
         position: relative;
-      }
+        height: 250px;
+        flex-grow: 3;
+        overflow: hidden;
+        padding: 0;
 
       svg {
         fill: var(--gray-color-400);

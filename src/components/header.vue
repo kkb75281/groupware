@@ -303,6 +303,7 @@ function formatTimeAgo(timestamp) {
 }
 
 let openNotification = () => {
+  console.log(realtimes.value);
   isNotiOpen.value = !isNotiOpen.value;
   resetBadgeCount();
 };
