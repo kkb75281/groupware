@@ -21,7 +21,7 @@ main#main
 <script setup>
 import { watch, ref, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { mainPageLoading, isUpdateLoading, newVersionAvailable, newVersion, applyUpdate } from '@/main.ts'
+import { mainPageLoading, workerRegistered, isUpdateLoading, newVersionAvailable, newVersion, applyUpdate } from '@/main.ts'
 
 import Header from '@/components/header.vue';
 import Navbar from '@/components/navbar.vue';
@@ -31,7 +31,7 @@ const router = useRouter();
 const route = useRoute();
 
 const showNewVersionAlert = computed(() => {
-    return newVersionAvailable.value && newVersion.value && !isUpdateLoading.value;
+    return workerRegistered.value && newVersionAvailable.value && newVersion.value && !isUpdateLoading.value;
 });
 
 let mainWrap = ref(null);

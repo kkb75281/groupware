@@ -28,6 +28,7 @@ export let currentVersion: string | null = null; // 현재 활성화된 서비�
 export let newVersionAvailable = ref(false); // 새로운 버전이 있는지 여부
 export let newVersion = ref(''); // 새로운 버전이 있는지 여부
 export let isUpdateLoading = ref(false); // 업데이트 로딩 상태
+export let workerRegistered = ref(false); // 서비스 워커 등록 상태
 
 export let iwaslogged = ref(false);
 export let loaded = ref(false);
@@ -88,6 +89,11 @@ if ('serviceWorker' in navigator) {
     .register(`/wrk.${serviceID}.js`)
     .then((registration) => {
       console.log('Service Worker registered:', registration);
+      if (registration.active) {
+        workerRegistered.value = true;
+      } else {
+        workerRegistered.value = false;
+      }
 
       registration.addEventListener('updatefound', () => {
         newWorker = registration.installing;
