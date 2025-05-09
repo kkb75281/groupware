@@ -13,20 +13,6 @@
                 use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
         p {{ notificationNotWorkingMsg }}
 
-    //- .warning-msg(v-if="showNewVersionAlert")
-        .icon
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-        p 새로운 버전이 준비되었습니다.
-        a.updateLink(@click="applyUpdate") 그룹웨어 업데이트 하기
-
-        br
-    //- template(v-if="showNewVersionAlert")
-        p 새로운 버전이 준비되었습니다.
-        button.btn(@click="applyUpdate" :disabled="isUpdateLoading") 그룹웨어 업데이트 하기
-
-        br
-
     template(v-if="onlyUserGesture")
         button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
 
@@ -218,10 +204,8 @@ let banner_pic_input = ref(null);
 let bannerStyle = ref('contain');
 let modalWidth = ref(0);
 let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
+
 const encodedEmail = encodeURIComponent(user.email);
-const showNewVersionAlert = computed(() => {
-    return newVersionAvailable.value && newVersion.value && !isUpdateLoading.value;
-});
 
 let uploadFile = () => {
     banner_pic_input.value.click();
@@ -254,7 +238,7 @@ let uploadBanner = async () => {
                 access_group: 1
             }
         }).catch((err) => {
-            console.log('배너 삭제 중 오류 발생', err);
+            // console.log('배너 삭제 중 오류 발생', err);
             alert('배너 업로드 중 오류 발생');
             return;
         })
@@ -280,11 +264,11 @@ let uploadBanner = async () => {
             access_group: 1
         },
     }).then((res) => {
-        console.log('배너 업로드 성공', res);
+        // console.log('배너 업로드 성공', res);
         alert('배너 업로드 성공');
         getSystemBanner(true);
     }).catch((err) => {
-        console.log('배너 업로드 중 오류 발생', err);
+        // console.log('배너 업로드 중 오류 발생', err);
         alert('배너 업로드 중 오류 발생');
     }).finally(() => {
         bannerUploading.value = false;
@@ -318,6 +302,7 @@ let checkCommuteRecord = async (router) => {
         await endWork(router);
     } else {
         console.log('출근');
+        console.log('dashboard router:', router)
         await startWork(router);
     }
 }
@@ -330,10 +315,6 @@ onMounted(async () => {
     ]);
 
     getNewsletterList();
-
-    console.log({ divisionNameList })
-    console.log('userPositionCurrent', userPositionCurrent.value);
-    console.log(divisionNameList.value[userPositionCurrent.value[0]?.divisionId]);
 });
 </script>
 
