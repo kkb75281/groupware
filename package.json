@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --hos",
+    "dev": "vite --host",
     "build": "node read-env-file.cjs; vite build",
     "preview": "vite preview --host",
     "build-only": "vite build",

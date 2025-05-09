@@ -296,7 +296,7 @@ let showMailDoc = (e, rt) => {
     openGmailAppOrWeb(rt.link, rt.id);
 };
 
-let checkCommuteRecord = async (router) => {
+let checkCommuteRecord = async () => {
     if (todayWorkStarting.value) {
         console.log('퇴근');
         await endWork(router);
