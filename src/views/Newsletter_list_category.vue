@@ -38,7 +38,8 @@
                       tr(v-for="(category, key, index) in newsCatList" :key="category.record_id")
                           td.list-num {{ index + 1 }}
                           td.left 
-                              router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.index.value } }")
+                              //- router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.index.value} }")
+                              router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.record_id} }")
                                   span {{ category.data.news_category }}
 </template>
 
@@ -88,6 +89,7 @@ const getNewsCat = async () => {
       access_group: 1
     }
   });
+  console.log('res : ', res);
 
   newsCatList.value = res.list.reduce((acc, cur) => {
     acc[cur.record_id] = cur;

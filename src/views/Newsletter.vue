@@ -49,9 +49,11 @@
           template(v-else)
             tr.hover(v-for="(news, index) in newsletterList" :key="news.record_id" @click="router.push('/newsletter-detail/' + news.record_id)")
               td {{ newsletterList.length - index }}
-              td.left {{ news.data.news_title }}
+              td.left {{ news.data?.news_title }}
               td {{ convertTimestampToDateMillis(news.uploaded) }}
               td {{ news.writer }}
+
+//- button.btn.outline(type="button" @click="testDelete") delete
 </template>
 
 <script setup>
@@ -60,9 +62,18 @@ import { useRoute, useRouter } from 'vue-router';
 import { newsletterList, getNewsletterList } from '@/notifications.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { skapi } from '@/main.ts';
-import { user } from '@/user.ts';
 
 import Loading from '@/components/loading.vue';
+
+// const testDelete = () => {
+//   skapi
+//     .deleteRecords({
+//       record_id: 'UkU0JXEeC9YEfDF6'
+//     })
+//     .then((res) => {
+//       console.log('삭제완');
+//     });
+// };
 
 // 게시판 공지
 // 이메일 발송의 기존 방식 -> 게시판 형태의 공지 방식으로 변경
@@ -82,7 +93,8 @@ const router = useRouter();
 const route = useRoute();
 
 const loading = ref(false);
-const cate = ref(route.params.category);
+const cate = ref(route.query.category);
+
 const searchFor = ref('subject');
 const searchValue = ref({
   subject: '',
@@ -91,6 +103,21 @@ const searchValue = ref({
     end: ''
   }
 });
+
+let dummyId = ''; // 카테고리별 더미 레코드 ID
+
+// 카테고리별 더미 레코드 가져오기
+const getNewsCatRecord = async () => {
+  const res = await skapi.getRecords({
+    table: {
+      name: `newsCatRecord_${cate.value}`,
+      access_group: 'authorized'
+    }
+  });
+
+  dummyId = res.list[0].record_id;
+  return dummyId;
+};
 
 // 게시글 검색
 const searchNewsletter = async (refresh = false) => {
@@ -145,7 +172,8 @@ watch(searchFor, (nv, ov) => {
 
 onMounted(async () => {
   loading.value = true;
-  await getNewsletterList(cate.value);
+  await getNewsCatRecord();
+  await getNewsletterList(dummyId, true);
   loading.value = false;
 });
 </script>
@@ -186,6 +214,12 @@ onMounted(async () => {
       left: 50%;
       transform: translate(-50%, -50%);
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .inner {
+    padding: 1rem;
   }
 }
 </style>

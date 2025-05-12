@@ -157,7 +157,6 @@ const disabled = ref(false);
 
 const newsCatList = ref([]); // 게시글 카테고리명 리스트
 const selectedCategory = ref(''); // 선택된 카테고리
-const selCatId = ref(''); // 선택된 카테고리 ID
 
 watch(selectedCategory, (n) => {
   if (n) {
@@ -172,12 +171,6 @@ watch(selectedCategory, (n) => {
       } else {
         notiSetting.value = true;
       }
-
-      // 선택한 카테고리의 더미 레코드 가져오기
-      getNewsCatRecord(selectedCat.record_id).then((res) => {
-        selCatId.value = res;
-        console.log('AA == selCatId.value : ', selCatId.value);
-      });
     } else {
       selectedDivision.value = {};
     }
@@ -576,21 +569,6 @@ let updateFileList = (e) => {
   e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
 };
 
-// 카테고리별 더미 레코드 가져오기
-const getNewsCatRecord = async (id) => {
-  const res = await skapi.getRecords({
-    table: {
-      name: `newsCatRecord_${id}`,
-      access_group: 'authorized'
-    }
-  });
-
-  const dummyId = res.list[0].record_id;
-  console.log('dummyId : ', dummyId);
-
-  return dummyId;
-};
-
 // 게시글 레코드 생성
 const postNewsRecord = async ({ news_title, to_news_content }) => {
   const accessUser = [];
@@ -662,7 +640,6 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
         });
     }
     console.log('selectedCategory.value : ', selectedCategory.value);
-    console.log('selCatId.value : ', selCatId.value);
 
     const options = {
       readonly: true, // 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
@@ -677,7 +654,6 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       source: {
         prevent_multiple_referencing: true // 중복 방지
       },
-      reference: selCatId.value, // 카테고리별 더미 레코드 ID를 레퍼런스
       tags: selectedCategory.value // 카테고리
     };
     console.log('options : ', options);
@@ -1021,8 +997,6 @@ const updateScreenSize = () => {
 onMounted(async () => {
   window.addEventListener('resize', updateScreenSize);
   getNewsCatList();
-  console.log('newsCatList.value : ', newsCatList.value);
-  // getNewsCatRecord();
 });
 
 onUnmounted(() => {

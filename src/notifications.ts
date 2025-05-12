@@ -402,20 +402,25 @@ export const addEmailNotification = (emailData: any) => {
 export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
+// 카테고리 해당 게시글 리스트
 export const getNewsletterList = async (tag, refresh = false) => {
-  // console.log('=== getNewsletterList === refresh : ', refresh);
-  console.log('카테고리 해당 게시글 리스트');
+  console.log('=== getNewsletterList === tag : ', tag);
 
   const getNews = await skapi.getRecords({
     table: {
       name: 'newsletter',
       access_group: 'private'
     },
-    record_id: 'UkUAZJFriza6fDF6'
+    reference: tag
     // tag: tag
   });
+  console.log('=== getNewsletterList === getNews : ', getNews);
 
-  newsletterList.value = getNews.list;
+  if (!getNews.list) {
+    newsletterList.value = [];
+  }
+
+  newsletterList.value = getNews.list.sort((a, b) => b.uploaded - a.uploaded);
 
   const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
 
@@ -425,7 +430,8 @@ export const getNewsletterList = async (tag, refresh = false) => {
       writer: writer[index]?.list?.[0]?.name || '이름 없음'
     };
   });
-  console.log('=== getNewsletterList === newsletterList.value : ', newsletterList.value);
+
+  return newsletterList.value;
 };
 
 // export const getNewsletterList = async (refresh = false) => {
@@ -600,7 +606,7 @@ watch(
     if (u && Object.keys(u).length) {
       const res = await Promise.all([getRealtime(), getReadList()]);
 
-      console.log('=== watch user === res : ', res);
+      // console.log('=== watch user === res : ', res);
 
       return res;
     }
