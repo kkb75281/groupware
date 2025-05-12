@@ -1,6 +1,6 @@
 <template lang="pug">
 //- .title
-//- 	h1 공지사항
+//- 	h1 각 카테고리별 게시글 목록
 
 //- hr
 
@@ -20,10 +20,11 @@
           input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
       .tb-toolbar
         .btn-wrap
+          button.btn.bg-gray.md(type="button" @click="router.push('/newsletter-category/')") 이전
           button.btn.outline.refresh-icon(:disabled="loading" @click="searchNewsletter(true)")
             svg(:class="{'rotate' : loading}")
               use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-          button.btn.outline.md(type="button" @click="writeNewsletter") 글작성
+          button.btn.outline.md(type="button" @click="router.push('/newsletter-add')") 글작성
     .tb-overflow
       table.table#tb-newsList
         colgroup
@@ -121,11 +122,6 @@ const searchNewsletter = async (refresh = false) => {
   }
 
   loading.value = false;
-};
-
-const writeNewsletter = async () => {
-  console.log('새로운 공지사항 등록');
-  router.push('/newsletter-add');
 };
 
 watch(searchFor, (nv, ov) => {

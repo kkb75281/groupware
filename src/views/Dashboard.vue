@@ -1,164 +1,164 @@
 <template lang="pug">
-#dashboard
-    .warning-msg(v-if="serviceWorkerRegistMsg")
-        .icon
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-        p {{ serviceWorkerRegistMsg }}
-
-
-    .warning-msg(v-if="notificationNotWorkingMsg")
-        .icon
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-        p {{ notificationNotWorkingMsg }}
-
-    template(v-if="onlyUserGesture")
-        button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
-
-        br
-
-    .profComp-wrap
-        .box-shadow-card.profile-wrap
-            .thumbnail(ref="btnProfile" @click="openProfile")
-                template(v-if="profileImage")
-                    img(:src="profileImage" alt="img-profile")
-                template(v-else)
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
-            .name {{ user.name }}
-            .division {{ userPositionCurrent.length > 0 ? divisionNameList[userPositionCurrent[0].divisionId] + ' / ' + userPositionCurrent[0].position + ' 외 ' + (userPositionCurrent.length - 1) + '개'  : userPositionCurrent[0] }}
-            br
-            .buttons(v-if="system_worktime")
-                button.btn.sm.bg-gray(v-if="todayWorkStarting && todayWorkEnding" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;") 내일 봬요 :)
-                button.btn.sm(v-else-if="!todayWorkStarting" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;" @click="checkCommuteRecord") 출근
-                button.btn.sm.bg-gray(v-else type="button" style="display:inline-block;font-size:0.7rem" @click="checkCommuteRecord") 퇴근
-
-        .box-shadow-card.company-wrap(:class="{master: user.access_group > 98, edit: editMode}")
-            img.banner-img(v-if="system_banner" :src="system_banner?.url" :style="{objectFit: system_banner_style}" alt="회사사진")
-            p.desc(v-else)
-                | 안녕하세요. FGWORKS 입니다.
-                br
-                | 오늘도 좋은 하루 되세요.
-            button.btn.master(type="button" @click.stop="openModal") 배너 설정
-
-    .mo-btn-wrap
-        .icon
-            a(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
-            p 이메일
-        .icon(:class="{'active': route.path.split('/')[1] === 'approval'}" @click="router.push('/approval/request-audit')" style="padding-bottom:6px")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
-            p 전자결재
-        //- .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
-            p 공지사항
-        .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'commute'}" @click="router.push('/commute/commute-record')")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
-            p 근태관리
-        .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
-            p 직원목록
-        .icon(:class="{'active': route.path.split('/')[1] === 'organigram'}" @click="router.push('/organigram')")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
-            p 조직도
-        .icon(:class="{'active': route.path.split('/')[1] === 'mypage'}" @click="router.push('/mypage/edit-myinfo')")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
-            p 마이페이지
-        .icon.master(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
-            p 마스터 페이지
-
-    //- ul.card-wrap.gmail
-        li.card
-            .title-wrap
-                h3.title
-                    .icon.img
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
-                    | 공지사항
-                router-link.go-detail(to="/newsletter") 더보기
-                    .icon
-                            svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-            ul.newsletter-mail
-                li.mail(v-for="news in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
-                    .link
-                        span.mail-title {{ news.subject }}
-                        span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
-                .empty(v-if="newsletterList && !newsletterList.length")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-                    | 등록된 공지사항이 없습니다.
-
-    .box-shadow-card.gmail(v-if="googleAccountCheck")
-        a.title-with-icon.alink(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
-            h3.title 이메일
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
-        ul.list-wrap.mail-warp(v-if="mailList && mailList.length")
-            li.list.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
-                span.from {{ mail.from }}
-                span.title {{ mail.subject }}
-                p.cont {{ mail.snippet }}
-                span.attachment(v-if="mail.hasAttachment")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
-                span.date {{ mail.date }}
-
-        .empty(v-else)
+    #dashboard
+        .warning-msg(v-if="serviceWorkerRegistMsg")
             .icon
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-            | 현재 메일이 없습니다.
-
-#modal.modal(v-if="isModalOpen" @click="cancelBanner")
-    .modal-cont(@click.stop style="min-width:unset; max-width:unset;")
-        .modal-header
-            h2.modal-title 배너 설정
-            button.btn-close(@click="cancelBanner")
+            p {{ serviceWorkerRegistMsg }}
+    
+    
+        .warning-msg(v-if="notificationNotWorkingMsg")
+            .icon
                 svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-        .modal-body
-            .style-wrap(:class="{disabled: !uploadSrc.banner_pic || bannerUploading}")
-                .style(:class="{selected: bannerStyle === 'contain'}" @click="bannerStyle = 'contain'")
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+            p {{ notificationNotWorkingMsg }}
+    
+        template(v-if="onlyUserGesture")
+            button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
+    
+            br
+    
+        .profComp-wrap
+            .box-shadow-card.profile-wrap
+                .thumbnail(ref="btnProfile" @click="openProfile")
+                    template(v-if="profileImage")
+                        img(:src="profileImage" alt="img-profile")
+                    template(v-else)
+                        .icon
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+                .name {{ user.name }}
+                .division {{ userPositionCurrent.length > 0 ? divisionNameList[userPositionCurrent[0].divisionId] + ' / ' + userPositionCurrent[0].position + ' 외 ' + (userPositionCurrent.length - 1) + '개'  : userPositionCurrent[0] }}
+                br
+                .buttons(v-if="system_worktime")
+                    button.btn.sm.bg-gray(v-if="todayWorkStarting && todayWorkEnding" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;") 내일 봬요 :)
+                    button.btn.sm(v-else-if="!todayWorkStarting" type="button" :disabled="todayWorkStarting && todayWorkEnding" style="display:inline-block;font-size:0.7rem;" @click="checkCommuteRecord") 출근
+                    button.btn.sm.bg-gray(v-else type="button" style="display:inline-block;font-size:0.7rem" @click="checkCommuteRecord") 퇴근
+    
+            .box-shadow-card.company-wrap(:class="{master: user.access_group > 98, edit: editMode}")
+                img.banner-img(v-if="system_banner" :src="system_banner?.url" :style="{objectFit: system_banner_style}" alt="회사사진")
+                p.desc(v-else)
+                    | 안녕하세요. FGWORKS 입니다.
+                    br
+                    | 오늘도 좋은 하루 되세요.
+                button.btn.master(type="button" @click.stop="openModal") 배너 설정
+    
+        .mo-btn-wrap
+            .icon
+                a(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
-                .style(:class="{selected: bannerStyle === 'cover'}" @click="bannerStyle = 'cover'")
-                    svg(style="transform:rotate(90deg)")
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
-                .style(:class="{selected: bannerStyle === 'fill'}" @click="bannerStyle = 'fill'")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-mail")
+                p 이메일
+            .icon(:class="{'active': route.path.split('/')[1] === 'approval'}" @click="router.push('/approval/request-audit')" style="padding-bottom:6px")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
+                p 전자결재
+            //- .icon(:class="{'active': route.path.split('/')[1] === 'newsletter'}" @click="router.push('/newsletter')")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
+                p 공지사항
+            .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'commute'}" @click="router.push('/commute/commute-record')")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-work-history")
+                p 근태관리
+            .icon(v-if="user.access_group < 99" :class="{'active': route.path.split('/')[1] === 'list-employee'}" @click="router.push('/list-employee')")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
+                p 직원목록
+            .icon(:class="{'active': route.path.split('/')[1] === 'organigram'}" @click="router.push('/organigram')")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
+                p 조직도
+            .icon(:class="{'active': route.path.split('/')[1] === 'mypage'}" @click="router.push('/mypage/edit-myinfo')")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
+                p 마이페이지
+            .icon.master(v-if="user.access_group > 98" :class="{'active': route.path.split('/')[1] === 'admin'}" @click="router.push('/admin/list-divisions')")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
+                p 마스터 페이지
+    
+        //- ul.card-wrap.gmail
+            li.card
+                .title-wrap
+                    h3.title
+                        .icon.img
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
+                        | 공지사항
+                    router-link.go-detail(to="/newsletter") 더보기
+                        .icon
+                                svg
+                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+                ul.newsletter-mail
+                    li.mail(v-for="news in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
+                        .link
+                            span.mail-title {{ news.subject }}
+                            span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
+                    .empty(v-if="newsletterList && !newsletterList.length")
+                        .icon
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+                        | 등록된 공지사항이 없습니다.
+    
+        .box-shadow-card.gmail(v-if="googleAccountCheck")
+            a.title-with-icon.alink(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
+                h3.title 이메일
+                .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-zoom-out-map")
-                .style(:class="{selected: bannerStyle === 'none'}" @click="bannerStyle = 'none'")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+    
+            ul.list-wrap.mail-warp(v-if="mailList && mailList.length")
+                li.list.mail(v-for="mail in mailList" :key="mail.id" @click="(e) => showMailDoc(e, mail)")
+                    span.from {{ mail.from }}
+                    span.title {{ mail.subject }}
+                    p.cont {{ mail.snippet }}
+                    span.attachment(v-if="mail.hasAttachment")
+                        .icon
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-attach-file")
+                    span.date {{ mail.date }}
+    
+            .empty(v-else)
+                .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-aspect-ratio")
-            input#banner_pic(ref="banner_pic_input" type="file" name="banner_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
-            .image-wrap(:class="{opacity: bannerUploading}" :style="{width: `${modalWidth}px`}" style="display: inline-block")
-                img#banner_img(v-if="uploadSrc.banner_pic && !openCropModal" :src="uploadSrc.banner_pic" :style="{objectFit: bannerStyle}" alt="배너 이미지")
-                .upload(v-if="bannerUploading")
-                    Loading
-                button.btn.upload(v-else :class="{'bg-gray': uploadSrc.banner_pic}" @click="uploadFile") 
-                    template(v-if="!uploadSrc.banner_pic") 사진 등록
-                    template(v-else) 사진 변경
-            CropImage(:open="openCropModal" :imageSrc="currentImageSrc" :aspectRatio="'NaN'" @cropped="setCroppedImage" @close="closeCropImageDialog")
-        .modal-footer
-            button.btn.bg-gray.btn-cancel(type="button" :disabled="bannerUploading" @click="cancelBanner") 취소
-            button.btn.btn-register(type="submit" :disabled="!uploadSrc.banner_pic || bannerUploading" @click="uploadBanner") 등록
-</template>
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
+                | 현재 메일이 없습니다.
+    
+    #modal.modal(v-if="isModalOpen" @click="cancelBanner")
+        .modal-cont(@click.stop style="min-width:unset; max-width:unset;")
+            .modal-header
+                h2.modal-title 배너 설정
+                button.btn-close(@click="cancelBanner")
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+            .modal-body
+                .style-wrap(:class="{disabled: !uploadSrc.banner_pic || bannerUploading}")
+                    .style(:class="{selected: bannerStyle === 'contain'}" @click="bannerStyle = 'contain'")
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
+                    .style(:class="{selected: bannerStyle === 'cover'}" @click="bannerStyle = 'cover'")
+                        svg(style="transform:rotate(90deg)")
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-expand")
+                    .style(:class="{selected: bannerStyle === 'fill'}" @click="bannerStyle = 'fill'")
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-zoom-out-map")
+                    .style(:class="{selected: bannerStyle === 'none'}" @click="bannerStyle = 'none'")
+                        svg
+                            use(xlink:href="@/assets/icon/material-icon.svg#icon-aspect-ratio")
+                input#banner_pic(ref="banner_pic_input" type="file" name="banner_pic" accept="image/*" @change="openCropImageDialog" style="opacity: 0;width: 0;height: 0;position: absolute;")
+                .image-wrap(:class="{opacity: bannerUploading}" :style="{width: `${modalWidth}px`}" style="display: inline-block")
+                    img#banner_img(v-if="uploadSrc.banner_pic && !openCropModal" :src="uploadSrc.banner_pic" :style="{objectFit: bannerStyle}" alt="배너 이미지")
+                    .upload(v-if="bannerUploading")
+                        Loading
+                    button.btn.upload(v-else :class="{'bg-gray': uploadSrc.banner_pic}" @click="uploadFile") 
+                        template(v-if="!uploadSrc.banner_pic") 사진 등록
+                        template(v-else) 사진 변경
+                CropImage(:open="openCropModal" :imageSrc="currentImageSrc" :aspectRatio="'NaN'" @cropped="setCroppedImage" @close="closeCropImageDialog")
+            .modal-footer
+                button.btn.bg-gray.btn-cancel(type="button" :disabled="bannerUploading" @click="cancelBanner") 취소
+                button.btn.btn-register(type="submit" :disabled="!uploadSrc.banner_pic || bannerUploading" @click="uploadBanner") 등록
+    </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';

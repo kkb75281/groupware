@@ -23,14 +23,14 @@
 									.input-wrap
 										input#name_newsCat(type="text" v-model="newsCatName" name="name_newsCat" placeholder="제목을 입력해주세요." required)
 
-							tr(v-if="Object.keys(selectedDivision).length === 0" style="height: 119px;")
+							tr(v-if="Object.keys(selectedDivision).length === 0" style="height: 100px;")
 								th.essential 공개범위
 								td.left(colspan="3")
 									span.empty(@click="openModal" style="cursor: pointer;") 이곳을 눌러 공개범위를 설정해주세요.
 
 							tr.selected-dvs(v-if="Object.keys(selectedDivision).length > 0")
 								th.essential 공개 범위
-								td.left(colspan="3" style="padding: 0; height: 119px;")
+								td.left(colspan="3")
 									ul.dvs-wrap
 										li.dvs-list(v-for="(division, index) in Object.keys(selectedDivision)" :key="division")
 											span.dvs-name {{ divisionNameList[division] }}
@@ -164,7 +164,7 @@ const getEditModeCat = async () => {
       // 데이터 설정
       newsCatName.value = categoryData.data.news_category || '';
       selectedDivision.value = categoryData.data.access_division || {};
-      notiSetting.value = categoryData.data.notiSetting ? 'true' : 'false';
+      notiSetting.value = String(categoryData.data.notiSetting);
 
       // 직원 선택 데이터 구성
       if (Object.keys(selectedDivision.value).length > 0) {
@@ -580,71 +580,71 @@ onUnmounted(() => {
   margin-top: 1rem;
 }
 
+// .dvs-wrap {
+//   display: grid;
+//   grid-template-columns: repeat(8, 1fr);
+//   text-align: center;
+//   height: 100%;
+
+//   .dvs-list {
+//     display: flex;
+//     flex-direction: column;
+//     width: 100%;
+//     min-height: 6rem;
+//     border-right: 1px solid var(--gray-color-300);
+//     border-bottom: 1px solid var(--gray-color-300);
+//     margin-bottom: -1px;
+//     position: relative;
+//   }
+
+//   .num {
+//     border-bottom: 1px solid var(--gray-color-200);
+//     padding: 0.25rem;
+//   }
+
+//   .dvs-name {
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     height: 100%;
+//     padding: 0.25rem;
+//   }
+
+//   .add-dvs {
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     height: 100%;
+//     cursor: pointer;
+
+//     .icon {
+//       svg {
+//         fill: var(--gray-color-400);
+//       }
+//     }
+//   }
+
+//   .btn-remove {
+//     margin-left: 4px;
+
+//     .icon {
+//       padding: 0;
+
+//       svg {
+//         width: 16px;
+//         height: 16px;
+//       }
+//     }
+//   }
+// }
+
 .dvs-wrap {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  text-align: center;
-  height: 100%;
-
-  .dvs-list {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    min-height: 6rem;
-    border-right: 1px solid var(--gray-color-300);
-    border-bottom: 1px solid var(--gray-color-300);
-    margin-bottom: -1px;
-    position: relative;
-  }
-
-  .num {
-    border-bottom: 1px solid var(--gray-color-200);
-    padding: 0.25rem;
-  }
-
-  .dvs-name {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    padding: 0.25rem;
-  }
-
-  .add-dvs {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    cursor: pointer;
-
-    .icon {
-      svg {
-        fill: var(--gray-color-400);
-      }
-    }
-  }
-
-  .btn-remove {
-    margin-left: 4px;
-
-    .icon {
-      padding: 0;
-
-      svg {
-        width: 16px;
-        height: 16px;
-      }
-    }
-  }
-}
-
-.reference-wrap {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   text-align: center;
 
-  .reference-list {
+  .dvs-list {
     display: flex;
     justify-content: center;
     background-color: var(--gray-color-50);
@@ -652,7 +652,7 @@ onUnmounted(() => {
     border-radius: 8px;
   }
 
-  .referencer {
+  .dvs-name {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -669,7 +669,7 @@ onUnmounted(() => {
     }
   }
 
-  .add-referencer {
+  .add-dvs {
     display: flex;
     align-items: center;
     cursor: pointer;
