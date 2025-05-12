@@ -69,7 +69,7 @@ export let getSystemWorktime = async (refresh = false) => {
   }
 
   // console.log("getSystemWorktimeId", getSystemWorktimeId.value);
-  console.log('system_worktime', system_worktime.value);
+  //   console.log('system_worktime', system_worktime.value);
 
   return system_worktime.value;
 };
@@ -111,7 +111,7 @@ export const getMyWorktimeStorage = async (refresh = false) => {
   let res = await getMyWorktimeStorageRunning;
 
   if (res && res.list && res.list.length) {
-    console.log('getMyWorktimeStorage', res);
+    // console.log('getMyWorktimeStorage', res);
 
     my_worktime_storage.value = [...res.list].sort((a, b) => b.uploaded - a.uploaded); // uploaded(레코드 최초 생성순) 기준으로 정렬해야 함.
 
@@ -149,7 +149,7 @@ export const getMyWorktimeStorage = async (refresh = false) => {
       onlyData.reduce((acc, item) => {
         const { date, startTime, endTime, startTimeStamp, endTimeStamp } = item;
 
-        console.log(acc, item);
+        // console.log(acc, item);
 
         // 유효성 검사
         if (!date) return acc;
@@ -164,7 +164,7 @@ export const getMyWorktimeStorage = async (refresh = false) => {
             endTimeStamp: -Infinity,
             dailyCommuteTime: null
           };
-          console.log('aaa', acc[date]);
+          //   console.log('aaa', acc[date]);
         }
 
         // 출근 기록 처리 (startTimeStamp가 있으면 업데이트)
@@ -189,9 +189,9 @@ export const getMyWorktimeStorage = async (refresh = false) => {
     );
   }
 
-  console.log('todayWorkStarting', todayWorkStarting.value);
-  console.log('my_worktime_storage', my_worktime_storage.value);
-  console.log('my_worktime_storage_data', my_worktime_storage_data.value);
+  //   console.log('todayWorkStarting', todayWorkStarting.value);
+  //   console.log('my_worktime_storage', my_worktime_storage.value);
+  //   console.log('my_worktime_storage_data', my_worktime_storage_data.value);
 
   return my_worktime_storage.value;
 };
@@ -263,7 +263,8 @@ export let startWork = async (router?: any) => {
     // 지각일 경우, 지각한 사유 적기 위해 저장 후 출퇴근 관리 페이지로 이동
     if (isLate && router) {
       alert('지각하셨습니다. 지각 사유를 적어주세요.');
-      router.push('/commute/commute-record');
+      console.log('worktime.ts: ', router);
+      router.push({ name: 'commute-record' });
     }
   } catch (error) {
     console.log('출근 기록 저장 에러', error);
@@ -320,7 +321,7 @@ export let endWork = async (router?: any) => {
     // 야근일 경우, 야근한 사유 적기 위해 저장 후 출퇴근 관리 페이지로 이동
     if (isOvertime && router) {
       alert('야근하셨습니다. 야근 사유를 적어주세요.');
-      router.push('/commute/commute-record');
+      router.push({ name: 'commute-record' });
     }
   } catch (error) {
     console.log('퇴근 기록 저장 에러', error);

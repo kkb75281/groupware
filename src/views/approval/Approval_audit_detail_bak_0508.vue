@@ -1,9 +1,9 @@
 <template lang="pug">
-.title
-	h1 결재 문서
-	span(v-if="isCanceled" style="color:var(--warning-color-400)") 현재 문서는 회수된 문서입니다.
+//- .title
+//- 	h1 결재 문서
+span(v-if="isCanceled" style="color:var(--warning-color-400)") 현재 문서는 회수된 문서입니다.
 
-hr
+//- hr
 
 Loading#loading(v-if="getAuditDetailRunning")
 
@@ -15,8 +15,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 			.reject-setting
 				template(v-if="senderUser.user_id === user.user_id")
-					p.text(v-if="rejectSetting") ※ 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.
-					p.text(v-else) ※ 결재 도중 반려시 해당 결재서류 회수합니다.
+					p.text(v-if="!rejectSetting") ※ 결재 도중 반려시 해당 결재서류 회수합니다.
+					p.text(v-else) ※ 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.
 
 			.table-wrap
 				.tb-overflow
@@ -139,6 +139,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 					svg
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="isCanceled") 회수
+			button.btn.outline.btn-re-request(type="button" v-if="senderUser.user_id === user.user_id" @click="reRequestAudit") 재요청
 			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
 
 //- 결재 모달
@@ -205,7 +206,7 @@ import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { skapi, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe } from '@/user.ts';
 import { getUserInfo } from '@/employee.ts';
-import { auditList } from '@/audit.ts';
+import { auditList, reRequestData } from '@/audit.ts';
 import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp.ts';
 import {
   openStampModal,
@@ -656,7 +657,7 @@ const getAuditDetail = async () => {
     receivers: []
   };
   isCanceled.value = false;
-  rejectSetting.value = true;
+  rejectSetting.value = false;
 
   if (!auditId.value) {
     getAuditDetailRunning.value = false;
@@ -669,7 +670,7 @@ const getAuditDetail = async () => {
         record_id: auditId.value
       })
     ).list[0];
-    // console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
+    console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
 
     if (auditDoc) {
       auditDoContent.value = auditDoc;
@@ -688,7 +689,7 @@ const getAuditDetail = async () => {
         rejectSetting.value =
           auditDoc.data.reject_setting === 'true' || auditDoc.data.reject_setting === true;
       } else {
-        rejectSetting.value = true;
+        rejectSetting.value = false;
       }
     }
 
@@ -742,16 +743,39 @@ const getAuditDetail = async () => {
       processAuditors('receivers')
     ]);
 
-    if (Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
+    // if (Object.keys(auditDoc.bin).length && auditDoc.bin.additional_data.length) {
+    //   console.log('AA');
+
+    //   let fileList = [];
+    //   let additional_data = auditDoc.bin.additional_data;
+
+    //   function getFileUserId(str) {
+    //     if (!str) return '';
+    //     return str.split('/')[3];
+    //   }
+
+    //   const result = additional_data.map((el) => ({
+    //     ...el,
+    //     user_id: getFileUserId(el.path)
+    //   }));
+
+    //   fileList.push(...result);
+
+    //   uploadedFile.value = fileList;
+    // }
+
+    if (Object.keys(auditDoc.bin).length && auditDoc.bin.form_data.length) {
+      console.log('BB');
+
       let fileList = [];
-      let additional_data = auditDoc.bin.additional_data;
+      let form_data = auditDoc.bin.form_data;
 
       function getFileUserId(str) {
         if (!str) return '';
         return str.split('/')[3];
       }
 
-      const result = additional_data.map((el) => ({
+      const result = form_data.map((el) => ({
         ...el,
         user_id: getFileUserId(el.path)
       }));
@@ -759,14 +783,15 @@ const getAuditDetail = async () => {
       fileList.push(...result);
 
       uploadedFile.value = fileList;
+      console.log('uploadedFile.value : ', uploadedFile.value);
     } else {
+      console.log('CC');
       uploadedFile.value = [];
     }
 
     getAuditDetailRunning.value = false;
 
     const approvals = await approvedAudit();
-    console.log('결재완료자 === getAuditDetail === approvals : ', approvals);
 
     // 최종결재자 정보 확인
     const allApprovers = [
@@ -1490,6 +1515,20 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
   }
 
   await nextTick();
+};
+
+// 기안자의 재요청
+const reRequestAudit = () => {
+  reRequestData.value = auditDoContent.value;
+  console.log('reRequestData : ', reRequestData.value);
+
+  router.push({
+    path: '/approval/request-audit',
+    query: {
+      mode: 'reRequest',
+      isReRequest: true
+    }
+  });
 };
 
 onMounted(() => {
@@ -2239,8 +2278,6 @@ onUnmounted(() => {
       .file-item {
         width: 100%;
       }
-    }
-    &.upload-stamp {
     }
   }
 }

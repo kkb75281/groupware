@@ -86,15 +86,15 @@ header#header
                         h5.noti-title 읽지 않은 이메일이 있습니다.
                 li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, 'realtime', rt)")
                     .router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
-                        template(v-if="rt.audit_info && rt.audit_info?.audit_type === 'request'")
-                            h4.noti-type [{{(rt.audit_info?.send_auditors || []).includes(`receiver:${user.user_id.replaceAll('-', '_')}`) ? '수신참조' : '결재요청'}}]
-                            h5.noti-title {{ rt.audit_info.to_audit }}
+                        template(v-if="rt?.noti_type === 'notice'")
+                            h4.noti-type [공지]
+                            h5.noti-title {{ rt.news_info?.news_title }}
                             p.noti-sender {{ rt.send_name }}
                             p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
-                        template(v-if="rt.noti_type === 'notice'")
-                            h4.noti-type [공지]
-                            h5.noti-title {{ rt.news_info?.news_title }}
+                        template(v-else-if="rt.audit_info && rt.audit_info?.audit_type === 'request'")
+                            h4.noti-type [{{(rt.audit_info?.send_auditors || []).includes(`receiver:${user.user_id.replaceAll('-', '_')}`) ? '수신참조' : '결재요청'}}]
+                            h5.noti-title {{ rt.audit_info.to_audit }}
                             p.noti-sender {{ rt.send_name }}
                             p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
@@ -308,6 +308,7 @@ function formatTimeAgo(timestamp) {
 }
 
 let openNotification = () => {
+  console.log(realtimes.value);
   isNotiOpen.value = !isNotiOpen.value;
   resetBadgeCount();
 };
@@ -504,18 +505,19 @@ watch(
   }
 
   .thumbnail {
-    width: 3rem;
-    height: 3rem;
+    width: 2.5rem;
+    height: 2.5rem;
     // border: 0.1875rem solid #fff;
     border-radius: 50%;
     display: flex;
     align-items: center;
-    padding: 0 1rem;
+    // padding: 0 1rem;
     transition: padding 0.15s linear;
     transition: top 0.3s;
     z-index: 9999;
     // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
     border-bottom: 1px solid var(--gray-color-300);
+    overflow: hidden;
 
     .img-logo {
       img {

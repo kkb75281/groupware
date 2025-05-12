@@ -27,14 +27,14 @@ let menuLists = {
       name: 'commute-record',
       icon: '#icon-work-history',
       to: '/commute/commute-record'
-    },
-    {
-      show: true,
-      text: '연차 관리',
-      name: 'commute-year',
-      icon: '#icon-clock',
-      to: '/commute/commute-year'
     }
+    // {
+    //     show: true,
+    //     text: '연차 관리',
+    //     name: 'commute-year',
+    //     icon: '#icon-clock',
+    //     to: '/commute/commute-year'
+    // }
   ],
   approval: [
     {
