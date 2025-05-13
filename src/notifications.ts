@@ -412,9 +412,7 @@ export const getNewsletterList = async (tag, refresh = false) => {
       access_group: 'private'
     },
     reference: tag
-    // tag: tag
   });
-  console.log('=== getNewsletterList === getNews : ', getNews);
 
   if (!getNews.list) {
     newsletterList.value = [];
@@ -427,7 +425,7 @@ export const getNewsletterList = async (tag, refresh = false) => {
   newsletterList.value = newsletterList.value.map((item, index) => {
     return {
       ...item,
-      writer: writer[index]?.list?.[0]?.name || '이름 없음'
+      writer: writer[index]?.list?.[0]?.name || '-'
     };
   });
 

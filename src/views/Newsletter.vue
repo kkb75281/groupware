@@ -21,7 +21,7 @@
       .tb-toolbar
         .btn-wrap
           button.btn.bg-gray.md(type="button" @click="router.push('/newsletter-category/')") 이전
-          button.btn.outline.refresh-icon(:disabled="loading" @click="searchNewsletter(true)")
+          button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
             svg(:class="{'rotate' : loading}")
               use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
           button.btn.outline.md(type="button" @click="router.push('/newsletter-add')") 글작성
@@ -47,7 +47,7 @@
             tr.nohover
               td(colspan="4") 등록된 공지사항이 없습니다.
           template(v-else)
-            tr.hover(v-for="(news, index) in newsletterList" :key="news.record_id" @click="router.push('/newsletter-detail/' + news.record_id)")
+            tr.hover(v-for="(news, index) in newsletterList" :key="news.record_id" @click="router.push({ path: '/newsletter-detail/' + news.record_id, query: { category: route.query.category } })")
               td {{ newsletterList.length - index }}
               td.left {{ news.data?.news_title }}
               td {{ convertTimestampToDateMillis(news.uploaded) }}
@@ -93,7 +93,7 @@ const router = useRouter();
 const route = useRoute();
 
 const loading = ref(false);
-const cate = ref(route.query.category);
+const cateId = ref(route.query.category);
 
 const searchFor = ref('subject');
 const searchValue = ref({
@@ -108,9 +108,13 @@ let dummyId = ''; // 카테고리별 더미 레코드 ID
 
 // 카테고리별 더미 레코드 가져오기
 const getNewsCatRecord = async () => {
+  if (!cateId.value) {
+    return;
+  }
+
   const res = await skapi.getRecords({
     table: {
-      name: `newsCatRecord_${cate.value}`,
+      name: `newsCatRecord_${cateId.value}`,
       access_group: 'authorized'
     }
   });
@@ -124,7 +128,7 @@ const searchNewsletter = async (refresh = false) => {
   loading.value = true;
 
   if (searchValue.value.subject === '' || refresh) {
-    await getNewsletterList(cate.value, true);
+    await getNewsletterList(cateId.value, true);
     loading.value = false;
     return;
   }
@@ -150,6 +154,26 @@ const searchNewsletter = async (refresh = false) => {
     newsletterList.value = [];
   }
 
+  loading.value = false;
+};
+
+// 새로고침
+const refresh = async () => {
+  loading.value = true;
+
+  await getNewsCatRecord();
+
+  if (searchValue.value) {
+    searchValue.value = {
+      subject: '',
+      timestamp: {
+        start: '',
+        end: ''
+      }
+    };
+  }
+
+  await getNewsletterList(dummyId, true);
   loading.value = false;
 };
 

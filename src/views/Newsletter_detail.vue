@@ -70,9 +70,10 @@
                             li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
 
       .button-wrap  
-        //- button.btn.md.outline.btn-edit(type="button" @click="router.push('/newsletter/')") 수정
-        button.btn.md.outline.warning.btn-delete(type="button" @click="deleteNews") 삭제
-        button.btn.md.bg-gray(type="button" @click="router.push('/newsletter/')") 목록
+        template(v-if="newsCont?.writer === user.name")
+          button.btn.md.outline.warning.btn-delete(type="button" @click="deleteNews") 삭제
+          //- button.btn.md.outline.btn-edit(type="button" @click="editNews") 수정
+        button.btn.md.bg-gray(type="button" @click="router.push({ path: '/newsletter', query: { category: route.query.category } })") 목록
 
 </template>
 
@@ -87,9 +88,11 @@ const router = useRouter();
 const route = useRoute();
 
 const isDesktop = ref(window.innerWidth > 768); // 반응형
+const cateId = ref(route.query.category); // 카테고리 ID
 const newsId = ref(route.params.record_id); // 게시글 record_id
 const newsCont = ref([]); // 게시글 내용 저장 변수
 const uploadedFile = ref([]); // 첨부파일
+const editModeData = ref({}); // 수정 모드 데이터
 
 // 작성일 날짜
 function formatTimestampToDate(timestamp) {
@@ -118,6 +121,35 @@ function disableContentEditable(htmlString) {
   return tempDiv.innerHTML;
 }
 
+let dummyId = ''; // 카테고리별 더미 레코드 ID
+
+// 카테고리별 더미 레코드 가져오기
+const getNewsCatRecord = async () => {
+  const res = await skapi.getRecords({
+    table: {
+      name: `newsCatRecord_${cateId.value}`,
+      access_group: 'authorized'
+    }
+  });
+
+  dummyId = res.list[0].record_id;
+  return dummyId;
+};
+
+// 게시글 수정
+const editNews = () => {
+  editModeData.value = newsCont.value;
+
+  router.push({
+    path: '/newsletter-add',
+    query: {
+      mode: 'edit',
+      news: newsId.value,
+      category: cateId.value
+    }
+  });
+};
+
 // 게시글 삭제
 const deleteNews = async () => {
   const res = await skapi.deleteRecords({
@@ -126,20 +158,19 @@ const deleteNews = async () => {
 
   if (res) {
     alert('삭제되었습니다.');
-    router.push('/newsletter/');
+    router.back();
   } else {
     alert('삭제에 실패했습니다.');
   }
 };
 
 onMounted(async () => {
-  console.log('newsId : ', newsId.value);
-
-  const res = await getNewsletterList(newsId.value);
-  console.log('res : ', res);
+  await getNewsCatRecord();
+  const res = await getNewsletterList(dummyId);
 
   if (res) {
     newsCont.value = res.find((el) => el.record_id === newsId.value);
+    console.log('== onMounted == newsCont : ', newsCont.value);
 
     // 첨부파일 리스트
     if (Object.keys(newsCont.value.bin).length && newsCont.value.bin.form_data.length) {
@@ -159,9 +190,7 @@ onMounted(async () => {
       fileList.push(...result);
 
       uploadedFile.value = fileList;
-      console.log('uploadedFile : ', uploadedFile.value);
     } else {
-      console.log('CC');
       uploadedFile.value = [];
     }
   } else {

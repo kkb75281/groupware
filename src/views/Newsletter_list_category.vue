@@ -47,6 +47,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, onMounted } from 'vue';
 import { skapi } from '@/main.ts';
+import { newsletterList, getNewsletterList } from '@/notifications.ts';
 
 import Loading from '@/components/loading.vue';
 
@@ -91,16 +92,20 @@ const getNewsCat = async () => {
   });
   console.log('res : ', res);
 
-  newsCatList.value = res.list.reduce((acc, cur) => {
-    acc[cur.record_id] = cur;
-    return acc;
-  }, {});
+  if (res && res.list) {
+    newsCatList.value = res.list.reduce((acc, cur) => {
+      acc[cur.record_id] = cur;
+      return acc;
+    }, {});
+  } else {
+    newsCatList.value = {};
+  }
 };
 
 const refresh = async () => {
   loading.value = true;
 
-  getNewsCat();
+  await getNewsCat();
 
   if (searchValue.value) {
     searchValue.value = '';
@@ -191,6 +196,7 @@ const searchNewsCat = async () => {
 
 onMounted(() => {
   getNewsCat();
+  getNewsletterList();
 });
 </script>
 
