@@ -113,7 +113,10 @@ async function processAuditData(auditRequests, isReference = false) {
     // 내가 받은 결재 요청건의 결재 서류 가져오기
     const auditDocs = await Promise.all(
       auditRequests.list.map(async (list) => {
-        if (!list.data.audit_id) return;
+        if (!list || !list.data || !list.data.audit_id) {
+          console.log('유효하지 않음 : ', list);
+          return null;
+        }
 
         // 결재 서류 가져오기
         const audit_doc = (
@@ -122,7 +125,7 @@ async function processAuditData(auditRequests, isReference = false) {
           })
         ).list[0];
 
-        if (!audit_doc) return;
+        if (!audit_doc) return null;
 
         // 회수된 결재 서류 가져오기
         const canceledAudit = await skapi.getRecords({
@@ -288,7 +291,7 @@ async function processAuditData(auditRequests, isReference = false) {
     );
 
     // null/undefined 값 제거
-    const filteredDocs = auditDocs.filter((doc) => doc !== undefined);
+    const filteredDocs = auditDocs.filter((doc) => doc !== undefined && doc !== null);
 
     // 사용자 정보 추가
     const userList = await Promise.all(

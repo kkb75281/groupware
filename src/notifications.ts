@@ -412,8 +412,10 @@ export const getNewsletterList = async (tag, refresh = false) => {
       name: 'newsletter',
       access_group: 'private'
     },
-    reference: tag
+    reference: tag,
+    tag: tag
   });
+  console.log('=== getNewsletterList === getNews : ', getNews);
 
   if (!getNews.list) {
     newsletterList.value = [];

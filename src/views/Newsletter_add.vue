@@ -691,7 +691,8 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       // source: {
       //   prevent_multiple_referencing: true // 중복 방지
       // },
-      reference: selCatId.value // 카테고리별 더미 레코드 ID를 레퍼런스
+      reference: selCatId.value, // 카테고리별 더미 레코드 ID를 레퍼런스
+      tags: selCatId.value // 카테고리별 더미 레코드 ID를 태그로
     };
     console.log('options : ', options);
 
