@@ -89,6 +89,7 @@ export const readAudit: Ref<
     news_info?: {
       news_title: string;
       news_id: string;
+      news_refer: string;
       news_noti_id?: string;
       send_newsUser?: [];
     };

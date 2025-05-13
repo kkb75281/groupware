@@ -352,16 +352,33 @@ onUnmounted(() => {
 });
 
 let showRealtimeNoti = (e, type, rt) => {
-  console.log('type : ', type);
-  console.log('rt : ', rt);
-
   if (type === 'gmail') {
     openGmailAppOrWeb(null);
   } else if (type === 'realtime' && rt.audit_info) {
     goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
     readNoti(rt);
   } else if (type === 'realtime' && rt.news_info) {
-    router.push({ path: '/newsletter-detail/' + rt.news_info?.news_id });
+    console.log('rt.news_info : ', rt.news_info);
+    // router.push(`/newsletter-detail/${rt.news_info.news_id}?category=${rt.news_info.news_refer}`);
+    if (rt.news_info.news_id && rt.news_info.news_refer) {
+      // 객체 형태로 라우터 푸시 - 이렇게 하면 쿼리 파라미터가 더 안정적으로 전달됨
+      router.push({
+        path: `/newsletter-detail/${rt.news_info.news_id}`,
+        query: {
+          category: rt.news_info.news_refer
+        }
+      });
+
+      // 알림을 읽음 처리 (readNoti 함수가 존재한다면)
+      if (typeof readNoti === 'function') {
+        readNoti(rt);
+      }
+    } else {
+      console.error('필요한 정보가 부족합니다:', {
+        newsId: rt.news_info.news_id,
+        category: rt.news_info.news_refer
+      });
+    }
   }
 };
 

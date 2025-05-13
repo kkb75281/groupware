@@ -814,6 +814,7 @@ const createAddNews = async (
             news_info: {
               news_title: news_title,
               news_id: news_id,
+              news_refer: selCatId.value,
               news_noti_id: news_id,
               send_newsUser: send_newsUser
             }
@@ -845,6 +846,7 @@ const createAddNews = async (
         news_info: {
           news_title: news_title,
           news_id: news_id,
+          news_refer: selCatId.value,
           news_noti_id: news_id,
           send_newsUser: send_newsUser
         }
@@ -870,20 +872,12 @@ const createAddNews = async (
 
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTarget = false) => {
-  // console.log('== postAuditDocRecordId == newsId : ', newsId);
-  // console.log('== postAuditDocRecordId == newsTitle : ', newsTitle);
-  // console.log('== postAuditDocRecordId == userId : ', userId);
-  // console.log('== postAuditDocRecordId == isNotificationTarget : ', isNotificationTarget);
-  // console.log('== postAuditDocRecordId == notiSetting : ', notiSetting);
-
   try {
     // 권한 부여
     await grantNewsUserAccess({
       news_id: newsId,
       newsUser_id: userId
     });
-
-    console.log('== postAuditDocRecordId == 권한 부여 완료', newsId);
 
     // 알림 전송
     const res = await createAddNews(
@@ -895,9 +889,7 @@ const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTar
       send_auditors_arr,
       isNotificationTarget
     );
-
     console.log('== postAuditDocRecordId == res : ', res);
-
     return res;
   } catch (error) {
     console.error(error);

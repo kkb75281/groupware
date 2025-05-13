@@ -11,13 +11,13 @@
         .input-wrap.what
           select(v-model="searchFor" :disabled="loading || !newsletterList")
             option(value="subject") 제목
+            option(value="writer") 작성자
         .input-wrap.search(v-if="searchFor == 'subject'")
           input(v-model="searchValue.subject" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList")
           button.btn-search
-        .input-wrap.date(v-else-if="searchFor == 'timestamp'")
-          input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList")
-          span ~
-          input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
+        .input-wrap.search(v-else-if="searchFor == 'writer'")
+          input(v-model="searchValue.writer" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList")
+          button.btn-search
       .tb-toolbar
         .btn-wrap
           button.btn.bg-gray.md(type="button" @click="router.push('/newsletter-category/')") 이전
@@ -95,13 +95,10 @@ const route = useRoute();
 const loading = ref(false);
 const cateId = ref(route.query.category);
 
-const searchFor = ref('subject');
+const searchFor = ref('subject', 'writer'); // 검색 조건
 const searchValue = ref({
   subject: '',
-  timestamp: {
-    start: '',
-    end: ''
-  }
+  writer: ''
 });
 
 let dummyId = ''; // 카테고리별 더미 레코드 ID
@@ -124,37 +121,42 @@ const getNewsCatRecord = async () => {
 };
 
 // 게시글 검색
-const searchNewsletter = async (refresh = false) => {
+const searchNewsletter = async () => {
   loading.value = true;
 
-  if (searchValue.value.subject === '' || refresh) {
-    await getNewsletterList(cateId.value, true);
+  try {
+    if (!dummyId) {
+      await getNewsCatRecord();
+    }
+
+    await getNewsletterList(dummyId, true);
+
+    if (
+      (searchFor.value === 'subject' && !searchValue.value.subject) ||
+      (searchFor.value === 'writer' && !searchValue.value.writer)
+    ) {
+      loading.value = false;
+      return;
+    }
+
+    let filteredList = [...newsletterList.value];
+
+    if (searchFor.value === 'subject' && searchValue.value.subject) {
+      filteredList = filteredList.filter((item) =>
+        item.data?.news_title?.toLowerCase().includes(searchValue.value.subject.toLowerCase())
+      );
+    } else if (searchFor.value === 'writer' && searchValue.value.writer) {
+      filteredList = filteredList.filter((item) =>
+        item.writer?.toLowerCase().includes(searchValue.value.writer.toLowerCase())
+      );
+    }
+
+    newsletterList.value = filteredList;
+  } catch (error) {
+    console.error('Search error:', error);
+  } finally {
     loading.value = false;
-    return;
   }
-
-  let params = {
-    searchFor: searchFor.value,
-    value: '',
-    group: 'public',
-    condition: '>='
-  };
-
-  if (searchFor.value === 'subject') {
-    params.value = searchValue.value.subject;
-  } else {
-    params.value = searchValue.value.timestamp.start;
-  }
-
-  let res = await skapi.getNewsletters(params);
-
-  if (res && res.list.length > 0) {
-    newsletterList.value = res.list;
-  } else {
-    newsletterList.value = [];
-  }
-
-  loading.value = false;
 };
 
 // 새로고침
@@ -166,10 +168,7 @@ const refresh = async () => {
   if (searchValue.value) {
     searchValue.value = {
       subject: '',
-      timestamp: {
-        start: '',
-        end: ''
-      }
+      writer: ''
     };
   }
 
