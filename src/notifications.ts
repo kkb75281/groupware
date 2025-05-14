@@ -263,7 +263,6 @@ export const createReadListRecord = (read = false) => {
 export const readNoti = async (rt: any) => {
   // 기존 readAudit 초기화
   for (let key in readAudit.value) {
-    console.log('readAudit.value : ', readAudit.value);
     delete readAudit.value[key];
   }
 
