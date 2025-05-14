@@ -964,8 +964,10 @@ const getAuditDetail = async () => {
     }
 
     // 참조 문서
+    console.log('auditDoc : ', auditDoc);
     const referDocIds = auditDoc.data.reference_docs;
     const parseReferDocId = JSON.parse(auditDoc.data.reference_docs).referDocId;
+    console.log('parseReferDocId : ', parseReferDocId);
 
     if (referDocIds) {
       const fetchPromises = parseReferDocId.map((recordId) =>

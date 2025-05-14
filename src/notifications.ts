@@ -406,32 +406,38 @@ export let getNewsletterListRunning: Promise<any> | null = null;
 export const getNewsletterList = async (tag, refresh = false) => {
   console.log('=== getNewsletterList === tag : ', tag);
 
-  const getNews = await skapi.getRecords({
-    table: {
-      name: 'newsletter',
-      access_group: 'private'
-    },
-    reference: tag,
-    tag: tag
-  });
-  console.log('=== getNewsletterList === getNews : ', getNews);
+  try {
+    const getNews = await skapi.getRecords({
+      table: {
+        name: 'newsletter',
+        access_group: 'private'
+      },
+      reference: tag,
+      tag: tag
+    });
+    console.log('=== getNewsletterList === getNews : ', getNews);
 
-  if (!getNews.list) {
-    newsletterList.value = [];
+    if (!getNews.list) {
+      newsletterList.value = [];
+    }
+
+    newsletterList.value = getNews.list.sort((a, b) => b.uploaded - a.uploaded);
+
+    const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
+
+    newsletterList.value = newsletterList.value.map((item, index) => {
+      return {
+        ...item,
+        writer: writer[index]?.list?.[0]?.name || '-'
+      };
+    });
+
+    return newsletterList.value;
+  } catch (err) {
+    if (err.message === 'User has no private access.') {
+      newsletterList.value = [];
+    }
   }
-
-  newsletterList.value = getNews.list.sort((a, b) => b.uploaded - a.uploaded);
-
-  const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
-
-  newsletterList.value = newsletterList.value.map((item, index) => {
-    return {
-      ...item,
-      writer: writer[index]?.list?.[0]?.name || '-'
-    };
-  });
-
-  return newsletterList.value;
 };
 
 // export const getNewsletterList = async (refresh = false) => {
