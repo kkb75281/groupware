@@ -118,8 +118,8 @@ let wysiwyg = null;
 
 // 테이블 행, 열 크기 설정
 const showTableDialog = ref(false);
-const tableRows = ref(7);
-const tableCols = ref(15);
+const tableRows = ref(3);
+const tableCols = ref(3);
 
 // showBtn이 true일 경우, Create 페이지 / false일 경우, Detail 페이지
 const isDetail = computed(() => {
@@ -137,8 +137,8 @@ const insertTable = () => {
 
     insertTableToWysiwyg(
         wysiwyg,
-        tableRows.value,
         tableCols.value,
+        tableRows.value,
         // true, // Vue 컴포넌트 사용 (false로 설정하면 DOM 방식 사용)
         props.showBtn // 행, 열 추가 버튼 사용
     );
@@ -520,7 +520,6 @@ defineExpose({
 ._wysiwyg4all {
     padding: 1.5rem 1rem 1rem 1rem;
     min-height: 18rem !important;
-    overflow: hidden !important;
 
     &::before {
         color: var(--gray-color-300) !important;
@@ -697,289 +696,91 @@ defineExpose({
 
 /* 테이블 스타일링 */
 .wysiwyg-table-wrap {
-    max-width: var(--wysiwyg-table-max-width);
-    min-height: 100%;
-    height: 100%;
+    display: block;
     position: relative;
-    overflow-x: auto;
-    overflow-y: visible !important;
-    white-space: nowrap;
-    padding-bottom: 36px;
-
-    &::-webkit-scrollbar {
-        display: none;
-    }
-
-    .wysiwyg-table-col-btns {
-        position: absolute;
-        top: 0;
-        right: -36px;
-        opacity: 1;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        opacity: 0;
-
-        &.show {
-            opacity: 1;
-        }
-
-        button {
-            flex-grow: 1;
-            background-color: #eee;
-            border-radius: 8px;
-            font-size: 1rem;
-            width: 30px;
-        }
-    }
-
-    .wysiwyg-table-row-btns {
-        position: absolute;
-        left: 0;
-        bottom: -36px;
-        opacity: 1;
-        width: 100%;
-        padding-top: 6px;
-        display: flex;
-        gap: 6px;
-        width: 100%;
-        opacity: 0;
-
-        &.show {
-            opacity: 1;
-        }
-
-        button {
-            flex-grow: 1;
-            background-color: #eee;
-            border-radius: 8px;
-            font-size: 1rem;
-            height: 30px;
-        }
-    }
-
-    .btn-merge {
-        position: absolute;
-        top: var(--merge-btn-top);
-        left: var(--merge-btn-left);
-        background-color: #487ff2;
-        color: white;
-        border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        z-index: 9999;
-        // display: none;
-        opacity: 0;
-
-        &.active {
-            // display: block;
-            opacity: 1;
-        }
-    }
+    overflow: visible;
+    margin: 0.5rem 0 1.5rem !important;
 }
 
 .wysiwyg-table {
     position: relative;
-    min-width: max-content;
-    table-layout: fixed;
     border-collapse: collapse;
-    white-space: nowrap;
+    width: calc(100% - 10px);
+    table-layout: fixed;
+    margin: 0 auto;
 
-    &.dragging {
-        &::selection {
-            background: transparent;
-        }
-    }
-
-    &::selection {
-        background: highlight;
+    tr,
+    th,
+    td {
+        height: auto;
     }
 
     td {
-        height: auto;
-        border: 1px solid #ccc;
+        border: 1px solid #000;
         min-width: 50px;
         min-height: 30px;
-        width: 100px;
         background-color: white;
         overflow: hidden;
         word-break: break-word;
         white-space: normal;
-
-        // &:focus,
-        // &:focus-visible {
-        //     outline: -webkit-focus-ring-color auto 1px !important;
-        // }
-
-        &.selected-cell {
-            // background-color: #d0ebff !important;
-            outline: -webkit-focus-ring-color auto 1px !important;
-            // outline: 2px dashed #333;
-        }
-
-        &.dragged-cell {
-            background-color: #d0ebff !important;
-        }
     }
-
-    th {
-        min-width: 50px;
-        min-height: 30px;
-        border: 1px solid #ccc;
-        text-align: left;
-        vertical-align: top;
-        padding: 4px 6px;
-        position: relative;
-        overflow: auto;
-        white-space: normal;
-        word-wrap: break-word;
-        box-sizing: border-box;
-        font-size: 14px;
-        line-height: 1.2em;
-    }
-
-    .resizer {
-        position: absolute;
-        top: 0;
-        right: -5px;
-        width: 10px;
-        height: 100%;
-        cursor: col-resize;
-        background-color: transparent;
-        z-index: 10;
-
-        &.active {
-            background-color: #777 !important;
-        }
-    }
-
-    .resizer-bottom {
-        position: absolute;
-        bottom: -5px;
-        left: 0;
-        height: 10px;
-        width: 100%;
-        cursor: row-resize;
-        background-color: transparent;
-        z-index: 10;
-
-        &.active {
-            background-color: #777 !important;
-        }
-    }
-
-    // .col-btns,
-    // .row-btns {
-    //     position: absolute;
-    //     z-index: 3;
-    //     background: white;
-    //     border: 1px solid #ccc;
-    //     padding: 4px;
-    //     display: flex;
-    //     gap: 4px;
-    // }
-
-    // .col-btns {
-    //     top: 0;
-    //     left: 100%;
-    //     transform: translateY(0);
-    // }
-
-    // .row-btns {
-    //     left: 0;
-    //     top: 100%;
-    // }
 }
 
-// .wysiwyg-table-wrap {
-//     display: block;
-//     position: relative;
-//     overflow: visible;
-//     margin: 0.5rem 0 1.5rem !important;
-// }
+.table-resizer {
+    position: absolute;
+    z-index: 100;
+    background-color: transparent;
+}
 
-// .wysiwyg-table {
-//     position: relative;
-//     border-collapse: collapse;
-//     width: calc(100% - 10px);
-//     table-layout: fixed;
-//     margin: 0 auto;
+.col-resizer {
+    top: 0;
+    right: -5px;
+    height: 100%;
+    cursor: col-resize;
+    width: 8px;
 
-//     tr,
-//     th,
-//     td {
-//         height: auto;
-//     }
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 3px;
+        width: 2px;
+        height: 100%;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
 
-//     td {
-//         border: 1px solid #000;
-//         min-width: 50px;
-//         min-height: 30px;
-//         background-color: white;
-//         overflow: hidden;
-//         word-break: break-word;
-//         white-space: normal;
-//     }
-// }
+    &:hover::after,
+    &.active::after {
+        opacity: 1;
+    }
+}
 
-// .table-resizer {
-//     position: absolute;
-//     z-index: 100;
-//     background-color: transparent;
-// }
+.row-resizer {
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    cursor: row-resize;
+    height: 8px;
 
-// .col-resizer {
-//     top: 0;
-//     right: -5px;
-//     height: 100%;
-//     cursor: col-resize;
-//     width: 8px;
+    &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 3px;
+        height: 2px;
+        width: 100%;
+        // background-color: #bbb;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
 
-//     &::after {
-//         content: '';
-//         position: absolute;
-//         top: 0;
-//         left: 3px;
-//         width: 2px;
-//         height: 100%;
-//         opacity: 0;
-//         transition: opacity 0.2s;
-//     }
-
-//     &:hover::after,
-//     &.active::after {
-//         opacity: 1;
-//     }
-// }
-
-// .row-resizer {
-//     bottom: -4px;
-//     left: 0;
-//     width: 100%;
-//     cursor: row-resize;
-//     height: 8px;
-
-//     &::after {
-//         content: '';
-//         position: absolute;
-//         left: 0;
-//         top: 3px;
-//         height: 2px;
-//         width: 100%;
-//         // background-color: #bbb;
-//         opacity: 0;
-//         transition: opacity 0.2s;
-//     }
-
-//     &:hover::after,
-//     &.active::after {
-//         opacity: 1;
-//         // background-color: #4a90e2;
-//     }
-// }
+    &:hover::after,
+    &.active::after {
+        opacity: 1;
+        // background-color: #4a90e2;
+    }
+}
 
 // /* 리사이저 스타일 */
 // .table-resizer {
@@ -1041,9 +842,9 @@ defineExpose({
 // }
 
 /* 리사이징 중 선택 방지 */
-// .resizing-table {
-//     user-select: none;
-// }
+.resizing-table {
+    user-select: none;
+}
 
 /* 조작 버튼 스타일 */
 .btn-control-wrap {
