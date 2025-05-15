@@ -25,10 +25,11 @@ export function createTable(rows, cols, isCreate = false) {
     table: null,
     tbody: null,
     mergeBtn: null,
+    isResizing: false,
     isDragging: false,
-    selectionStart: null,
     isSelection: false,
     isMouseDown: false,
+    selectionStart: null,
     outlinePosition: {
       top: 0,
       left: 0,
@@ -251,39 +252,55 @@ function addResizer(tableState, cell) {
   resizer.className = 'resizer';
   resizer.setAttribute('contenteditable', 'false');
 
+  // 리사이징 시작
   resizer.onmousedown = (e) => {
+    e.stopPropagation();
+    tableState.isResizing = true;
+
+    // 다른 리사이저 active 제거
+    document.querySelectorAll('.resizer').forEach((r) => r.classList.remove('active'));
+
+    // 현재 리사이저에만 active 적용
+    resizer.classList.add('active');
+
     resizeColumn(e, tableState, cell);
   };
+
+  // 마우스 진입 시 active 추가 (리사이징 중이 아닐 때만)
   resizer.onmouseenter = (e) => {
-    if (!tableState.isDragging) {
+    if (!tableState.isResizing) {
       e.currentTarget.classList.add('active');
     }
   };
+
+  // 마우스 벗어날 때 active 제거
   resizer.onmouseleave = (e) => {
-    if (!tableState.isDragging) {
-      e.currentTarget.classList.remove('active');
-    }
+    e.currentTarget.classList.remove('active');
   };
 
   cell.appendChild(resizer);
 
-  // 하단 리사이저도 추가 (선택적)
+  // 하단 리사이저도 동일하게 처리 가능
   const resizerBottom = document.createElement('div');
   resizerBottom.className = 'resizer-bottom';
   resizerBottom.setAttribute('contenteditable', 'false');
 
   resizerBottom.onmousedown = (e) => {
+    e.stopPropagation();
+    tableState.isResizing = true;
+    document.querySelectorAll('.resizer-bottom').forEach((r) => r.classList.remove('active'));
+    resizerBottom.classList.add('active');
     resizeRow(e, tableState, cell);
   };
+
   resizerBottom.onmouseenter = (e) => {
-    if (!tableState.isDragging) {
+    if (!tableState.isResizing) {
       e.currentTarget.classList.add('active');
     }
   };
+
   resizerBottom.onmouseleave = (e) => {
-    if (!tableState.isDragging) {
-      e.currentTarget.classList.remove('active');
-    }
+    e.currentTarget.classList.remove('active');
   };
 
   cell.appendChild(resizerBottom);
@@ -299,7 +316,6 @@ function resizeColumn(e, tableState, cell) {
 
   const startX = e.clientX;
   const startCellWidth = cell.offsetWidth;
-  const nextCellWidth = nextCell.offsetWidth;
 
   function onMouseMove(e) {
     const diffX = e.clientX - startX;
@@ -320,10 +336,12 @@ function resizeColumn(e, tableState, cell) {
   }
 
   function onMouseUp() {
+    tableState.isResizing = false;
     resizer.classList.remove('active');
 
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
+
     setTimeout(() => updateButtonPositions(tableState), 0);
   }
 
@@ -332,85 +350,18 @@ function resizeColumn(e, tableState, cell) {
 }
 
 // 행 높이 조절
-// function resizeRow(e, tableState, cell) {
-//   e.stopPropagation();
-
-//   const rowIndex = parseInt(cell.dataset.row);
-//   const row = tableState.table.rows[rowIndex];
-//   const resizer = e.currentTarget;
-
-//   const startY = e.pageY;
-//   const startHeightRow = cell.offsetHeight;
-//   const startTableHeight = tableState.table.offsetHeight;
-
-//   // 마지막 행이 아닌 경우에만 다음 행 참조
-//   const isLastRow = rowIndex === tableState.table.rows.length - 1;
-//   let nextRow, startHeightNextRow;
-
-//   if (!isLastRow) {
-//     nextRow = tableState.table.rows[rowIndex + 1];
-//     startHeightNextRow = nextRow.offsetHeight;
-//   }
-
-//   function onMouseMove(e) {
-//     const diffY = e.clientY - startY;
-
-//     if (!tableState.isDragging) {
-//       resizer.classList.add('active');
-//     }
-
-//     const rowCells = row.cells;
-
-//     if (isLastRow) {
-//       // 마지막 행인 경우 - 테이블 전체 높이 조정
-//       for (let i = 0; i < rowCells.length; i++) {
-//         rowCells[i].style.height = `${startHeightRow + diffY}px`;
-//       }
-
-//       // 테이블 전체 높이 조정
-//       tableState.table.style.height = `${startTableHeight + diffY}px`;
-
-//       // 열 리사이저 높이 업데이트
-//       const colResizers = tableState.tableWrap.querySelectorAll('.col-resizer');
-//       colResizers.forEach((colResizer) => {
-//         colResizer.style.height = `${tableState.table.offsetHeight}px`;
-//       });
-//     } else {
-//       // 일반 행인 경우 - 현재 행과 다음 행 사이의 경계 조정
-//       for (let i = 0; i < rowCells.length; i++) {
-//         rowCells[i].style.height = `${startHeightRow + diffY}px`;
-//       }
-//     }
-//   }
-
-//   function onMouseUp() {
-//     resizer.classList.remove('active');
-
-//     document.removeEventListener('mousemove', onMouseMove);
-//     document.removeEventListener('mouseup', onMouseUp);
-//   }
-
-//   document.addEventListener('mousemove', onMouseMove);
-//   document.addEventListener('mouseup', onMouseUp);
-// }
 function resizeRow(e, tableState, cell) {
   e.preventDefault();
   e.stopPropagation();
-
   const rowIndex = parseInt(cell.dataset.row);
   const resizer = e.currentTarget;
 
-  let startY;
-  let startHeightRow;
-
-  requestAnimationFrame(() => {
-    startY = e.pageY;
-    startHeightRow = cell.offsetHeight;
-  });
+  let startY = e.pageY;
+  let startHeight = cell.offsetHeight;
 
   function onMouseMove(e) {
     const diffY = e.pageY - startY;
-    const newHeight = Math.max(20, startHeightRow + diffY);
+    const newHeight = Math.max(20, startHeight + diffY);
 
     const row = tableState.table.rows[rowIndex];
     for (let i = 0; i < row.cells.length; i++) {
@@ -419,9 +370,11 @@ function resizeRow(e, tableState, cell) {
   }
 
   function onMouseUp() {
+    tableState.isResizing = false;
     resizer.classList.remove('active');
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
+    setTimeout(() => updateButtonPositions(tableState), 0);
   }
 
   document.addEventListener('mousemove', onMouseMove);
