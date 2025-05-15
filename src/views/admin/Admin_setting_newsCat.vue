@@ -347,7 +347,7 @@ const registerNewsCat = async () => {
       // 등록 모드
       const config = {
         table: {
-          name: 'news_category_list',
+          name: 'news_category',
           access_group: 1
         },
         index: {
@@ -355,40 +355,27 @@ const registerNewsCat = async () => {
           value: newsCatName.value
         }
       };
+
       const res = await skapi.postRecord(data, config);
-      console.log('카테고리명 == res : ', res);
+      console.log('== registerNewsCat == res : ', res);
 
-      if (res) {
-        // 카테고리별 게시글 더미 레코드 생성
-        const newsCatRecord = await skapi.postRecord(null, {
-          table: {
-            name: `newsCatRecord_${res.record_id}`,
-            access_group: 'private'
-          }
-        });
-        console.log('카테고리별 게시글 더미 레코드 : ', newsCatRecord);
+      // 카테고리 공개범위에게 권한 부여
+      const categoryId = res.record_id;
+      const accessUserId = selectedEmps.value.map((user) => user.user_id);
 
-        // 게시글 공개범위에게 권한을 부여
-        const newsCatId = newsCatRecord.record_id;
-        const newsUserIds = selectedEmps.value.map((user) => user.user_id);
-        console.log('newsUserIds : ', newsUserIds);
-        console.log('newsCatId : ', newsCatId);
+      await Promise.all(
+        accessUserId.map((userId) =>
+          grantNewsUserAccess({ news_id: categoryId, newsUser_id: userId })
+        )
+      );
 
-        await Promise.all(
-          newsUserIds.map((userId) =>
-            grantNewsUserAccess({ news_id: newsCatId, newsUser_id: userId })
-          )
-        ).then((res) => {
-          console.log('게시글 공개범위 권한 부여 결과 : ', res);
-        });
-      }
       alert('게시글 카테고리가 추가되었습니다.');
     }
-
-    router.push('/admin/list-newsletter');
   } catch (err) {
     console.error('게시글 카테고리가 추가 중 오류 발생: ', err);
     alert('게시글 카테고리가 추가 중 오류가 발생했습니다.');
+  } finally {
+    router.push('/admin/list-newsletter');
   }
 };
 

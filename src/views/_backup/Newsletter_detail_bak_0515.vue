@@ -72,7 +72,7 @@
       .button-wrap  
         template(v-if="newsCont?.writer === user.name")
           button.btn.md.outline.warning.btn-delete(type="button" @click="deleteNews") 삭제
-          button.btn.md.outline.btn-edit(type="button" @click="editNews") 수정
+          //- button.btn.md.outline.btn-edit(type="button" @click="editNews") 수정
         button.btn.md.bg-gray(type="button" @click="router.push({ path: '/newsletter', query: { category: route.query.category } })") 목록
 
 </template>
@@ -121,9 +121,24 @@ function disableContentEditable(htmlString) {
   return tempDiv.innerHTML;
 }
 
+let dummyId = ''; // 카테고리별 더미 레코드 ID
+
+// 카테고리별 더미 레코드 가져오기
+const getNewsCatRecord = async () => {
+  const res = await skapi.getRecords({
+    table: {
+      name: `newsCatRecord_${cateId.value}`,
+      access_group: 'private'
+    }
+  });
+  console.log('상세 == getNewsCatRecord = res : ', res);
+
+  dummyId = res.list[0].record_id;
+  return dummyId;
+};
+
 // 게시글 수정
 const editNews = () => {
-  console.log('게시글 수정');
   editModeData.value = newsCont.value;
 
   router.push({
@@ -151,7 +166,8 @@ const deleteNews = async () => {
 };
 
 onMounted(async () => {
-  const res = await getNewsletterList(cateId.value);
+  await getNewsCatRecord();
+  const res = await getNewsletterList(dummyId);
 
   if (res) {
     newsCont.value = res.find((el) => el.record_id === newsId.value);

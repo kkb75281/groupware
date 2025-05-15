@@ -432,8 +432,8 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 										.input-wrap.upload-file
 											.file-wrap
 												ul.file-list
-													template(v-if="currentDetailDoc?.bin?.form_data?.length > 0")
-														li.file-item(v-for="(file, index) in currentDetailDoc.bin.form_data" :key="index")
+													template(v-if="modalUploadedFile?.length > 0")
+														li.file-item(v-for="(file, index) in modalUploadedFile" :key="index")
 															a.file-name(v-if="file.url" :href="file.url" download target="_blank") {{ file.filename }}
 															span.only-text(v-else) {{ file.name || file.filename }}
 													template(v-else)
@@ -443,9 +443,9 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 									th 참조 문서
 									td.left(colspan="3")
 										ul.refer-doc-list
-											template(v-if="referDoc.length > 0")
-												li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
-													span.refer-doc-name {{ doc.data.to_audit }}
+											template(v-if="modalReferDoc?.length > 0")
+												li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index")
+													span.refer-doc-name {{ doc?.data?.to_audit }}
 											template(v-else)
 												li(style="color:var(--gray-color-300);") 등록된 참조 문서가 없습니다.
 
@@ -548,6 +548,8 @@ const referDoc = ref([]); // 선택된 참조문서
 const referDocList = ref([]); // 참조문서 목록
 const referDocFilter = ref('all'); // 참조문서 필터 (전체, 발신, 수신+수신참조)
 const currentDetailDoc = ref(null); // 현재 문서 상세 정보
+const modalUploadedFile = ref(null); // 참조문서 첨부파일
+const modalReferDoc = ref(null); // 참조문서 모달
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -2792,35 +2794,27 @@ const showDocDetail = async (doc) => {
 
   // 첨부파일
   if (currentDetailDoc.value.bin && currentDetailDoc.value.bin.form_data) {
-    uploadedFile.value = currentDetailDoc.value.bin.form_data;
+    modalUploadedFile.value = currentDetailDoc.value.bin.form_data;
   } else {
-    uploadedFile.value = [];
+    modalUploadedFile.value = [];
   }
 
   // 참조문서가 있는 경우
-  if (currentDetailDoc.value.data.reference_docs) {
-    console.log('모달 오픈, 참조문서 있음');
-    try {
-      const referDocId = JSON.parse(currentDetailDoc.value.data.reference_docs).referDocId;
-      console.log('referDocId : ', referDocId);
-      console.log('currentDetailDoc.value : ', currentDetailDoc.value);
-      const fetchPromises = referDocId.map((recordId) =>
-        skapi
-          .getRecords({ record_id: recordId })
-          .then((res) => res.list?.[0] || null)
-          .catch((err) => {
-            console.error(`record_id ${recordId} 호출 실패:`, err);
-            return null;
-          })
-      );
-      referDoc.value = await Promise.all(fetchPromises);
-      console.log('referDoc.value : ', referDoc.value);
-    } catch (error) {
-      console.error('참조문서 정보 처리 중 오류:', error);
-    }
-  }
+  if (doc.data.reference_docs) {
+    const parseReferDocId = JSON.parse(doc.data.reference_docs).referDocId;
 
-  console.log('currentDetailDoc.value : ', currentDetailDoc.value);
+    const fetchPromises = parseReferDocId.map((recordId) =>
+      skapi
+        .getRecords({ record_id: recordId })
+        .then((res) => res.list?.[0] || null)
+        .catch((err) => {
+          console.error(`record_id ${recordId} 호출 실패:`, err);
+          return null;
+        })
+    );
+
+    modalReferDoc.value = await Promise.all(fetchPromises);
+  }
 };
 
 // 참조문서 상세 모달 close

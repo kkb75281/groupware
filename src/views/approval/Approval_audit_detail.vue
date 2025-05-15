@@ -209,7 +209,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="isCanceled") 회수
 			button.btn.outline.btn-re-request(type="button" v-if="senderUser.user_id === user.user_id" @click="reRequestAudit") 재요청
-			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
+			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 목록
 
 //- 결재 모달
 #modal.modal.modal-approve(v-if="isModalOpen")
@@ -360,8 +360,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 									td.left(colspan="3")
 										.refer-doc-wrap
 											ul.refer-doc-list
-												template(v-if="referDoc.length > 0")
-													li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
+												template(v-if="modalReferDoc.length > 0")
+													li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index")
 														span.refer-doc-name {{ doc.data.to_audit }}
 												template(v-else)
 													li(style="color:var(--gray-color-300);") 등록된 참조 문서가 없습니다.
@@ -445,6 +445,7 @@ const editComment = ref({}); // 댓글 수정 내용
 const isReferDetailModal = ref(false); // 참조 문서 상세 모달
 const referDoc = ref([]); // 참조 문서
 const referDetail = ref({}); // 참조 문서 상세 내용
+const modalReferDoc = ref([]);
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -2060,6 +2061,7 @@ const deleteReply = async (type, index) => {
 const showReferDetail = async (doc) => {
   isReferDetailModal.value = true;
   referDetail.value = doc;
+  console.log('모달 = referDetail.value : ', referDetail.value);
 
   try {
     // 이미 처리된 결재자 정보 사용
@@ -2116,15 +2118,9 @@ const showReferDetail = async (doc) => {
       name: r.name || '알 수 없음'
     }));
 
-    console.log('referDetail.value : ', referDetail.value);
-
     // 참조 문서
-    const referDocIds = referDetail.value.data.reference_docs;
-    const parseReferDocId = JSON.parse(referDetail.value.data.reference_docs).referDocId;
-    console.log('referDocIds : ', referDocIds);
-    console.log('parseReferDocId : ', parseReferDocId);
-
-    if (referDocIds) {
+    if (doc.data.reference_docs) {
+      const parseReferDocId = JSON.parse(doc.data.reference_docs).referDocId;
       const fetchPromises = parseReferDocId.map((recordId) =>
         skapi
           .getRecords({ record_id: recordId })
@@ -2135,10 +2131,10 @@ const showReferDetail = async (doc) => {
           })
       );
 
-      referDoc.value.value = await Promise.all(fetchPromises);
-      console.log('referDoc.value.value : ', referDoc.value.value);
+      modalReferDoc.value = await Promise.all(fetchPromises);
+      console.log('모달 = modalReferDoc.value : ', modalReferDoc.value);
     } else {
-      referDoc.value = [];
+      modalReferDoc.value = [];
     }
   } catch (error) {
     console.error('문서 상세정보 처리 오류 : ', error);
@@ -2154,7 +2150,6 @@ onMounted(async () => {
   window.addEventListener('resize', updateScreenSize);
 
   auditId.value = route.params.auditId;
-  console.log('auditId.value : ', route.params.auditId);
   getAuditDetail();
   loadStylesheet();
   await getCmtRecord();

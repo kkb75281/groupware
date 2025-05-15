@@ -406,39 +406,32 @@ export let getNewsletterListRunning: Promise<any> | null = null;
 export const getNewsletterList = async (tag, refresh = false) => {
   console.log('=== getNewsletterList === tag : ', tag);
 
-  try {
-    const getNews = await skapi.getRecords({
-      table: {
-        name: 'newsletter',
-        access_group: 'private'
-      },
-      reference: tag
-      // tag: tag
-    });
-    console.log('=== getNewsletterList === getNews : ', getNews);
+  const getNews = await skapi.getRecords({
+    table: {
+      name: 'newsletter',
+      access_group: 'private'
+    },
+    reference: tag
+    // tag: tag
+  });
+  console.log('=== getNewsletterList === getNews : ', getNews);
 
-    if (!getNews.list) {
-      newsletterList.value = [];
-    }
-
-    newsletterList.value = getNews.list.sort((a, b) => b.uploaded - a.uploaded);
-
-    const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
-
-    newsletterList.value = newsletterList.value.map((item, index) => {
-      return {
-        ...item,
-        writer: writer[index]?.list?.[0]?.name || '-'
-      };
-    });
-
-    return newsletterList.value;
-  } catch (err) {
-    if (err.code === 'INVALID_REQUEST') {
-      newsletterList.value = [];
-      console.log('ㅠㅠㅠㅠ');
-    }
+  if (!getNews.list) {
+    newsletterList.value = [];
   }
+
+  newsletterList.value = getNews.list.sort((a, b) => b.uploaded - a.uploaded);
+
+  const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
+
+  newsletterList.value = newsletterList.value.map((item, index) => {
+    return {
+      ...item,
+      writer: writer[index]?.list?.[0]?.name || '-'
+    };
+  });
+  console.log('-newsletter fin-');
+  return newsletterList.value;
 };
 
 // export const getNewsletterList = async (refresh = false) => {

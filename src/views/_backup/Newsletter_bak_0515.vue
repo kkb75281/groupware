@@ -24,7 +24,7 @@
           button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
             svg(:class="{'rotate' : loading}")
               use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-          button.btn.outline.md(type="button" @click="writeNews") 글작성
+          button.btn.outline.md(type="button" @click="router.push('/newsletter-add')") 글작성
     .tb-overflow
       table.table#tb-newsList
         colgroup
@@ -68,19 +68,32 @@ import Loading from '@/components/loading.vue';
 // const testDelete = () => {
 //   skapi
 //     .deleteRecords({
-//       record_id: 'UlFS1BhmaFScz5vo'
+//       record_id: 'UkU0JXEeC9YEfDF6'
 //     })
 //     .then((res) => {
 //       console.log('삭제완');
 //     });
 // };
 
+// 게시판 공지
+// 이메일 발송의 기존 방식 -> 게시판 형태의 공지 방식으로 변경
+// 직원 모두 작성 가능
+// 공지사항은 레코드에 저장
+// 작성 시 공개범위, 알림발송 설정 가능하게
+// --> 공개범위는 부서별로 선택 가능하게
+// --> 알림발송은 허용/비허용 설정 가능하게 (공개범위에 해당하는 사람들에게만 알림발송)
+// 목록에서 클릭 시, 상세 페이지로 이동
+// 등록한 공지사항 삭제, 수정 가능
+// 처음 작성시: 알람 허용이면 공개 범위에 해당하는 사람에게만 알람 보내기
+// 올리고 수정시: 공개범위에 추가된 부서가 있으면 추가 부서 사람들에게만 알람 보내기
+// 댓글 알람: 작성자에게만 알람 보내기, 만약 작성자가 본인글에 댓글 작성시에는 알람 안가는게 맞음
+// 대댓글: 댓글 작성자 + 게시물 작성자 알람
+
 const router = useRouter();
 const route = useRoute();
 
 const loading = ref(false);
 const cateId = ref(route.query.category);
-console.log('== cateId == : ', cateId.value);
 
 const searchFor = ref('subject', 'writer'); // 검색 조건
 const searchValue = ref({
@@ -88,12 +101,44 @@ const searchValue = ref({
   writer: ''
 });
 
+let dummyId = ''; // 카테고리별 더미 레코드 ID
+
+// 카테고리별 더미 레코드 가져오기
+const getNewsCatRecord = async () => {
+  if (!cateId.value) {
+    return;
+  }
+
+  try {
+    const res = await skapi.getRecords({
+      table: {
+        name: `newsCatRecord_${cateId.value}`,
+        access_group: 'private'
+      }
+    });
+    console.log('== getNewsCatRecord == res : ', res);
+
+    dummyId = res.list[0].record_id;
+    return dummyId;
+  } catch (err) {
+    if (err.message === 'No access.') {
+      dummyId = '';
+      alert('해당 게시글에 대한 권한이 없습니다.');
+      router.push('/newsletter-category/');
+    }
+  }
+};
+
 // 게시글 검색
 const searchNewsletter = async () => {
   loading.value = true;
 
   try {
-    await getNewsletterList(cateId.value);
+    if (!dummyId) {
+      await getNewsCatRecord();
+    }
+
+    await getNewsletterList(dummyId, true);
 
     if (
       (searchFor.value === 'subject' && !searchValue.value.subject) ||
@@ -127,6 +172,8 @@ const searchNewsletter = async () => {
 const refresh = async () => {
   loading.value = true;
 
+  await getNewsCatRecord();
+
   if (searchValue.value) {
     searchValue.value = {
       subject: '',
@@ -134,19 +181,8 @@ const refresh = async () => {
     };
   }
 
-  await getNewsletterList(cateId.value);
+  await getNewsletterList(dummyId, true);
   loading.value = false;
-};
-
-// 게시글 작성
-const writeNews = () => {
-  router.push({
-    path: '/newsletter-add',
-    query: {
-      mode: 'category',
-      category: cateId.value
-    }
-  });
 };
 
 watch(searchFor, (nv, ov) => {
@@ -167,13 +203,10 @@ watch(searchFor, (nv, ov) => {
 });
 
 onMounted(async () => {
-  await getNewsletterList(cateId.value).catch((err) => {
-    if (err.code === 'INVALID_REQUEST' || err.message === 'User has no private access.') {
-      newsletterList.value = [];
-      alert('해당 게시글에 대한 권한이 없습니다.');
-      router.push('/newsletter-category/');
-    }
-  });
+  loading.value = true;
+  await getNewsCatRecord();
+  await getNewsletterList(dummyId, true);
+  loading.value = false;
 });
 </script>
 
