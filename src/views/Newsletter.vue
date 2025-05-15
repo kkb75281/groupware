@@ -11,17 +11,17 @@
         .input-wrap.what
           select(v-model="searchFor" :disabled="loading || !newsletterList")
             option(value="subject") 제목
+            option(value="writer") 작성자
         .input-wrap.search(v-if="searchFor == 'subject'")
           input(v-model="searchValue.subject" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList")
           button.btn-search
-        .input-wrap.date(v-else-if="searchFor == 'timestamp'")
-          input(v-model="searchValue.timestamp.start" type="date" :disabled="loading || !newsletterList")
-          span ~
-          input(v-model="searchValue.timestamp.end" type="date" :disabled="loading || !newsletterList")
+        .input-wrap.search(v-else-if="searchFor == 'writer'")
+          input(v-model="searchValue.writer" type="text" placeholder="검색어를 입력하세요" :disabled="loading || !newsletterList")
+          button.btn-search
       .tb-toolbar
         .btn-wrap
           button.btn.bg-gray.md(type="button" @click="router.push('/newsletter-category/')") 이전
-          button.btn.outline.refresh-icon(:disabled="loading" @click="searchNewsletter(true)")
+          button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
             svg(:class="{'rotate' : loading}")
               use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
           button.btn.outline.md(type="button" @click="router.push('/newsletter-add')") 글작성
@@ -30,6 +30,7 @@
         colgroup
           col(style="width:5%")
           col(style="width: 50%")
+          col(style="width: 10%")
           col(style="width: 10%")
         thead
           tr
@@ -46,11 +47,13 @@
             tr.nohover
               td(colspan="4") 등록된 공지사항이 없습니다.
           template(v-else)
-            tr.hover(v-for="(news, index) in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
+            tr.hover(v-for="(news, index) in newsletterList" :key="news.record_id" @click="router.push({ path: '/newsletter-detail/' + news.record_id, query: { category: route.query.category } })")
               td {{ newsletterList.length - index }}
-              td.left {{ news.subject }}
-              td {{ convertTimestampToDateMillis(news.timestamp) }}
+              td.left {{ news.data?.news_title }}
+              td {{ convertTimestampToDateMillis(news.uploaded) }}
               td {{ news.writer }}
+
+//- button.btn.outline(type="button" @click="testDelete") delete
 </template>
 
 <script setup>
@@ -59,9 +62,18 @@ import { useRoute, useRouter } from 'vue-router';
 import { newsletterList, getNewsletterList } from '@/notifications.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { skapi } from '@/main.ts';
-import { user } from '@/user.ts';
 
 import Loading from '@/components/loading.vue';
+
+// const testDelete = () => {
+//   skapi
+//     .deleteRecords({
+//       record_id: 'UkU0JXEeC9YEfDF6'
+//     })
+//     .then((res) => {
+//       console.log('삭제완');
+//     });
+// };
 
 // 게시판 공지
 // 이메일 발송의 기존 방식 -> 게시판 형태의 공지 방식으로 변경
@@ -81,46 +93,94 @@ const router = useRouter();
 const route = useRoute();
 
 const loading = ref(false);
-const searchFor = ref('subject');
+const cateId = ref(route.query.category);
+
+const searchFor = ref('subject', 'writer'); // 검색 조건
 const searchValue = ref({
   subject: '',
-  timestamp: {
-    start: '',
-    end: ''
-  }
+  writer: ''
 });
 
-// 게시글 검색
-const searchNewsletter = async (refresh = false) => {
-  loading.value = true;
+let dummyId = ''; // 카테고리별 더미 레코드 ID
 
-  if (searchValue.value.subject === '' || refresh) {
-    await getNewsletterList(true);
-    loading.value = false;
+// 카테고리별 더미 레코드 가져오기
+const getNewsCatRecord = async () => {
+  if (!cateId.value) {
     return;
   }
 
-  let params = {
-    searchFor: searchFor.value,
-    value: '',
-    group: 'public',
-    condition: '>='
-  };
+  try {
+    const res = await skapi.getRecords({
+      table: {
+        name: `newsCatRecord_${cateId.value}`,
+        access_group: 'private'
+      }
+    });
 
-  if (searchFor.value === 'subject') {
-    params.value = searchValue.value.subject;
-  } else {
-    params.value = searchValue.value.timestamp.start;
+    dummyId = res.list[0].record_id;
+    return dummyId;
+  } catch (err) {
+    if (err.message === 'No access.') {
+      dummyId = '';
+      alert('해당 게시글에 대한 권한이 없습니다.');
+      router.push('/newsletter-category/');
+    }
+  }
+};
+
+// 게시글 검색
+const searchNewsletter = async () => {
+  loading.value = true;
+
+  try {
+    if (!dummyId) {
+      await getNewsCatRecord();
+    }
+
+    await getNewsletterList(dummyId, true);
+
+    if (
+      (searchFor.value === 'subject' && !searchValue.value.subject) ||
+      (searchFor.value === 'writer' && !searchValue.value.writer)
+    ) {
+      loading.value = false;
+      return;
+    }
+
+    let filteredList = [...newsletterList.value];
+
+    if (searchFor.value === 'subject' && searchValue.value.subject) {
+      filteredList = filteredList.filter((item) =>
+        item.data?.news_title?.toLowerCase().includes(searchValue.value.subject.toLowerCase())
+      );
+    } else if (searchFor.value === 'writer' && searchValue.value.writer) {
+      filteredList = filteredList.filter((item) =>
+        item.writer?.toLowerCase().includes(searchValue.value.writer.toLowerCase())
+      );
+    }
+
+    newsletterList.value = filteredList;
+  } catch (error) {
+    console.error('Search error:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 새로고침
+const refresh = async () => {
+  loading.value = true;
+
+  await getNewsCatRecord();
+
+  if (searchValue.value) {
+    searchValue.value = {
+      subject: '',
+      writer: ''
+    };
   }
 
-  let res = await skapi.getNewsletters(params);
-
-  if (res && res.list.length > 0) {
-    newsletterList.value = res.list;
-  } else {
-    newsletterList.value = [];
-  }
-
+  await getNewsletterList(dummyId, true);
   loading.value = false;
 };
 
@@ -143,7 +203,8 @@ watch(searchFor, (nv, ov) => {
 
 onMounted(async () => {
   loading.value = true;
-  await getNewsletterList();
+  await getNewsCatRecord();
+  await getNewsletterList(dummyId, true);
   loading.value = false;
 });
 </script>
@@ -184,6 +245,12 @@ onMounted(async () => {
       left: 50%;
       transform: translate(-50%, -50%);
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .inner {
+    padding: 1rem;
   }
 }
 </style>

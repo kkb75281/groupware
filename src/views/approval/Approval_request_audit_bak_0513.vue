@@ -26,6 +26,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode 
 
 			select(v-else)
 				option(value="" disabled selected) 결재 양식을 선택해주세요.
+				//- option(v-for="form in masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
 	.item
 		p.label 결재 옵션
@@ -41,6 +42,24 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode 
 	.button-wrap
 		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새 양식 생성
 		button.btn.btn-next(type="button" :disabled="!isFormSelected" @click="step = 2") 다음
+
+	//- .top-wrap
+		p.desc 결재 양식 선택 후 결재 작성이 진행됩니다. 결재 양식을 먼저 선택해주세요.
+		button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새로 작성
+
+	//- .item-wrap
+		p.label 기본 결재 양식
+		.selected-wrap
+			select(name="masterForms" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) 기본 결재 양식을 선택해주세요.
+				option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
+
+	//- .item-wrap
+		p.label 나의 양식
+		.selected-wrap
+			select(name="myForms" @change="(e) => selDocForm(e)")
+				option(value="" disabled selected) 나의 결재 양식을 선택해주세요.
+				option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
 template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) || (isReRequestMode && temploading)")
 	.form-wrap
@@ -186,18 +205,10 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 																svg
 																	use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
-								tr
-									th 참조 문서
-									td(colspan="3")
-										.refer-doc-wrap
-											button.btn.sm.outline.btn-open-modal(type="button" @click="openReferModal") 참조 문서 추가
-											ul.refer-doc-list
-												template(v-if="referDoc.length > 0")
-													li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
-														span.refer-doc-name(@click="showDocDetail(doc)") {{ doc.data.to_audit }}
-														button.btn-remove.icon(type="button" @click.stop="removeReferDoc(doc, index)")
-															svg
-																use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+			//- .reject-setting
+				label.checkbox
+					input#setReject(type="checkbox" name="checkbox" v-model="rejectSetting")
+					span.label-checkbox 결재 도중 반려와 상관없이 모든 결재자의 결재를 진행합니다.<br>(미체크 경우, 결재 도중 반려시 해당 결재서류 회수)
 
 			.button-wrap
 				template(v-if="isTemplateMode")
@@ -208,7 +219,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 					template(v-if="isTempSaveMode")
 						button.btn.bg-gray.btn-cancel(type="button" @click="cancelTempSave") 취소
 					template(v-else)
-						button.btn.bg-gray.btn-cancel(type="button" @click="router.back(); formCategory = 'master'; rejectSetting = false") 취소
+						button.btn.bg-gray.btn-cancel(type="button" @click="step = 1; formCategory = 'master'; rejectSetting = false") 취소
 					button.btn.outline.bg-gray.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
 					button.btn.outline.btn-tempsave(type="button" @click="tempSaveMyDoc") 임시저장
 					button.btn(type="submit") 결재요청
@@ -296,162 +307,6 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
 			button.btn.btn-save(type="submit" @click="saveAuditor") 저장
 
-//- 참조 문서 추가
-//- Modal - 참조문서 리스트
-#modal.modal.modal-refer-list(v-if="isReferModal" @click="closeReferModal")
-	.modal-cont(@click.stop)
-		.modal-header
-			h2.title 참조 문서 추가
-			button.btn-close(type="button" @click="closeReferModal")
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-
-		.modal-body
-			.top-wrap
-				p.sub-title 참조 문서를 선택 후 추가해주세요.
-				.input-wrap.sel-filter
-					select(v-model="referDocFilter")
-						option(value="all") 전체
-						option(value="outDoc") 발신
-						option(value="inDoc") 수신
-						option(value="referDoc") 수신참조
-			
-			.refer-list-wrap
-				.table-wrap
-					.tb-overflow
-						table.table#tb-referList
-							colgroup
-								col(style="width: 8%")
-								col
-								col(style="width: 15%")
-								col(style="width: 15%")
-							thead
-								tr
-									th 선택
-									th 결재 사안
-									th 결재 현황
-									th 기안자
-							tbody
-								tr(v-for="(doc, index) in filteredReferDocList" :key="doc.record_id")
-									td
-										label.checkbox
-											input(type="checkbox" v-model="doc.selected")
-											span.label-checkbox
-									td.left
-										a.doc-title(href="#" @click="showDocDetail(doc)")
-											span.doc-name {{ doc.data.to_audit }}
-									td
-										span.status(:class="{approve: doc.documentStatus === '완료됨', reject: doc.documentStatus === '회수됨'}") {{ doc.documentStatus }}
-									td {{ doc.drafter }}
-								tr(v-if="filteredReferDocList.length === 0")
-									td(colspan="4")
-										span.empty 선택할 참조 문서가 없습니다.
-
-		.modal-footer(style="padding-top: 0; border-top: none;")
-			button.btn.bg-gray.btn-cancel(type="button" @click="closeReferModal") 취소
-			button.btn.btn-save(type="button" @click="addRefer") 추가
-
-//- Modal - 참조문서 상세
-#modal.modal.modal-refer-detail(v-if="isReferDetailModal" @click="closeDocModal")
-	.modal-cont(@click.stop)
-		.modal-header
-			h2.title 문서 상세보기
-			button.btn-close(type="button" @click="closeDocModal")
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-		.modal-body
-			.doc-cont
-				.table-wrap
-					.tb-overflow
-						table.table#tb-referDetail
-							colgroup
-								col(style="width: 13%")
-								col
-								col(style="width: 15%")
-								col(style="width: 20%")
-
-							thead
-								//- 작성일자 기안사 :: s
-								tr.pc(v-show="isDesktop")
-									th 작성 일자
-									td {{ formatTimestampToDate(currentDetailDoc.uploaded) }}
-									th 기안자
-									td
-										span.drafter {{ currentDetailDoc.drafter  }}
-
-								//- 모바일 경우 레이아웃
-								tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
-									th 작성 일자
-									td(colspan="3") {{ formatTimestampToDate(currentDetailDoc.uploaded) }}
-								tr.mo(v-show="!isDesktop")
-									th 기안자
-									td(colspan="3" style="text-align: left")
-										span.drafter {{ currentDetailDoc.drafter}}
-								//- 작성일자 기안사 :: e
-
-								tr.approval(v-if="currentDetailDoc?.approvers?.length > 0")
-									th 결재
-									td.left(colspan="3" style="padding: 0; height: 119px;")
-										ul.approver-wrap
-											li.approver-list(v-for="(approver, index) in currentDetailDoc.approvers" :key="index")
-												span.num {{ approver.order }}
-												span.sign
-													span.approved(v-if="approver.approved === 'approve'") 승인
-													span.rejected(v-else-if="approver.approved === 'reject'") 반려
-													span.waitting(v-else) 대기
-												span.approver {{ approver.name }}
-
-								tr.approval(v-if="currentDetailDoc?.agreers?.length > 0")
-									th 합의
-									td.left(colspan="3" style="padding: 0; height: 119px;")
-										ul.approver-wrap
-											li.approver-list(v-for="(agreer, index) in currentDetailDoc.agreers" :key="index")
-												span.num {{ agreer.order }}
-												span.sign
-													span.approved(v-if="agreer.approved === 'approve'") 승인
-													span.rejected(v-else-if="agreer.approved === 'reject'") 반려
-													span.waitting(v-else) 대기
-												span.approver {{ agreer.name }}
-
-								tr.reference(v-if="currentDetailDoc?.receivers?.length > 0")
-									th 수신 참조
-									td.left(colspan="3") {{ currentDetailDoc.receivers.map(receiver => receiver.name).join(', ') }}
-
-								tr
-									th 제목
-									td.left(colspan="3") {{ currentDetailDoc.data?.to_audit }}
-
-								tr
-									th 결재 내용
-									td.left(colspan="3")
-										._wysiwyg4all(v-html="currentDetailDoc.data?.to_audit_content")
-
-								tr
-									th 첨부 파일
-									td.left(colspan="3")
-										.input-wrap.upload-file
-											.file-wrap
-												ul.file-list
-													template(v-if="currentDetailDoc?.bin?.form_data?.length > 0")
-														li.file-item(v-for="(file, index) in currentDetailDoc.bin.form_data" :key="index")
-															a.file-name(v-if="file.url" :href="file.url" download target="_blank") {{ file.filename }}
-															span.only-text(v-else) {{ file.name || file.filename }}
-													template(v-else)
-														li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
-
-								tr
-									th 참조 문서
-									td.left(colspan="3")
-										ul.refer-doc-list
-											template(v-if="referDoc.length > 0")
-												li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
-													span.refer-doc-name {{ doc.data.to_audit }}
-											template(v-else)
-												li(style="color:var(--gray-color-300);") 등록된 참조 문서가 없습니다.
-
-		.modal-footer(style="padding-top: 0; border-top: none;")
-			button.btn.bg-gray.btn-cancel(type="button" @click="closeDocModal") 닫기
-
 // button.btn.outline.btn-new(type="button" @click="testDelete") delete
 </template>
 
@@ -460,26 +315,23 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe, verifiedEmail } from '@/user.ts';
-import { getUserInfo } from '@/employee.ts';
 import { divisionNameList } from '@/division.ts';
-import {
-  reRequestData,
-  auditList,
-  auditListRunning,
-  auditReferenceList,
-  auditReferenceListRunning,
-  getAuditList,
-  getAuditReferenceList,
-  sendAuditList,
-  getSendAuditList
-} from '@/audit.ts';
+import { reRequestData } from '@/audit.ts';
 
-import Loading from '@/components/loading.vue';
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
 
 const router = useRouter();
 const route = useRoute();
+
+// 결재 요청시 순서 지정
+// 결재자가 지정한 순서대로 결재 진행 -> 한명 끝나면 다음 사람이 결재 진행할 수 있도록
+// 알람도 순서대로 한명씩한테만 가게 (결재요청자한테는 결재완료될때마다 알림 전송 - 기존처럼 하면 됨)
+
+// 결재자 선택 모달 ::
+// 결재자 선택시 좌측에 순서 표시 (수신참조로 선택한 경우에는 맨아래로 가게 - 순서 포함X)
+// 우측에는 sort 기능 버튼 넣어서 사용자가 순서 지정할 수 있게
+// 사용자가 선택한 순서대로 결재, 합의에 숫자 표시되어야 함
 
 const isTemplateMode = computed(() => route.query.mode === 'template'); // 결재 양식 관리 > 등록 경로인지 확인
 const isTempSaveMode = computed(() => route.query.mode === 'tempsave'); // 임시 저장 경로인지 확인
@@ -504,7 +356,6 @@ const isModalOpen = ref(false);
 const isRowModalOpen = ref(false); // 작성란 추가 모달
 const showBackStep = ref(true);
 const isDesktop = ref(window.innerWidth > 768);
-const loading = ref(false);
 
 const selectedUsers = ref([]); // 조직도에서 선택된 직원
 const selectedUsersOrder = ref([]); // 결재자 순서
@@ -540,14 +391,6 @@ const formTitle = ref(''); // 상단 양식 제목 (ex.마스터가 저장한 �
 const auditTitle = ref(''); // 결재건 제목
 const disabled = ref(false);
 const temploading = ref(false);
-
-// 참조문서 관련 변수
-const isReferModal = ref(false); // 참조문서 추가 모달
-const isReferDetailModal = ref(false); // 참조문서 상세 모달
-const referDoc = ref([]); // 선택된 참조문서
-const referDocList = ref([]); // 참조문서 목록
-const referDocFilter = ref('all'); // 참조문서 필터 (전체, 발신, 수신+수신참조)
-const currentDetailDoc = ref(null); // 현재 문서 상세 정보
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -1279,71 +1122,29 @@ const removeFile = (file, index) => {
   console.log('fileNames.value : ', fileNames.value);
 };
 
+// let cancelRemoveFile = (item) => {
+//   removeFileList.value = removeFileList.value.filter((id) => id !== item.record_id);
+// };
+
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
+  // let target = e.target;
+  // console.log('target : ', target);
+
+  // if (target.files) {
+  //   fileNames.value = Array.from(target.files).map((file) => file.name);
+  //   console.log('fileNames.value : ', fileNames.value);
+  // }
+
   const newFiles = Array.from(e.target.files);
   uploadedFile.value.push(...newFiles);
   fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
   e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
-};
 
-// 참조문서 정보 저장
-const saveReferenceDocsInfo = async (auditId, referDocs) => {
-  console.log('auditId : ', auditId);
-  console.log('referDocs : ', referDocs);
-  try {
-    // 참조문서 정보를 저장할 레코드 생성
-    await skapi.postRecord(
-      {
-        reference_docs: referDocs.map((doc) => ({
-          record_id: doc.record_id,
-          title: doc.title,
-          docType: doc.docType
-        }))
-      },
-      {
-        table: {
-          name: `audit_reference_docs:${auditId}`,
-          access_group: 'authorized'
-        },
-        reference: auditId
-      }
-    );
-  } catch (error) {
-    console.error('참조문서 정보 저장 중 오류:', error);
-    throw error;
-  }
-};
-
-// 참조문서에 결재자들 권한 부여
-const grantReferDocsAccess = async (referDocs, processRoles) => {
-  try {
-    // 모든 결재자 ID 목록 생성
-    const allAuditorIds = processRoles.map((role) => role.userId);
-    console.log('allAuditorIds : ', allAuditorIds);
-
-    // 각 참조문서에 대해 권한 부여
-    for (const doc of referDocs) {
-      // 각 결재자에게 권한 부여
-      for (const auditorId of allAuditorIds) {
-        await skapi
-          .grantPrivateRecordAccess({
-            record_id: doc.record_id,
-            user_id: auditorId
-          })
-          .catch((err) => {
-            // 오류가 발생해도 계속 진행 (이미 권한이 있는 경우 등)
-            console.warn(`권한 부여 오류(무시됨): ${err.message}`);
-          });
-      }
-    }
-
-    console.log(
-      `${referDocs.length}개 참조문서에 ${allAuditorIds.length}명의 결재자에게 권한 부여 완료`
-    );
-  } catch (error) {
-    console.error('참조문서 권한 부여 중 오류 : ', error);
-  }
+  console.log('newFiles : ', newFiles);
+  console.log('uploadedFile.value : ', uploadedFile.value);
+  console.log('fileNames.value : ', fileNames.value);
+  console.log('isFormSelected.value : ', isFormSelected.value);
 };
 
 // 결재 서류 레코드 생성 (결재자 순서 지정)
@@ -1377,16 +1178,8 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
 
   try {
     // 첨부파일 업로드
+    const filebox = document.querySelector('input[name="additional_data"]');
     const additionalFormData = new FormData();
-
-    console.log('referDoc.value : ', referDoc.value);
-
-    // 참조문서 정보
-    const referDocInfo = {
-      referDocId: referDoc.value.map((doc) => doc.record_id),
-      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
-    };
-    console.log('referDocInfo : ', referDocInfo);
 
     additionalFormData.append('docform_title', docform_title);
     additionalFormData.append('to_audit', to_audit);
@@ -1394,7 +1187,6 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     additionalFormData.append('to_audit_content', to_audit_content);
     additionalFormData.append('reject_setting', rejectSetting.value);
     additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
-    additionalFormData.append('reference_docs', JSON.stringify(referDocInfo));
 
     // 만약 첨부파일이 있는 결재 양식 선택시
     // for (const file of uploadedFile.value) {
@@ -1712,6 +1504,7 @@ const requestAudit = async (e) => {
       docform_title,
       to_audit,
       to_audit_content,
+      // roles: getAllSelectedUserIds() // ID 목록만 전달
       reject_setting: rejectSetting.value // 반려 설정 관련 체크박스 값 전달
     });
     console.log('auditDoc : ', auditDoc);
@@ -1729,6 +1522,40 @@ const requestAudit = async (e) => {
       reference: auditId
     });
     console.log('commentRecord : ', commentRecord);
+
+    // 권한 부여
+    // const cmtGrantAccess = await grantAuditorAccess({
+    //   audit_id: auditId,
+    //   auditor_id: commentRecord.user_id
+    // });
+    // console.log('cmtGrantAccess : ', cmtGrantAccess);
+
+    // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
+    // 결재자/합의자를 순서대로 정렬
+    // const approversAndAgreers = [
+    //   ...selectedAuditors.value.approvers,
+    //   ...selectedAuditors.value.agreers
+    // ].sort((a, b) => a.order - b.order);
+    // console.log('approversAndAgreers : ', approversAndAgreers);
+
+    // // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
+    // const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
+    // console.log('sendFirstNoti : ', sendFirstNoti);
+
+    // // Id만 추출
+    // const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id);
+    // console.log('sendFirstNotiId : ', sendFirstNotiId);
+
+    // //sendFirstNotiId string으로 변환
+    // const sendFirstNotiIdString = sendFirstNotiId.join(',');
+    // console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
+
+    // const processRoles = sendFirstNoti.map((auditor) => ({
+    //   userId: auditor.data.user_id,
+    //   role: auditor.role,
+    //   order: auditor.order
+    // }));
+    // console.log('processRoles : ', processRoles);
 
     const processRoles = [
       // 결재
@@ -1753,14 +1580,12 @@ const requestAudit = async (e) => {
       }))
     ];
     console.log('processRoles : ', processRoles);
-    console.log('referDoc.value : ', referDoc.value);
 
-    // 참조문서에 결재자들 권한 부여
-    if (referDoc.value.length > 0) {
-      await grantReferDocsAccess(referDoc.value, processRoles).then((res) => {
-        console.log('grantReferDocsAccess : ', res);
-      });
-    }
+    // const res = await Promise.all(
+    //   processRoles.map((roleInfo) =>
+    //     postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
+    //   )
+    // );
 
     // 결재자와 합의자를 순서대로 통합 정렬
     const approversAndAgreers = [
@@ -1833,21 +1658,11 @@ const saveDocForm = async () => {
     // 첨부파일 업로드
     const formData = new FormData();
 
-    console.log('referDoc.value : ', referDoc.value);
-
-    // 참조문서 정보
-    const referDocInfo = {
-      referDocId: referDoc.value.map((doc) => doc.record_id),
-      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
-    };
-    console.log('referDocInfo : ', referDocInfo);
-
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
-    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -1974,21 +1789,11 @@ const saveMyDocForm = async () => {
     // 첨부파일 업로드
     const formData = new FormData();
 
-    console.log('referDoc.value : ', referDoc.value);
-
-    // 참조문서 정보
-    const referDocInfo = {
-      referDocId: referDoc.value.map((doc) => doc.record_id),
-      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
-    };
-    console.log('referDocInfo : ', referDocInfo);
-
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
-    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -2092,20 +1897,14 @@ const tempSaveMyDoc = async () => {
 
   try {
     // 첨부파일 업로드
+    const filebox = document.querySelector('input[name="additional_data"]');
     const formData = new FormData();
-
-    // 참조문서 정보
-    const referDocInfo = {
-      referDocId: referDoc.value.map((doc) => doc.record_id),
-      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
-    };
 
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
-    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -2346,26 +2145,6 @@ const getTempSaveMyDocCont = async () => {
           uploadedFile.value = tempSaveData.value.bin.form_data;
           console.log('uploadedFile.value : ', uploadedFile.value);
         }
-
-        // 참조문서가 있는 경우
-        if (tempSaveData.value.data.reference_docs) {
-          try {
-            const referDocId = JSON.parse(tempSaveData.value.data.reference_docs).referDocId;
-            const fetchPromises = referDocId.map((recordId) =>
-              skapi
-                .getRecords({ record_id: recordId })
-                .then((res) => res.list?.[0] || null)
-                .catch((err) => {
-                  console.error(`record_id ${recordId} 호출 실패:`, err);
-                  return null;
-                })
-            );
-            referDoc.value = await Promise.all(fetchPromises);
-            console.log('referDoc.value : ', referDoc.value);
-          } catch (error) {
-            console.error('참조문서 정보 처리 중 오류:', error);
-          }
-        }
       }
 
       return res;
@@ -2511,26 +2290,6 @@ const selDocForm = async (e) => {
       fileNames.value = [];
     }
 
-    // 참조문서가 있는 경우
-    if (selectedForm.value.data.reference_docs) {
-      try {
-        const referDocId = JSON.parse(selectedForm.value.data.reference_docs).referDocId;
-        const fetchPromises = referDocId.map((recordId) =>
-          skapi
-            .getRecords({ record_id: recordId })
-            .then((res) => res.list?.[0] || null)
-            .catch((err) => {
-              console.error(`record_id ${recordId} 호출 실패:`, err);
-              return null;
-            })
-        );
-        referDoc.value = await Promise.all(fetchPromises);
-        console.log('referDoc.value : ', referDoc.value);
-      } catch (error) {
-        console.error('참조문서 정보 처리 중 오류:', error);
-      }
-    }
-
     // 체크박스 설정 불러오기
     if (selectedForm.value.data.reject_setting !== undefined) {
       rejectSetting.value =
@@ -2583,264 +2342,6 @@ const cancelTempSave = () => {
   alert('해당 페이지에서 벗어나면 수정 내용이 저장되지 않습니다.');
 };
 
-// 참조문서 목록 모달 필터링
-const filteredReferDocList = computed(() => {
-  if (referDocFilter.value === 'all') {
-    return referDocList.value;
-  } else if (referDocFilter.value === 'inDoc') {
-    return referDocList.value.filter((doc) => doc.docType === '수신함');
-  } else if (referDocFilter.value === 'referDoc') {
-    return referDocList.value.filter((doc) => doc.docType === '수신참조');
-  } else if (referDocFilter.value === 'outDoc') {
-    return referDocList.value.filter((doc) => doc.docType === '발신함');
-  }
-  return [];
-});
-
-// 참조문서추가 모달 open
-const openReferModal = async () => {
-  loading.value = true;
-  isReferModal.value = true;
-  referDocFilter.value = 'all'; // 필터 초기화
-
-  if (referDocList.value.length > 0) {
-    // 삭제된 문서 반영을 위해 선택 상태를 다시 동기화
-    const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
-
-    referDocList.value.forEach((doc) => {
-      doc.selected = selectedMap.has(doc.record_id);
-    });
-
-    return;
-  }
-
-  try {
-    const allDocs = [];
-    const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
-
-    // 결재 수신함 가져오기
-    try {
-      const receivedDocs = await getAuditList();
-
-      if (receivedDocs && receivedDocs.list && Array.isArray(receivedDocs.list)) {
-        receivedDocs.list.forEach((doc) => {
-          if (doc && doc.record_id) {
-            if (!allDocs.some((d) => d.record_id === doc.record_id)) {
-              allDocs.push({
-                ...doc,
-                docType: '수신함',
-                selected: selectedMap.has(doc.record_id),
-                drafter: doc.user_info.name
-              });
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.error('수신함 오류 : ', error);
-    }
-
-    // 결재 발신함 가져오기
-    try {
-      const sentDocs = await getSendAuditList();
-
-      if (sentDocs && sentDocs.list && Array.isArray(sentDocs.list)) {
-        sentDocs.list.forEach((doc) => {
-          if (doc && doc.record_id) {
-            if (!allDocs.some((d) => d.record_id === doc.record_id)) {
-              allDocs.push({
-                ...doc,
-                docType: '발신함',
-                selected: selectedMap.has(doc.record_id),
-                drafter: user.name
-              });
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.error('발신함 오류 : ', error);
-    }
-
-    // 수신참조 가져오기
-    try {
-      const referenceDocs = await getAuditReferenceList();
-
-      if (referenceDocs && referenceDocs.list && Array.isArray(referenceDocs.list)) {
-        referenceDocs.list.forEach((doc) => {
-          if (doc && doc.record_id) {
-            if (!allDocs.some((d) => d.record_id === doc.record_id)) {
-              allDocs.push({
-                ...doc,
-                docType: '수신참조',
-                selected: selectedMap.has(doc.record_id),
-                drafter: doc.user_info.name
-              });
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.error('수신참조 오류 : ', error);
-    }
-
-    // 날짜 내림차순 정렬
-    allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
-
-    referDocList.value = allDocs;
-    console.log('referDocList.value : ', referDocList.value);
-  } catch (error) {
-    console.error('참조문서 목록 가져오기 중 오류 : ', error);
-  } finally {
-    // loading.value = false;
-  }
-};
-
-// 선택한 참조문서를 추가
-const addRefer = () => {
-  const selectedDocs = referDocList.value.filter((doc) => doc.selected);
-
-  selectedDocs.forEach((doc) => {
-    if (!referDoc.value.some((existingDoc) => existingDoc.record_id === doc.record_id)) {
-      referDoc.value.push(doc);
-    }
-  });
-
-  referDoc.value = selectedDocs;
-
-  closeReferModal();
-};
-
-// 참조문서 제거
-const removeReferDoc = (doc, index) => {
-  referDoc.value.splice(index, 1);
-  console.log('referDoc.value : ', referDoc.value);
-};
-
-// 참조문서추가 모달 close
-const closeReferModal = () => {
-  isReferModal.value = false;
-};
-
-// 참조문서 상세 보기
-const showDocDetail = async (doc) => {
-  isReferDetailModal.value = true;
-
-  // 기존 문서 정보 그대로 사용
-  currentDetailDoc.value = doc;
-  console.log('currentDetailDoc.value : ', currentDetailDoc.value);
-
-  try {
-    // 이미 처리된 결재자 정보 사용
-    const auditors = currentDetailDoc.value.data?.auditors
-      ? JSON.parse(currentDetailDoc.value.data.auditors)
-      : { approvers: [], agreers: [], receivers: [] };
-
-    // 결재자 이름 가져오기
-    const userInfo = await getUserInfo(
-      auditors.approvers.map((a) => a.user_id.replaceAll('_', '-')),
-      auditors.agreers.map((a) => a.user_id.replaceAll('_', '-')),
-      auditors.receivers.map((a) => a.user_id.replaceAll('_', '-'))
-    );
-    console.log('userInfo : ', userInfo);
-
-    auditors.approvers.forEach((a) => {
-      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
-      if (user) {
-        a.name = user.name;
-      }
-    });
-
-    auditors.agreers.forEach((a) => {
-      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
-      if (user) {
-        a.name = user.name;
-      }
-    });
-
-    auditors.receivers.forEach((a) => {
-      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
-      if (user) {
-        a.name = user.name;
-      }
-    });
-
-    // 결재자 정보를 UI에 표시하기 위한 형태로 변환
-    currentDetailDoc.value.approvers = (auditors.approvers || []).map((a) => ({
-      userId: a.user_id.replaceAll('_', '-'),
-      name: a.name || '알 수 없음',
-      order: a.order || 0,
-      approved: a.approved || null
-    }));
-
-    currentDetailDoc.value.agreers = (auditors.agreers || []).map((a) => ({
-      userId: a.user_id.replaceAll('_', '-'),
-      name: a.name || '알 수 없음',
-      order: a.order || 0,
-      approved: a.approved || null
-    }));
-
-    currentDetailDoc.value.receivers = (auditors.receivers || []).map((r) => ({
-      userId: r.user_id.replaceAll('_', '-'),
-      name: r.name || '알 수 없음'
-    }));
-  } catch (error) {
-    console.error('문서 상세정보 처리 오류:', error);
-  } finally {
-    loading.value = false;
-  }
-
-  // 첨부파일
-  if (currentDetailDoc.value.bin && currentDetailDoc.value.bin.form_data) {
-    uploadedFile.value = currentDetailDoc.value.bin.form_data;
-  } else {
-    uploadedFile.value = [];
-  }
-
-  // 참조문서가 있는 경우
-  if (currentDetailDoc.value.data.reference_docs) {
-    console.log('모달 오픈, 참조문서 있음');
-    try {
-      const referDocId = JSON.parse(currentDetailDoc.value.data.reference_docs).referDocId;
-      console.log('referDocId : ', referDocId);
-      console.log('currentDetailDoc.value : ', currentDetailDoc.value);
-      const fetchPromises = referDocId.map((recordId) =>
-        skapi
-          .getRecords({ record_id: recordId })
-          .then((res) => res.list?.[0] || null)
-          .catch((err) => {
-            console.error(`record_id ${recordId} 호출 실패:`, err);
-            return null;
-          })
-      );
-      referDoc.value = await Promise.all(fetchPromises);
-      console.log('referDoc.value : ', referDoc.value);
-    } catch (error) {
-      console.error('참조문서 정보 처리 중 오류:', error);
-    }
-  }
-
-  console.log('currentDetailDoc.value : ', currentDetailDoc.value);
-};
-
-// 참조문서 상세 모달 close
-const closeDocModal = () => {
-  isReferDetailModal.value = false;
-  currentDetailDoc.value = null;
-};
-
-// 타임스탬프를 날짜 형식으로 변환하는 함수
-const formatTimestampToDate = (timestamp) => {
-  if (!timestamp) return '날짜 없음';
-
-  const date = new Date(timestamp);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-};
-
 const dateValue = ref(new Date().toISOString().substring(0, 10));
 
 const updateScreenSize = () => {
@@ -2856,8 +2357,6 @@ onMounted(async () => {
   if (isTempSaveMode.value) {
     getTempSaveMyDocCont();
   }
-
-  console.log('requestData.value : ', reRequestData.value);
 
   // 재요청 모드인 경우 바로 step 2로 이동
   if (isReRequestMode.value && reRequestData.value && reRequestData.value.data) {
@@ -2960,26 +2459,6 @@ onMounted(async () => {
         console.log('결재자 정보 설정 완료:', selectedAuditors.value);
       } catch (error) {
         console.error('결재자 정보 처리 중 오류:', error);
-      }
-    }
-
-    // 참조문서 정보 불러오기
-    if (reRequestData.value.data.reference_docs) {
-      try {
-        const referDocId = JSON.parse(reRequestData.value.data.reference_docs).referDocId;
-        const fetchPromises = referDocId.map((recordId) =>
-          skapi
-            .getRecords({ record_id: recordId })
-            .then((res) => res.list?.[0] || null)
-            .catch((err) => {
-              console.error(`record_id ${recordId} 호출 실패:`, err);
-              return null;
-            })
-        );
-        referDoc.value = await Promise.all(fetchPromises);
-        console.log('referDoc.value : ', referDoc.value);
-      } catch (error) {
-        console.error('참조문서 정보 처리 중 오류:', error);
       }
     }
 
@@ -3222,19 +2701,6 @@ onUnmounted(() => {
   }
 }
 
-.table-wrap {
-  .loading {
-    position: relative;
-    border-bottom: unset;
-
-    #loading {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-  }
-}
-
 .table {
   // min-width: 20rem;
 
@@ -3338,7 +2804,6 @@ onUnmounted(() => {
       gap: 0.5rem;
 
       .btn {
-        width: 110px;
         height: 28px;
         min-width: auto;
       }
@@ -3744,225 +3209,6 @@ onUnmounted(() => {
   }
 }
 
-// 참조문서
-.refer-doc-wrap {
-  .btn-open-modal {
-    width: 110px;
-    height: 28px;
-    display: flex;
-  }
-
-  .btn-remove {
-    padding: 0;
-    width: initial;
-    height: initial;
-    border: none;
-
-    svg {
-      width: 16px;
-      height: 16px;
-      fill: var(--warning-color-500);
-    }
-  }
-}
-
-.refer-doc-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 8px;
-
-  &:first-of-type {
-    margin-top: 16px;
-  }
-}
-
-.refer-doc-name {
-  margin-left: 0;
-  width: 100%;
-  border: 1px dashed var(--gray-color-300);
-  border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 0.75rem;
-  color: var(--gray-color-400);
-  text-align: left;
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-// 참조문서 추가 모달
-.modal-refer-list {
-  .top-wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .sub-title {
-    font-size: 1rem;
-    flex-wrap: 500;
-  }
-
-  .sel-filter {
-    width: 10.4rem;
-    cursor: pointer;
-  }
-
-  .doc-title {
-    color: var(--primary-color-500);
-    text-decoration: none;
-    cursor: pointer;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  .status {
-    border: 1px solid var(--gray-color-400);
-    border-radius: 6px;
-    padding: 1px 0.4rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--gray-color-500);
-
-    &.approve {
-      color: var(--primary-color-400);
-      border-color: var(--primary-color-400);
-    }
-
-    &.reject {
-      color: var(--warning-color-500);
-      border-color: var(--warning-color-500);
-    }
-  }
-}
-
-// 참조문서 상세 모달
-.modal-refer-detail {
-  .table {
-    tr {
-      border-top: 1px solid var(--gray-color-300);
-      font-weight: 400;
-
-      td {
-        background-color: #fff;
-        padding: 0.5rem;
-      }
-    }
-  }
-
-  .approver-wrap {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    text-align: center;
-    height: 100%;
-
-    .approver-list {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      min-width: 100px;
-      min-height: 8rem;
-      border-right: 1px solid var(--gray-color-300);
-      border-bottom: 1px solid var(--gray-color-300);
-      margin-bottom: -1px;
-      position: relative;
-
-      &.noexist {
-        background-color: var(--gray-color-50);
-
-        span {
-          color: var(--gray-color-300);
-        }
-      }
-    }
-
-    .num {
-      border-bottom: 1px solid var(--gray-color-200);
-      padding: 0.25rem;
-    }
-
-    .sign {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      border-bottom: 1px solid var(--gray-color-200);
-    }
-
-    .approver {
-      height: initial;
-    }
-  }
-
-  .reference-wrap {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    text-align: center;
-
-    .reference-list {
-      display: flex;
-      justify-content: center;
-      background-color: var(--gray-color-50);
-      border: 1px solid var(--gray-color-300);
-      border-radius: 8px;
-    }
-
-    .referencer {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      padding: 0.25rem;
-      gap: 2px;
-
-      .icon {
-        padding: 0;
-
-        &:hover {
-          cursor: pointer;
-        }
-      }
-    }
-  }
-
-  .upload-file {
-    .file-list {
-      margin-top: 0;
-    }
-
-    .file-item {
-      &:first-of-type {
-        margin-top: 0;
-      }
-    }
-  }
-
-  .refer-doc-item {
-    &:first-of-type {
-      margin-top: 0;
-    }
-  }
-
-  .refer-doc-name {
-    cursor: default;
-    color: var(--gray-color-500);
-
-    &:hover {
-      text-decoration: none;
-    }
-  }
-}
-
 @media (max-width: 768px) {
   .approver-wrap {
     grid-template-columns: repeat(5, 1fr);
@@ -4022,13 +3268,6 @@ onUnmounted(() => {
       min-width: calc(100% - 16px);
     }
   }
-
-  // 참조문서
-  .modal-refer-list {
-    .sel-filter {
-      width: 100%;
-    }
-  }
 }
 
 @media (max-width: 682px) {
@@ -4050,13 +3289,6 @@ onUnmounted(() => {
       .file-item {
         width: 100%;
       }
-    }
-  }
-
-  .refer-doc-wrap {
-    .btn-open-modal {
-      width: 100%;
-      height: 28px;
     }
   }
 }

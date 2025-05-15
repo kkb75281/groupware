@@ -116,6 +116,15 @@ Loading#loading(v-if="getAuditDetailRunning")
 												template(v-if="uploadedFile.length === 0")
 													li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
 
+							tr
+								th 참조 문서
+								td(colspan="3")
+									.refer-doc-wrap
+										ul.refer-doc-list
+											template(v-if="referDoc.length > 0")
+												li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
+													span.refer-doc-name(@click="showReferDetail(doc)") {{ doc.data.to_audit }}
+
 			h4.sub-title 의견
 
 			.input-wrap.input-comment
@@ -258,6 +267,109 @@ Loading#loading(v-if="getAuditDetailRunning")
 				button.btn.bg-gray.btn-edit(v-if="stempType === 'sign' ? handleStampBlobComplete : true" type="button" @click="approvalStep--") 이전
 				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재승인
 
+//- Modal - 참조문서 상세
+#modal.modal.modal-refer-detail(v-if="isReferDetailModal" @click="closeReferDetail")
+	.modal-cont(@click.stop)
+		.modal-header
+			h2.title 문서 상세보기
+			button.btn-close(type="button" @click="closeReferDetail")
+				svg
+					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+		.modal-body
+			.doc-cont
+				.table-wrap
+					.tb-overflow
+						table.table#tb-referDetail
+							colgroup
+								col(style="width: 13%")
+								col
+								col(style="width: 15%")
+								col(style="width: 20%")
+
+							thead
+								//- 작성일자 기안사 :: s
+								tr.pc(v-show="isDesktop")
+									th 작성 일자
+									td {{ formatTimestampToDate(referDetail.uploaded) }}
+									th 기안자
+									td
+										span.drafter {{ referDetail.drafter  }}
+
+								//- 모바일 경우 레이아웃
+								tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
+									th 작성 일자
+									td(colspan="3") {{ formatTimestampToDate(referDetail.uploaded) }}
+								tr.mo(v-show="!isDesktop")
+									th 기안자
+									td(colspan="3" style="text-align: left")
+										span.drafter {{ referDetail.drafter}}
+								//- 작성일자 기안사 :: e
+
+								tr.approval(v-if="referDetail?.approvers?.length > 0")
+									th 결재
+									td.left(colspan="3" style="padding: 0; height: 119px;")
+										ul.approver-wrap
+											li.approver-list(v-for="(approver, index) in referDetail.approvers" :key="index")
+												span.num {{ approver.order }}
+												span.sign
+													span.approved(v-if="approver.approved === 'approve'") 승인
+													span.rejected(v-else-if="approver.approved === 'reject'") 반려
+													span.waitting(v-else) 대기
+												span.approver {{ approver.name }}
+
+								tr.approval(v-if="referDetail?.agreers?.length > 0")
+									th 합의
+									td.left(colspan="3" style="padding: 0; height: 119px;")
+										ul.approver-wrap
+											li.approver-list(v-for="(agreer, index) in referDetail.agreers" :key="index")
+												span.num {{ agreer.order }}
+												span.sign
+													span.approved(v-if="agreer.approved === 'approve'") 승인
+													span.rejected(v-else-if="agreer.approved === 'reject'") 반려
+													span.waitting(v-else) 대기
+												span.approver {{ agreer.name }}
+
+								tr.reference(v-if="referDetail?.receivers?.length > 0")
+									th 수신 참조
+									td.left(colspan="3") {{ referDetail.receivers.map(receiver => receiver.name).join(', ') }}
+
+								tr
+									th 제목
+									td.left(colspan="3") {{ referDetail.data?.to_audit }}
+
+								tr
+									th 결재 내용
+									td.left(colspan="3")
+										._wysiwyg4all(v-html="referDetail.data?.to_audit_content")
+
+								tr
+									th 첨부 파일
+									td.left(colspan="3")
+										.input-wrap.upload-file
+											.file-wrap
+												ul.file-list
+													template(v-if="referDetail?.bin?.form_data?.length > 0")
+														li.file-item(v-for="(file, index) in referDetail.bin.form_data" :key="index")
+															a.file-name(v-if="file.url" :href="file.url" download target="_blank") {{ file.filename }}
+															span.only-text(v-else) {{ file.name || file.filename }}
+													template(v-else)
+														li(style="color:var(--gray-color-300);") 등록된 파일이 없습니다.
+
+								tr
+									th 참조 문서
+									td.left(colspan="3")
+										.refer-doc-wrap
+											ul.refer-doc-list
+												template(v-if="referDetail?.data?.reference_docs.length > 0")
+													li.refer-doc-item(v-for="(doc, index) in referDetail?.data?.reference_docs" :key="index")
+														span.refer-doc-name {{ doc.data.to_audit }}
+												template(v-else)
+													li(style="color:var(--gray-color-300);") 등록된 참조 문서가 없습니다.
+
+		.modal-footer(style="padding-top: 0; border-top: none;")
+			button.btn.bg-gray.btn-cancel(type="button" @click="closeReferDetail") 닫기
+
+
 //- button.btn.outline.btn-new(type="button" @click="testDelete") delete
 </template>
 
@@ -329,6 +441,10 @@ const reply = ref({}); // 결재 의견의 댓글 (대댓글)
 const subReply = ref({}); // 대대댓글
 const isEditMode = ref({}); // 댓글 수정 모드
 const editComment = ref({}); // 댓글 수정 내용
+
+const isReferDetailModal = ref(false); // 참조 문서 상세 모달
+const referDoc = ref([]); // 참조 문서
+const referDetail = ref({}); // 참조 문서 상세 내용
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -845,6 +961,29 @@ const getAuditDetail = async () => {
     } else {
       console.log('CC');
       uploadedFile.value = [];
+    }
+
+    // 참조 문서
+    console.log('auditDoc : ', auditDoc);
+    const referDocIds = auditDoc.data.reference_docs;
+    const parseReferDocId = JSON.parse(auditDoc.data.reference_docs).referDocId;
+    console.log('parseReferDocId : ', parseReferDocId);
+
+    if (referDocIds) {
+      const fetchPromises = parseReferDocId.map((recordId) =>
+        skapi
+          .getRecords({ record_id: recordId })
+          .then((res) => res.list?.[0] || null)
+          .catch((err) => {
+            console.error(`record_id ${recordId} 호출 실패:`, err);
+            return null;
+          })
+      );
+
+      referDoc.value = await Promise.all(fetchPromises);
+      console.log('referDoc.value : ', referDoc.value);
+    } else {
+      referDoc.value = [];
     }
 
     getAuditDetailRunning.value = false;
@@ -1577,7 +1716,6 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
 // 기안자의 재요청
 const reRequestAudit = () => {
   reRequestData.value = auditDoContent.value;
-  console.log('reRequestData : ', reRequestData.value);
 
   router.push({
     path: '/approval/request-audit',
@@ -1603,8 +1741,6 @@ const getCmtRecord = async () => {
   } else {
     cmtRecord.value = [];
   }
-  console.log('cmtRecord.value : ', cmtRecord.value);
-  console.log('cmtRecord.value : ', cmtRecord.value.record_id);
 };
 
 // 댓글 (결재 의견) 작성
@@ -1669,9 +1805,8 @@ const getComment = async () => {
     },
     reference: cmtRecord.value.record_id
   };
-//   console.log({ params });
 
-  if(!cmtRecord.value.record_id) return;
+  if (!cmtRecord.value.record_id) return;
   const res = await skapi.getRecords(params);
 
   if (res.list.length > 0) {
@@ -1679,8 +1814,6 @@ const getComment = async () => {
   } else {
     commentList.value = [];
   }
-
-  console.log('commentList : ', commentList.value);
 };
 
 // 필터링된 대댓글 목록을 가져오는 함수
@@ -1793,14 +1926,10 @@ const getReply = async (index) => {
   } else {
     replyList.value = [];
   }
-
-  console.log('replyList : ', replyList.value);
 };
 
 // 댓글 수정 모드 전환
 const toggleEditMode = (type, index) => {
-  console.log('수정 모드 전환', type, index);
-
   const commentId =
     type === 'reply'
       ? String(commentList.value[index].record_id)
@@ -1925,6 +2054,76 @@ const deleteReply = async (type, index) => {
   } catch (error) {
     console.error('댓글 삭제 오류:', error);
   }
+};
+
+// 참조문서 상세 모달 open
+const showReferDetail = async (doc) => {
+  console.log('doc : ', doc);
+  isReferDetailModal.value = true;
+  referDetail.value = doc;
+
+  try {
+    // 이미 처리된 결재자 정보 사용
+    const auditors = referDetail.value.data?.auditors
+      ? JSON.parse(referDetail.value.data.auditors)
+      : { approvers: [], agreers: [], receivers: [] };
+
+    // 결재자 이름 가져오기
+    const userInfo = await getUserInfo(
+      auditors.approvers.map((a) => a.user_id.replaceAll('_', '-')),
+      auditors.agreers.map((a) => a.user_id.replaceAll('_', '-')),
+      auditors.receivers.map((a) => a.user_id.replaceAll('_', '-'))
+    );
+    console.log('userInfo : ', userInfo);
+
+    auditors.approvers.forEach((a) => {
+      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
+      if (user) {
+        a.name = user.name;
+      }
+    });
+
+    auditors.agreers.forEach((a) => {
+      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
+      if (user) {
+        a.name = user.name;
+      }
+    });
+
+    auditors.receivers.forEach((a) => {
+      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
+      if (user) {
+        a.name = user.name;
+      }
+    });
+
+    // 결재자 정보를 UI에 표시하기 위한 형태로 변환
+    referDetail.value.approvers = (auditors.approvers || []).map((a) => ({
+      userId: a.user_id.replaceAll('_', '-'),
+      name: a.name || '알 수 없음',
+      order: a.order || 0,
+      approved: a.approved || null
+    }));
+
+    referDetail.value.agreers = (auditors.agreers || []).map((a) => ({
+      userId: a.user_id.replaceAll('_', '-'),
+      name: a.name || '알 수 없음',
+      order: a.order || 0,
+      approved: a.approved || null
+    }));
+
+    referDetail.value.receivers = (auditors.receivers || []).map((r) => ({
+      userId: r.user_id.replaceAll('_', '-'),
+      name: r.name || '알 수 없음'
+    }));
+  } catch (error) {
+    console.error('문서 상세정보 처리 오류 : ', error);
+  }
+};
+
+// 참조문서 상세 모달 close
+const closeReferDetail = () => {
+  isReferDetailModal.value = false;
 };
 
 onMounted(async () => {
@@ -2648,6 +2847,140 @@ onUnmounted(() => {
     height: 100%;
   }
 }
+
+// 참조문서 :: s
+.refer-doc-item {
+  border: 1px dashed var(--gray-color-300);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  color: var(--gray-color-500);
+  text-align: left;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// 참조문서상세 모달
+.modal-refer-detail {
+  .modal-cont {
+    max-width: 992px;
+  }
+
+  .table {
+    tr {
+      border-top: 1px solid var(--gray-color-300);
+      font-weight: 400;
+
+      td {
+        background-color: #fff;
+        padding: 0.5rem;
+      }
+    }
+  }
+
+  .approver-wrap {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    text-align: center;
+    height: 100%;
+
+    .approver-list {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-width: 100px;
+      min-height: 8rem;
+      border-right: 1px solid var(--gray-color-300);
+      border-bottom: 1px solid var(--gray-color-300);
+      margin-bottom: -1px;
+      position: relative;
+
+      &.noexist {
+        background-color: var(--gray-color-50);
+
+        span {
+          color: var(--gray-color-300);
+        }
+      }
+    }
+
+    .num {
+      border-bottom: 1px solid var(--gray-color-200);
+      padding: 0.25rem;
+    }
+
+    .sign {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      border-bottom: 1px solid var(--gray-color-200);
+    }
+
+    .approver {
+      height: initial;
+    }
+  }
+
+  .reference-wrap {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    text-align: center;
+
+    .reference-list {
+      display: flex;
+      justify-content: center;
+      background-color: var(--gray-color-50);
+      border: 1px solid var(--gray-color-300);
+      border-radius: 8px;
+    }
+
+    .referencer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      padding: 0.25rem;
+      gap: 2px;
+
+      .icon {
+        padding: 0;
+
+        &:hover {
+          cursor: pointer;
+        }
+      }
+    }
+  }
+
+  .upload-file {
+    margin-top: 0;
+
+    .file-wrap {
+      margin-top: 0;
+    }
+
+    .file-list {
+      margin-top: 0;
+    }
+
+    .file-item {
+      &:first-of-type {
+        margin-top: 0;
+      }
+    }
+  }
+}
+// 참조문서 :: e
 
 @media print {
   #main,

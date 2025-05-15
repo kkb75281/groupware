@@ -89,6 +89,7 @@ export const readAudit: Ref<
     news_info?: {
       news_title: string;
       news_id: string;
+      news_refer: string;
       news_noti_id?: string;
       send_newsUser?: [];
     };
@@ -401,8 +402,43 @@ export const addEmailNotification = (emailData: any) => {
 export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
-export const getNewsletterList = async (refresh = false) => {
-  // console.log('=== getNewsletterList === refresh : ', refresh);
+// 카테고리 해당 게시글 리스트
+export const getNewsletterList = async (tag, refresh = false) => {
+  console.log('=== getNewsletterList === tag : ', tag);
+
+  try {
+    const getNews = await skapi.getRecords({
+      table: {
+        name: 'newsletter',
+        access_group: 'private'
+      },
+      reference: tag
+      // tag: tag
+    });
+    console.log('=== getNewsletterList === getNews : ', getNews);
+
+    if (!getNews.list) {
+      newsletterList.value = [];
+    }
+
+    newsletterList.value = getNews.list.sort((a, b) => b.uploaded - a.uploaded);
+
+    const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
+
+    newsletterList.value = newsletterList.value.map((item, index) => {
+      return {
+        ...item,
+        writer: writer[index]?.list?.[0]?.name || '-'
+      };
+    });
+
+    return newsletterList.value;
+  } catch (err) {
+    if (err.code === 'INVALID_REQUEST') {
+      newsletterList.value = [];
+      console.log('ㅠㅠㅠㅠ');
+    }
+  }
 };
 
 // export const getNewsletterList = async (refresh = false) => {
@@ -575,7 +611,11 @@ watch(
   async (u) => {
     // 로딩되고 로그인되면 무조건 실행
     if (u && Object.keys(u).length) {
-      await Promise.all([getRealtime(), getReadList()]);
+      const res = await Promise.all([getRealtime(), getReadList()]);
+
+      // console.log('=== watch user === res : ', res);
+
+      return res;
     }
   },
   { immediate: true }
