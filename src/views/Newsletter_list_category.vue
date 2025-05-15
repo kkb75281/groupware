@@ -47,7 +47,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, onMounted } from 'vue';
 import { skapi } from '@/main.ts';
-import { newsletterList, getNewsletterList } from '@/notifications.ts';
+// import { newsletterList, getNewsletterList } from '@/notifications.ts';
 
 import Loading from '@/components/loading.vue';
 
@@ -90,7 +90,7 @@ const getNewsCat = async () => {
       access_group: 1
     }
   });
-  console.log('res : ', res);
+  // console.log('카테고리 리스트 : ', res);
 
   if (res && res.list) {
     newsCatList.value = res.list.reduce((acc, cur) => {
@@ -196,7 +196,7 @@ const searchNewsCat = async () => {
 
 onMounted(() => {
   getNewsCat();
-  getNewsletterList();
+  // getNewsletterList();
 });
 </script>
 

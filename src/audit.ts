@@ -114,7 +114,7 @@ async function processAuditData(auditRequests, isReference = false) {
     const auditDocs = await Promise.all(
       auditRequests.list.map(async (list) => {
         if (!list || !list.data || !list.data.audit_id) {
-          console.log('유효하지 않음 : ', list);
+          // console.log('유효하지 않음 : ', list);
           return null;
         }
 

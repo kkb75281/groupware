@@ -109,15 +109,23 @@ const getNewsCatRecord = async () => {
     return;
   }
 
-  const res = await skapi.getRecords({
-    table: {
-      name: `newsCatRecord_${cateId.value}`,
-      access_group: 'authorized'
-    }
-  });
+  try {
+    const res = await skapi.getRecords({
+      table: {
+        name: `newsCatRecord_${cateId.value}`,
+        access_group: 'private'
+      }
+    });
 
-  dummyId = res.list[0].record_id;
-  return dummyId;
+    dummyId = res.list[0].record_id;
+    return dummyId;
+  } catch (err) {
+    if (err.message === 'No access.') {
+      dummyId = '';
+      alert('해당 게시글에 대한 권한이 없습니다.');
+      router.push('/newsletter-category/');
+    }
+  }
 };
 
 // 게시글 검색

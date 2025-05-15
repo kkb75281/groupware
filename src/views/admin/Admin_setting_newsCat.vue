@@ -356,31 +356,31 @@ const registerNewsCat = async () => {
         }
       };
       const res = await skapi.postRecord(data, config);
-      console.log('등록 == res : ', res);
+      console.log('카테고리명 == res : ', res);
 
       if (res) {
         // 카테고리별 게시글 더미 레코드 생성
         const newsCatRecord = await skapi.postRecord(null, {
           table: {
             name: `newsCatRecord_${res.record_id}`,
-            access_group: 'authorized'
+            access_group: 'private'
           }
         });
-        console.log('newsCatRecord : ', newsCatRecord);
+        console.log('카테고리별 게시글 더미 레코드 : ', newsCatRecord);
 
         // 게시글 공개범위에게 권한을 부여
-        // const newsCatId = newsCatRecord.record_id;
-        // const newsUserIds = selectedEmps.value.map((user) => user.user_id);
-        // console.log('newsUserIds : ', newsUserIds);
-        // console.log('newsCatId : ', newsCatId);
+        const newsCatId = newsCatRecord.record_id;
+        const newsUserIds = selectedEmps.value.map((user) => user.user_id);
+        console.log('newsUserIds : ', newsUserIds);
+        console.log('newsCatId : ', newsCatId);
 
-        // await Promise.all(
-        //   newsUserIds.map((userId) =>
-        //     grantNewsUserAccess({ news_id: newsCatId, newsUser_id: userId })
-        //   )
-        // ).then((res) => {
-        //   console.log('게시글 공개범위 권한 부여 결과 : ', res);
-        // });
+        await Promise.all(
+          newsUserIds.map((userId) =>
+            grantNewsUserAccess({ news_id: newsCatId, newsUser_id: userId })
+          )
+        ).then((res) => {
+          console.log('게시글 공개범위 권한 부여 결과 : ', res);
+        });
       }
       alert('게시글 카테고리가 추가되었습니다.');
     }

@@ -412,8 +412,8 @@ export const getNewsletterList = async (tag, refresh = false) => {
         name: 'newsletter',
         access_group: 'private'
       },
-      reference: tag,
-      tag: tag
+      reference: tag
+      // tag: tag
     });
     console.log('=== getNewsletterList === getNews : ', getNews);
 
@@ -434,8 +434,9 @@ export const getNewsletterList = async (tag, refresh = false) => {
 
     return newsletterList.value;
   } catch (err) {
-    if (err.message === 'User has no private access.') {
+    if (err.code === 'INVALID_REQUEST') {
       newsletterList.value = [];
+      console.log('ㅠㅠㅠㅠ');
     }
   }
 };

@@ -691,8 +691,8 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       // source: {
       //   prevent_multiple_referencing: true // 중복 방지
       // },
-      reference: selCatId.value, // 카테고리별 더미 레코드 ID를 레퍼런스
-      tags: selCatId.value // 카테고리별 더미 레코드 ID를 태그로
+      reference: selCatId.value // 카테고리별 더미 레코드 ID를 레퍼런스
+      // tags: selCatId.value // 카테고리별 더미 레코드 ID를 태그로
     };
     console.log('options : ', options);
 
@@ -710,12 +710,12 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
 };
 
 // 게시글 공개범위에게 권한을 부여하는 함수
-const grantNewsUserAccess = async ({ news_id, newsUser_id }) => {
-  return skapi.grantPrivateRecordAccess({
-    record_id: news_id,
-    user_id: newsUser_id
-  });
-};
+// const grantNewsUserAccess = async ({ news_id, newsUser_id }) => {
+//   return skapi.grantPrivateRecordAccess({
+//     record_id: news_id,
+//     user_id: newsUser_id
+//   });
+// };
 
 // 게시글 등록하고 알림을 보내는 함수
 const createAddNews = async (
@@ -789,20 +789,20 @@ const createAddNews = async (
   // );
   // console.log('res : ', res);
 
-  skapi.grantPrivateRecordAccess({
-    record_id: news_id,
-    user_id: newsUser_id
-  });
+  // skapi.grantPrivateRecordAccess({
+  //   record_id: news_id,
+  //   user_id: newsUser_id
+  // });
 
   // 실시간 알림 보내기
   if (isNotificationTarget) {
     let news_title = document.getElementById('news_title').value;
 
-    let postRealtimeBody = {
-      text: `${user.name}님께서 게시글을 올렸습니다.`,
-      type: 'notice',
-      id: news_id
-    };
+    // let postRealtimeBody = {
+    //   text: `${user.name}님께서 게시글을 올렸습니다.`,
+    //   type: 'notice',
+    //   id: news_id
+    // };
 
     skapi
       .postRealtime(
@@ -824,10 +824,10 @@ const createAddNews = async (
         newsUser_id,
         {
           title: '[그룹웨어]',
-          body: `${user.name}님께서 게시글을 올렸습니다.`,
-          config: {
-            always: true // 무조건 알림 받기
-          }
+          body: `${user.name}님께서 게시글을 올렸습니다.`
+          // config: {
+          //   always: true // 무조건 알림 받기
+          // }
         }
       )
       .then((res) => {
@@ -875,10 +875,10 @@ const createAddNews = async (
 const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTarget = false) => {
   try {
     // 권한 부여
-    await grantNewsUserAccess({
-      news_id: newsId,
-      newsUser_id: userId
-    });
+    // await grantNewsUserAccess({
+    //   news_id: newsId,
+    //   newsUser_id: userId
+    // });
 
     // 알림 전송
     const res = await createAddNews(
