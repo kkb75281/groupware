@@ -360,8 +360,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 									td.left(colspan="3")
 										.refer-doc-wrap
 											ul.refer-doc-list
-												template(v-if="referDetail?.data?.reference_docs.length > 0")
-													li.refer-doc-item(v-for="(doc, index) in referDetail?.data?.reference_docs" :key="index")
+												template(v-if="referDoc.length > 0")
+													li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
 														span.refer-doc-name {{ doc.data.to_audit }}
 												template(v-else)
 													li(style="color:var(--gray-color-300);") 등록된 참조 문서가 없습니다.
@@ -964,10 +964,10 @@ const getAuditDetail = async () => {
     }
 
     // 참조 문서
-    console.log('auditDoc : ', auditDoc);
+    // console.log('auditDoc : ', auditDoc);
     const referDocIds = auditDoc.data.reference_docs;
     const parseReferDocId = JSON.parse(auditDoc.data.reference_docs).referDocId;
-    console.log('parseReferDocId : ', parseReferDocId);
+    // console.log('parseReferDocId : ', parseReferDocId);
 
     if (referDocIds) {
       const fetchPromises = parseReferDocId.map((recordId) =>
@@ -981,7 +981,7 @@ const getAuditDetail = async () => {
       );
 
       referDoc.value = await Promise.all(fetchPromises);
-      console.log('referDoc.value : ', referDoc.value);
+      // console.log('referDoc.value : ', referDoc.value);
     } else {
       referDoc.value = [];
     }
@@ -2058,7 +2058,6 @@ const deleteReply = async (type, index) => {
 
 // 참조문서 상세 모달 open
 const showReferDetail = async (doc) => {
-  console.log('doc : ', doc);
   isReferDetailModal.value = true;
   referDetail.value = doc;
 
@@ -2116,6 +2115,31 @@ const showReferDetail = async (doc) => {
       userId: r.user_id.replaceAll('_', '-'),
       name: r.name || '알 수 없음'
     }));
+
+    console.log('referDetail.value : ', referDetail.value);
+
+    // 참조 문서
+    const referDocIds = referDetail.value.data.reference_docs;
+    const parseReferDocId = JSON.parse(referDetail.value.data.reference_docs).referDocId;
+    console.log('referDocIds : ', referDocIds);
+    console.log('parseReferDocId : ', parseReferDocId);
+
+    if (referDocIds) {
+      const fetchPromises = parseReferDocId.map((recordId) =>
+        skapi
+          .getRecords({ record_id: recordId })
+          .then((res) => res.list?.[0] || null)
+          .catch((err) => {
+            console.error(`record_id ${recordId} 호출 실패:`, err);
+            return null;
+          })
+      );
+
+      referDoc.value.value = await Promise.all(fetchPromises);
+      console.log('referDoc.value.value : ', referDoc.value.value);
+    } else {
+      referDoc.value = [];
+    }
   } catch (error) {
     console.error('문서 상세정보 처리 오류 : ', error);
   }
@@ -2977,6 +3001,13 @@ onUnmounted(() => {
       &:first-of-type {
         margin-top: 0;
       }
+    }
+  }
+
+  .refer-doc-item {
+    &:hover {
+      text-decoration: none;
+      cursor: default;
     }
   }
 }
