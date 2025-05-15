@@ -38,7 +38,8 @@
                       tr(v-for="(category, key, index) in newsCatList" :key="category.record_id")
                           td.list-num {{ index + 1 }}
                           td.left 
-                              router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.index.value } }")
+                              //- router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.index.value} }")
+                              router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.record_id} }")
                                   span {{ category.data.news_category }}
 </template>
 
@@ -46,6 +47,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, onMounted } from 'vue';
 import { skapi } from '@/main.ts';
+// import { newsletterList, getNewsletterList } from '@/notifications.ts';
 
 import Loading from '@/components/loading.vue';
 
@@ -88,17 +90,22 @@ const getNewsCat = async () => {
       access_group: 1
     }
   });
+  // console.log('카테고리 리스트 : ', res);
 
-  newsCatList.value = res.list.reduce((acc, cur) => {
-    acc[cur.record_id] = cur;
-    return acc;
-  }, {});
+  if (res && res.list) {
+    newsCatList.value = res.list.reduce((acc, cur) => {
+      acc[cur.record_id] = cur;
+      return acc;
+    }, {});
+  } else {
+    newsCatList.value = {};
+  }
 };
 
 const refresh = async () => {
   loading.value = true;
 
-  getNewsCat();
+  await getNewsCat();
 
   if (searchValue.value) {
     searchValue.value = '';
@@ -189,6 +196,7 @@ const searchNewsCat = async () => {
 
 onMounted(() => {
   getNewsCat();
+  // getNewsletterList();
 });
 </script>
 

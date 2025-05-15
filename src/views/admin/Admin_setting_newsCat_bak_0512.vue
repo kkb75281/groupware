@@ -311,14 +311,6 @@ const removeDvs = (divisionName) => {
   }
 };
 
-// 게시글 공개범위에게 권한을 부여하는 함수
-const grantNewsUserAccess = async ({ news_id, newsUser_id }) => {
-  return skapi.grantPrivateRecordAccess({
-    record_id: news_id,
-    user_id: newsUser_id
-  });
-};
-
 // 게시글 카테고리 등록/수정
 const registerNewsCat = async () => {
   if (!newsCatName.value) {
@@ -356,32 +348,7 @@ const registerNewsCat = async () => {
         }
       };
       const res = await skapi.postRecord(data, config);
-      console.log('카테고리명 == res : ', res);
-
-      if (res) {
-        // 카테고리별 게시글 더미 레코드 생성
-        const newsCatRecord = await skapi.postRecord(null, {
-          table: {
-            name: `newsCatRecord_${res.record_id}`,
-            access_group: 'private'
-          }
-        });
-        console.log('카테고리별 게시글 더미 레코드 : ', newsCatRecord);
-
-        // 게시글 공개범위에게 권한을 부여
-        const newsCatId = newsCatRecord.record_id;
-        const newsUserIds = selectedEmps.value.map((user) => user.user_id);
-        console.log('newsUserIds : ', newsUserIds);
-        console.log('newsCatId : ', newsCatId);
-
-        await Promise.all(
-          newsUserIds.map((userId) =>
-            grantNewsUserAccess({ news_id: newsCatId, newsUser_id: userId })
-          )
-        ).then((res) => {
-          console.log('게시글 공개범위 권한 부여 결과 : ', res);
-        });
-      }
+      console.log('등록 == res : ', res);
       alert('게시글 카테고리가 추가되었습니다.');
     }
 
@@ -414,6 +381,7 @@ onUnmounted(() => {
 .inner {
   max-width: 1600px;
   margin: 0 auto;
+  padding: 2rem;
 }
 
 .form-wrap {
