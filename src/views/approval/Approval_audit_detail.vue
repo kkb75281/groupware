@@ -222,9 +222,10 @@ Loading#loading(v-if="getAuditDetailRunning")
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 		.modal-body
 			template(v-if="approvalStep === 1")
-				.input-wrap(style="margin: 0")
+				//- .input-wrap(style="margin: 0")
 					p.label 결재의견
 					textarea(name="comment" rows="5" placeholder="결재의견을 추가하고 싶다면 입력해주세요." v-model="approvedComment" style="width: 100%;resize: none;")
+				p.label 결재 사항을 선택해주세요.
 
 			template(v-if="approvalStep === 2")
 				.tab-menu
@@ -1786,6 +1787,57 @@ const writeComment = async () => {
 
     const res = await skapi.postRecord(data, config);
     console.log('== writeComment == res : ', res);
+
+    // 댓글 알림
+    if (senderUser.value.user_id && senderUser.value.user_id !== user.user_id) {
+      // 알림 데이터 구성
+      const notificationData = {
+        comment_notification: {
+          noti_id: res.record_id,
+          noti_type: 'audit_comment',
+          send_date: new Date().getTime(),
+          send_user: user.user_id,
+          audit_info: {
+            audit_type: 'comment',
+            to_audit: auditDoContent.value?.data?.to_audit,
+            audit_doc_id: auditId.value,
+            comment: data.comment.length > 20 ? data.comment.substring(0, 20) + '...' : data.comment
+          }
+        }
+      };
+
+      // 실시간 알림 보내기
+      skapi
+        .postRealtime(notificationData, senderUser.value.user_id, {
+          title: '[그룹웨어]',
+          body: `${user.name}님이 결재 문서에 의견을 남겼습니다.`,
+          config: {
+            always: true // 무조건 알림 받기
+          }
+        })
+        .then((res) => {
+          console.log('댓글알림 === postRealtime === res : ', res);
+        })
+        .catch((err) => {
+          console.error('댓글알림 실패:', err);
+        });
+
+      // 알림 기록 저장 (실시간 못 받을 경우 대비)
+      skapi
+        .postRecord(notificationData.comment_notification, {
+          readonly: true,
+          table: {
+            name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+            access_group: 'authorized'
+          }
+        })
+        .then((res) => {
+          console.log('댓글알림기록 === postRecord === res : ', res);
+        })
+        .catch((err) => {
+          console.error('댓글알림기록 저장 실패:', err);
+        });
+    }
   } catch (error) {
     console.error('Error writing comment:', error);
   }
@@ -1891,6 +1943,61 @@ const writeReply = async (type, index) => {
 
     const res = await skapi.postRecord(data, config);
     console.log('== writeReply == res : ', res);
+
+    // 대댓글 알림
+    if (senderUser.value.user_id && senderUser.value.user_id !== user.user_id) {
+      // 알림 데이터 구성
+      const notificationData = {
+        reply_notification: {
+          noti_id: res.record_id,
+          noti_type: 'audit_reply',
+          send_date: new Date().getTime(),
+          send_user: user.user_id,
+          audit_info: {
+            audit_type: 'reply',
+            to_audit: auditDoContent.value?.data?.to_audit,
+            audit_doc_id: auditId.value,
+            parent_comment_id:
+              type === 'reply'
+                ? commentList.value[index].record_id
+                : replyList.value[index].reference,
+            reply: data.comment.length > 20 ? data.comment.substring(0, 20) + '...' : data.comment
+          }
+        }
+      };
+
+      // 실시간 알림 보내기
+      skapi
+        .postRealtime(notificationData, senderUser.value.user_id, {
+          title: '[그룹웨어]',
+          body: `${user.name}님이 결재 문서의 댓글에 답글을 남겼습니다.`,
+          config: {
+            always: true // 무조건 알림 받기
+          }
+        })
+        .then((res) => {
+          console.log('대댓글알림 === postRealtime === res : ', res);
+        })
+        .catch((err) => {
+          console.error('대댓글알림 실패:', err);
+        });
+
+      // 알림 기록 저장 (실시간 못 받을 경우 대비)
+      skapi
+        .postRecord(notificationData.reply_notification, {
+          readonly: true,
+          table: {
+            name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+            access_group: 'authorized'
+          }
+        })
+        .then((res) => {
+          console.log('대댓글알림기록 === postRecord === res : ', res);
+        })
+        .catch((err) => {
+          console.error('대댓글알림기록 저장 실패:', err);
+        });
+    }
   } catch (error) {
     console.log('error : ', error);
   } finally {

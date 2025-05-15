@@ -271,29 +271,15 @@ export const readNoti = async (rt: any) => {
     readAudit.value[key] = rt[key];
   }
 
-  const auditType =
-    rt.audit_info?.audit_type ||
-    rt.comment_notification?.audit_type ||
-    rt.reply_notification?.audit_type ||
-    '';
-  console.log('auditType : ', auditType);
-
   // 읽은 알람 리스트를 업데이트
-  // updateReadList(rt.audit_info.audit_type);
-  updateReadList(auditType);
+  updateReadList(rt.audit_info.audit_type);
 };
 
 async function updateReadList(type: string) {
   let id;
 
-  console.log('readAudit.value : ', readAudit.value);
-
   if (type === 'email') {
     id = readAudit.value.id;
-  } else if (type === 'news') {
-    id = readAudit.value.news_info.news_id;
-  } else if (type === 'comment' || type === 'reply') {
-    id = readAudit.value.noti_id;
   } else {
     id = readAudit.value.noti_id;
   }

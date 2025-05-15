@@ -11,7 +11,7 @@
 				.tb-overflow
 					table.table#tb-write-newsForm
 						colgroup
-							col(style="width: 13%")
+							col(style="width: 13%; min-width: 92px")
 							col
 							col(style="width: 15%")
 							col(style="width: 20%")
@@ -104,24 +104,11 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
-import { user, makeSafe, verifiedEmail } from '@/user.ts';
 import { divisionNameList } from '@/division.ts';
 
 import Organigram from '@/components/organigram.vue';
 
-// 게시판 공지
-// 이메일 발송의 기존 방식 -> 게시판 형태의 공지 방식으로 변경
-// 직원 모두 작성 가능
-// 공지사항은 레코드에 저장
-// 작성 시 공개범위, 알림발송 설정 가능하게
-// --> 공개범위는 부서별로 선택 가능하게
-// --> 알림발송은 허용/비허용 설정 가능하게 (공개범위에 해당하는 사람들에게만 알림발송)
-// 목록에서 클릭 시, 상세 페이지로 이동
-// 등록한 공지사항 삭제, 수정 가능
-// 처음 작성시: 알람 허용이면 공개 범위에 해당하는 사람에게만 알람 보내기
-// 올리고 수정시: 공개범위에 추가된 부서가 있으면 추가 부서 사람들에게만 알람 보내기
-// 댓글 알람: 작성자에게만 알람 보내기, 만약 작성자가 본인글에 댓글 작성시에는 알람 안가는게 맞음
-// 대댓글: 댓글 작성자 + 게시물 작성자 알람
+// 마스터들은 무조건 권한 부여?
 
 const router = useRouter();
 const route = useRoute();
@@ -130,6 +117,7 @@ const route = useRoute();
 const isEditMode = computed(() => !!route.query.record_id);
 const recordId = ref(route.query.record_id || null);
 
+const disabled = ref(false);
 const isDesktop = ref(window.innerWidth > 768); // 반응형
 const isModalOpen = ref(false); // 공개범위 설정 모달
 const selectedDivision = ref({}); // 조직도에서 선택된 부서
@@ -142,7 +130,8 @@ const uploadedFile = ref([]); // 첨부파일
 const fileNames = ref([]);
 
 const newsCatName = ref(''); // 게시글 제목
-const disabled = ref(false);
+
+const adminId = ref([]);
 
 // 수정 모드일 경우 데이터 가져오기
 const getEditModeCat = async () => {
@@ -151,7 +140,7 @@ const getEditModeCat = async () => {
   try {
     const res = await skapi.getRecords({
       table: {
-        name: 'news_category_list',
+        name: 'news_category',
         access_group: 1
       },
       record_id: recordId.value
@@ -207,36 +196,6 @@ const closeModal = () => {
 
   backupSelected.value = null;
   isModalOpen.value = false;
-};
-
-// 직원 부서 가져오기
-const getEmpDivision = async (userId) => {
-  if (!userId) return;
-
-  const userDvsList = await skapi.getRecords({
-    table: {
-      name: 'emp_division' + makeSafe(emp.user_id),
-      access_group: 1
-    },
-    tag: '[emp_id]' + makeSafe(emp.user_id)
-  });
-  const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
-  const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
-
-  await skapi
-    .getRecords({
-      table: {
-        name: 'emp_position_current',
-        access_group: 1
-      },
-      unique_id: `[emp_position_current]${makeSafe(userId)}:${userDvs}`
-    })
-    .then((r) => {
-      if (r.list.length === 0) return;
-
-      user.division = r.list[0].index.name.split('.')[0];
-      user.position = r.list[0].index.name.split('.')[1];
-    });
 };
 
 // 공개범위 모달에서 조직도 선택시
@@ -598,64 +557,6 @@ onUnmounted(() => {
 .btn {
   margin-top: 1rem;
 }
-
-// .dvs-wrap {
-//   display: grid;
-//   grid-template-columns: repeat(8, 1fr);
-//   text-align: center;
-//   height: 100%;
-
-//   .dvs-list {
-//     display: flex;
-//     flex-direction: column;
-//     width: 100%;
-//     min-height: 6rem;
-//     border-right: 1px solid var(--gray-color-300);
-//     border-bottom: 1px solid var(--gray-color-300);
-//     margin-bottom: -1px;
-//     position: relative;
-//   }
-
-//   .num {
-//     border-bottom: 1px solid var(--gray-color-200);
-//     padding: 0.25rem;
-//   }
-
-//   .dvs-name {
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//     height: 100%;
-//     padding: 0.25rem;
-//   }
-
-//   .add-dvs {
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//     height: 100%;
-//     cursor: pointer;
-
-//     .icon {
-//       svg {
-//         fill: var(--gray-color-400);
-//       }
-//     }
-//   }
-
-//   .btn-remove {
-//     margin-left: 4px;
-
-//     .icon {
-//       padding: 0;
-
-//       svg {
-//         width: 16px;
-//         height: 16px;
-//       }
-//     }
-//   }
-// }
 
 .dvs-wrap {
   display: flex;

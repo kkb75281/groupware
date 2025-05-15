@@ -44,7 +44,7 @@
 								th.essential 카테고리
 								td.left(colspan="3")
 									.input-wrap
-										select#newsCat(v-model="selCate" name="category" required :disabled="is")
+										select#newsCat(v-model="selCate" name="category" required :disabled="isEditMode")
 											option(value="" disabled hidden) 카테고리를 선택해주세요.
 											option(v-for="(category, index) in newsCateList" :key="category.record_id" :value="category.record_id") {{ category.data.news_category }}
 
@@ -126,19 +126,7 @@ import { divisionNameList } from '@/division.ts';
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
 
-// 게시판 공지
-// 이메일 발송의 기존 방식 -> 게시판 형태의 공지 방식으로 변경
-// 직원 모두 작성 가능
-// 공지사항은 레코드에 저장
-// 작성 시 공개범위, 알림발송 설정 가능하게
-// --> 공개범위는 부서별로 선택 가능하게
-// --> 알림발송은 허용/비허용 설정 가능하게 (공개범위에 해당하는 사람들에게만 알림발송)
-// 목록에서 클릭 시, 상세 페이지로 이동
-// 등록한 공지사항 삭제, 수정 가능
-// 처음 작성시: 알람 허용이면 공개 범위에 해당하는 사람에게만 알람 보내기
-// 올리고 수정시: 공개범위에 추가된 부서가 있으면 추가 부서 사람들에게만 알람 보내기
-// 댓글 알람: 작성자에게만 알람 보내기, 만약 작성자가 본인글에 댓글 작성시에는 알람 안가는게 맞음
-// 대댓글: 댓글 작성자 + 게시물 작성자 알람
+// 게시글 수정시 첨부파일 변경 안됨
 
 const router = useRouter();
 const route = useRoute();
@@ -917,6 +905,8 @@ const registerNews = async (e) => {
       // 직원 정보 추가
       updateFormData.append('members', JSON.stringify(selectedUsers.value));
 
+      console.log('== AA == uploadedFile.value : ', uploadedFile.value);
+
       // 첨부파일 처리
       if (uploadedFile.value.length) {
         const filePromises = uploadedFile.value.map(async (file) => {
@@ -943,6 +933,8 @@ const registerNews = async (e) => {
             updateFormData.append('form_data', file);
           });
       }
+
+      console.log('== BB == uploadedFile.value : ', uploadedFile.value);
 
       const updateRes = await skapi.postRecord(updateFormData, {
         record_id: editNewsId,

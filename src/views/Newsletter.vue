@@ -68,7 +68,7 @@ import Loading from '@/components/loading.vue';
 // const testDelete = () => {
 //   skapi
 //     .deleteRecords({
-//       record_id: 'UlFS1BhmaFScz5vo'
+//       record_id: 'UlFvXcpKsmIQfDF6'
 //     })
 //     .then((res) => {
 //       console.log('삭제완');
