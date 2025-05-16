@@ -135,8 +135,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 			ul.comment-list(v-if="commentList.length > 0")
 				li.comment-item(v-for="(comment, index) in commentList" :key="index")
 					.auditor-info
-						.name {{ comment.data.writer_name }}
-						.approved(:class="{ 'reject': comment.data.approval_type === 'reject', 'draft': !comment.data.approval_type || comment.data.approval_type === 'undefined' }") {{ comment.data.approval_type === 'approve' ? '승인자' : comment.data.approval_type === 'reject' ? '반려자' : '기안자' }}
+						.name {{ comment.data?.writer_name }}
+						.approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !comment.data?.approval_type || comment.data?.approval_type === 'undefined' }") {{ comment.data?.approval_type === 'approve' ? '승인자' : comment.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
 					template(v-if="isEditMode[comment.record_id]")
 						.input-wrap.input-edit
 							input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[comment.record_id]" style="width: 100%;")
@@ -144,7 +144,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 								button.btn.sm.outline.btn-update(type="button" @click="editReply('reply', index)") 등록
 								button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode('reply', index)") 취소
 					template(v-else)
-						.text {{ comment.data.comment || '-' }}
+						.text {{ comment.data?.comment || '-' }}
 					.etc
 						template(v-if="comment.data.edited")
 							span.date(v-if="comment.data.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(comment?.data.edit_date) }}
@@ -164,8 +164,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 									use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
 							.reply
 								.auditor-info
-									.name {{ reply.data.writer_name }}
-									.approved(:class="{ 'reject': comment.data.approval_type === 'reject', 'draft': !reply.data.approval_type || reply.data.approval_type === 'undefined' }") {{ reply.data.approval_type === 'approve' ? '승인자' : reply.data.approval_type === 'reject' ? '반려자' : '기안자' }}
+									.name {{ reply.data?.writer_name }}
+									.approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !reply.data?.approval_type || reply.data?.approval_type === 'undefined' }") {{ reply.data?.approval_type === 'approve' ? '승인자' : reply.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
 								template(v-if="isEditMode[reply.record_id]")
 									.input-wrap.input-edit
 										input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[reply.record_id]" style="width: 100%;")
@@ -1846,7 +1846,7 @@ const writeComment = async () => {
   comment.value = '';
 
   // 댓글 목록 갱신
-  getComment();
+  await getComment();
 };
 
 // 댓글 가져오기
@@ -2012,10 +2012,10 @@ const writeReply = async (type, index) => {
     }
 
     // 댓글 목록 갱신
-    getComment();
+    await getComment();
 
     // 대댓글 목록 갱신 - 해당 댓글의 대댓글만 갱신
-    getReply(index);
+    await getReply(index);
   }
 };
 

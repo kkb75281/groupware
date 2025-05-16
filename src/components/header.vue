@@ -543,6 +543,7 @@ watch(
     // border: 0.1875rem solid #fff;
     border-radius: 50%;
     display: flex;
+    justify-content: center;
     align-items: center;
     // padding: 0 1rem;
     transition: padding 0.15s linear;

@@ -44,9 +44,9 @@
 								th.essential 카테고리
 								td.left(colspan="3")
 									.input-wrap
-										select#newsCat(v-model="selCate" name="category" required :disabled="isEditMode")
-											option(value="" disabled hidden) 카테고리를 선택해주세요.
-											option(v-for="(category, index) in newsCateList" :key="category.record_id" :value="category.record_id") {{ category.data.news_category }}
+											select#newsCat(v-model="selCate" name="category" required :disabled="isEditMode || (user.access_group < 99 && isCateMode)")
+												option(value="" disabled hidden) 카테고리를 선택해주세요.
+												option(v-for="(category, index) in newsCateList" :key="category.record_id" :value="category.record_id") {{ category.data.news_category }}
 
 							tr
 								th.essential 제목
@@ -153,6 +153,7 @@ const selCate = ref(''); // 선택된 카테고리
 const editModeData = ref({}); // 수정 모드 데이터
 
 let selCateId = ''; // 선택된 카테고리 ID
+const removeFiles = []; // 삭제할 파일 리스트
 
 watch(selCate, (n) => {
   if (n) {
@@ -562,9 +563,15 @@ const exportWysiwygData = (content) => {
 
 // 첨부파일 삭제
 const removeFile = (file, index) => {
+  // 삭제 파일 removeFiles 변수에 저장
+  removeFiles.push(file);
+  console.log('removeFiles : ', removeFiles);
+
   uploadedFile.value.splice(index, 1);
   fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
+  console.log('uploadedFile.value : ', uploadedFile.value);
 };
+console.log('== BB == removeFiles : ', removeFiles);
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
@@ -648,7 +655,7 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
     const options = {
       table: {
         name: 'newsletter',
-        access_group: 'private'
+        access_group: 99
       },
       index: {
         name: 'news_title', // 게시글 제목. 제목별로 찾을때 위한 인덱싱
@@ -687,6 +694,7 @@ const createAddNews = async (
 ) => {
   console.log('== createAddNews == send_newsUser : ', send_newsUser);
   console.log('== createAddNews == newsUser_id : ', newsUser_id);
+  console.log('== createAddNews == isNotificationTarget : ', isNotificationTarget);
 
   if (!news_id || !newsUser_id) return;
 
@@ -696,8 +704,9 @@ const createAddNews = async (
   // });
 
   // 실시간 알림 보내기
-  if (isNotificationTarget) {
+  if (isNotificationTarget === true) {
     let news_title = document.getElementById('news_title').value;
+    console.log('news_title : ', news_title);
 
     skapi
       .postRealtime(
@@ -857,12 +866,13 @@ const registerNews = async (e) => {
       console.log('== registerNews == 수정모드');
       // 수정 모드인 경우
       const editNewsId = route.query.news;
+      const selNews = newsCateList.value.find((cat) => cat.record_id === selCate.value);
+      console.log('selNews : ', selNews);
 
-      const selectedCategory = newsCateList.value.find((cat) => cat.record_id === selCate.value);
-      console.log('selectedCategory : ', selectedCategory);
+      console.log('= AA = removeFiles : ', removeFiles);
 
-      if (selectedCategory) {
-        selectedDivision.value = selectedCategory.data.access_division;
+      if (selNews) {
+        selectedDivision.value = selNews.data.access_division;
       } else {
         selectedDivision.value = {};
       }
@@ -905,8 +915,6 @@ const registerNews = async (e) => {
       // 직원 정보 추가
       updateFormData.append('members', JSON.stringify(selectedUsers.value));
 
-      console.log('== AA == uploadedFile.value : ', uploadedFile.value);
-
       // 첨부파일 처리
       if (uploadedFile.value.length) {
         const filePromises = uploadedFile.value.map(async (file) => {
@@ -927,31 +935,73 @@ const registerNews = async (e) => {
         });
 
         const fileObjects = await Promise.all(filePromises);
+        console.log('fileObjects : ', fileObjects);
+
         fileObjects
           .filter((file) => file !== null)
           .forEach((file) => {
+            console.log('file : ', file);
             updateFormData.append('form_data', file);
           });
       }
 
-      console.log('== BB == uploadedFile.value : ', uploadedFile.value);
+      try {
+        const config = {
+          record_id: editNewsId,
+          table: {
+            name: 'newsletter',
+            access_group: 99
+          },
+          index: {
+            name: 'news_title',
+            value: news_title.replaceAll('.', '_')
+          },
+          reference: selCateId
+        };
+        console.log('config : ', config);
 
-      const updateRes = await skapi.postRecord(updateFormData, {
-        record_id: editNewsId,
-        table: {
-          name: 'newsletter',
-          access_group: 'private'
-        },
-        index: {
-          name: 'news_title',
-          value: news_title.replaceAll('.', '_')
-        },
-        reference: selCateId
-      });
-      console.log('updateRes : ', updateRes);
+        let updateRes;
 
-      alert('게시글 수정이 완료되었습니다.');
-      router.push(`/newsletter-category?category=${selCate.value}`);
+        if (uploadedFile.value.length) {
+          // 첨부파일 변경이 있을 경우
+          config.remove_bin = removeFiles;
+          console.log('removeFiles : ', removeFiles);
+          updateRes = await skapi.postRecord(updateFormData, config);
+          console.log('= AA = updateRes : ', updateRes);
+        } else {
+          updateRes = await skapi.postRecord(updateFormData, config);
+          console.log('= BB = updateRes : ', updateRes);
+        }
+
+        if (editModeData.value.data?.noti_setting === 'false' && notiSetting.value === true) {
+          const newsId = updateRes.record_id; // 게시글 ID
+          const newsTitle = updateRes.data.news_title; // 게시글 제목
+
+          const processRoles = [
+            ...selectedUsers.value.map((user) => ({
+              userId: user.user_id
+            }))
+          ];
+          console.log('processRoles : ', processRoles);
+
+          const res = await Promise.all(
+            processRoles.map((roleInfo) =>
+              postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value === 'true')
+            )
+          );
+          console.log('promiseall res : ', res);
+
+          selectedUsers.value = [];
+          selectedMembers.value = [];
+        }
+
+        alert('게시글 수정이 완료되었습니다.');
+      } catch (err) {
+        console.error('게시글 수정 중 오류 발생:', err);
+        alert('게시글 수정 중 오류가 발생했습니다.');
+      } finally {
+        router.push(`/newsletter-category?category=${selCate.value}`);
+      }
     } else {
       // 등록 모드인 경우
       // 게시글 레코드 생성
@@ -975,7 +1025,7 @@ const registerNews = async (e) => {
       // 공개범위에게 게시글 열람 권한 및 등록 레코드 생성
       const res = await Promise.all(
         processRoles.map((roleInfo) =>
-          postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value)
+          postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value === 'true')
         )
       );
       console.log('promiseall res : ', res);
@@ -1034,7 +1084,7 @@ onMounted(async () => {
         const record = await skapi.getRecords({
           table: {
             name: 'newsletter',
-            access_group: 'private'
+            access_group: 99
           },
           record_id: editNewsId
         });
@@ -1260,6 +1310,14 @@ onUnmounted(() => {
       }
     }
   }
+
+  #newsCat {
+    &:disabled {
+      background-color: var(--gray-color-50);
+      color: var(--gray-color-900);
+      background-image: none;
+    }
+  }
 }
 
 .button-wrap {
@@ -1269,64 +1327,6 @@ onUnmounted(() => {
 .btn {
   margin-top: 1rem;
 }
-
-// .dvs-wrap {
-//   display: grid;
-//   grid-template-columns: repeat(8, 1fr);
-//   text-align: center;
-//   height: 100%;
-
-//   .dvs-list {
-//     display: flex;
-//     flex-direction: column;
-//     width: 100%;
-//     min-height: 6rem;
-//     border-right: 1px solid var(--gray-color-300);
-//     border-bottom: 1px solid var(--gray-color-300);
-//     margin-bottom: -1px;
-//     position: relative;
-//   }
-
-//   .num {
-//     border-bottom: 1px solid var(--gray-color-200);
-//     padding: 0.25rem;
-//   }
-
-//   .dvs-name {
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//     height: 100%;
-//     padding: 0.25rem;
-//   }
-
-//   .add-dvs {
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//     height: 100%;
-//     cursor: pointer;
-
-//     .icon {
-//       svg {
-//         fill: var(--gray-color-400);
-//       }
-//     }
-//   }
-
-//   .btn-remove {
-//     margin-left: 4px;
-
-//     .icon {
-//       padding: 0;
-
-//       svg {
-//         width: 16px;
-//         height: 16px;
-//       }
-//     }
-//   }
-// }
 
 .dvs-wrap {
   display: flex;

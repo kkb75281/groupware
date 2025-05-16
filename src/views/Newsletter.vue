@@ -49,11 +49,12 @@
           template(v-else)
             tr.hover(v-for="(news, index) in newsletterList" :key="news.record_id" @click="router.push({ path: '/newsletter-detail/' + news.record_id, query: { category: route.query.category } })")
               td {{ newsletterList.length - index }}
-              td.left {{ news.data?.news_title }}
+              td.left
+                .title-wrap
+                  p.title {{ news.data?.news_title }}
+                  span.edit(v-if="news.data?.isEdit") 수정됨
               td {{ convertTimestampToDateMillis(news.uploaded) }}
               td {{ news.writer }}
-
-//- button.btn.outline(type="button" @click="testDelete") delete
 </template>
 
 <script setup>
@@ -64,16 +65,6 @@ import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { skapi } from '@/main.ts';
 
 import Loading from '@/components/loading.vue';
-
-// const testDelete = () => {
-//   skapi
-//     .deleteRecords({
-//       record_id: 'UlFvXcpKsmIQfDF6'
-//     })
-//     .then((res) => {
-//       console.log('삭제완');
-//     });
-// };
 
 const router = useRouter();
 const route = useRoute();
@@ -167,8 +158,16 @@ watch(searchFor, (nv, ov) => {
 });
 
 onMounted(async () => {
+  newsletterList.value = [];
+
   await getNewsletterList(cateId.value).catch((err) => {
-    if (err.code === 'INVALID_REQUEST' || err.message === 'User has no private access.') {
+    if (
+      err.code === 'INVALID_REQUEST' ||
+      err.message.includes(
+        `User's private access for reference: \"${cateId.value}\" does not exist.`
+      ) ||
+      err.message === 'User has no private access.'
+    ) {
       newsletterList.value = [];
       alert('해당 게시글에 대한 권한이 없습니다.');
       router.push('/newsletter-category/');
@@ -213,6 +212,22 @@ onMounted(async () => {
       left: 50%;
       transform: translate(-50%, -50%);
     }
+  }
+}
+
+.title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .edit {
+    font-size: 0.625rem;
+    background-color: var(--gray-color-200);
+    border-radius: 6px;
+    padding: 1px 4px;
+    display: inline-block;
+    position: relative;
+    top: 1px;
   }
 }
 

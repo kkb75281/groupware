@@ -38,7 +38,10 @@
 
                 tr
                   th 제목
-                  td.left(colspan="3") {{ newsCont?.data?.news_title }}
+                  td.left(colspan="3") 
+                    .title-wrap
+                      p.title {{ newsCont?.data?.news_title }}
+                      span.edit(v-if="newsCont?.data?.isEdit") 수정됨
 
                 tr.selected-dvs
                   th 공개 범위
@@ -155,7 +158,6 @@ onMounted(async () => {
 
   if (res) {
     newsCont.value = res.find((el) => el.record_id === newsId.value);
-    console.log('== onMounted == newsCont : ', newsCont.value);
 
     // 첨부파일 리스트
     if (Object.keys(newsCont.value.bin).length && newsCont.value.bin.form_data.length) {
@@ -334,6 +336,26 @@ onMounted(async () => {
 
 ._wysiwyg4all {
   padding: 0;
+}
+
+.title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .title {
+    margin-bottom: 0;
+  }
+
+  .edit {
+    font-size: 0.625rem;
+    background-color: var(--gray-color-200);
+    border-radius: 6px;
+    padding: 1px 4px;
+    display: inline-block;
+    position: relative;
+    top: 1px;
+  }
 }
 
 @media (max-width: 768px) {

@@ -423,10 +423,9 @@ export const getNewsletterList = async (tag, refresh = false) => {
   const getNews = await skapi.getRecords({
     table: {
       name: 'newsletter',
-      access_group: 'private'
+      access_group: 99
     },
     reference: tag
-    // tag: tag
   });
   console.log('=== getNewsletterList === getNews : ', getNews);
 

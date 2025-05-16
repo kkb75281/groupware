@@ -108,8 +108,6 @@ import { divisionNameList } from '@/division.ts';
 
 import Organigram from '@/components/organigram.vue';
 
-// 마스터들은 무조건 권한 부여?
-
 const router = useRouter();
 const route = useRoute();
 
