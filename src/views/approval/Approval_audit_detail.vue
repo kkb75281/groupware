@@ -144,15 +144,15 @@ Loading#loading(v-if="getAuditDetailRunning")
 								button.btn.sm.outline.btn-update(type="button" @click="editReply('reply', index)") 등록
 								button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode('reply', index)") 취소
 					template(v-else)
-						.text {{ comment.data?.comment || '-' }}
+						.text {{ comment?.data?.comment || '-' }}
 					.etc
-						template(v-if="comment.data.edited")
-							span.date(v-if="comment.data.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(comment?.data.edit_date) }}
+						template(v-if="comment.data?.edited")
+							span.date(v-if="comment.data?.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(comment.data?.edit_date) }}
 								span.text 수정됨
 						template(v-else)
-							.date {{ formatTimestampToDate(comment?.data.date) }}
+							.date {{ formatTimestampToDate(comment.data?.date) }}
 						button.btn-reply(type="button" @click="toggleReplyInput('reply', index)") 댓글 쓰기
-						.btn-wrap(v-if="comment.data.writer === user.user_id")
+						.btn-wrap(v-if="comment.data?.writer === user.user_id")
 							button.btn-edit(type="button" @click="toggleEditMode('reply', index)") 수정
 							button.btn-delete(type="button" @click="deleteReply('reply', index)") 삭제
 
@@ -173,13 +173,13 @@ Loading#loading(v-if="getAuditDetailRunning")
 											button.btn.sm.outline.btn-update(type="button" @click="editReply('subReply', index)") 등록
 											button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode('subReply', index)") 취소
 								template(v-else)
-									.text {{ reply.data.comment || '-' }}
+									.text {{ reply.data?.comment || '-' }}
 								.etc
 									template(v-if="reply.data.edited")
-										span.date(v-if="reply.data.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(reply?.data.edit_date) }}
+										span.date(v-if="reply.data?.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(reply.data?.edit_date) }}
 											span.text 수정됨
 									template(v-else)
-										.date {{ formatTimestampToDate(reply?.data.date) }}
+										.date {{ formatTimestampToDate(reply.data?.date) }}
 									//- button.btn-reply(type="button" @click="toggleReplyInput('subReply', index)") 댓글 쓰기
 									.btn-wrap(v-if="reply.data.writer === user.user_id")
 										button.btn-edit(type="button" @click="toggleEditMode('subReply', index)") 수정
@@ -1733,16 +1733,25 @@ const getCmtRecord = async () => {
   const res = await skapi.getRecords({
     table: {
       name: `audit_comment_${auditId.value}`,
-      access_group: 'authorized'
+      access_group: 'private'
     },
     reference: auditId.value
   });
+  console.log('getCmtRecord res : ', res);
 
   if (res.list.length > 0) {
     cmtRecord.value = res.list[0];
   } else {
     cmtRecord.value = [];
   }
+};
+
+// 댓글에 권한 부여
+const grantCmtUserAccess = async ({ news_id, newsUser_id }) => {
+  return skapi.grantPrivateRecordAccess({
+    record_id: news_id,
+    user_id: newsUser_id
+  });
 };
 
 // 댓글 (결재 의견) 작성
@@ -1777,7 +1786,7 @@ const writeComment = async () => {
     const config = {
       table: {
         name: 'audit_comment',
-        access_group: 'private'
+        access_group: 'authorized'
       },
       reference: cmtRecord.value.record_id
     };
@@ -1854,16 +1863,18 @@ const getComment = async () => {
   const params = {
     table: {
       name: 'audit_comment',
-      access_group: 'private'
+      access_group: 'authorized'
     },
     reference: cmtRecord.value.record_id
   };
 
   if (!cmtRecord.value.record_id) return;
+
   const res = await skapi.getRecords(params);
 
   if (res.list.length > 0) {
     commentList.value = res.list;
+    return res.list;
   } else {
     commentList.value = [];
   }
@@ -1903,6 +1914,7 @@ const writeReply = async (type, index) => {
   console.log('type : ', type);
   console.log('index : ', index);
   console.log('reply.value : ', reply.value);
+  console.log('commentList.value : ', commentList.value);
   console.log('commentList.value[index] : ', commentList.value[index]);
 
   // 댓글 ID -> 문자열 변환
@@ -1920,6 +1932,7 @@ const writeReply = async (type, index) => {
   const writer = auditorList.value.find(
     (auditor) => auditor.user_id.replaceAll('-', '_') === user.user_id.replaceAll('-', '_')
   );
+  console.log('auditorList.value : ', auditorList.value);
   console.log('writer : ', writer);
 
   try {
@@ -1934,7 +1947,7 @@ const writeReply = async (type, index) => {
     const config = {
       table: {
         name: 'comment_reply',
-        access_group: 'private'
+        access_group: 'authorized'
       },
       reference: commentList.value[index].record_id
     };
@@ -2021,16 +2034,24 @@ const writeReply = async (type, index) => {
 
 // 대댓글 가져오기
 const getReply = async (index) => {
+  if (!commentList.value || !commentList.value[index]) {
+    console.error('유효하지 않은 댓글 인덱스:', index);
+    return [];
+  }
+
+  const commentId = commentList.value[index].record_id;
+
   const res = await skapi.getRecords({
     table: {
       name: 'comment_reply',
-      access_group: 'private'
-    }
-    // reference: commentList.value[index].record_id
+      access_group: 'authorized'
+    },
+    reference: commentId
   });
 
   if (res.list.length > 0) {
     replyList.value = res.list;
+    return res.list;
   } else {
     replyList.value = [];
   }
@@ -2061,7 +2082,7 @@ const editReply = async (type, index) => {
   // 원본 댓글 데이터 및 ID 가져오기
   const originalData = type === 'reply' ? commentList.value[index] : replyList.value[index];
   const commentId = String(originalData.record_id);
-  console.log('originalData : ', originalData);
+  console.log('== AA == originalData : ', originalData);
 
   if (!editComment.value[commentId]) {
     alert('수정할 내용을 입력해주세요.');
@@ -2080,7 +2101,7 @@ const editReply = async (type, index) => {
     const config = {
       table: {
         name: type === 'reply' ? 'audit_comment' : 'comment_reply',
-        access_group: 'private'
+        access_group: 'authorized'
       },
       record_id: originalData.record_id
     };
@@ -2090,20 +2111,51 @@ const editReply = async (type, index) => {
       config.reference = originalData.reference;
     }
 
-    console.log('data : ', data);
-    console.log('config : ', config);
+    // await skapi
+    //   .deleteRecords({
+    //     record_id: originalData.record_id
+    //   })
+    //   .then((r) => {
+    //     console.log('== deleteRecords == r:', r);
+    //     console.log('originalData.record_id : ', originalData.record_id);
+    //     console.log('data : ', data);
+    //     console.log('config : ', config);
+    //     skapi.postRecord(data, config);
+    //   })
+    //   .then((res) => {
+    //     console.log('== postRecord == res:', res);
+    //     originalData.data.comment = res.data.comment; // 댓글 내용 업데이트
+    //     return res;
+    //   });
 
     const res = await skapi.postRecord(data, config);
     console.log('== editReply == res:', res);
 
-    originalData.data.comment = res.data.comment; // 댓글 내용 업데이트
     isEditMode.value[commentId] = false;
+
+    console.log('== BB == originalData : ', originalData);
 
     // 목록 갱신
     if (type === 'reply') {
-      getComment();
+      console.log('AA');
+      if (commentList.value[index]) {
+        commentList.value[index].data = res.data;
+        console.log('댓글 업데이트 완료 : ', res.data);
+      }
+
+      // await getComment().then((res) => {
+      //   console.log('댓글 수정 후 댓글 목록 갱신:', res);
+      // });
     } else {
-      getReply(index);
+      console.log('BB');
+      const replyIndex = replyList.value.findIndex((r) => r.record_id === originalData.record_id);
+      console.log('replyIndex : ', replyIndex);
+      if (replyIndex >= 0) {
+        replyList.value[replyIndex].data = res.data;
+        console.log('대댓글 업데이트 완료');
+      }
+      // 전체 대댓글 목록 새로고침
+      // await getReply(index);
     }
   } catch (error) {
     console.error('댓글 수정 오류:', error);
@@ -2119,6 +2171,8 @@ const deleteReply = async (type, index) => {
   // 댓글 또는 대댓글 객체 선택
   const targetData = type === 'reply' ? commentList.value[index] : replyList.value[index];
   const parentId = targetData.record_id;
+  console.log('parentId : ', parentId);
+  console.log('targetData : ', targetData);
 
   try {
     // 삭제할 record_id
@@ -2142,23 +2196,30 @@ const deleteReply = async (type, index) => {
     }
 
     await Promise.all(
-      delRecords.map(({ id, table }) =>
+      delRecords.map(({ id, table }) => {
+        console.log('id : ', id);
+        console.log('table : ', table);
+
         skapi.deleteRecords({
           table: {
             name: table,
-            access_group: 'private'
+            access_group: 'authorized'
           },
           record_id: id
-        })
-      )
+        });
+      })
     );
 
     // 목록 갱신
     if (type === 'reply') {
-      await getComment(); // 댓글 + 대댓글 전체 갱신
+      commentList.value = commentList.value.filter((item) => item.record_id !== parentId);
+      replyList.value = replyList.value.filter((item) => item.reference !== parentId);
+      // await getComment(); // 댓글 + 대댓글 전체 갱신
     } else {
       await getReply(index); // 대댓글만 갱신
     }
+
+    alert('삭제되었습니다.');
   } catch (error) {
     console.error('댓글 삭제 오류:', error);
   }
@@ -2590,7 +2651,7 @@ onUnmounted(() => {
   .text {
     font-size: 12px;
     color: var(--gray-color-500);
-    background-color: var(--gray-color-300);
+    background-color: var(--gray-color-200);
     border-radius: 8px;
     padding: 2px 4px;
     margin-left: 0.25rem;

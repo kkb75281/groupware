@@ -1348,6 +1348,27 @@ const grantReferDocsAccess = async (referDocs, processRoles) => {
   }
 };
 
+// 결재의견 권한 부여
+const grantAuditOpinionAccess = async (cmtId, processRoles) => {
+  console.log('cmtId : ', cmtId);
+
+  try {
+    // 모든 결재자 ID 목록 생성
+    const allAuditorIds = processRoles.map((role) => role.userId);
+    console.log('allAuditorIds : ', allAuditorIds);
+
+    // 결재의견 테이블에 권한 부여
+    await skapi.grantPrivateRecordAccess({
+      record_id: cmtId,
+      user_id: allAuditorIds
+    });
+
+    console.log(`결재의견 테이블에 ${allAuditorIds.length}명의 결재자에게 권한 부여 완료`);
+  } catch (error) {
+    console.error('결재의견 권한 부여 중 오류 : ', error);
+  }
+};
+
 // 결재 서류 레코드 생성 (결재자 순서 지정)
 const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
   // order 추가한 결재자 정보
@@ -1722,11 +1743,11 @@ const requestAudit = async (e) => {
     const formTitle = docform_title; // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
     const auditTitle = to_audit; // 결재건 제목
 
-    // 결재 문서를 레퍼런스하는 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
+    // 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
     const commentRecord = await skapi.postRecord(null, {
       table: {
         name: `audit_comment_${auditId}`,
-        access_group: 'authorized'
+        access_group: 'private'
       },
       reference: auditId
     });
@@ -1763,6 +1784,11 @@ const requestAudit = async (e) => {
         console.log('grantReferDocsAccess : ', res);
       });
     }
+
+    // 결재의견 권한 부여
+    await grantAuditOpinionAccess(commentRecord.record_id, processRoles).then((res) => {
+      console.log('grantAuditOpinionAccess : ', res);
+    });
 
     // 결재자와 합의자를 순서대로 통합 정렬
     const approversAndAgreers = [
