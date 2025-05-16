@@ -135,8 +135,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 			ul.comment-list(v-if="commentList.length > 0")
 				li.comment-item(v-for="(comment, index) in commentList" :key="index")
 					.auditor-info
-						.name {{ comment.data.writer_name }}
-						.approved(:class="{ 'reject': comment.data.approval_type === 'reject', 'draft': !comment.data.approval_type || comment.data.approval_type === 'undefined' }") {{ comment.data.approval_type === 'approve' ? '승인자' : comment.data.approval_type === 'reject' ? '반려자' : '기안자' }}
+						.name {{ comment.data?.writer_name }}
+						.approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !comment.data?.approval_type || comment.data?.approval_type === 'undefined' }") {{ comment.data?.approval_type === 'approve' ? '승인자' : comment.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
 					template(v-if="isEditMode[comment.record_id]")
 						.input-wrap.input-edit
 							input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[comment.record_id]" style="width: 100%;")
@@ -144,7 +144,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 								button.btn.sm.outline.btn-update(type="button" @click="editReply('reply', index)") 등록
 								button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode('reply', index)") 취소
 					template(v-else)
-						.text {{ comment.data.comment || '-' }}
+						.text {{ comment.data?.comment || '-' }}
 					.etc
 						template(v-if="comment.data.edited")
 							span.date(v-if="comment.data.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(comment?.data.edit_date) }}
@@ -164,8 +164,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 									use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
 							.reply
 								.auditor-info
-									.name {{ reply.data.writer_name }}
-									.approved(:class="{ 'reject': comment.data.approval_type === 'reject', 'draft': !reply.data.approval_type || reply.data.approval_type === 'undefined' }") {{ reply.data.approval_type === 'approve' ? '승인자' : reply.data.approval_type === 'reject' ? '반려자' : '기안자' }}
+									.name {{ reply.data?.writer_name }}
+									.approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !reply.data?.approval_type || reply.data?.approval_type === 'undefined' }") {{ reply.data?.approval_type === 'approve' ? '승인자' : reply.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
 								template(v-if="isEditMode[reply.record_id]")
 									.input-wrap.input-edit
 										input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[reply.record_id]" style="width: 100%;")
@@ -209,7 +209,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 						use(xlink:href="@/assets/icon/material-icon.svg#icon-print")
 			button.btn.outline.warning.btn-cancel(type="button" v-if="senderUser.user_id === user.user_id && isCancelPossible" @click="canceledAudit" :disabled="isCanceled") 회수
 			button.btn.outline.btn-re-request(type="button" v-if="senderUser.user_id === user.user_id" @click="reRequestAudit") 재요청
-			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 이전
+			button.btn.bg-gray.btn-cancel(type="button" @click="goToPrev") 목록
 
 //- 결재 모달
 #modal.modal.modal-approve(v-if="isModalOpen")
@@ -222,9 +222,10 @@ Loading#loading(v-if="getAuditDetailRunning")
 					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
 		.modal-body
 			template(v-if="approvalStep === 1")
-				.input-wrap(style="margin: 0")
+				//- .input-wrap(style="margin: 0")
 					p.label 결재의견
 					textarea(name="comment" rows="5" placeholder="결재의견을 추가하고 싶다면 입력해주세요." v-model="approvedComment" style="width: 100%;resize: none;")
+				p.label 결재 사항을 선택해주세요.
 
 			template(v-if="approvalStep === 2")
 				.tab-menu
@@ -360,8 +361,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 									td.left(colspan="3")
 										.refer-doc-wrap
 											ul.refer-doc-list
-												template(v-if="referDetail?.data?.reference_docs.length > 0")
-													li.refer-doc-item(v-for="(doc, index) in referDetail?.data?.reference_docs" :key="index")
+												template(v-if="modalReferDoc.length > 0")
+													li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index")
 														span.refer-doc-name {{ doc.data.to_audit }}
 												template(v-else)
 													li(style="color:var(--gray-color-300);") 등록된 참조 문서가 없습니다.
@@ -445,6 +446,7 @@ const editComment = ref({}); // 댓글 수정 내용
 const isReferDetailModal = ref(false); // 참조 문서 상세 모달
 const referDoc = ref([]); // 참조 문서
 const referDetail = ref({}); // 참조 문서 상세 내용
+const modalReferDoc = ref([]);
 
 // 에디터 상태 관리
 const editorContent = ref('');
@@ -964,10 +966,10 @@ const getAuditDetail = async () => {
     }
 
     // 참조 문서
-    console.log('auditDoc : ', auditDoc);
+    // console.log('auditDoc : ', auditDoc);
     const referDocIds = auditDoc.data.reference_docs;
     const parseReferDocId = JSON.parse(auditDoc.data.reference_docs).referDocId;
-    console.log('parseReferDocId : ', parseReferDocId);
+    // console.log('parseReferDocId : ', parseReferDocId);
 
     if (referDocIds) {
       const fetchPromises = parseReferDocId.map((recordId) =>
@@ -981,7 +983,7 @@ const getAuditDetail = async () => {
       );
 
       referDoc.value = await Promise.all(fetchPromises);
-      console.log('referDoc.value : ', referDoc.value);
+      // console.log('referDoc.value : ', referDoc.value);
     } else {
       referDoc.value = [];
     }
@@ -1785,6 +1787,57 @@ const writeComment = async () => {
 
     const res = await skapi.postRecord(data, config);
     console.log('== writeComment == res : ', res);
+
+    // 댓글 알림
+    if (senderUser.value.user_id && senderUser.value.user_id !== user.user_id) {
+      // 알림 데이터 구성
+      const notificationData = {
+        comment_notification: {
+          noti_id: res.record_id,
+          noti_type: 'audit_comment',
+          send_date: new Date().getTime(),
+          send_user: user.user_id,
+          audit_info: {
+            audit_type: 'comment',
+            to_audit: auditDoContent.value?.data?.to_audit,
+            audit_doc_id: auditId.value,
+            comment: data.comment.length > 20 ? data.comment.substring(0, 20) + '...' : data.comment
+          }
+        }
+      };
+
+      // 실시간 알림 보내기
+      skapi
+        .postRealtime(notificationData, senderUser.value.user_id, {
+          title: '[그룹웨어]',
+          body: `${user.name}님이 결재 문서에 의견을 남겼습니다.`,
+          config: {
+            always: true // 무조건 알림 받기
+          }
+        })
+        .then((res) => {
+          console.log('댓글알림 === postRealtime === res : ', res);
+        })
+        .catch((err) => {
+          console.error('댓글알림 실패:', err);
+        });
+
+      // 알림 기록 저장 (실시간 못 받을 경우 대비)
+      skapi
+        .postRecord(notificationData.comment_notification, {
+          readonly: true,
+          table: {
+            name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+            access_group: 'authorized'
+          }
+        })
+        .then((res) => {
+          console.log('댓글알림기록 === postRecord === res : ', res);
+        })
+        .catch((err) => {
+          console.error('댓글알림기록 저장 실패:', err);
+        });
+    }
   } catch (error) {
     console.error('Error writing comment:', error);
   }
@@ -1793,7 +1846,7 @@ const writeComment = async () => {
   comment.value = '';
 
   // 댓글 목록 갱신
-  getComment();
+  await getComment();
 };
 
 // 댓글 가져오기
@@ -1890,6 +1943,61 @@ const writeReply = async (type, index) => {
 
     const res = await skapi.postRecord(data, config);
     console.log('== writeReply == res : ', res);
+
+    // 대댓글 알림
+    if (senderUser.value.user_id && senderUser.value.user_id !== user.user_id) {
+      // 알림 데이터 구성
+      const notificationData = {
+        reply_notification: {
+          noti_id: res.record_id,
+          noti_type: 'audit_reply',
+          send_date: new Date().getTime(),
+          send_user: user.user_id,
+          audit_info: {
+            audit_type: 'reply',
+            to_audit: auditDoContent.value?.data?.to_audit,
+            audit_doc_id: auditId.value,
+            parent_comment_id:
+              type === 'reply'
+                ? commentList.value[index].record_id
+                : replyList.value[index].reference,
+            reply: data.comment.length > 20 ? data.comment.substring(0, 20) + '...' : data.comment
+          }
+        }
+      };
+
+      // 실시간 알림 보내기
+      skapi
+        .postRealtime(notificationData, senderUser.value.user_id, {
+          title: '[그룹웨어]',
+          body: `${user.name}님이 결재 문서의 댓글에 답글을 남겼습니다.`,
+          config: {
+            always: true // 무조건 알림 받기
+          }
+        })
+        .then((res) => {
+          console.log('대댓글알림 === postRealtime === res : ', res);
+        })
+        .catch((err) => {
+          console.error('대댓글알림 실패:', err);
+        });
+
+      // 알림 기록 저장 (실시간 못 받을 경우 대비)
+      skapi
+        .postRecord(notificationData.reply_notification, {
+          readonly: true,
+          table: {
+            name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+            access_group: 'authorized'
+          }
+        })
+        .then((res) => {
+          console.log('대댓글알림기록 === postRecord === res : ', res);
+        })
+        .catch((err) => {
+          console.error('대댓글알림기록 저장 실패:', err);
+        });
+    }
   } catch (error) {
     console.log('error : ', error);
   } finally {
@@ -1904,10 +2012,10 @@ const writeReply = async (type, index) => {
     }
 
     // 댓글 목록 갱신
-    getComment();
+    await getComment();
 
     // 대댓글 목록 갱신 - 해당 댓글의 대댓글만 갱신
-    getReply(index);
+    await getReply(index);
   }
 };
 
@@ -2058,9 +2166,9 @@ const deleteReply = async (type, index) => {
 
 // 참조문서 상세 모달 open
 const showReferDetail = async (doc) => {
-  console.log('doc : ', doc);
   isReferDetailModal.value = true;
   referDetail.value = doc;
+  console.log('모달 = referDetail.value : ', referDetail.value);
 
   try {
     // 이미 처리된 결재자 정보 사용
@@ -2116,6 +2224,25 @@ const showReferDetail = async (doc) => {
       userId: r.user_id.replaceAll('_', '-'),
       name: r.name || '알 수 없음'
     }));
+
+    // 참조 문서
+    if (doc.data.reference_docs) {
+      const parseReferDocId = JSON.parse(doc.data.reference_docs).referDocId;
+      const fetchPromises = parseReferDocId.map((recordId) =>
+        skapi
+          .getRecords({ record_id: recordId })
+          .then((res) => res.list?.[0] || null)
+          .catch((err) => {
+            console.error(`record_id ${recordId} 호출 실패:`, err);
+            return null;
+          })
+      );
+
+      modalReferDoc.value = await Promise.all(fetchPromises);
+      console.log('모달 = modalReferDoc.value : ', modalReferDoc.value);
+    } else {
+      modalReferDoc.value = [];
+    }
   } catch (error) {
     console.error('문서 상세정보 처리 오류 : ', error);
   }
@@ -2130,7 +2257,6 @@ onMounted(async () => {
   window.addEventListener('resize', updateScreenSize);
 
   auditId.value = route.params.auditId;
-  console.log('auditId.value : ', route.params.auditId);
   getAuditDetail();
   loadStylesheet();
   await getCmtRecord();
@@ -2977,6 +3103,13 @@ onUnmounted(() => {
       &:first-of-type {
         margin-top: 0;
       }
+    }
+  }
+
+  .refer-doc-item {
+    &:hover {
+      text-decoration: none;
+      cursor: default;
     }
   }
 }

@@ -86,6 +86,18 @@ header#header
                         h5.noti-title 읽지 않은 이메일이 있습니다.
                 li(v-for="rt in realtimes" @click.stop="(e) => showRealtimeNoti(e, 'realtime', rt)")
                     .router(@click="closePopup" :class="{'read' : Object.keys(readList).includes(rt?.noti_id)}")
+                        template(v-if="rt.audit_info && rt.audit_info?.audit_type === 'comment'")
+                            h4.noti-type [결재의견]
+                            h5.noti-title {{ rt.send_name + '님이 [' + rt.audit_info?.to_audit + '] 문서에 의견을 남겼습니다.' }}
+                            p.noti-comment {{ rt.audit_info?.comment }}
+                            p.upload-time {{ formatTimeAgo(rt.send_date) }}
+                    
+                        template(v-else-if="rt.audit_info && rt.audit_info?.audit_type === 'reply'")
+                            h4.noti-type [댓글답변]
+                            h5.noti-title {{ rt.send_name + '님이 [' + rt.audit_info?.to_audit + '] 문서의 댓글에 답변을 남겼습니다.' }}
+                            p.noti-comment {{ rt.audit_info?.reply }}
+                            p.upload-time {{ formatTimeAgo(rt.send_date) }}
+
                         template(v-if="rt?.noti_type === 'notice'")
                             h4.noti-type [공지]
                             h5.noti-title {{ rt.news_info?.news_title }}
@@ -352,16 +364,20 @@ onUnmounted(() => {
 });
 
 let showRealtimeNoti = (e, type, rt) => {
+  console.log('rt : ', rt);
+
   if (type === 'gmail') {
     openGmailAppOrWeb(null);
   } else if (type === 'realtime' && rt.audit_info) {
-    goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
-    readNoti(rt);
+    if (rt.audit_info.audit_type === 'comment' || rt.audit_info.audit_type === 'reply') {
+      goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
+      readNoti(rt);
+    } else {
+      goToAuditDetail(e, rt.audit_info.audit_doc_id, router);
+      readNoti(rt);
+    }
   } else if (type === 'realtime' && rt.news_info) {
-    console.log('rt.news_info : ', rt.news_info);
-    // router.push(`/newsletter-detail/${rt.news_info.news_id}?category=${rt.news_info.news_refer}`);
     if (rt.news_info.news_id && rt.news_info.news_refer) {
-      // 객체 형태로 라우터 푸시 - 이렇게 하면 쿼리 파라미터가 더 안정적으로 전달됨
       router.push({
         path: `/newsletter-detail/${rt.news_info.news_id}`,
         query: {
@@ -527,6 +543,7 @@ watch(
     // border: 0.1875rem solid #fff;
     border-radius: 50%;
     display: flex;
+    justify-content: center;
     align-items: center;
     // padding: 0 1rem;
     transition: padding 0.15s linear;
@@ -1123,6 +1140,16 @@ watch(
       }
     }
   }
+}
+
+.noti-comment {
+  font-size: 0.8rem;
+  color: var(--gray-color-500);
+  margin: 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 @media (max-width: 1200px) {

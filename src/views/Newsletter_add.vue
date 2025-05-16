@@ -44,9 +44,9 @@
 								th.essential 카테고리
 								td.left(colspan="3")
 									.input-wrap
-										select#newsCat(v-model="selectedCategory" name="category" required)
-											option(value="" disabled hidden) 카테고리를 선택해주세요.
-											option(v-for="(category, index) in newsCatList" :key="category.record_id" :value="category.record_id") {{ category.data.news_category }}
+											select#newsCat(v-model="selCate" name="category" required :disabled="isEditMode || (user.access_group < 99 && isCateMode)")
+												option(value="" disabled hidden) 카테고리를 선택해주세요.
+												option(v-for="(category, index) in newsCateList" :key="category.record_id" :value="category.record_id") {{ category.data.news_category }}
 
 							tr
 								th.essential 제목
@@ -126,33 +126,20 @@ import { divisionNameList } from '@/division.ts';
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
 
-// 게시판 공지
-// 이메일 발송의 기존 방식 -> 게시판 형태의 공지 방식으로 변경
-// 직원 모두 작성 가능
-// 공지사항은 레코드에 저장
-// 작성 시 공개범위, 알림발송 설정 가능하게
-// --> 공개범위는 부서별로 선택 가능하게
-// --> 알림발송은 허용/비허용 설정 가능하게 (공개범위에 해당하는 사람들에게만 알림발송)
-// 목록에서 클릭 시, 상세 페이지로 이동
-// 등록한 공지사항 삭제, 수정 가능
-// 처음 작성시: 알람 허용이면 공개 범위에 해당하는 사람에게만 알람 보내기
-// 올리고 수정시: 공개범위에 추가된 부서가 있으면 추가 부서 사람들에게만 알람 보내기
-// 댓글 알람: 작성자에게만 알람 보내기, 만약 작성자가 본인글에 댓글 작성시에는 알람 안가는게 맞음
-// 대댓글: 댓글 작성자 + 게시물 작성자 알람
+// 게시글 수정시 첨부파일 변경 안됨
 
 const router = useRouter();
 const route = useRoute();
 
 const isEditMode = computed(() => route.query.mode === 'edit'); // 게시글 수정 모드
+const isCateMode = computed(() => route.query.mode === 'category'); // 카테고리 모드
 
 const isDesktop = ref(window.innerWidth > 768); // 반응형
-const isModalOpen = ref(false); // 공개범위 설정 모달
 const selectedDivision = ref({}); // 조직도에서 선택된 부서
 const selectedUsers = ref([]); // 조직도에서 선택된 부서의 직원
 const selectedMembers = ref([]); // 공개범위 직원 정보 저장
 const selectedForm = ref([]); // 선택된 결재 양식
 const notiSetting = ref(true); // 알림 설정 관련 체크박스
-const backupSelected = ref(null); // 선택된 공개범위 직원 백업
 let send_auditors_arr = [];
 
 const uploadedFile = ref([]); // 첨부파일
@@ -161,49 +148,47 @@ const fileNames = ref([]);
 const newsTitle = ref(''); // 게시글 제목
 const disabled = ref(false);
 
-const newsCatList = ref([]); // 게시글 카테고리명 리스트
-const selectedCategory = ref(''); // 선택된 카테고리
-const selCatId = ref(''); // 선택된 카테고리 ID
+const newsCateList = ref([]); // 카테고리 리스트
+const selCate = ref(''); // 선택된 카테고리
 const editModeData = ref({}); // 수정 모드 데이터
 
-watch(selectedCategory, (n) => {
-  if (n) {
-    const selectedCat = newsCatList.value.find((cat) => cat.record_id === n);
+let selCateId = ''; // 선택된 카테고리 ID
+const removeFiles = []; // 삭제할 파일 리스트
 
-    if (selectedCat) {
-      selectedDivision.value = selectedCat.data.access_division;
+watch(selCate, (n) => {
+  if (n) {
+    const selCate = newsCateList.value.find((cat) => cat.record_id === n);
+
+    if (selCate) {
+      selectedDivision.value = selCate.data.access_division;
 
       // 알림설정 체크박스 상태 가져오기
-      if (selectedCat.data.notiSetting) {
-        notiSetting.value = selectedCat.data.notiSetting;
+      if (selCate.data.notiSetting) {
+        notiSetting.value = selCate.data.notiSetting;
       } else {
         notiSetting.value = true;
       }
 
-      // 선택한 카테고리의 더미 레코드 가져오기
-      getNewsCatRecord(selectedCat.record_id).then((res) => {
-        selCatId.value = res;
-        console.log('AA == selCatId.value : ', selCatId.value);
-      });
+      selCateId = n;
     } else {
       selectedDivision.value = {};
     }
   }
 });
 
-// 게시판 카테고리 리스트 가져오기
-const getNewsCatList = async () => {
+// 카테고리 리스트 가져오기
+const getNewsCateList = async () => {
   const res = await skapi.getRecords({
     table: {
-      name: 'news_category_list',
+      name: 'news_category',
       access_group: 1
     }
   });
 
   if (res.list.length > 0) {
-    newsCatList.value = res.list;
+    newsCateList.value = res.list;
   } else {
-    newsCatList.value = [];
+    newsCateList.value = [];
   }
 };
 
@@ -578,9 +563,15 @@ const exportWysiwygData = (content) => {
 
 // 첨부파일 삭제
 const removeFile = (file, index) => {
+  // 삭제 파일 removeFiles 변수에 저장
+  removeFiles.push(file);
+  console.log('removeFiles : ', removeFiles);
+
   uploadedFile.value.splice(index, 1);
   fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
+  console.log('uploadedFile.value : ', uploadedFile.value);
 };
+console.log('== BB == removeFiles : ', removeFiles);
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
@@ -590,26 +581,9 @@ let updateFileList = (e) => {
   e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
 };
 
-// 카테고리별 더미 레코드 가져오기
-const getNewsCatRecord = async (id) => {
-  const res = await skapi.getRecords({
-    table: {
-      name: `newsCatRecord_${id}`,
-      access_group: 'authorized'
-    }
-  });
-
-  const dummyId = res.list[0].record_id;
-  console.log('dummyId : ', dummyId);
-
-  return dummyId;
-};
-
 // 게시글 레코드 생성
 const postNewsRecord = async ({ news_title, to_news_content }) => {
   const accessUser = [];
-
-  console.log('selectedDivision.value : ', selectedDivision.value);
 
   for (const key in selectedDivision.value) {
     const includeUser = selectedDivision.value[key];
@@ -624,7 +598,7 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
     (user, index, self) => index === self.findIndex((u) => u.user_id === user.user_id)
   );
   selectedUsers.value = JSON.parse(JSON.stringify(uniqueUsers));
-  console.log('selectedUsers.value : ', selectedUsers.value);
+  console.log('중복제거 = selectedUsers.value : ', selectedUsers.value);
 
   try {
     const dvs = Object.keys(selectedDivision.value);
@@ -675,24 +649,19 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
           newsFormData.append('form_data', file);
         });
     }
-    console.log('selectedCategory.value : ', selectedCategory.value);
-    console.log('selCatId.value : ', selCatId.value);
+    console.log('selCate.value : ', selCate.value);
+    console.log('selCateId : ', selCateId);
 
     const options = {
-      // readonly: true, // 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
       table: {
         name: 'newsletter',
-        access_group: 'private' // 프라빗으로 올려야 공개범위 직원들만 접근 가능
+        access_group: 99
       },
       index: {
         name: 'news_title', // 게시글 제목. 제목별로 찾을때 위한 인덱싱
         value: news_title.replaceAll('.', '_')
       },
-      // source: {
-      //   prevent_multiple_referencing: true // 중복 방지
-      // },
-      reference: selCatId.value // 카테고리별 더미 레코드 ID를 레퍼런스
-      // tags: selCatId.value // 카테고리별 더미 레코드 ID를 태그로
+      reference: selCateId // 카테고리 ID를 레퍼런스
     };
     console.log('options : ', options);
 
@@ -725,69 +694,9 @@ const createAddNews = async (
 ) => {
   console.log('== createAddNews == send_newsUser : ', send_newsUser);
   console.log('== createAddNews == newsUser_id : ', newsUser_id);
+  console.log('== createAddNews == isNotificationTarget : ', isNotificationTarget);
 
   if (!news_id || !newsUser_id) return;
-
-  // let recId = null;
-
-  // // 레퍼런스가 존재하는지 확인
-  // try {
-  //   const referenceExists = await skapi.getRecord(`news:${newsUser_id}`);
-  //   console.log('레퍼런스 존재함:', referenceExists);
-  // } catch (error) {
-  //   // 레퍼런스가 존재하지 않으면 새로 생성
-  //   console.log('레퍼런스가 존재하지 않음, 새로 생성합니다');
-
-  //   try {
-  //     const newReference = await skapi.postRecord(
-  //       {
-  //         newsUser_id: newsUser_id
-  //       },
-  //       {
-  //         readonly: true,
-  //         table: {
-  //           name: 'news',
-  //           access_group: 'authorized'
-  //         }
-  //       }
-  //     );
-
-  //     recId = newReference.reference_id; // 새로 생성된 레퍼런스 ID 저장
-  //     console.log('새 레퍼런스 생성 성공:', newReference);
-  //   } catch (refCreateError) {
-  //     console.error('레퍼런스 생성 실패:', refCreateError);
-  //     throw refCreateError;
-  //   }
-  // }
-
-  // console.log('news_id : ', news_id);
-  // console.log('newsUser_id : ', newsUser_id);
-  // // console.log('recId : ', recId);
-  // console.log('news_title : ', news_title);
-
-  // // 게시글 등록 알림 관련 레코드
-  // const res = await skapi.postRecord(
-  //   {
-  //     news_id,
-  //     newsUser: newsUser_id,
-  //     news_title
-  //   },
-  //   {
-  //     unique_id: `add_news:${news_id}:${newsUser_id}`,
-  //     readonly: true,
-  //     table: {
-  //       name: 'add_news',
-  //       access_group: 'authorized'
-  //     },
-  //     reference: `news:${news_id}`,
-  //     tags: [news_id],
-  //     index: {
-  //       name: 'news_title',
-  //       value: news_title.replaceAll('.', '_')
-  //     }
-  //   }
-  // );
-  // console.log('res : ', res);
 
   // skapi.grantPrivateRecordAccess({
   //   record_id: news_id,
@@ -795,14 +704,9 @@ const createAddNews = async (
   // });
 
   // 실시간 알림 보내기
-  if (isNotificationTarget) {
+  if (isNotificationTarget === true) {
     let news_title = document.getElementById('news_title').value;
-
-    // let postRealtimeBody = {
-    //   text: `${user.name}님께서 게시글을 올렸습니다.`,
-    //   type: 'notice',
-    //   id: news_id
-    // };
+    console.log('news_title : ', news_title);
 
     skapi
       .postRealtime(
@@ -815,7 +719,7 @@ const createAddNews = async (
             news_info: {
               news_title: news_title,
               news_id: news_id,
-              news_refer: selCatId.value,
+              news_refer: selCateId,
               news_noti_id: news_id,
               send_newsUser: send_newsUser
             }
@@ -847,7 +751,7 @@ const createAddNews = async (
         news_info: {
           news_title: news_title,
           news_id: news_id,
-          news_refer: selCatId.value,
+          news_refer: selCateId,
           news_noti_id: news_id,
           send_newsUser: send_newsUser
         }
@@ -928,7 +832,7 @@ const registerNews = async (e) => {
   e.preventDefault();
 
   // 카테고리 선택 안했을 경우 등록 불가
-  if (!selectedCategory.value) {
+  if (!selCate.value) {
     alert('카테고리를 선택해주세요.');
     return;
   }
@@ -959,15 +863,20 @@ const registerNews = async (e) => {
     mainPageLoading.value = true;
 
     if (isEditMode.value) {
+      console.log('== registerNews == 수정모드');
       // 수정 모드인 경우
       const editNewsId = route.query.news;
+      const selNews = newsCateList.value.find((cat) => cat.record_id === selCate.value);
+      console.log('selNews : ', selNews);
 
-      const selectedCat = newsCatList.value.find((cat) => cat.record_id === selectedCategory.value);
-      if (selectedCat) {
-        selectedDivision.value = selectedCat.data.access_division;
+      console.log('= AA = removeFiles : ', removeFiles);
+
+      if (selNews) {
+        selectedDivision.value = selNews.data.access_division;
       } else {
         selectedDivision.value = {};
       }
+      console.log('selectedDivision.value : ', selectedDivision.value);
 
       // 선택된 부서에서 직원 정보 가져오기
       const accessUser = [];
@@ -983,50 +892,7 @@ const registerNews = async (e) => {
         (user, index, self) => index === self.findIndex((u) => u.user_id === user.user_id)
       );
       selectedUsers.value = JSON.parse(JSON.stringify(uniqueUsers));
-
-      // const data = {
-      //   news_title,
-      //   to_news_content,
-      //   noti_setting: notiSetting.value, // 알림 설정 관련 체크박스 값 전달
-      //   record_id: editNewsId,
-      //   selDvs: Object.keys(selectedDivision.value)
-      //     .map((key) => {
-      //       const name = divisionNameList.value[key] || '-';
-      //       return `${key}.${name}`;
-      //     })
-      //     .join(','),
-      //   members: JSON.stringify(selectedUsers.value),
-      //   form_data: [],
-      //   isEdit: true
-      // };
-
-      // if (uploadedFile.value.length) {
-      //   const filePromises = uploadedFile.value.map(async (file) => {
-      //     if (file instanceof File) {
-      //       return file;
-      //     }
-
-      //     if (file.url) {
-      //       try {
-      //         const blob = await skapi.getFile(file.url, { dataType: 'blob' });
-      //         return new File([blob], file.filename, { type: blob.type });
-      //       } catch (error) {
-      //         console.error('파일 가져오기 실패:', file.filename, error);
-      //         return null;
-      //       }
-      //     }
-
-      //     return null;
-      //   });
-
-      //   const fileObjects = await Promise.all(filePromises);
-
-      //   fileObjects
-      //     .filter((file) => file !== null)
-      //     .forEach((file) => {
-      //       data.form_data.push(file);
-      //     });
-      // }
+      console.log('중복제거 = selectedUsers.value : ', selectedUsers.value);
 
       // FormData 활용
       const updateFormData = new FormData();
@@ -1035,6 +901,7 @@ const registerNews = async (e) => {
       updateFormData.append('news_title', news_title);
       updateFormData.append('to_news_content', to_news_content);
       updateFormData.append('noti_setting', notiSetting.value);
+      updateFormData.append('isEdit', true);
 
       // 부서 정보 추가
       const dvsWithName = Object.keys(selectedDivision.value)
@@ -1068,31 +935,73 @@ const registerNews = async (e) => {
         });
 
         const fileObjects = await Promise.all(filePromises);
+        console.log('fileObjects : ', fileObjects);
+
         fileObjects
           .filter((file) => file !== null)
           .forEach((file) => {
+            console.log('file : ', file);
             updateFormData.append('form_data', file);
           });
       }
 
-      console.log('BB == data : ', data);
+      try {
+        const config = {
+          record_id: editNewsId,
+          table: {
+            name: 'newsletter',
+            access_group: 99
+          },
+          index: {
+            name: 'news_title',
+            value: news_title.replaceAll('.', '_')
+          },
+          reference: selCateId
+        };
+        console.log('config : ', config);
 
-      const updateRes = await skapi.postRecord(data, {
-        record_id: editNewsId,
-        table: {
-          name: 'newsletter',
-          access_group: 'private'
-        },
-        index: {
-          name: 'news_title',
-          value: news_title.replaceAll('.', '_')
-        },
-        reference: selCatId.value
-      });
-      console.log('updateRes : ', updateRes);
+        let updateRes;
 
-      alert('게시글 수정이 완료되었습니다.');
-      router.push(`/newsletter-category?category=${selectedCategory.value}`);
+        if (uploadedFile.value.length) {
+          // 첨부파일 변경이 있을 경우
+          config.remove_bin = removeFiles;
+          console.log('removeFiles : ', removeFiles);
+          updateRes = await skapi.postRecord(updateFormData, config);
+          console.log('= AA = updateRes : ', updateRes);
+        } else {
+          updateRes = await skapi.postRecord(updateFormData, config);
+          console.log('= BB = updateRes : ', updateRes);
+        }
+
+        if (editModeData.value.data?.noti_setting === 'false' && notiSetting.value === true) {
+          const newsId = updateRes.record_id; // 게시글 ID
+          const newsTitle = updateRes.data.news_title; // 게시글 제목
+
+          const processRoles = [
+            ...selectedUsers.value.map((user) => ({
+              userId: user.user_id
+            }))
+          ];
+          console.log('processRoles : ', processRoles);
+
+          const res = await Promise.all(
+            processRoles.map((roleInfo) =>
+              postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value === 'true')
+            )
+          );
+          console.log('promiseall res : ', res);
+
+          selectedUsers.value = [];
+          selectedMembers.value = [];
+        }
+
+        alert('게시글 수정이 완료되었습니다.');
+      } catch (err) {
+        console.error('게시글 수정 중 오류 발생:', err);
+        alert('게시글 수정 중 오류가 발생했습니다.');
+      } finally {
+        router.push(`/newsletter-category?category=${selCate.value}`);
+      }
     } else {
       // 등록 모드인 경우
       // 게시글 레코드 생성
@@ -1101,14 +1010,10 @@ const registerNews = async (e) => {
         to_news_content,
         noti_setting: notiSetting.value // 알림 설정 관련 체크박스 값 전달
       });
-      console.log('newsDoc : ', newsDoc);
+      console.log('등록 = newsDoc : ', newsDoc);
 
       const newsId = newsDoc.record_id; // 게시글 ID
       const newsTitle = news_title; // 게시글 제목
-
-      console.log('newsIddddddddddddddddddd : ', newsId);
-
-      console.log('selectedUsers.value : ', selectedUsers.value);
 
       const processRoles = [
         ...selectedUsers.value.map((user) => ({
@@ -1120,7 +1025,7 @@ const registerNews = async (e) => {
       // 공개범위에게 게시글 열람 권한 및 등록 레코드 생성
       const res = await Promise.all(
         processRoles.map((roleInfo) =>
-          postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value)
+          postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value === 'true')
         )
       );
       console.log('promiseall res : ', res);
@@ -1129,7 +1034,7 @@ const registerNews = async (e) => {
       selectedMembers.value = [];
 
       alert('게시글 등록이 완료되었습니다.');
-      router.push(`/newsletter-category?category=${selectedCategory.value}`);
+      router.push(`/newsletter?category=${selCate.value}`);
     }
   } catch (error) {
     console.error('게시글 등록 중 오류 발생:', error);
@@ -1163,8 +1068,7 @@ const updateScreenSize = () => {
 onMounted(async () => {
   window.addEventListener('resize', updateScreenSize);
 
-  getNewsCatList();
-  console.log('newsCatList.value : ', newsCatList.value);
+  await getNewsCateList();
 
   if (isEditMode.value && editModeData.value) {
     const editNewsId = route.query.news;
@@ -1173,14 +1077,14 @@ onMounted(async () => {
       const categoryId = route.query.category;
 
       if (categoryId) {
-        selectedCategory.value = categoryId;
+        selCate.value = categoryId;
       }
 
       try {
         const record = await skapi.getRecords({
           table: {
             name: 'newsletter',
-            access_group: 'private'
+            access_group: 99
           },
           record_id: editNewsId
         });
@@ -1214,6 +1118,27 @@ onMounted(async () => {
         console.error('error : ', error);
         alert('게시글을 불러오는 중 오류가 발생했습니다.');
       }
+    }
+  }
+
+  if (isCateMode.value) {
+    selCate.value = route.query.category; // 카테고리 ID
+
+    const selCateItem = newsCateList.value.find((cat) => cat.record_id === route.query.category);
+
+    if (selCateItem) {
+      selectedDivision.value = selCateItem.data.access_division;
+
+      // 알림설정 체크박스 상태 가져오기
+      if (selCateItem.data.notiSetting) {
+        notiSetting.value = selCateItem.data.notiSetting;
+      } else {
+        notiSetting.value = true;
+      }
+
+      selCateId = route.query.category;
+    } else {
+      selectedDivision.value = {};
     }
   }
 });
@@ -1385,6 +1310,14 @@ onUnmounted(() => {
       }
     }
   }
+
+  #newsCat {
+    &:disabled {
+      background-color: var(--gray-color-50);
+      color: var(--gray-color-900);
+      background-image: none;
+    }
+  }
 }
 
 .button-wrap {
@@ -1394,64 +1327,6 @@ onUnmounted(() => {
 .btn {
   margin-top: 1rem;
 }
-
-// .dvs-wrap {
-//   display: grid;
-//   grid-template-columns: repeat(8, 1fr);
-//   text-align: center;
-//   height: 100%;
-
-//   .dvs-list {
-//     display: flex;
-//     flex-direction: column;
-//     width: 100%;
-//     min-height: 6rem;
-//     border-right: 1px solid var(--gray-color-300);
-//     border-bottom: 1px solid var(--gray-color-300);
-//     margin-bottom: -1px;
-//     position: relative;
-//   }
-
-//   .num {
-//     border-bottom: 1px solid var(--gray-color-200);
-//     padding: 0.25rem;
-//   }
-
-//   .dvs-name {
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//     height: 100%;
-//     padding: 0.25rem;
-//   }
-
-//   .add-dvs {
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//     height: 100%;
-//     cursor: pointer;
-
-//     .icon {
-//       svg {
-//         fill: var(--gray-color-400);
-//       }
-//     }
-//   }
-
-//   .btn-remove {
-//     margin-left: 4px;
-
-//     .icon {
-//       padding: 0;
-
-//       svg {
-//         width: 16px;
-//         height: 16px;
-//       }
-//     }
-//   }
-// }
 
 .dvs-wrap {
   display: flex;

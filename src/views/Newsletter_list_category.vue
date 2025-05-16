@@ -15,7 +15,7 @@
                   button.btn.outline.refresh-icon(:disabled="loading" @click="refresh")
                       svg(:class="{'rotate' : loading}")
                           use(xlink:href="@/assets/icon/material-icon.svg#icon-refresh")
-                  button.btn.outline(type="button" @click="router.push('/newsletter-add')" :disabled="loading") 글작성
+                  button.btn.outline(v-if="user.access_group > 98" type="button" @click="router.push('/newsletter-add')" :disabled="loading") 글작성
       .tb-overflow
           table.table#tb-newsCat
               colgroup
@@ -38,7 +38,6 @@
                       tr(v-for="(category, key, index) in newsCatList" :key="category.record_id")
                           td.list-num {{ index + 1 }}
                           td.left 
-                              //- router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.index.value} }")
                               router-link.go-news-list(:to="{ name: 'newsletter', query: { category: category.record_id} }")
                                   span {{ category.data.news_category }}
 </template>
@@ -47,7 +46,7 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, computed, onMounted } from 'vue';
 import { skapi } from '@/main.ts';
-// import { newsletterList, getNewsletterList } from '@/notifications.ts';
+import { user } from '@/user.ts';
 
 import Loading from '@/components/loading.vue';
 
@@ -55,42 +54,18 @@ const router = useRouter();
 const route = useRoute();
 
 const loading = ref(false);
-const newsCatList = ref([]); // 게시글 카테고리명 리스트
-let currentPage = ref(1);
-let selectedList = ref({});
-let searchValue = ref('');
-let isAllSelected = computed(() => {
-  let keys = Object.keys(newsCatList.value);
-  return keys.length > 0 && keys.every((key) => Object.keys(selectedList.value).includes(key));
-});
+let searchValue = ref(''); // 검색어
+const newsCatList = ref([]); // 카테고리 리스트
 
-let toggleSelectAll = () => {
-  if (isAllSelected.value) {
-    selectedList.value = {};
-  } else {
-    for (let key in newsCatList.value) {
-      selectedList.value[key] = newsCatList.value[key].data.news_category;
-    }
-  }
-};
-
-let toggleSelect = (id, name) => {
-  if (selectedList.value[id]) {
-    delete selectedList.value[id];
-  } else {
-    selectedList.value[id] = name;
-  }
-};
-
-// 게시글 카테고리명 리스트 가져오기
+// 카테고리 리스트 가져오기
 const getNewsCat = async () => {
   const res = await skapi.getRecords({
     table: {
-      name: 'news_category_list',
+      name: 'news_category',
       access_group: 1
     }
   });
-  // console.log('카테고리 리스트 : ', res);
+  console.log('== getNewsCat == res : ', res);
 
   if (res && res.list) {
     newsCatList.value = res.list.reduce((acc, cur) => {
@@ -111,51 +86,6 @@ const refresh = async () => {
     searchValue.value = '';
   }
 
-  loading.value = false;
-};
-
-const deleteNewsCat = async () => {
-  if (!Object.keys(selectedList.value).length) {
-    alert('삭제할 카테고리를 선택해주세요.');
-    return;
-  }
-
-  loading.value = true;
-
-  let recordIds = Object.keys(selectedList.value);
-  let categoryNames = Object.values(selectedList.value);
-
-  let isSuccess = [];
-  let isFail = [];
-
-  // 카테고리 삭제
-  await Promise.all(
-    recordIds.map((el) => {
-      return skapi
-        .deleteRecords({ record_id: el })
-        .then((res) => {
-          isSuccess.push(el);
-          delete newsCatList.value[el];
-        })
-        .catch((err) => {
-          isFail.push(el);
-          alert('카테고리 삭제에 실패하였습니다. 관리자에게 문의해주세요.');
-          throw err;
-        });
-    })
-  );
-
-  newsCatList.value = { ...newsCatList.value }; // 새 참조로 업데이트
-
-  if (isSuccess.length > 0) {
-    alert(`${isSuccess.length}개의 카테고리가 삭제되었습니다.`);
-  }
-
-  if (isFail.length > 0) {
-    alert(`${isFail.length}개의 카테고리 삭제에 실패했습니다.`);
-  }
-
-  selectedList.value = {};
   loading.value = false;
 };
 
@@ -196,7 +126,6 @@ const searchNewsCat = async () => {
 
 onMounted(() => {
   getNewsCat();
-  // getNewsletterList();
 });
 </script>
 

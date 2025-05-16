@@ -52,7 +52,11 @@
 								th.essential 제목
 								td(colspan="3")
 									.input-wrap
-										input#news_title(type="text" v-model="newsTitle" name="news_title" placeholder="제목을 입력해주세요." required)
+										template(v-if="!isEditMode")
+											input#news_title(type="text" v-model="newsTitle" name="news_title" placeholder="제목을 입력해주세요." required)
+										template(v-else-if="isEditMode && editModeData.data")
+											input#news_title(type="text" v-model="editModeData.data.news_title" name="news_title" placeholder="제목을 입력해주세요." required)
+
 
 							tr(v-if="Object.keys(selectedDivision).length === 0" style="height: 100px;")
 								th 공개 범위
@@ -80,7 +84,7 @@
 								th.essential 내용
 								td(colspan="3")
 									.wysiwyg-wrap(style="cursor: text;")
-										Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="selectedForm?.data?.form_content" :showBtn="true")
+										Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'edit' ? editModeData?.data?.to_news_content : selectedForm?.data?.form_content" :showBtn="true")
 										textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 							tr
@@ -109,12 +113,12 @@
 
 			.button-wrap
 				button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/newsletter-category')") 취소
-				button.btn(type="submit") 등록
+				button.btn(type="submit") {{ isEditMode ? '수정' : '등록' }}
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe, verifiedEmail } from '@/user.ts';
 import { divisionNameList } from '@/division.ts';
@@ -139,6 +143,8 @@ import Wysiwyg from '@/components/wysiwyg.vue';
 const router = useRouter();
 const route = useRoute();
 
+const isEditMode = computed(() => route.query.mode === 'edit'); // 게시글 수정 모드
+
 const isDesktop = ref(window.innerWidth > 768); // 반응형
 const isModalOpen = ref(false); // 공개범위 설정 모달
 const selectedDivision = ref({}); // 조직도에서 선택된 부서
@@ -157,6 +163,8 @@ const disabled = ref(false);
 
 const newsCatList = ref([]); // 게시글 카테고리명 리스트
 const selectedCategory = ref(''); // 선택된 카테고리
+const selCatId = ref(''); // 선택된 카테고리 ID
+const editModeData = ref({}); // 수정 모드 데이터
 
 watch(selectedCategory, (n) => {
   if (n) {
@@ -171,6 +179,12 @@ watch(selectedCategory, (n) => {
       } else {
         notiSetting.value = true;
       }
+
+      // 선택한 카테고리의 더미 레코드 가져오기
+      getNewsCatRecord(selectedCat.record_id).then((res) => {
+        selCatId.value = res;
+        console.log('AA == selCatId.value : ', selCatId.value);
+      });
     } else {
       selectedDivision.value = {};
     }
@@ -197,7 +211,7 @@ const getNewsCatList = async () => {
 const editorContent = ref('');
 const editorIsReady = ref(false);
 
-// 에디터 내용이 변경 감지
+// 에디터 내용 변경 감지
 watch(editorContent, (newContent) => {
   if (!newContent || newContent === '') {
     // 내용이 완전히 비어있는 경우 기본 p 태그 추가
@@ -217,6 +231,13 @@ const handleEditorReady = (status) => {
     setTimeout(() => {
       const editorElement = document.getElementById('myeditor');
       if (editorElement) {
+        // 수정 모드인 경우 내용 직접 설정
+        if (isEditMode.value && editModeData.value?.data?.to_news_content) {
+          // 기존 내용 직접 설정
+          editorElement.innerHTML = editModeData.value.data.to_news_content;
+          editorContent.value = editModeData.value.data.to_news_content;
+          console.log('에디터에 내용 설정됨:', editorContent.value);
+        }
         activateTableEditing(editorElement);
       }
     }, 500);
@@ -569,11 +590,25 @@ let updateFileList = (e) => {
   e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
 };
 
+// 카테고리별 더미 레코드 가져오기
+const getNewsCatRecord = async (id) => {
+  const res = await skapi.getRecords({
+    table: {
+      name: `newsCatRecord_${id}`,
+      access_group: 'private'
+    }
+  });
+  console.log('작성중 == getNewsCatRecord == res : ', res);
+
+  const dummyId = res.list[0].record_id;
+  console.log('dummyId : ', dummyId);
+
+  return dummyId;
+};
+
 // 게시글 레코드 생성
 const postNewsRecord = async ({ news_title, to_news_content }) => {
   const accessUser = [];
-
-  console.log('selectedDivision.value : ', selectedDivision.value);
 
   for (const key in selectedDivision.value) {
     const includeUser = selectedDivision.value[key];
@@ -588,7 +623,7 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
     (user, index, self) => index === self.findIndex((u) => u.user_id === user.user_id)
   );
   selectedUsers.value = JSON.parse(JSON.stringify(uniqueUsers));
-  console.log('selectedUsers.value : ', selectedUsers.value);
+  console.log('중복제거 = selectedUsers.value : ', selectedUsers.value);
 
   try {
     const dvs = Object.keys(selectedDivision.value);
@@ -640,9 +675,9 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
         });
     }
     console.log('selectedCategory.value : ', selectedCategory.value);
+    console.log('selCatId.value : ', selCatId.value);
 
     const options = {
-      readonly: true, // 수정할 수 없음. 수정하려면 새로 올려야 함. 이것은 교묘히 수정할 수 없게 하는 방법
       table: {
         name: 'newsletter',
         access_group: 'private' // 프라빗으로 올려야 공개범위 직원들만 접근 가능
@@ -651,10 +686,7 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
         name: 'news_title', // 게시글 제목. 제목별로 찾을때 위한 인덱싱
         value: news_title.replaceAll('.', '_')
       },
-      source: {
-        prevent_multiple_referencing: true // 중복 방지
-      },
-      tags: selectedCategory.value // 카테고리
+      reference: selCatId.value // 카테고리별 더미 레코드 ID를 레퍼런스
     };
     console.log('options : ', options);
 
@@ -672,12 +704,12 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
 };
 
 // 게시글 공개범위에게 권한을 부여하는 함수
-const grantNewsUserAccess = async ({ news_id, newsUser_id }) => {
-  return skapi.grantPrivateRecordAccess({
-    record_id: news_id,
-    user_id: newsUser_id
-  });
-};
+// const grantNewsUserAccess = async ({ news_id, newsUser_id }) => {
+//   return skapi.grantPrivateRecordAccess({
+//     record_id: news_id,
+//     user_id: newsUser_id
+//   });
+// };
 
 // 게시글 등록하고 알림을 보내는 함수
 const createAddNews = async (
@@ -751,20 +783,14 @@ const createAddNews = async (
   // );
   // console.log('res : ', res);
 
-  skapi.grantPrivateRecordAccess({
-    record_id: news_id,
-    user_id: newsUser_id
-  });
+  // skapi.grantPrivateRecordAccess({
+  //   record_id: news_id,
+  //   user_id: newsUser_id
+  // });
 
   // 실시간 알림 보내기
   if (isNotificationTarget) {
     let news_title = document.getElementById('news_title').value;
-
-    let postRealtimeBody = {
-      text: `${user.name}님께서 게시글을 올렸습니다.`,
-      type: 'notice',
-      id: news_id
-    };
 
     skapi
       .postRealtime(
@@ -777,6 +803,7 @@ const createAddNews = async (
             news_info: {
               news_title: news_title,
               news_id: news_id,
+              news_refer: selCatId.value,
               news_noti_id: news_id,
               send_newsUser: send_newsUser
             }
@@ -785,10 +812,10 @@ const createAddNews = async (
         newsUser_id,
         {
           title: '[그룹웨어]',
-          body: `${user.name}님께서 게시글을 올렸습니다.`,
-          config: {
-            always: true // 무조건 알림 받기
-          }
+          body: `${user.name}님께서 게시글을 올렸습니다.`
+          // config: {
+          //   always: true // 무조건 알림 받기
+          // }
         }
       )
       .then((res) => {
@@ -808,6 +835,7 @@ const createAddNews = async (
         news_info: {
           news_title: news_title,
           news_id: news_id,
+          news_refer: selCatId.value,
           news_noti_id: news_id,
           send_newsUser: send_newsUser
         }
@@ -833,20 +861,12 @@ const createAddNews = async (
 
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTarget = false) => {
-  // console.log('== postAuditDocRecordId == newsId : ', newsId);
-  // console.log('== postAuditDocRecordId == newsTitle : ', newsTitle);
-  // console.log('== postAuditDocRecordId == userId : ', userId);
-  // console.log('== postAuditDocRecordId == isNotificationTarget : ', isNotificationTarget);
-  // console.log('== postAuditDocRecordId == notiSetting : ', notiSetting);
-
   try {
     // 권한 부여
-    await grantNewsUserAccess({
-      news_id: newsId,
-      newsUser_id: userId
-    });
-
-    console.log('== postAuditDocRecordId == 권한 부여 완료', newsId);
+    // await grantNewsUserAccess({
+    //   news_id: newsId,
+    //   newsUser_id: userId
+    // });
 
     // 알림 전송
     const res = await createAddNews(
@@ -858,9 +878,7 @@ const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTar
       send_auditors_arr,
       isNotificationTarget
     );
-
     console.log('== postAuditDocRecordId == res : ', res);
-
     return res;
   } catch (error) {
     console.error(error);
@@ -928,43 +946,175 @@ const registerNews = async (e) => {
 
     mainPageLoading.value = true;
 
-    // 게시글 레코드 생성
-    const newsDoc = await postNewsRecord({
-      news_title,
-      to_news_content
-      // noti_setting: notiSetting.value // 알림 설정 관련 체크박스 값 전달
-    });
-    console.log('newsDoc : ', newsDoc);
+    if (isEditMode.value) {
+      // 수정 모드인 경우
+      const editNewsId = route.query.news;
 
-    const newsId = newsDoc.record_id; // 게시글 ID
-    const newsTitle = news_title; // 게시글 제목
+      const selectedCat = newsCatList.value.find((cat) => cat.record_id === selectedCategory.value);
+      if (selectedCat) {
+        selectedDivision.value = selectedCat.data.access_division;
+      } else {
+        selectedDivision.value = {};
+      }
 
-    console.log('newsIddddddddddddddddddd : ', newsId);
+      // 선택된 부서에서 직원 정보 가져오기
+      const accessUser = [];
+      for (const key in selectedDivision.value) {
+        const includeUser = selectedDivision.value[key];
+        if (Array.isArray(includeUser)) {
+          accessUser.push(...includeUser);
+        }
+      }
 
-    console.log('selectedUsers.value : ', selectedUsers.value);
+      // 중복 제거
+      const uniqueUsers = accessUser.filter(
+        (user, index, self) => index === self.findIndex((u) => u.user_id === user.user_id)
+      );
+      selectedUsers.value = JSON.parse(JSON.stringify(uniqueUsers));
 
-    const processRoles = [
-      ...selectedUsers.value.map((user) => ({
-        userId: user.user_id
-      }))
-    ];
-    console.log('processRoles : ', processRoles);
+      // const data = {
+      //   news_title,
+      //   to_news_content,
+      //   noti_setting: notiSetting.value, // 알림 설정 관련 체크박스 값 전달
+      //   record_id: editNewsId,
+      //   selDvs: Object.keys(selectedDivision.value)
+      //     .map((key) => {
+      //       const name = divisionNameList.value[key] || '-';
+      //       return `${key}.${name}`;
+      //     })
+      //     .join(','),
+      //   members: JSON.stringify(selectedUsers.value),
+      //   form_data: [],
+      //   isEdit: true
+      // };
 
-    // 공개범위에게 게시글 열람 권한 및 등록 레코드 생성
-    const res = await Promise.all(
-      processRoles.map((roleInfo) =>
-        postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value)
-      )
-    );
-    console.log('promiseall res : ', res);
+      // if (uploadedFile.value.length) {
+      //   const filePromises = uploadedFile.value.map(async (file) => {
+      //     if (file instanceof File) {
+      //       return file;
+      //     }
 
-    selectedUsers.value = [];
-    selectedMembers.value = [];
+      //     if (file.url) {
+      //       try {
+      //         const blob = await skapi.getFile(file.url, { dataType: 'blob' });
+      //         return new File([blob], file.filename, { type: blob.type });
+      //       } catch (error) {
+      //         console.error('파일 가져오기 실패:', file.filename, error);
+      //         return null;
+      //       }
+      //     }
 
-    alert('게시글 등록이 완료되었습니다.');
-    router.push({
-      path: '/newsletter'
-    });
+      //     return null;
+      //   });
+
+      //   const fileObjects = await Promise.all(filePromises);
+
+      //   fileObjects
+      //     .filter((file) => file !== null)
+      //     .forEach((file) => {
+      //       data.form_data.push(file);
+      //     });
+      // }
+
+      // FormData 활용
+      const updateFormData = new FormData();
+
+      // 기본 정보 추가
+      updateFormData.append('news_title', news_title);
+      updateFormData.append('to_news_content', to_news_content);
+      updateFormData.append('noti_setting', notiSetting.value);
+
+      // 부서 정보 추가
+      const dvsWithName = Object.keys(selectedDivision.value)
+        .map((key) => {
+          const name = divisionNameList.value[key] || '-';
+          return `${key}.${name}`;
+        })
+        .join(',');
+      updateFormData.append('selDvs', dvsWithName);
+
+      // 직원 정보 추가
+      updateFormData.append('members', JSON.stringify(selectedUsers.value));
+
+      // 첨부파일 처리
+      if (uploadedFile.value.length) {
+        const filePromises = uploadedFile.value.map(async (file) => {
+          if (file instanceof File) {
+            return file;
+          }
+
+          if (file.url) {
+            try {
+              const blob = await skapi.getFile(file.url, { dataType: 'blob' });
+              return new File([blob], file.filename, { type: blob.type });
+            } catch (error) {
+              console.error('파일 가져오기 실패:', file.filename, error);
+              return null;
+            }
+          }
+          return null;
+        });
+
+        const fileObjects = await Promise.all(filePromises);
+        fileObjects
+          .filter((file) => file !== null)
+          .forEach((file) => {
+            updateFormData.append('form_data', file);
+          });
+      }
+
+      console.log('BB == data : ', data);
+
+      const updateRes = await skapi.postRecord(data, {
+        record_id: editNewsId,
+        table: {
+          name: 'newsletter',
+          access_group: 'private'
+        },
+        index: {
+          name: 'news_title',
+          value: news_title.replaceAll('.', '_')
+        },
+        reference: selCatId.value
+      });
+      console.log('updateRes : ', updateRes);
+
+      alert('게시글 수정이 완료되었습니다.');
+      router.push(`/newsletter-category?category=${selectedCategory.value}`);
+    } else {
+      // 등록 모드인 경우
+      // 게시글 레코드 생성
+      const newsDoc = await postNewsRecord({
+        news_title,
+        to_news_content,
+        noti_setting: notiSetting.value // 알림 설정 관련 체크박스 값 전달
+      });
+      console.log('등록 = newsDoc : ', newsDoc);
+
+      const newsId = newsDoc.record_id; // 게시글 ID
+      const newsTitle = news_title; // 게시글 제목
+
+      const processRoles = [
+        ...selectedUsers.value.map((user) => ({
+          userId: user.user_id
+        }))
+      ];
+      console.log('processRoles : ', processRoles);
+
+      // 공개범위에게 게시글 열람 권한 및 등록 레코드 생성
+      const res = await Promise.all(
+        processRoles.map((roleInfo) =>
+          postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value)
+        )
+      );
+      console.log('promiseall res : ', res);
+
+      selectedUsers.value = [];
+      selectedMembers.value = [];
+
+      alert('게시글 등록이 완료되었습니다.');
+      router.push(`/newsletter-category?category=${selectedCategory.value}`);
+    }
   } catch (error) {
     console.error('게시글 등록 중 오류 발생:', error);
     if (error?.message === 'index.value should not have special characters') {
@@ -996,7 +1146,60 @@ const updateScreenSize = () => {
 
 onMounted(async () => {
   window.addEventListener('resize', updateScreenSize);
+
   getNewsCatList();
+  console.log('newsCatList.value : ', newsCatList.value);
+
+  if (isEditMode.value && editModeData.value) {
+    const editNewsId = route.query.news;
+
+    if (editNewsId) {
+      const categoryId = route.query.category;
+
+      if (categoryId) {
+        selectedCategory.value = categoryId;
+      }
+
+      try {
+        const record = await skapi.getRecords({
+          table: {
+            name: 'newsletter',
+            access_group: 'private'
+          },
+          record_id: editNewsId
+        });
+
+        if (record) {
+          editModeData.value = record.list[0];
+          console.log('onMounted == editModeData.value : ', editModeData.value);
+
+          newsTitle.value = editModeData.value.data?.news_title || '';
+          editorContent.value = editModeData.value.data?.to_news_content || '';
+          notiSetting.value = editModeData.value.data?.noti_setting === 'false' ? false : true;
+
+          if (editModeData.value.data?.selDvs) {
+            const divisions = {};
+            editModeData.value.data.selDvs.split(',').forEach((item) => {
+              const [key] = item.split('.');
+              divisions[key] = editModeData.value.data.members || [];
+            });
+            selectedDivision.value = divisions;
+          }
+
+          if (
+            editModeData.value.bin &&
+            editModeData.value.bin.form_data &&
+            editModeData.value.bin.form_data.length
+          ) {
+            uploadedFile.value = editModeData.value.bin.form_data;
+          }
+        }
+      } catch (error) {
+        console.error('error : ', error);
+        alert('게시글을 불러오는 중 오류가 발생했습니다.');
+      }
+    }
+  }
 });
 
 onUnmounted(() => {
