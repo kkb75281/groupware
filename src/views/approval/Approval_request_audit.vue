@@ -779,7 +779,8 @@ const activateTableEditing = (editorElement) => {
             tableWrap: wrap,
             table: wrap.querySelector('table'),
             tbody: wrap.querySelector('tbody'),
-            mergeBtn: wrap.querySelector('.merge-btn'),
+            mergeBtn: wrap.querySelector('.btn-merge'),
+            unmergeBtn: wrap.querySelector('.btn-unmerge'),
             isResizing: false,
             isDragging: false,
             isSelection: false,
@@ -813,23 +814,27 @@ const activateTableEditing = (editorElement) => {
 
         document.addEventListener('mouseup', () => {
             const mergeBtn = state.tableWrap.querySelector('.btn-merge');
+            state.mergeBtn.classList.remove('active');
 
             if (state.isDragging) {
-                state.isDragging = false;
-                tableSelection(state);
-
                 const selected = state.table.querySelectorAll('td.dragged-cell');
                 if (selected.length >= 2) {
-                    if (mergeBtn) mergeBtn.classList.add('active'); // 조건에 따라 활성화
+                    mergeBtn.classList.add('active'); // 조건에 따라 활성화
                 }
-            } else {
-                if (mergeBtn) state.mergeBtn.classList.remove('active'); // 단일 클릭 시 무조건 비활성화
             }
+
             state.isMouseDown = false;
+            state.isDragging = false;
+            state.isSelection = false;
+
+            tableSelection(state);
         });
 
         document.addEventListener('click', (e) => {
             if (state.table && !state.table.contains(e.target)) {
+                if (e.target.closest('.btn-custom')) {
+                    return;
+                }
                 state.isSelection = false;
                 clearSelection(state.table);
                 tableSelection(state);
