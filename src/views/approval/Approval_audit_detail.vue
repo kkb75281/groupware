@@ -2440,6 +2440,25 @@ onUnmounted(() => {
     }
 }
 
+.refer-doc-item {
+    border: 1px dashed var(--gray-color-300);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    color: var(--gray-color-500);
+    text-align: left;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+
+    &:last-of-type {
+        margin-bottom: 0;
+    }
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
 // 추가의견 영역
 .sub-title {
     margin: 4rem 0 1rem;

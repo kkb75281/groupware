@@ -1003,8 +1003,8 @@ const exportWysiwygData = (content) => {
     console.log('에디터 내보내기:', content);
 };
 
-const importWysiwygData = () => {
-    myWysiwyg.value.exportData();
+const importWysiwygData = async () => {
+    await myWysiwyg.value.exportData();
 };
 
 // 첨부파일 삭제
@@ -1369,6 +1369,9 @@ const removeButtonTags = (content) => {
 // 결재 요청
 const requestAudit = async (e) => {
     e.preventDefault();
+
+    // 에디터에서 내용 가져오기
+    await importWysiwygData();
 
     // 결재 내용이 없을 경우 결재 요청 안되게
     if (!editorContent.value || editorContent.value === '<p><br></p>') {
@@ -3022,6 +3025,27 @@ onUnmounted(() => {
                 fill: var(--warning-color-500);
                 margin: 0 auto;
             }
+        }
+    }
+}
+
+.refer-doc-wrap {
+    .btn-open-modal {
+        width: 110px;
+        height: 28px;
+        display: flex;
+    }
+
+    .btn-remove {
+        padding: 0;
+        width: initial;
+        height: initial;
+        border: none;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--warning-color-500);
         }
     }
 }

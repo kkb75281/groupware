@@ -342,9 +342,9 @@ const handleCommand = (command) => {
 };
 
 // 에디터 내용 export
-const exportData = () => {
+const exportData = async () => {
     if (wysiwyg) {
-        wysiwyg.export().then((r) => {
+        await wysiwyg.export().then((r) => {
             let result = r;
             let html = result.html;
 
