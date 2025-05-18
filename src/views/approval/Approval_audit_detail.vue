@@ -124,6 +124,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 											template(v-if="referDoc.length > 0")
 												li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
 													span.refer-doc-name(@click="showReferDetail(doc)") {{ doc.data.to_audit }}
+											template(v-else)
+												li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
 			h4.sub-title 의견
 
@@ -136,7 +138,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				li.comment-item(v-for="(comment, index) in commentList" :key="index")
 					.auditor-info
 						.name {{ comment.data?.writer_name }}
-						.approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !comment.data?.approval_type || comment.data?.approval_type === 'undefined' }") {{ comment.data?.approval_type === 'approve' ? '승인자' : comment.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
+						//- .approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !comment.data?.approval_type || comment.data?.approval_type === 'undefined' }") {{ comment.data?.approval_type === 'approve' ? '승인자' : comment.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
 					template(v-if="isEditMode[comment.record_id]")
 						.input-wrap.input-edit
 							input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[comment.record_id]" style="width: 100%;")
@@ -153,25 +155,25 @@ Loading#loading(v-if="getAuditDetailRunning")
 							.date {{ formatTimestampToDate(comment.data?.date) }}
 						button.btn-reply(type="button" @click="toggleReplyInput('reply', index)") 댓글 쓰기
 						.btn-wrap(v-if="comment.data?.writer === user.user_id")
-							button.btn-edit(type="button" @click="toggleEditMode('reply', index)") 수정
-							button.btn-delete(type="button" @click="deleteReply('reply', index)") 삭제
+							button.btn-edit(type="button" @click="toggleEditMode(comment.record_id, true)") 수정
+							button.btn-delete(type="button" @click="deleteReply(comment.record_id, true)") 삭제
 
 					//- 대댓글 :: s
-					ul.reply-list(v-if="getFilteredReplies(comment.record_id).length > 0")
-						li.reply-item(v-for="(reply, index) in getFilteredReplies(comment.record_id)" :key="index")
+					ul.reply-list(v-if="replyList[comment.record_id]?.length > 0")
+						li.reply-item(v-for="(reply, index) in replyList[comment.record_id]" :key="index")
 							.icon
 								svg
 									use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
 							.reply
 								.auditor-info
 									.name {{ reply.data?.writer_name }}
-									.approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !reply.data?.approval_type || reply.data?.approval_type === 'undefined' }") {{ reply.data?.approval_type === 'approve' ? '승인자' : reply.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
+									//- .approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !reply.data?.approval_type || reply.data?.approval_type === 'undefined' }") {{ reply.data?.approval_type === 'approve' ? '승인자' : reply.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
 								template(v-if="isEditMode[reply.record_id]")
 									.input-wrap.input-edit
 										input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[reply.record_id]" style="width: 100%;")
 										.btn-wrap
-											button.btn.sm.outline.btn-update(type="button" @click="editReply('subReply', index)") 등록
-											button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode('subReply', index)") 취소
+											button.btn.sm.outline.btn-update(type="button" @click="editReply('subReply', index, comment.record_id)") 등록
+											button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode(reply.record_id, true)") 취소
 								template(v-else)
 									.text {{ reply.data?.comment || '-' }}
 								.etc
@@ -182,15 +184,15 @@ Loading#loading(v-if="getAuditDetailRunning")
 										.date {{ formatTimestampToDate(reply.data?.date) }}
 									//- button.btn-reply(type="button" @click="toggleReplyInput('subReply', index)") 댓글 쓰기
 									.btn-wrap(v-if="reply.data.writer === user.user_id")
-										button.btn-edit(type="button" @click="toggleEditMode('subReply', index)") 수정
-										button.btn-delete(type="button" @click="deleteReply('subReply', index)") 삭제
+										button.btn-edit(type="button" @click="toggleEditMode(reply.record_id, false)") 수정
+										button.btn-delete(type="button" @click="deleteReply(reply.record_id, false)") 삭제
 
 						template(v-if="commentList[index]?.record_id && isSubReplyOpen[commentList[index]?.record_id]")
 							.input-wrap.input-reply(style="padding-left: 2.5rem; margin-top: 1rem;")
 								input(type="text" placeholder="댓글을 입력해주세요." v-model="subReply[commentList[index]?.record_id]" style="width: 100%;")
 								.btn-wrap
-									button.btn(type="button" @click="writeReply('subReply', index)") 등록
-									button.btn.bg-gray(type="button" @click="toggleReplyInput('subReply', index)") 취소
+									button.btn(type="button" @click="writeReply('subReply', index, comment.record_id)") 등록
+									button.btn.bg-gray(type="button" @click="toggleReplyInput(reply.record_id, true)") 취소
 					//- 대댓글 :: e
 
 					template(v-if="isReplyOpen[comment.record_id]")
@@ -365,7 +367,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 													li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index")
 														span.refer-doc-name {{ doc.data.to_audit }}
 												template(v-else)
-													li(style="color:var(--gray-color-300);") 등록된 참조 문서가 없습니다.
+													li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
 		.modal-footer(style="padding-top: 0; border-top: none;")
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeReferDetail") 닫기
@@ -395,15 +397,15 @@ import Loading from '@/components/loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
 
-const testDelete = () => {
-  skapi
-    .deleteRecords({
-      record_id: 'Ukgb7K1Yzn4oBQRG'
-    })
-    .then((res) => {
-      console.log('삭제완');
-    });
-};
+// const testDelete = () => {
+//   skapi
+//     .deleteRecords({
+//       record_id: 'Ukgjwll1jL49BQRG'
+//     })
+//     .then((res) => {
+//       console.log('삭제완');
+//     });
+// };
 
 const router = useRouter();
 const route = useRoute();
@@ -437,7 +439,7 @@ const commentList = ref([]); // 결재 의견 리스트
 const comment = ref(''); // 결재 의견 (댓글)
 const isReplyOpen = ref({}); // 댓글 입력창 열기
 const isSubReplyOpen = ref({}); // 대댓글 입력창 열기
-const replyList = ref([]); // 결재 의견의 댓글 리스트
+const replyList = ref({}); // 결재 의견의 댓글 리스트
 const reply = ref({}); // 결재 의견의 댓글 (대댓글)
 const subReply = ref({}); // 대대댓글
 const isEditMode = ref({}); // 댓글 수정 모드
@@ -1737,7 +1739,6 @@ const getCmtRecord = async () => {
     },
     reference: auditId.value
   });
-  console.log('getCmtRecord res : ', res);
 
   if (res.list.length > 0) {
     cmtRecord.value = res.list[0];
@@ -1746,21 +1747,10 @@ const getCmtRecord = async () => {
   }
 };
 
-// 댓글에 권한 부여
-const grantCmtUserAccess = async ({ news_id, newsUser_id }) => {
-  return skapi.grantPrivateRecordAccess({
-    record_id: news_id,
-    user_id: newsUser_id
-  });
-};
-
 // 댓글 (결재 의견) 작성
 const writeComment = async () => {
-  console.log('댓글 작성');
   console.log('user : ', user);
-  console.log('auditId : ', auditId.value);
   console.log('auditorList : ', auditorList.value);
-  console.log('comment : ', comment.value);
   console.log('cmtRecord.value : ', cmtRecord.value);
 
   if (!comment.value) {
@@ -1786,13 +1776,10 @@ const writeComment = async () => {
     const config = {
       table: {
         name: 'audit_comment',
-        access_group: 'authorized'
+        access_group: 1
       },
       reference: cmtRecord.value.record_id
     };
-
-    console.log('data : ', data);
-    console.log('config : ', config);
 
     const res = await skapi.postRecord(data, config);
     console.log('== writeComment == res : ', res);
@@ -1837,7 +1824,7 @@ const writeComment = async () => {
           readonly: true,
           table: {
             name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
-            access_group: 'authorized'
+            access_group: 1
           }
         })
         .then((res) => {
@@ -1863,7 +1850,7 @@ const getComment = async () => {
   const params = {
     table: {
       name: 'audit_comment',
-      access_group: 'authorized'
+      access_group: 1
     },
     reference: cmtRecord.value.record_id
   };
@@ -1874,22 +1861,15 @@ const getComment = async () => {
 
   if (res.list.length > 0) {
     commentList.value = res.list;
+    console.log('commentList.value : ', commentList.value);
     return res.list;
   } else {
     commentList.value = [];
   }
 };
 
-// 필터링된 대댓글 목록을 가져오는 함수
-const getFilteredReplies = (commentId) => {
-  return replyList.value.filter((reply) => String(reply.reference) === String(commentId));
-};
-
 // 댓글 입력 영역 toggle
 const toggleReplyInput = (type, index) => {
-  console.log('type : ', type);
-  console.log('index : ', index);
-
   const commentItem = type === 'reply' ? commentList.value[index] : replyList.value[index];
 
   if (!commentItem) {
@@ -1901,26 +1881,25 @@ const toggleReplyInput = (type, index) => {
 
   if (type === 'reply') {
     isReplyOpen.value[commentId] = !isReplyOpen.value[commentId];
+
+    if (!isReplyOpen.value[commentId]) {
+      reply.value[commentId] = '';
+    }
   } else if (type === 'subReply') {
     // subReply의 경우 부모 댓글의 ID를 저장
     const parentId = commentItem.reference || commentId;
     isSubReplyOpen.value[parentId] = !isSubReplyOpen.value[parentId];
-    console.log('isSubReplyOpen.value : ', isSubReplyOpen.value);
+
+    if (!isSubReplyOpen.value[parentId]) {
+      subReply.value[parentId] = '';
+    }
   }
 };
 
 // 대댓글 작성
 const writeReply = async (type, index) => {
-  console.log('type : ', type);
-  console.log('index : ', index);
-  console.log('reply.value : ', reply.value);
-  console.log('commentList.value : ', commentList.value);
-  console.log('commentList.value[index] : ', commentList.value[index]);
-
   // 댓글 ID -> 문자열 변환
   const commentId = String(commentList.value[index].record_id);
-  console.log('commentId : ', commentId);
-
   const replyContent = type === 'subReply' ? subReply.value[commentId] : reply.value[commentId];
 
   if (!replyContent) {
@@ -1932,8 +1911,6 @@ const writeReply = async (type, index) => {
   const writer = auditorList.value.find(
     (auditor) => auditor.user_id.replaceAll('-', '_') === user.user_id.replaceAll('-', '_')
   );
-  console.log('auditorList.value : ', auditorList.value);
-  console.log('writer : ', writer);
 
   try {
     const data = {
@@ -1947,15 +1924,12 @@ const writeReply = async (type, index) => {
     const config = {
       table: {
         name: 'comment_reply',
-        access_group: 'authorized'
+        access_group: 1
       },
       reference: commentList.value[index].record_id
     };
-    console.log('data : ', data);
-    console.log('config : ', config);
 
     const res = await skapi.postRecord(data, config);
-    console.log('== writeReply == res : ', res);
 
     // 대댓글 알림
     if (senderUser.value.user_id && senderUser.value.user_id !== user.user_id) {
@@ -2001,7 +1975,7 @@ const writeReply = async (type, index) => {
           readonly: true,
           table: {
             name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
-            access_group: 'authorized'
+            access_group: 1
           }
         })
         .then((res) => {
@@ -2027,201 +2001,185 @@ const writeReply = async (type, index) => {
     // 댓글 목록 갱신
     await getComment();
 
-    // 대댓글 목록 갱신 - 해당 댓글의 대댓글만 갱신
-    await getReply(index);
+    // 대댓글 목록 갱신
+    await getReply();
   }
 };
 
 // 대댓글 가져오기
-const getReply = async (index) => {
-  if (!commentList.value || !commentList.value[index]) {
-    console.error('유효하지 않은 댓글 인덱스:', index);
-    return [];
-  }
-
-  const commentId = commentList.value[index].record_id;
-
+const getReply = async () => {
   const res = await skapi.getRecords({
     table: {
       name: 'comment_reply',
-      access_group: 'authorized'
-    },
-    reference: commentId
+      access_group: 1
+    }
   });
 
-  if (res.list.length > 0) {
-    replyList.value = res.list;
-    return res.list;
-  } else {
-    replyList.value = [];
-  }
+  const groupReplies = {};
+
+  res.list.forEach((reply) => {
+    const commentId = String(reply.reference);
+
+    if (!groupReplies[commentId]) {
+      groupReplies[commentId] = [];
+    }
+    groupReplies[commentId].push(reply);
+  });
+
+  replyList.value = groupReplies;
+  return res.list;
 };
 
 // 댓글 수정 모드 전환
-const toggleEditMode = (type, index) => {
-  const commentId =
-    type === 'reply'
-      ? String(commentList.value[index].record_id)
-      : String(replyList.value[index].record_id);
+const toggleEditMode = (typeOrRecordId, indexOrIsComment) => {
+  let recordId;
 
-  isEditMode.value[commentId] = !isEditMode.value[commentId];
+  if (typeOrRecordId === 'reply' || typeOrRecordId === 'subReply') {
+    const type = typeOrRecordId;
+    const index = indexOrIsComment;
 
-  // 수정 모드 활성화시 기존 내용 복사
-  if (isEditMode.value[commentId]) {
-    editComment.value[commentId] =
-      type === 'reply'
-        ? commentList.value[index].data.comment
-        : replyList.value[index].data.comment;
+    if (type === 'reply') {
+      recordId = commentList.value[index].record_id;
+    } else {
+      const parentId = commentList.value[index].record_id;
+      if (replyList.value[parentId] && replyList.value[parentId][index]) {
+        recordId = replyList.value[parentId][index].record_id;
+      } else {
+        console.error('Reply not found');
+        return;
+      }
+    }
+  } else {
+    recordId = typeOrRecordId;
+  }
+
+  isEditMode.value[recordId] = !isEditMode.value[recordId];
+
+  if (isEditMode.value[recordId]) {
+    if (typeOrRecordId === 'reply' || (typeof indexOrIsComment === 'boolean' && indexOrIsComment)) {
+      const comment = commentList.value.find((c) => c.record_id === recordId);
+      if (comment) {
+        editComment.value[recordId] = comment.data.comment;
+      }
+    } else {
+      for (const commentId in replyList.value) {
+        const reply = replyList.value[commentId]?.find((r) => r.record_id === recordId);
+        if (reply) {
+          editComment.value[recordId] = reply.data.comment;
+          break;
+        }
+      }
+    }
   }
 };
 
 // 댓글 수정
-const editReply = async (type, index) => {
-  console.log('댓글 수정', type, index);
-
-  // 원본 댓글 데이터 및 ID 가져오기
-  const originalData = type === 'reply' ? commentList.value[index] : replyList.value[index];
-  const commentId = String(originalData.record_id);
-  console.log('== AA == originalData : ', originalData);
-
-  if (!editComment.value[commentId]) {
-    alert('수정할 내용을 입력해주세요.');
-    return;
-  }
-
+const editReply = async (type, index, parentId = null) => {
   try {
-    // 원본 데이터 복사 후 내용만 수정
-    const data = {
-      ...originalData.data,
-      comment: editComment.value[commentId],
-      edited: true, // 수정 여부
-      edit_date: new Date().getTime() // 수정 시간
-    };
+    let targetItem;
 
-    const config = {
-      table: {
-        name: type === 'reply' ? 'audit_comment' : 'comment_reply',
-        access_group: 'authorized'
-      },
-      record_id: originalData.record_id
-    };
-
-    // 대댓글인 경우 참조 추가
-    if (type !== 'reply') {
-      config.reference = originalData.reference;
+    if (type === 'reply') {
+      targetItem = commentList.value[index];
+    } else {
+      if (!parentId || !replyList.value[parentId]) {
+        throw new Error('대댓글의 부모 ID가 필요합니다');
+      }
+      targetItem = replyList.value[parentId][index];
     }
 
-    // await skapi
-    //   .deleteRecords({
-    //     record_id: originalData.record_id
-    //   })
-    //   .then((r) => {
-    //     console.log('== deleteRecords == r:', r);
-    //     console.log('originalData.record_id : ', originalData.record_id);
-    //     console.log('data : ', data);
-    //     console.log('config : ', config);
-    //     skapi.postRecord(data, config);
-    //   })
-    //   .then((res) => {
-    //     console.log('== postRecord == res:', res);
-    //     originalData.data.comment = res.data.comment; // 댓글 내용 업데이트
-    //     return res;
-    //   });
+    if (!targetItem) {
+      throw new Error(`수정할 ${type === 'reply' ? '댓글' : '대댓글'}을 찾을 수 없습니다`);
+    }
 
-    const res = await skapi.postRecord(data, config);
-    console.log('== editReply == res:', res);
+    const recordId = targetItem.record_id;
 
-    isEditMode.value[commentId] = false;
+    if (!editComment.value[recordId]) {
+      alert('수정할 내용을 입력해주세요.');
+      return;
+    }
 
-    console.log('== BB == originalData : ', originalData);
+    const result = await skapi.postRecord(
+      {
+        ...targetItem.data,
+        comment: editComment.value[recordId],
+        edited: true,
+        edit_date: new Date().getTime()
+      },
+      {
+        table: {
+          name: type === 'reply' ? 'audit_comment' : 'comment_reply',
+          access_group: 1
+        },
+        record_id: recordId,
+        ...(type === 'reply' ? {} : { reference: targetItem.reference || parentId }) // 대댓글인 경우 reference 추가
+      }
+    );
 
-    // 목록 갱신
+    isEditMode.value[recordId] = false;
+
     if (type === 'reply') {
-      console.log('AA');
-      if (commentList.value[index]) {
-        commentList.value[index].data = res.data;
-        console.log('댓글 업데이트 완료 : ', res.data);
+      // 댓글 목록 업데이트
+      const updatedIndex = commentList.value.findIndex((c) => c.record_id === recordId);
+      if (updatedIndex !== -1) {
+        commentList.value[updatedIndex].data = result.data;
       }
-
-      // await getComment().then((res) => {
-      //   console.log('댓글 수정 후 댓글 목록 갱신:', res);
-      // });
     } else {
-      console.log('BB');
-      const replyIndex = replyList.value.findIndex((r) => r.record_id === originalData.record_id);
-      console.log('replyIndex : ', replyIndex);
-      if (replyIndex >= 0) {
-        replyList.value[replyIndex].data = res.data;
-        console.log('대댓글 업데이트 완료');
+      // 대댓글 목록 업데이트
+      if (parentId && replyList.value[parentId]) {
+        const replyIndex = replyList.value[parentId].findIndex((r) => r.record_id === recordId);
+        if (replyIndex !== -1) {
+          replyList.value[parentId][replyIndex].data = result.data;
+        }
       }
-      // 전체 대댓글 목록 새로고침
-      // await getReply(index);
     }
   } catch (error) {
-    console.error('댓글 수정 오류:', error);
+    console.error('수정 오류:', error);
+    alert('수정 중 오류가 발생했습니다: ' + error.message);
   }
 };
 
 // 댓글 삭제
-const deleteReply = async (type, index) => {
-  if (!confirm('정말 삭제하시겠습니까?')) {
-    return;
-  }
-
-  // 댓글 또는 대댓글 객체 선택
-  const targetData = type === 'reply' ? commentList.value[index] : replyList.value[index];
-  const parentId = targetData.record_id;
-  console.log('parentId : ', parentId);
-  console.log('targetData : ', targetData);
+const deleteReply = async (recordId, isComment = true) => {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
 
   try {
-    // 삭제할 record_id
-    let delRecords = [];
+    // 댓글인 경우 (해당 대댓글도 삭제)
+    if (isComment) {
+      const commentId = String(recordId);
 
-    if (type === 'reply') {
-      // 댓글 삭제 (대댓글 포함)
-      const subReply = replyList.value.filter((reply) => reply.reference === parentId);
-
-      // 댓글 + 대댓글
-      delRecords = [
-        { id: parentId, table: 'audit_comment' },
-        ...subReply.map((reply) => ({
-          id: reply.record_id,
-          table: 'comment_reply'
-        }))
-      ];
-    } else {
-      // 대댓글 삭제
-      delRecords = [{ id: parentId, table: 'comment_reply' }];
-    }
-
-    await Promise.all(
-      delRecords.map(({ id, table }) => {
-        console.log('id : ', id);
-        console.log('table : ', table);
-
-        skapi.deleteRecords({
-          table: {
-            name: table,
-            access_group: 'authorized'
-          },
-          record_id: id
+      const subReplies = replyList.value[commentId] || [];
+      if (subReplies.length > 0) {
+        await skapi.deleteRecords({
+          table: { name: 'comment_reply', access_group: 1 },
+          record_id: subReplies.map((reply) => reply.record_id)
         });
-      })
-    );
+      }
 
-    // 목록 갱신
-    if (type === 'reply') {
-      commentList.value = commentList.value.filter((item) => item.record_id !== parentId);
-      replyList.value = replyList.value.filter((item) => item.reference !== parentId);
-      // await getComment(); // 댓글 + 대댓글 전체 갱신
-    } else {
-      await getReply(index); // 대댓글만 갱신
+      await skapi.deleteRecords({
+        table: { name: 'audit_comment', access_group: 1 },
+        record_id: commentId
+      });
+
+      const index = commentList.value.findIndex((c) => String(c.record_id) === commentId);
+      if (index !== -1) commentList.value.splice(index, 1);
+      delete replyList.value[commentId];
     }
+    // 대댓글인 경우 (해당 항목만 삭제)
+    else {
+      await skapi.deleteRecords({
+        table: { name: 'comment_reply', access_group: 1 },
+        record_id: recordId
+      });
 
-    alert('삭제되었습니다.');
+      Object.keys(replyList.value).forEach((key) => {
+        const index = replyList.value[key].findIndex((r) => r.record_id === recordId);
+        if (index !== -1) replyList.value[key].splice(index, 1);
+      });
+    }
+    alert('의견이 삭제되었습니다.');
   } catch (error) {
-    console.error('댓글 삭제 오류:', error);
+    console.error('== deleteReply == error : ', error);
+    alert('삭제 중 오류가 발생했습니다.');
   }
 };
 

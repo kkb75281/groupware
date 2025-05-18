@@ -447,7 +447,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 												li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index")
 													span.refer-doc-name {{ doc?.data?.to_audit }}
 											template(v-else)
-												li(style="color:var(--gray-color-300);") 등록된 참조 문서가 없습니다.
+												li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
 		.modal-footer(style="padding-top: 0; border-top: none;")
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeDocModal") 닫기
