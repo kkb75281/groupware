@@ -107,7 +107,6 @@ import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
 import { divisionNameList } from '@/division.ts';
 
 import Organigram from '@/components/organigram.vue';
-import { organigram } from '@/components/organigram';
 
 const router = useRouter();
 const route = useRoute();
@@ -125,7 +124,6 @@ const selectedEmps = ref([]); // 공개범위 직원 정보 저장
 const selectedEmpsArr = ref([]); // 공개범위 직원 정보 저장
 const notiSetting = ref(true); // 알림 설정 관련 체크박스
 const backupSelected = ref(null); // 선택된 공개범위 직원 백업
-const checkedUsers = ref([]); // 체크된 직원
 
 const uploadedFile = ref([]); // 첨부파일
 const fileNames = ref([]);
@@ -188,11 +186,7 @@ const getEditModeCat = async () => {
 // 공개범위 모달 열기
 const openModal = () => {
   // 열렸을 때 selectedEmps 전체를 original로 백업
-  backupSelected.value = {
-    employees: [...selectedEmps.value],
-    divisions: JSON.parse(JSON.stringify(selectedDivision.value))
-  };
-
+  backupSelected.value = [...selectedEmps.value];
   selectedEmpsArr.value = selectedEmps.value.map((user) => {
     return [user];
   });
@@ -203,15 +197,16 @@ const openModal = () => {
 // 공개범위 모달 닫기
 const closeModal = () => {
   if (backupSelected.value) {
-    selectedEmps.value = [...backupSelected.value.employees];
-    selectedDivision.value = JSON.parse(JSON.stringify(backupSelected.value.divisions));
+    console.log('backupSelected.value : ', backupSelected.value);
+    selectedEmps.value = [...backupSelected.value];
   } else {
     selectedEmps.value = [];
-    selectedDivision.value = {};
   }
 
+  selectedDivision.value = {};
   selectedUsers.value = [];
-  backupSelected.value = null;
+
+  // backupSelected.value = null;
   isModalOpen.value = false;
 };
 
@@ -269,63 +264,17 @@ const saveAuditor = () => {
   console.log('저장 직원 : ', selectedEmps.value);
 };
 
-const undoChecked = (divisionName) => {
-  console.log('divisionName : ', divisionName);
-
-  // 재귀적으로 부서 찾기
-  const findUncheckDepartment = (departments) => {
-    console.log('departments : ', departments);
-
-    for (const dept of departments) {
-      console.log('dept : ', dept);
-
-      // 현재 부서가 찾는 부서인지 확인
-      if (dept.division === divisionName) {
-        // 부서 체크박스 해제
-        dept.isChecked = false;
-
-        // 부서 멤버들도 체크 해제
-        if (dept.members && dept.members.length > 0) {
-          dept.members.forEach((member) => {
-            member.isChecked = false;
-
-            // checkedUsers에서도 제거
-            const index = checkedUsers.value.findIndex(
-              (user) => user.data?.user_id === member.data?.user_id
-            );
-            if (index !== -1) {
-              checkedUsers.value.splice(index, 1);
-            }
-          });
-        }
-
-        return true; // 찾았으면 종료
-      }
-
-      // 하위 부서에서 찾기
-      if (dept.subDepartments && dept.subDepartments.length > 0) {
-        if (findUncheckDepartment(dept.subDepartments)) {
-          return true;
-        }
-      }
-    }
-
-    return false; // 못 찾았으면 계속 진행
-  };
-
-  // 최상위 부서부터 검색 시작
-  findUncheckDepartment(organigram.value);
-};
-
 // 공개범위 모달에서 선택된 부서 삭제
 const removeDvs = (divisionName) => {
   if (selectedDivision.value[divisionName]) {
-    // 조직도에서 해당 부서 찾아 체크 해제하는 함수 호출
-    undoChecked(divisionName);
+    // 해당 부서의 모든 사용자 체크 해제
+    // selectedUsers.value = selectedUsers.value.filter(
+    //   (user) => user.index.name.split('.')[0] !== divisionName
+    // );
 
     delete selectedDivision.value[divisionName];
     selectedDivision.value = JSON.parse(JSON.stringify(selectedDivision.value));
-    console.log('== removeDvs == selectedDivision.value :', selectedDivision.value);
+    console.log('삭제 == selectedDivision :', selectedDivision.value);
   }
 };
 

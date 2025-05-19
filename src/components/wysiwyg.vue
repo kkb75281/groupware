@@ -139,7 +139,7 @@ let commandTracker = ref({
     italic: false,
     small: false,
     strike: false,
-    underline: false,
+    underline: false
 });
 
 // 테이블 행, 열 크기 설정
@@ -159,7 +159,7 @@ const insertTable = () => {
     insertTableToWysiwyg(
         wysiwyg,
         tableRows.value,
-        tableCols.value,
+        tableCols.value
         // true, // Vue 컴포넌트 사용 (false로 설정하면 DOM 방식 사용)
         // props.showBtn // 행, 열 추가 버튼 사용
     );
@@ -211,7 +211,7 @@ const updateColorPickerToSelectedCells = () => {
         const r = parseInt(matches[1]);
         const g = parseInt(matches[2]);
         const b = parseInt(matches[3]);
-        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+        return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
     }
 
     // 텍스트 색상
@@ -238,7 +238,7 @@ const handleColorInput = (type, colorValue) => {
     const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
 
     if (selectedCells.length > 0) {
-        selectedCells.forEach(cell => {
+        selectedCells.forEach((cell) => {
             if (type === 'textColor') {
                 cell.style.color = colorValue;
             } else if (type === 'bgColor') {
@@ -270,7 +270,6 @@ const onColorInputMouseDown = (type, event) => {
 // 에디터 명령어 처리
 const handleCommand = (command) => {
     if (!wysiwyg) return;
-
     // 색상 값이 직접 전달된 경우 (#색상값 형식)
     else if (typeof command === 'string' && command.startsWith('#')) {
         console.log('BB 색상 값:', command);
@@ -553,6 +552,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
     wysiwyg = null;
 
+    document.removeEventListener('keydown', handleEditorKeyDown);
+    document.removeEventListener('keyup', handleEditorKeyUp);
     document.removeEventListener('keydown', handleEditorKeyDown);
     document.removeEventListener('keyup', handleEditorKeyUp);
 });
