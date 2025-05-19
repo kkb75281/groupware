@@ -39,61 +39,68 @@ const getIconPath = computed(() => (iconName) => {
 });
 
 let checkRouteName = (routeName) => {
-	if(routeName === 'audit-detail' && isSendingValue.value) {
-		activeMenu.value = 'request-list';
-		return;
-	} else if(routeName === 'audit-detail' && !isSendingValue.value) {
-		activeMenu.value = 'audit-list';
-		return;
-	}
+  if (routeName === 'audit-detail' && isSendingValue.value) {
+    activeMenu.value = 'request-list';
+    return;
+  } else if (routeName === 'audit-detail' && !isSendingValue.value) {
+    activeMenu.value = 'audit-list';
+    return;
+  }
 
-	let childList = menuList.value.filter((item) => item.child);
-	let foundChild = childList.find((item) => item.child.some((child) => child === routeName));
+  let childList = menuList.value.filter((item) => item.child);
+  let foundChild = childList.find((item) => item.child.some((child) => child === routeName));
 
-	if (foundChild) {
-		activeMenu.value = foundChild.name;
-		return;
-	}
+  if (foundChild) {
+    activeMenu.value = foundChild.name;
+    return;
+  }
 
-	activeMenu.value = routeName;
-}
+  activeMenu.value = routeName;
+};
 
-watch(() => props.menuList, (nv) => {
-	menuList.value = nv;
-	checkRouteName(route.name);
-}, { immediate: true });
+watch(
+  () => props.menuList,
+  (nv) => {
+    menuList.value = nv;
+    checkRouteName(route.name);
+  },
+  { immediate: true }
+);
 
-watch(() => route.query, (nv) => {
-	if(nv.isSending) {
-		isSendingValue.value = true;
-	} else {
-		isSendingValue.value = false;
-	}
-}, { immediate: true });
+watch(
+  () => route.query,
+  (nv) => {
+    if (nv.isSending) {
+      isSendingValue.value = true;
+    } else {
+      isSendingValue.value = false;
+    }
+  },
+  { immediate: true }
+);
 
-watch(() => route.name, (nv) => {
-	checkRouteName(nv);
-},{ immediate: true });
+watch(
+  () => route.name,
+  (nv) => {
+    checkRouteName(nv);
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped lang="less">
 #navbar {
-  // width: var(--navbar-width);
-  // height: 100vh;
+  width: 4.625rem;
   height: calc(100vh - var(--header-height));
   position: fixed;
   top: var(--header-height);
   left: 0;
-  // margin-top: var(--header-height);
+  overflow-x: hidden;
   overflow-y: overlay;
   background-color: #fff;
-  // box-shadow: 5px 1px 20px rgba(0, 0, 0, 0.2);
   border-right: 1px solid rgba(0, 0, 0, 0.1);
-
-	z-index: 9998;
-	// transition: width 0.15s linear;
-	// transition: left 0.15s linear;
-	transition: all 0.3s;
+  z-index: 9998;
+  transition: width 0.3s ease-in-out;
 
   .navbar-wrap {
     overflow: hidden;
@@ -101,11 +108,13 @@ watch(() => route.name, (nv) => {
   }
 
   &:hover {
+    width: 10rem;
+
     .menu-item {
       .item {
         .router {
           .text {
-            display: flex;
+            display: inline;
           }
         }
       }
@@ -118,12 +127,10 @@ watch(() => route.name, (nv) => {
 
   .logo {
     height: var(--header-height);
-    // box-shadow: 1px 1px 10px rgba(0,0,0,0.03);
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
-    // padding: 1rem 20px 0;
     padding: 0 16px;
     margin-bottom: 30px;
     cursor: pointer;
@@ -163,6 +170,9 @@ watch(() => route.name, (nv) => {
     .item {
       // margin-top: 0.8rem;
 
+      display: flex;
+      align-items: center;
+
       &:first-child {
         margin-top: 0;
       }
@@ -196,33 +206,32 @@ watch(() => route.name, (nv) => {
       }
     }
 
-		.router {
-			display: flex;
-			flex-wrap: nowrap;
-			align-items: center;
-			gap: 4px;
-			// justify-content: center;
-			// padding: 1.2rem 1.25rem 1.2rem 0.75rem;
-			// padding: 1.2rem 0.875rem 1.2rem 0.25rem;
-			padding: 1rem 0.5rem;
-			border-radius: 36px;
-			transition: all 0.3s;
-			cursor: pointer;
+    .router {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 4px;
+      padding: 1rem 0.5rem;
+      border-radius: 36px;
+      transition: all 0.3s;
+      cursor: pointer;
+      width: 100%;
 
-			.text {
-				// flex-grow: 1;
-				display: flex;
-				align-items: center;
-				// justify-content: space-between;
-				justify-content: center;
-				padding-right: 12px;
-				display: none;
-			}
-			.arrow {
-				width: max(1.2rem, 16px);
-				height: max(1.2rem, 16px);
-				fill: #b7b7b7;
-				transition: all 0.3s;
+      .text {
+        // display: flex;
+        // align-items: center;
+        // justify-content: center;
+        padding-right: 12px;
+        display: none;
+        white-space: nowrap;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      .arrow {
+        width: max(1.2rem, 16px);
+        height: max(1.2rem, 16px);
+        fill: #b7b7b7;
+        transition: all 0.3s;
 
         &.down {
           transform: rotate(90deg);

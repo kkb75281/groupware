@@ -868,6 +868,7 @@ const getAuditDetail = async () => {
         record_id: auditId.value
       })
     ).list[0];
+    console.log('auditDoc : ', auditDoc);
 
     if (auditDoc) {
       auditDoContent.value = auditDoc;
