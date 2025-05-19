@@ -162,6 +162,7 @@ export function bindCellEvents(tableState, cell) {
   });
 
   cell.addEventListener('mouseover', () => {
+    console.log(tableState.isDragging, tableState.isResizings);
     if (tableState.isDragging) {
       highlightDrag(tableState, cell);
     }
@@ -201,19 +202,14 @@ export function addResizer(tableState, cell) {
   resizer.onmousedown = (e) => {
     e.stopPropagation();
     tableState.isResizing = true;
-
-    // 다른 리사이저 active 제거
     document.querySelectorAll('.resizer').forEach((r) => r.classList.remove('active'));
-
-    // 현재 리사이저에만 active 적용
     resizer.classList.add('active');
-
     resizeColumn(e, tableState, cell);
   };
 
   // 마우스 진입 시 active 추가 (리사이징 중이 아닐 때만)
   resizer.onmouseenter = (e) => {
-    if (!tableState.isResizing || !tableState.isDragging) {
+    if (!tableState.isResizing && !tableState.isDragging) {
       e.currentTarget.classList.add('active');
     }
   };
@@ -239,7 +235,7 @@ export function addResizer(tableState, cell) {
   };
 
   resizerBottom.onmouseenter = (e) => {
-    if (!tableState.isResizing || !tableState.isDragging) {
+    if (!tableState.isResizing && !tableState.isDragging) {
       e.currentTarget.classList.add('active');
     }
   };
