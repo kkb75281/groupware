@@ -553,7 +553,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     wysiwyg = null;
 
-    document.addEventListener('keydown', handleEditorKeyDown);
+    document.removeEventListener('keydown', handleEditorKeyDown);
     document.removeEventListener('keyup', handleEditorKeyUp);
 });
 
