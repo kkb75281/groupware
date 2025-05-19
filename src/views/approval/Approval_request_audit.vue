@@ -159,7 +159,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 													use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 									td(colspan="3")
 										.wysiwyg-wrap(style="cursor: text;")
-											Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'tempsave' ? tempSaveData?.data?.form_content : route.query.mode === 'reRequest' ? reRequestData?.data?.to_audit_content : selectedForm?.data?.form_content" :showBtn="true")
+											Wysiwyg(ref="myWysiwyg" @editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'tempsave' ? tempSaveData?.data?.form_content : route.query.mode === 'reRequest' ? reRequestData?.data?.to_audit_content : selectedForm?.data?.form_content" :showBtn="true")
 											textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 								tr
@@ -462,19 +462,15 @@ import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe, verifiedEmail } from '@/user.ts';
 import { getUserInfo } from '@/employee.ts';
 import { divisionNameList } from '@/division.ts';
+import { reRequestData } from '@/audit.ts';
 import {
-  reRequestData,
-  auditList,
-  auditListRunning,
-  auditReferenceList,
-  auditReferenceListRunning,
-  getAuditList,
-  getAuditReferenceList,
-  sendAuditList,
-  getSendAuditList
-} from '@/audit.ts';
+  addResizer,
+  bindCellEvents,
+  initButtons,
+  tableSelection,
+  clearSelection
+} from '@/components/wysiwygTable.js';
 
-import Loading from '@/components/loading.vue';
 import Organigram from '@/components/organigram.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
 
@@ -500,6 +496,7 @@ const pageTitle = computed(() => {
   return route.query.mode === 'template' ? '결재 양식 등록' : '결재 작성';
 });
 
+const myWysiwyg = ref(null);
 const isModalOpen = ref(false);
 const isRowModalOpen = ref(false); // 작성란 추가 모달
 const showBackStep = ref(true);
@@ -526,16 +523,14 @@ const rejectSetting = ref(false); // 반려 설정 관련 체크박스
 
 const prevSelected = ref([]);
 const backupSelected = ref(null); // 선택된 결재자 백업
-const same_division_auditors = ref({}); // 동일 부서 직원 목록
 let send_auditors_arr = [];
 
 const uploadedFile = ref([]);
-const backupUploadFile = ref([]);
 const removeFileList = ref([]);
 const fileNames = ref([]);
 
-const addRows = ref([]);
 let step = ref(1);
+const addRows = ref([]);
 const formTitle = ref(''); // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
 const auditTitle = ref(''); // 결재건 제목
 const disabled = ref(false);
@@ -552,19 +547,9 @@ const modalUploadedFile = ref(null); // 참조문서 첨부파일
 const modalReferDoc = ref(null); // 참조문서 모달
 
 // 에디터 상태 관리
+const editor = ref(null);
 const editorContent = ref('');
 const editorIsReady = ref(false);
-
-// 에디터 내용이 변경 감지
-watch(editorContent, (newContent) => {
-  if (!newContent || newContent === '') {
-    // 내용이 완전히 비어있는 경우 기본 p 태그 추가
-    const editorElement = document.getElementById('myeditor');
-    if (editorElement && (!editorElement.innerHTML || editorElement.innerHTML === '')) {
-      editorElement.innerHTML = '<p><br></p>';
-    }
-  }
-});
 
 // 결재라인 모달 열기
 const openModal = () => {
@@ -688,12 +673,12 @@ const previewAudit = () => {
     const style = document.createElement('style');
     style.id = 'print-style';
     style.textContent = `
-      @media print {
-        body * { visibility: hidden !important; }
-        #printArea, #printArea * { visibility: visible !important; }
-        #printArea { position: absolute; left: 0; top: 0; width: 100%; }
-      }
-    `;
+          @media print {
+            body * { visibility: hidden !important; }
+            #printArea, #printArea * { visibility: visible !important; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+          }
+        `;
     document.head.appendChild(style);
   };
 
@@ -922,6 +907,8 @@ const removeAuditor = (user, type) => {
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
 
+  console.log('에디터 준비 상태:', status);
+
   // 에디터가 준비되었을 때
   if (status) {
     setTimeout(() => {
@@ -940,336 +927,90 @@ const handleEditorReady = (status) => {
   }
 };
 
-// 테이블 편집 기능 활성화 함수
 const activateTableEditing = (editorElement) => {
-  // 테이블 찾기
-  const tables = editorElement.querySelectorAll('table');
+  const tableWraps = editorElement.querySelectorAll('.wysiwyg-table-wrap');
 
-  tables.forEach((table) => {
-    // 테이블 클래스 추가
-    if (!table.classList.contains('wysiwyg-table')) {
-      table.classList.add('wysiwyg-table');
-    }
-
-    // 테이블에 리사이즈 속성 추가
-    table.setAttribute('data-resizable', 'true');
-
-    // 테이블 내 모든 셀을 편집 가능하게 설정
-    const cells = table.querySelectorAll('td');
-    cells.forEach((cell) => {
-      cell.contentEditable = 'true';
-      cell.removeAttribute('disabled');
-
-      // 포커스 이벤트 추가
-      cell.addEventListener('focus', () => {
-        cell.style.outline = '2px solid #4a90e2';
-      });
-
-      cell.addEventListener('blur', () => {
-        cell.style.outline = 'none';
-      });
-    });
-
-    // 테이블 컨테이너 확인 또는 생성
-    let tableWrap = table.closest('.wysiwyg-table-wrap');
-    if (!tableWrap) {
-      // 테이블을 컨테이너로 감싸기
-      tableWrap = document.createElement('div');
-      tableWrap.className = 'wysiwyg-table-wrap';
-      table.parentNode.insertBefore(tableWrap, table);
-      tableWrap.appendChild(table);
-    }
-
-    // 기존 컨트롤 버튼과 리사이저 제거
-    const existingControls = tableWrap.querySelectorAll('.btn-control-wrap, .table-resizer');
-    existingControls.forEach((control) => control.remove());
-
-    // 테이블 리사이저 추가
-    addTableResizers(table, tableWrap);
-
-    // 행 컨트롤 버튼 그룹 생성
-    const rowControlWrap = document.createElement('div');
-    rowControlWrap.contentEditable = 'false';
-    rowControlWrap.tabIndex = '-1';
-    rowControlWrap.className = 'btn-control-wrap control-row';
-
-    // 행 추가 버튼
-    const addRowBtn = document.createElement('button');
-    addRowBtn.className = 'btn-add';
-    addRowBtn.type = 'button';
-    addRowBtn.textContent = '+';
-
-    // 행 추가 이벤트
-    addRowBtn.addEventListener('click', () => {
-      const tr = document.createElement('tr');
-
-      // 현재 테이블의 첫 번째 행을 기준으로 열 수 가져오기
-      const tbody = table.querySelector('tbody') || table;
-      const currentCols = tbody.firstChild ? tbody.firstChild.childNodes.length : 3;
-
-      for (let c = 0; c < currentCols; c++) {
-        const td = document.createElement('td');
-        td.contentEditable = 'true';
-        td.innerHTML = '&nbsp;';
-
-        // 포커스 이벤트
-        td.addEventListener('focus', () => {
-          td.style.outline = '2px solid #4a90e2';
-        });
-
-        td.addEventListener('blur', () => {
-          td.style.outline = 'none';
-        });
-
-        tr.appendChild(td);
+  // 테이블 각각에 대해 편집 기능 활성화
+  tableWraps.forEach((wrap) => {
+    let state = {
+      tableWrap: wrap,
+      table: wrap.querySelector('table'),
+      tbody: wrap.querySelector('tbody'),
+      mergeBtn: wrap.querySelector('.btn-merge'),
+      unmergeBtn: wrap.querySelector('.btn-unmerge'),
+      isResizing: false,
+      isDragging: false,
+      isSelection: false,
+      isMouseDown: false,
+      selectionStart: null,
+      outlinePosition: {
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0
       }
-
-      tbody.appendChild(tr);
-
-      // 행 추가 후 리사이저 업데이트
-      addTableResizers(table, tableWrap);
-    });
-
-    // 행 삭제 버튼
-    const removeRowBtn = document.createElement('button');
-    removeRowBtn.className = 'btn-remove';
-    removeRowBtn.type = 'button';
-    removeRowBtn.textContent = '-';
-
-    // 행 삭제 이벤트
-    removeRowBtn.addEventListener('click', () => {
-      const tbody = table.querySelector('tbody') || table;
-      if (tbody.childNodes.length > 1) {
-        tbody.removeChild(tbody.lastChild);
-
-        // 행 삭제 후 리사이저 업데이트
-        addTableResizers(table, tableWrap);
-      }
-    });
-
-    // 열 컨트롤 버튼 그룹 생성
-    const colControlWrap = document.createElement('div');
-    colControlWrap.contentEditable = 'false';
-    colControlWrap.tabIndex = '-1';
-    colControlWrap.className = 'btn-control-wrap control-col';
-
-    // 열 추가 버튼
-    const addColBtn = document.createElement('button');
-    addColBtn.className = 'btn-add';
-    addColBtn.type = 'button';
-    addColBtn.textContent = '+';
-
-    // 열 추가 이벤트
-    addColBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      const rows = table.rows;
-      for (let i = 0; i < rows.length; i++) {
-        const td = document.createElement('td');
-        td.contentEditable = 'true';
-        td.innerHTML = '&nbsp;';
-
-        td.addEventListener('focus', () => {
-          td.style.outline = '2px solid #4a90e2';
-        });
-
-        td.addEventListener('blur', () => {
-          td.style.outline = 'none';
-        });
-
-        rows[i].appendChild(td);
-      }
-
-      // 열 추가 후 리사이저 업데이트
-      addTableResizers(table, tableWrap);
-    });
-
-    // 열 삭제 버튼
-    const removeColBtn = document.createElement('button');
-    removeColBtn.className = 'btn-remove';
-    removeColBtn.type = 'button';
-    removeColBtn.textContent = '-';
-
-    // 열 삭제 이벤트
-    removeColBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      const rows = table.rows;
-      for (let i = 0; i < rows.length; i++) {
-        if (rows[i].childNodes.length > 1) {
-          rows[i].removeChild(rows[i].lastChild);
-        }
-      }
-
-      // 열 삭제 후 리사이저 업데이트
-      addTableResizers(table, tableWrap);
-    });
-
-    // 컨트롤 버튼 추가
-    rowControlWrap.appendChild(addRowBtn);
-    rowControlWrap.appendChild(removeRowBtn);
-
-    colControlWrap.appendChild(addColBtn);
-    colControlWrap.appendChild(removeColBtn);
-
-    // 모든 컨트롤 추가
-    tableWrap.appendChild(rowControlWrap);
-    tableWrap.appendChild(colControlWrap);
+    };
+    addEventListeners(state);
   });
-};
 
-// 테이블 리사이저 추가 함수
-const addTableResizers = (table, tableWrap) => {
-  // 기존 리사이저 제거
-  const existingResizers = tableWrap.querySelectorAll('.table-resizer');
-  existingResizers.forEach((resizer) => resizer.remove());
+  function addEventListeners(state) {
+    const rows = state.table.querySelectorAll('tr');
 
-  // 열 리사이저 추가
-  if (table.rows.length > 0) {
-    const firstRow = table.rows[0];
-    const cellCount = firstRow.cells.length;
+    for (let r = 0; r < rows.length; r++) {
+      const cols = rows[r].querySelectorAll('td');
 
-    for (let i = 0; i < cellCount - 1; i++) {
-      const cell = firstRow.cells[i];
+      for (let c = 0; c < cols.length; c++) {
+        const cell = cols[c];
 
-      const resizer = document.createElement('div');
-      resizer.className = 'table-resizer col-resizer';
-      resizer.setAttribute('data-col-index', i);
-
-      // 위치 계산 및 설정
-      const left = cell.offsetLeft + cell.offsetWidth + 4;
-
-      resizer.style.left = `${left}px`;
-      resizer.style.height = `${table.offsetHeight}px`;
-
-      // 드래그 이벤트 설정
-      resizer.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        tableWrap.classList.add('resizing-table');
-
-        const startX = e.clientX;
-        const startWidthCell = cell.offsetWidth;
-        const nextCell = firstRow.cells[i + 1];
-        const startWidthNextCell = nextCell.offsetWidth;
-
-        resizer.classList.add('active');
-
-        function onMouseMove(e) {
-          const diffX = e.clientX - startX;
-
-          // 최소 너비 제한
-          if (startWidthCell + diffX < 30 || startWidthNextCell - diffX < 30) return;
-
-          // 모든 행의 해당 열 셀 크기 변경
-          for (let j = 0; j < table.rows.length; j++) {
-            const currentCell = table.rows[j].cells[i];
-            const currentNextCell = table.rows[j].cells[i + 1];
-
-            currentCell.style.width = `${startWidthCell + diffX}px`;
-            currentNextCell.style.width = `${startWidthNextCell - diffX}px`;
-          }
-
-          // 리사이저 위치 업데이트
-          const newLeft = currentCell.offsetLeft + currentCell.offsetWidth - 4;
-          resizer.style.left = `${newLeft}px`;
-        }
-
-        function onMouseUp() {
-          resizer.classList.remove('active');
-          tableWrap.classList.remove('resizing-table');
-
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-
-          // 리사이저 위치 업데이트
-          addTableResizers(table, tableWrap);
-        }
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-      });
-
-      tableWrap.appendChild(resizer);
+        addResizer(state, cell);
+        bindCellEvents(state, cell);
+      }
     }
-  }
 
-  // 행 리사이저 추가
-  const rowCount = table.rows.length;
+    initButtons(state);
 
-  // 행 리사이저 추가 부분 수정
-  for (let i = 0; i < rowCount; i++) {
-    const row = table.rows[i];
+    document.addEventListener('mouseup', () => {
+      const mergeBtn = state.tableWrap.querySelector('.btn-merge');
+      state.mergeBtn.classList.remove('active');
 
-    const resizer = document.createElement('div');
-    resizer.className = 'table-resizer row-resizer';
-    resizer.setAttribute('data-row-index', i);
-
-    // 위치 계산 및 설정
-    const top = row.offsetTop + row.offsetHeight + 2;
-    const left = row.offsetLeft + 5;
-
-    resizer.style.top = `${top}px`;
-    resizer.style.left = `${left}px`;
-    resizer.style.width = `${table.offsetWidth}px`;
-
-    // 드래그 이벤트 설정
-    resizer.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      tableWrap.classList.add('resizing-table');
-
-      const startY = e.clientY;
-      const startHeight = row.offsetHeight;
-
-      resizer.classList.add('active');
-
-      function onMouseMove(e) {
-        const diffY = e.clientY - startY;
-
-        // 최소 높이 제한
-        if (startHeight + diffY < 20) return;
-
-        // 셀들의 높이 지정
-        const cells = row.cells;
-        for (let j = 0; j < cells.length; j++) {
-          cells[j].style.height = `${startHeight + diffY}px`;
+      if (state.isDragging) {
+        const selected = state.table.querySelectorAll('td.dragged-cell');
+        if (selected.length >= 2) {
+          mergeBtn.classList.add('active'); // 조건에 따라 활성화
         }
-
-        // 전체 행의 높이도 설정
-        row.style.height = `${startHeight + diffY}px`;
-
-        // 리사이저 위치 업데이트
-        resizer.style.top = `${row.offsetTop + row.offsetHeight - 4}px`;
       }
 
-      function onMouseUp() {
-        resizer.classList.remove('active');
-        tableWrap.classList.remove('resizing-table');
+      state.isMouseDown = false;
+      state.isDragging = false;
+      state.isSelection = false;
 
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-
-        // 리사이저 위치 업데이트
-        setTimeout(() => {
-          addTableResizers(table, tableWrap);
-        }, 0);
-      }
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+      tableSelection(state);
     });
 
-    tableWrap.appendChild(resizer);
+    document.addEventListener('click', (e) => {
+      if (state.table && !state.table.contains(e.target)) {
+        if (e.target.closest('.btn-custom')) {
+          return;
+        }
+        state.isSelection = false;
+        clearSelection(state.table);
+        tableSelection(state);
+      }
+    });
   }
 };
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
   // 내용이 비어있을 때 기본 p 태그 유지
-  editorContent.value = content && content.trim() !== '' ? content : '<p><br></p>';
+  // editorContent.value = content && content.trim() !== '' ? content : '<p><br></p>';
+  editor.value = content;
+  editorContent.value = content.html;
+  console.log('에디터 내보내기:', content);
+};
+
+const importWysiwygData = async () => {
+  await myWysiwyg.value.exportData();
 };
 
 // 첨부파일 삭제
@@ -1283,69 +1024,23 @@ const removeFile = (file, index) => {
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
+  // let target = e.target;
+  // console.log('target : ', target);
+
+  // if (target.files) {
+  //   fileNames.value = Array.from(target.files).map((file) => file.name);
+  //   console.log('fileNames.value : ', fileNames.value);
+  // }
+
   const newFiles = Array.from(e.target.files);
   uploadedFile.value.push(...newFiles);
   fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
   e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
-};
 
-// 참조문서 정보 저장
-const saveReferenceDocsInfo = async (auditId, referDocs) => {
-  console.log('auditId : ', auditId);
-  console.log('referDocs : ', referDocs);
-  try {
-    // 참조문서 정보를 저장할 레코드 생성
-    await skapi.postRecord(
-      {
-        reference_docs: referDocs.map((doc) => ({
-          record_id: doc.record_id,
-          title: doc.title,
-          docType: doc.docType
-        }))
-      },
-      {
-        table: {
-          name: `audit_reference_docs:${auditId}`,
-          access_group: 'authorized'
-        },
-        reference: auditId
-      }
-    );
-  } catch (error) {
-    console.error('참조문서 정보 저장 중 오류:', error);
-    throw error;
-  }
-};
-
-// 참조문서에 결재자들 권한 부여
-const grantReferDocsAccess = async (referDocs, processRoles) => {
-  try {
-    // 모든 결재자 ID 목록 생성
-    const allAuditorIds = processRoles.map((role) => role.userId);
-    console.log('allAuditorIds : ', allAuditorIds);
-
-    // 각 참조문서에 대해 권한 부여
-    for (const doc of referDocs) {
-      // 각 결재자에게 권한 부여
-      for (const auditorId of allAuditorIds) {
-        await skapi
-          .grantPrivateRecordAccess({
-            record_id: doc.record_id,
-            user_id: auditorId
-          })
-          .catch((err) => {
-            // 오류가 발생해도 계속 진행 (이미 권한이 있는 경우 등)
-            console.warn(`권한 부여 오류(무시됨): ${err.message}`);
-          });
-      }
-    }
-
-    console.log(
-      `${referDocs.length}개 참조문서에 ${allAuditorIds.length}명의 결재자에게 권한 부여 완료`
-    );
-  } catch (error) {
-    console.error('참조문서 권한 부여 중 오류 : ', error);
-  }
+  console.log('newFiles : ', newFiles);
+  console.log('uploadedFile.value : ', uploadedFile.value);
+  console.log('fileNames.value : ', fileNames.value);
+  console.log('isFormSelected.value : ', isFormSelected.value);
 };
 
 // 결재의견 권한 부여
@@ -1400,16 +1095,8 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
 
   try {
     // 첨부파일 업로드
+    const filebox = document.querySelector('input[name="additional_data"]');
     const additionalFormData = new FormData();
-
-    console.log('referDoc.value : ', referDoc.value);
-
-    // 참조문서 정보
-    const referDocInfo = {
-      referDocId: referDoc.value.map((doc) => doc.record_id),
-      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
-    };
-    console.log('referDocInfo : ', referDocInfo);
 
     additionalFormData.append('docform_title', docform_title);
     additionalFormData.append('to_audit', to_audit);
@@ -1417,7 +1104,6 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     additionalFormData.append('to_audit_content', to_audit_content);
     additionalFormData.append('reject_setting', rejectSetting.value);
     additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
-    additionalFormData.append('reference_docs', JSON.stringify(referDocInfo));
 
     // 만약 첨부파일이 있는 결재 양식 선택시
     // for (const file of uploadedFile.value) {
@@ -1552,6 +1238,25 @@ const createAuditRequest = async (
     record_id: res.record_id,
     user_id: auditor_id
   });
+
+  //   // 결재자/합의자를 순서대로 정렬
+  //   const approversAndAgreers = [
+  //     ...selectedAuditors.value.approvers,
+  //     ...selectedAuditors.value.agreers
+  //   ].sort((a, b) => a.order - b.order);
+  //   console.log('approversAndAgreers : ', approversAndAgreers);
+
+  //   // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
+  //   const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
+  //   console.log('sendFirstNoti : ', sendFirstNoti);
+
+  //   // Id만 추출
+  //   const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id.replaceAll('-', '_'));
+  //   console.log('sendFirstNotiId : ', sendFirstNotiId);
+
+  //   //sendFirstNotiId string으로 변환
+  //   const sendFirstNotiIdString = sendFirstNotiId.join(',');
+  //   console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
 
   // 실시간 알림 보내기
   if (isNotificationTarget) {
@@ -1692,6 +1397,9 @@ const removeButtonTags = (content) => {
 const requestAudit = async (e) => {
   e.preventDefault();
 
+  // 에디터에서 내용 가져오기
+  await importWysiwygData();
+
   // 결재 내용이 없을 경우 결재 요청 안되게
   if (!editorContent.value || editorContent.value === '<p><br></p>') {
     alert('결재 내용을 입력해주세요.');
@@ -1735,6 +1443,7 @@ const requestAudit = async (e) => {
       docform_title,
       to_audit,
       to_audit_content,
+      // roles: getAllSelectedUserIds() // ID 목록만 전달
       reject_setting: rejectSetting.value // 반려 설정 관련 체크박스 값 전달
     });
     console.log('auditDoc : ', auditDoc);
@@ -1743,15 +1452,49 @@ const requestAudit = async (e) => {
     const formTitle = docform_title; // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
     const auditTitle = to_audit; // 결재건 제목
 
-    // 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
+    // 결재 문서를 레퍼런스하는 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
     const commentRecord = await skapi.postRecord(null, {
       table: {
         name: `audit_comment_${auditId}`,
-        access_group: 'private'
+        access_group: 'authorized'
       },
       reference: auditId
     });
     console.log('commentRecord : ', commentRecord);
+
+    // 권한 부여
+    // const cmtGrantAccess = await grantAuditorAccess({
+    //   audit_id: auditId,
+    //   auditor_id: commentRecord.user_id
+    // });
+    // console.log('cmtGrantAccess : ', cmtGrantAccess);
+
+    // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
+    // 결재자/합의자를 순서대로 정렬
+    // const approversAndAgreers = [
+    //   ...selectedAuditors.value.approvers,
+    //   ...selectedAuditors.value.agreers
+    // ].sort((a, b) => a.order - b.order);
+    // console.log('approversAndAgreers : ', approversAndAgreers);
+
+    // // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
+    // const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
+    // console.log('sendFirstNoti : ', sendFirstNoti);
+
+    // // Id만 추출
+    // const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id);
+    // console.log('sendFirstNotiId : ', sendFirstNotiId);
+
+    // //sendFirstNotiId string으로 변환
+    // const sendFirstNotiIdString = sendFirstNotiId.join(',');
+    // console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
+
+    // const processRoles = sendFirstNoti.map((auditor) => ({
+    //   userId: auditor.data.user_id,
+    //   role: auditor.role,
+    //   order: auditor.order
+    // }));
+    // console.log('processRoles : ', processRoles);
 
     const processRoles = [
       // 결재
@@ -1776,19 +1519,12 @@ const requestAudit = async (e) => {
       }))
     ];
     console.log('processRoles : ', processRoles);
-    console.log('referDoc.value : ', referDoc.value);
 
-    // 참조문서에 결재자들 권한 부여
-    if (referDoc.value.length > 0) {
-      await grantReferDocsAccess(referDoc.value, processRoles).then((res) => {
-        console.log('grantReferDocsAccess : ', res);
-      });
-    }
-
-    // 결재의견 권한 부여
-    await grantAuditOpinionAccess(commentRecord.record_id, processRoles).then((res) => {
-      console.log('grantAuditOpinionAccess : ', res);
-    });
+    // const res = await Promise.all(
+    //   processRoles.map((roleInfo) =>
+    //     postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
+    //   )
+    // );
 
     // 결재자와 합의자를 순서대로 통합 정렬
     const approversAndAgreers = [
@@ -1861,21 +1597,11 @@ const saveDocForm = async () => {
     // 첨부파일 업로드
     const formData = new FormData();
 
-    console.log('referDoc.value : ', referDoc.value);
-
-    // 참조문서 정보
-    const referDocInfo = {
-      referDocId: referDoc.value.map((doc) => doc.record_id),
-      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
-    };
-    console.log('referDocInfo : ', referDocInfo);
-
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
-    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -1901,6 +1627,16 @@ const saveDocForm = async () => {
         order: user.order // 순서 정보 추가
       }))
     };
+
+    // 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
+    const commentRecord = await skapi.postRecord(null, {
+      table: {
+        name: `audit_comment_${auditId}`,
+        access_group: 'private'
+      },
+      reference: auditId
+    });
+    console.log('commentRecord : ', commentRecord);
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
@@ -1998,25 +1734,25 @@ const saveMyDocForm = async () => {
     return;
   }
 
+  // 결재의견 권한 부여
+  await grantAuditOpinionAccess(commentRecord.record_id, processRoles).then((res) => {
+    console.log('grantAuditOpinionAccess : ', res);
+  });
+
+  // 결재자와 합의자를 순서대로 통합 정렬
+  const approversAndAgreers = [
+    ...selectedAuditors.value.approvers,
+    ...selectedAuditors.value.agreers
+  ].sort((a, b) => a.order - b.order);
   try {
     // 첨부파일 업로드
     const formData = new FormData();
-
-    console.log('referDoc.value : ', referDoc.value);
-
-    // 참조문서 정보
-    const referDocInfo = {
-      referDocId: referDoc.value.map((doc) => doc.record_id),
-      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
-    };
-    console.log('referDocInfo : ', referDocInfo);
 
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
-    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -2120,20 +1856,14 @@ const tempSaveMyDoc = async () => {
 
   try {
     // 첨부파일 업로드
+    const filebox = document.querySelector('input[name="additional_data"]');
     const formData = new FormData();
-
-    // 참조문서 정보
-    const referDocInfo = {
-      referDocId: referDoc.value.map((doc) => doc.record_id),
-      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
-    };
 
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
-    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -2374,26 +2104,6 @@ const getTempSaveMyDocCont = async () => {
           uploadedFile.value = tempSaveData.value.bin.form_data;
           console.log('uploadedFile.value : ', uploadedFile.value);
         }
-
-        // 참조문서가 있는 경우
-        if (tempSaveData.value.data.reference_docs) {
-          try {
-            const referDocId = JSON.parse(tempSaveData.value.data.reference_docs).referDocId;
-            const fetchPromises = referDocId.map((recordId) =>
-              skapi
-                .getRecords({ record_id: recordId })
-                .then((res) => res.list?.[0] || null)
-                .catch((err) => {
-                  console.error(`record_id ${recordId} 호출 실패:`, err);
-                  return null;
-                })
-            );
-            referDoc.value = await Promise.all(fetchPromises);
-            console.log('referDoc.value : ', referDoc.value);
-          } catch (error) {
-            console.error('참조문서 정보 처리 중 오류:', error);
-          }
-        }
       }
 
       return res;
@@ -2537,26 +2247,6 @@ const selDocForm = async (e) => {
     } else {
       uploadedFile.value = [];
       fileNames.value = [];
-    }
-
-    // 참조문서가 있는 경우
-    if (selectedForm.value.data.reference_docs) {
-      try {
-        const referDocId = JSON.parse(selectedForm.value.data.reference_docs).referDocId;
-        const fetchPromises = referDocId.map((recordId) =>
-          skapi
-            .getRecords({ record_id: recordId })
-            .then((res) => res.list?.[0] || null)
-            .catch((err) => {
-              console.error(`record_id ${recordId} 호출 실패:`, err);
-              return null;
-            })
-        );
-        referDoc.value = await Promise.all(fetchPromises);
-        console.log('referDoc.value : ', referDoc.value);
-      } catch (error) {
-        console.error('참조문서 정보 처리 중 오류:', error);
-      }
     }
 
     // 체크박스 설정 불러오기
@@ -2877,8 +2567,6 @@ onMounted(async () => {
     getTempSaveMyDocCont();
   }
 
-  console.log('requestData.value : ', reRequestData.value);
-
   // 재요청 모드인 경우 바로 step 2로 이동
   if (isReRequestMode.value && reRequestData.value && reRequestData.value.data) {
     step.value = 2;
@@ -2983,26 +2671,6 @@ onMounted(async () => {
       }
     }
 
-    // 참조문서 정보 불러오기
-    if (reRequestData.value.data.reference_docs) {
-      try {
-        const referDocId = JSON.parse(reRequestData.value.data.reference_docs).referDocId;
-        const fetchPromises = referDocId.map((recordId) =>
-          skapi
-            .getRecords({ record_id: recordId })
-            .then((res) => res.list?.[0] || null)
-            .catch((err) => {
-              console.error(`record_id ${recordId} 호출 실패:`, err);
-              return null;
-            })
-        );
-        referDoc.value = await Promise.all(fetchPromises);
-        console.log('referDoc.value : ', referDoc.value);
-      } catch (error) {
-        console.error('참조문서 정보 처리 중 오류:', error);
-      }
-    }
-
     isFormSelected.value = true;
   }
 });
@@ -3037,7 +2705,8 @@ onUnmounted(() => {
 
   #printArea,
   #printArea * {
-    visibility: visible; /* printArea와 그 내부 요소만 보이게 설정 */
+    visibility: visible;
+    /* printArea와 그 내부 요소만 보이게 설정 */
   }
 
   #printArea {
@@ -3242,19 +2911,6 @@ onUnmounted(() => {
   }
 }
 
-.table-wrap {
-  .loading {
-    position: relative;
-    border-bottom: unset;
-
-    #loading {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-  }
-}
-
 .table {
   // min-width: 20rem;
 
@@ -3358,7 +3014,6 @@ onUnmounted(() => {
       gap: 0.5rem;
 
       .btn {
-        width: 110px;
         height: 28px;
         min-width: auto;
       }
@@ -3415,6 +3070,27 @@ onUnmounted(() => {
         fill: var(--warning-color-500);
         margin: 0 auto;
       }
+    }
+  }
+}
+
+.refer-doc-wrap {
+  .btn-open-modal {
+    width: 110px;
+    height: 28px;
+    display: flex;
+  }
+
+  .btn-remove {
+    padding: 0;
+    width: initial;
+    height: initial;
+    border: none;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--warning-color-500);
     }
   }
 }
@@ -3640,6 +3316,7 @@ onUnmounted(() => {
 }
 
 .wysiwyg-wrap {
+  max-width: 42rem;
   text-align: left;
   border: 1px solid var(--gray-color-200);
   border-radius: 0.5rem;
@@ -3764,225 +3441,6 @@ onUnmounted(() => {
   }
 }
 
-// 참조문서
-.refer-doc-wrap {
-  .btn-open-modal {
-    width: 110px;
-    height: 28px;
-    display: flex;
-  }
-
-  .btn-remove {
-    padding: 0;
-    width: initial;
-    height: initial;
-    border: none;
-
-    svg {
-      width: 16px;
-      height: 16px;
-      fill: var(--warning-color-500);
-    }
-  }
-}
-
-.refer-doc-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 8px;
-
-  &:first-of-type {
-    margin-top: 16px;
-  }
-}
-
-.refer-doc-name {
-  margin-left: 0;
-  width: 100%;
-  border: 1px dashed var(--gray-color-300);
-  border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 0.75rem;
-  color: var(--gray-color-400);
-  text-align: left;
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-// 참조문서 추가 모달
-.modal-refer-list {
-  .top-wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .sub-title {
-    font-size: 1rem;
-    flex-wrap: 500;
-  }
-
-  .sel-filter {
-    width: 10.4rem;
-    cursor: pointer;
-  }
-
-  .doc-title {
-    color: var(--primary-color-500);
-    text-decoration: none;
-    cursor: pointer;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  .status {
-    border: 1px solid var(--gray-color-400);
-    border-radius: 6px;
-    padding: 1px 0.4rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--gray-color-500);
-
-    &.approve {
-      color: var(--primary-color-400);
-      border-color: var(--primary-color-400);
-    }
-
-    &.reject {
-      color: var(--warning-color-500);
-      border-color: var(--warning-color-500);
-    }
-  }
-}
-
-// 참조문서 상세 모달
-.modal-refer-detail {
-  .table {
-    tr {
-      border-top: 1px solid var(--gray-color-300);
-      font-weight: 400;
-
-      td {
-        background-color: #fff;
-        padding: 0.5rem;
-      }
-    }
-  }
-
-  .approver-wrap {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    text-align: center;
-    height: 100%;
-
-    .approver-list {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      min-width: 100px;
-      min-height: 8rem;
-      border-right: 1px solid var(--gray-color-300);
-      border-bottom: 1px solid var(--gray-color-300);
-      margin-bottom: -1px;
-      position: relative;
-
-      &.noexist {
-        background-color: var(--gray-color-50);
-
-        span {
-          color: var(--gray-color-300);
-        }
-      }
-    }
-
-    .num {
-      border-bottom: 1px solid var(--gray-color-200);
-      padding: 0.25rem;
-    }
-
-    .sign {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      border-bottom: 1px solid var(--gray-color-200);
-    }
-
-    .approver {
-      height: initial;
-    }
-  }
-
-  .reference-wrap {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    text-align: center;
-
-    .reference-list {
-      display: flex;
-      justify-content: center;
-      background-color: var(--gray-color-50);
-      border: 1px solid var(--gray-color-300);
-      border-radius: 8px;
-    }
-
-    .referencer {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      padding: 0.25rem;
-      gap: 2px;
-
-      .icon {
-        padding: 0;
-
-        &:hover {
-          cursor: pointer;
-        }
-      }
-    }
-  }
-
-  .upload-file {
-    .file-list {
-      margin-top: 0;
-    }
-
-    .file-item {
-      &:first-of-type {
-        margin-top: 0;
-      }
-    }
-  }
-
-  .refer-doc-item {
-    &:first-of-type {
-      margin-top: 0;
-    }
-  }
-
-  .refer-doc-name {
-    cursor: default;
-    color: var(--gray-color-500);
-
-    &:hover {
-      text-decoration: none;
-    }
-  }
-}
-
 @media (max-width: 768px) {
   .approver-wrap {
     grid-template-columns: repeat(5, 1fr);
@@ -4042,13 +3500,6 @@ onUnmounted(() => {
       min-width: calc(100% - 16px);
     }
   }
-
-  // 참조문서
-  .modal-refer-list {
-    .sel-filter {
-      width: 100%;
-    }
-  }
 }
 
 @media (max-width: 682px) {
@@ -4061,6 +3512,7 @@ onUnmounted(() => {
           flex-grow: 1;
         }
       }
+
       .btn-upload-file + .file-list {
         .file-item {
           width: 100%;
@@ -4070,13 +3522,6 @@ onUnmounted(() => {
       .file-item {
         width: 100%;
       }
-    }
-  }
-
-  .refer-doc-wrap {
-    .btn-open-modal {
-      width: 100%;
-      height: 28px;
     }
   }
 }

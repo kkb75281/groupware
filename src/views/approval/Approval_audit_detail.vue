@@ -127,11 +127,11 @@ Loading#loading(v-if="getAuditDetailRunning")
 											template(v-else)
 												li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
-			h4.sub-title 의견
+		h4.sub-title 의견
 
-			.input-wrap.input-comment
-				input(type="text" placeholder="의견을 입력해주세요." v-model="comment" style="width: 100%;")
-				button.btn(type="button" @click="writeComment") 등록
+		.input-wrap.input-comment
+			input(type="text" placeholder="의견을 입력해주세요." v-model="comment" style="width: 100%;")
+			button.btn(type="button" @click="writeComment") 등록
 
 			//- 댓글
 			ul.comment-list(v-if="commentList.length > 0")
@@ -199,9 +199,17 @@ Loading#loading(v-if="getAuditDetailRunning")
 						.input-wrap.input-reply
 							input(type="text" placeholder="댓글을 입력해주세요." v-model="reply[comment.record_id]" style="width: 100%;")
 							.btn-wrap
-								button.btn(type="button" @click="writeReply('reply', index)") 등록
-								button.btn.bg-gray(type="button" @click="toggleReplyInput('reply', index)") 취소
-			.empty(v-else style="margin-top: 3rem;") 결재 의견이 없습니다.
+								button.btn(type="button" @click="writeReply('subReply', index)") 등록
+								button.btn.bg-gray(type="button" @click="toggleReplyInput('subReply', index)") 취소
+				//- 대댓글 :: e
+
+				template(v-if="isReplyOpen[comment.record_id]")
+					.input-wrap.input-reply
+						input(type="text" placeholder="댓글을 입력해주세요." v-model="reply[comment.record_id]" style="width: 100%;")
+						.btn-wrap
+							button.btn(type="button" @click="writeReply('reply', index)") 등록
+							button.btn.bg-gray(type="button" @click="toggleReplyInput('reply', index)") 취소
+		.empty(v-else style="margin-top: 3rem;") 결재 의견이 없습니다.
 
 
 		.button-wrap
@@ -365,7 +373,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 											ul.refer-doc-list
 												template(v-if="modalReferDoc.length > 0")
 													li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index")
-														span.refer-doc-name {{ doc.data.to_audit }}
+														span.refer-doc-name {{ doc?.data?.to_audit }}
 												template(v-else)
 													li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
@@ -2367,6 +2375,7 @@ onUnmounted(() => {
         }
       }
     }
+
     tr {
       &:hover {
         background-color: transparent;
@@ -2455,6 +2464,25 @@ onUnmounted(() => {
         cursor: pointer;
       }
     }
+  }
+}
+
+.refer-doc-item {
+  border: 1px dashed var(--gray-color-300);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  color: var(--gray-color-500);
+  text-align: left;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 
@@ -2692,6 +2720,7 @@ onUnmounted(() => {
           color: #fff;
           background-color: var(--primary-color-400);
         }
+
         &.disabled {
           opacity: 0.5;
           cursor: default;
@@ -2794,6 +2823,7 @@ onUnmounted(() => {
             background-color: unset;
           }
         }
+
         .name {
           // transition: all 0.3s;
           // color: var(--gray-color-300);
@@ -2807,9 +2837,11 @@ onUnmounted(() => {
           #stamp-img {
             border-color: var(--gray-color-300);
           }
+
           .add-icon {
             fill: var(--gray-color-300);
           }
+
           .name {
             color: var(--gray-color-300);
           }
@@ -2841,6 +2873,7 @@ onUnmounted(() => {
             background-color: var(--primary-color-25);
           }
         }
+
         .name {
           opacity: 0.3;
         }
@@ -2871,6 +2904,7 @@ onUnmounted(() => {
         &:first-child {
           margin-bottom: 4px;
         }
+
         &:hover {
           background-color: var(--primary-color-400);
           color: #fff;
@@ -2880,6 +2914,7 @@ onUnmounted(() => {
             color: unset;
           }
         }
+
         &.disabled {
           opacity: 0.25;
           cursor: default;
@@ -3132,6 +3167,7 @@ onUnmounted(() => {
     }
   }
 }
+
 // 참조문서 :: e
 
 @media print {
@@ -3269,6 +3305,7 @@ onUnmounted(() => {
           flex-grow: 1;
         }
       }
+
       .btn-upload-file + .file-list {
         .file-item {
           width: 100%;

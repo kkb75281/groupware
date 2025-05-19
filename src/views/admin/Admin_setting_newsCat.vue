@@ -66,7 +66,7 @@
 		.modal-body
 			.select-dvs-wrap
 				.organigram-wrap
-					Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedEmps" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
+					Organigram(:selectedEmployees="selectedEmps" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedEmpsArr" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
 
 				br
 
@@ -121,6 +121,7 @@ const isModalOpen = ref(false); // 공개범위 설정 모달
 const selectedDivision = ref({}); // 조직도에서 선택된 부서
 const selectedUsers = ref({}); // 조직도에서 선택된 부서의 직원
 const selectedEmps = ref([]); // 공개범위 직원 정보 저장
+const selectedEmpsArr = ref([]); // 공개범위 직원 정보 저장
 const notiSetting = ref(true); // 알림 설정 관련 체크박스
 const backupSelected = ref(null); // 선택된 공개범위 직원 백업
 
@@ -158,7 +159,20 @@ const getEditModeCat = async () => {
         Object.keys(selectedDivision.value).forEach((division) => {
           const departmentUsers = selectedDivision.value[division];
           departmentUsers.forEach((user) => {
-            selectedEmps.value.push(JSON.parse(JSON.stringify(user)));
+            let parseUser = JSON.parse(JSON.stringify(user));
+            let pushUser = {
+              data: {
+                user_id: parseUser.user_id
+              },
+              index: {
+                name: user.dvs.split('.')[0] + '.' + parseUser.position,
+                value: parseUser.name
+              },
+              dvs: `${parseUser.dvs.split('.')[0]}.${divisionNameList[division]}`,
+              position: parseUser.position,
+              name: parseUser.name
+            }
+            selectedEmps.value.push(pushUser);
           });
         });
       }
@@ -173,10 +187,9 @@ const getEditModeCat = async () => {
 const openModal = () => {
   // 열렸을 때 selectedEmps 전체를 original로 백업
   backupSelected.value = [...selectedEmps.value];
-
-  // selectedMembers에 있는 모든 유저를 selectedUsers에 추가
-  selectedUsers.value = [];
-  console.log('selectedUsers.value : ', selectedUsers.value);
+  selectedEmpsArr.value = selectedEmps.value.map((user) => {
+    return [user];
+  });
 
   isModalOpen.value = true;
 };
@@ -618,7 +631,7 @@ onUnmounted(() => {
 }
 
 .select-dvs-wrap {
-  > div {
+  >div {
     border: 1px solid var(--gray-color-300);
     border-radius: 0.5rem;
     padding: 1rem;
@@ -798,7 +811,7 @@ onUnmounted(() => {
   .checkbox {
     text-align: right;
 
-    input[type='checkbox']:checked ~ .label-checkbox::before {
+    input[type='checkbox']:checked~.label-checkbox::before {
       border-color: var(--warning-color-500);
       background-color: var(--warning-color-500);
     }
@@ -821,6 +834,7 @@ onUnmounted(() => {
 }
 
 .wysiwyg-table {
+
   tr,
   th,
   td {
@@ -893,13 +907,15 @@ onUnmounted(() => {
   .input-wrap {
     &.upload-file {
       .btn-upload-file {
+
         input,
         label,
         button {
           flex-grow: 1;
         }
       }
-      .btn-upload-file + .file-list {
+
+      .btn-upload-file+.file-list {
         .file-item {
           width: 100%;
         }
