@@ -114,7 +114,7 @@
     </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, nextTick, ref, computed } from 'vue';
+import { onMounted, onBeforeUnmount, nextTick, ref, computed, onUnmounted } from 'vue';
 import { insertTableToWysiwyg } from '@/components/wysiwygTable.js';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
@@ -549,13 +549,13 @@ onMounted(() => {
     document.addEventListener('keyup', handleEditorKeyUp);
 });
 
+onUnmounted(() => {
+    document.removeEventListener('keydown', handleEditorKeyDown);
+    document.removeEventListener('keyup', handleEditorKeyUp);
+});
+
 onBeforeUnmount(() => {
     wysiwyg = null;
-
-    document.removeEventListener('keydown', handleEditorKeyDown);
-    document.removeEventListener('keyup', handleEditorKeyUp);
-    document.removeEventListener('keydown', handleEditorKeyDown);
-    document.removeEventListener('keyup', handleEditorKeyUp);
 });
 
 defineExpose({
