@@ -451,8 +451,6 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 
 		.modal-footer(style="padding-top: 0; border-top: none;")
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeDocModal") 닫기
-
-// button.btn.outline.btn-new(type="button" @click="testDelete") delete
 </template>
 
 <script setup>
@@ -480,16 +478,6 @@ const route = useRoute();
 const isTemplateMode = computed(() => route.query.mode === 'template'); // 결재 양식 관리 > 등록 경로인지 확인
 const isTempSaveMode = computed(() => route.query.mode === 'tempsave'); // 임시 저장 경로인지 확인
 const isReRequestMode = computed(() => route.query.mode === 'reRequest'); // 재요청 모드인지 확인
-
-// const testDelete = () => {
-//   skapi
-//     .deleteRecords({
-//       record_id: 'UjHCkckVC1ogfDF6'
-//     })
-//     .then((res) => {
-//       console.log('삭제완');
-//     });
-// };
 
 // 페이지 제목 변경
 const pageTitle = computed(() => {
@@ -553,9 +541,6 @@ const editorIsReady = ref(false);
 
 // 결재라인 모달 열기
 const openModal = () => {
-  // isTemplateMode 경우에는 결재라인 선택 불가
-  // if (isTemplateMode.value) return;
-
   // 열렸을 때 selectedAuditors 전체를 original로 백업
   backupSelected.value = {
     approvers: [...selectedAuditors.value.approvers],
@@ -578,11 +563,7 @@ const openModal = () => {
   }
 
   selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
-  console.log('selectedUsers.value : ', selectedUsers.value);
   prevSelected.value = selectedUsers.value;
-
-  // 모달이 열릴 때 본인 부서 직원만 보이도록 새로 조직도 데이터 가져오기
-  // getOrganigram(true, true);
 
   isModalOpen.value = true;
 };
@@ -595,11 +576,6 @@ const closeModal = () => {
       agreers: [...backupSelected.value.agreers],
       receivers: [...backupSelected.value.receivers]
     };
-
-    // // 모든 사용자의 role을 '결재'로 초기화
-    // selectedUsers.value.forEach((user) => {
-    //   user.role = 'approvers';
-    // });
   } else {
     selectedAuditors.value = {
       approvers: [],
@@ -750,7 +726,6 @@ const getEmpDivision = async (userId) => {
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
-  console.log(users);
   // 선택된 유저들을 초기 처리
   users.forEach((user) => {
     // 선택된 유저들에게 role 정보가 없으면 추가
@@ -907,8 +882,6 @@ const removeAuditor = (user, type) => {
 const handleEditorReady = (status) => {
   editorIsReady.value = status;
 
-  console.log('에디터 준비 상태:', status);
-
   // 에디터가 준비되었을 때
   if (status) {
     setTimeout(() => {
@@ -919,7 +892,6 @@ const handleEditorReady = (status) => {
           (isReRequestMode.value && reRequestData.value?.data?.to_audit_content) ||
           selectedForm.value?.data?.form_content
         ) {
-          console.log('에디터 준비 완료');
           activateTableEditing(editorElement);
         }
       }
@@ -1002,11 +974,8 @@ const activateTableEditing = (editorElement) => {
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
-  // 내용이 비어있을 때 기본 p 태그 유지
-  // editorContent.value = content && content.trim() !== '' ? content : '<p><br></p>';
   editor.value = content;
   editorContent.value = content.html;
-  console.log('에디터 내보내기:', content);
 };
 
 const importWysiwygData = async () => {
@@ -1017,48 +986,27 @@ const importWysiwygData = async () => {
 const removeFile = (file, index) => {
   uploadedFile.value.splice(index, 1);
   fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
-
-  console.log('uploadedFile.value : ', uploadedFile.value);
-  console.log('fileNames.value : ', fileNames.value);
 };
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
-  // let target = e.target;
-  // console.log('target : ', target);
-
-  // if (target.files) {
-  //   fileNames.value = Array.from(target.files).map((file) => file.name);
-  //   console.log('fileNames.value : ', fileNames.value);
-  // }
-
   const newFiles = Array.from(e.target.files);
   uploadedFile.value.push(...newFiles);
   fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
   e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
-
-  console.log('newFiles : ', newFiles);
-  console.log('uploadedFile.value : ', uploadedFile.value);
-  console.log('fileNames.value : ', fileNames.value);
-  console.log('isFormSelected.value : ', isFormSelected.value);
 };
 
 // 결재의견 권한 부여
 const grantAuditOpinionAccess = async (cmtId, processRoles) => {
-  console.log('cmtId : ', cmtId);
-
   try {
     // 모든 결재자 ID 목록 생성
     const allAuditorIds = processRoles.map((role) => role.userId);
-    console.log('allAuditorIds : ', allAuditorIds);
 
     // 결재의견 테이블에 권한 부여
     await skapi.grantPrivateRecordAccess({
       record_id: cmtId,
       user_id: allAuditorIds
     });
-
-    console.log(`결재의견 테이블에 ${allAuditorIds.length}명의 결재자에게 권한 부여 완료`);
   } catch (error) {
     console.error('결재의견 권한 부여 중 오류 : ', error);
   }
@@ -1105,24 +1053,6 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     additionalFormData.append('reject_setting', rejectSetting.value);
     additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
 
-    // 만약 첨부파일이 있는 결재 양식 선택시
-    // for (const file of uploadedFile.value) {
-    //   // 가져온 파일 데이터를 Blob으로 변환
-    //   const blob = await skapi.getFile(file.url, {
-    //     dataType: 'blob'
-    //   });
-
-    //   console.log('blob : ', blob);
-
-    //   console.log('AA : ', file.filename, { type: blob.type });
-
-    //   // Blob에 원래 파일 이름을 붙여 File 객체 생성
-    //   const fileObject = new File([blob], file.filename, { type: blob.type });
-
-    //   // FormData에 추가
-    //   additionalFormData.append('additional_data', fileObject);
-    // }
-
     if (uploadedFile.value.length) {
       const filePromises = uploadedFile.value.map(async (file) => {
         // 이미 File 객체인 경우 그대로 반환
@@ -1145,11 +1075,8 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
         return null;
       });
 
-      console.log('filePromises : ', filePromises);
-
       // 모든 파일 변환이 끝날 때까지 기다림
       const fileObjects = await Promise.all(filePromises);
-      console.log('fileObjects : ', fileObjects);
 
       // null이 아닌 파일만 필터링하여 FormData에 추가
       fileObjects
@@ -1179,7 +1106,6 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     };
 
     const res = await skapi.postRecord(additionalFormData, options);
-    console.log('== postAuditDoc == res : ', res);
 
     return res;
   } catch (error) {
@@ -1205,9 +1131,6 @@ const createAuditRequest = async (
   send_auditors,
   isNotificationTarget = false
 ) => {
-  console.log('send_auditors : ', send_auditors);
-  console.log('auditor_id : ', auditor_id);
-
   if (!audit_id || !auditor_id) return;
 
   // 결재 요청
@@ -1232,31 +1155,11 @@ const createAuditRequest = async (
       }
     }
   );
-  console.log('res : ', res);
 
   skapi.grantPrivateRecordAccess({
     record_id: res.record_id,
     user_id: auditor_id
   });
-
-  //   // 결재자/합의자를 순서대로 정렬
-  //   const approversAndAgreers = [
-  //     ...selectedAuditors.value.approvers,
-  //     ...selectedAuditors.value.agreers
-  //   ].sort((a, b) => a.order - b.order);
-  //   console.log('approversAndAgreers : ', approversAndAgreers);
-
-  //   // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
-  //   const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
-  //   console.log('sendFirstNoti : ', sendFirstNoti);
-
-  //   // Id만 추출
-  //   const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id.replaceAll('-', '_'));
-  //   console.log('sendFirstNotiId : ', sendFirstNotiId);
-
-  //   //sendFirstNotiId string으로 변환
-  //   const sendFirstNotiIdString = sendFirstNotiId.join(',');
-  //   console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
 
   // 실시간 알림 보내기
   if (isNotificationTarget) {
@@ -1289,7 +1192,6 @@ const createAuditRequest = async (
         auditor_id,
         {
           title: '[그룹웨어]',
-          // body: JSON.stringify(postRealtimeBody)
           body: `${user.name}님께서 결재를 올렸습니다.`,
           config: {
             always: true // 무조건 알림 받기
@@ -1443,10 +1345,8 @@ const requestAudit = async (e) => {
       docform_title,
       to_audit,
       to_audit_content,
-      // roles: getAllSelectedUserIds() // ID 목록만 전달
       reject_setting: rejectSetting.value // 반려 설정 관련 체크박스 값 전달
     });
-    console.log('auditDoc : ', auditDoc);
 
     const auditId = auditDoc.record_id; // 결재 문서 ID
     const formTitle = docform_title; // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
@@ -1460,41 +1360,6 @@ const requestAudit = async (e) => {
       },
       reference: auditId
     });
-    console.log('commentRecord : ', commentRecord);
-
-    // 권한 부여
-    // const cmtGrantAccess = await grantAuditorAccess({
-    //   audit_id: auditId,
-    //   auditor_id: commentRecord.user_id
-    // });
-    // console.log('cmtGrantAccess : ', cmtGrantAccess);
-
-    // 각 역할별 권한 부여 및 알림 전송 (첫번째 순서, 수신참조만)
-    // 결재자/합의자를 순서대로 정렬
-    // const approversAndAgreers = [
-    //   ...selectedAuditors.value.approvers,
-    //   ...selectedAuditors.value.agreers
-    // ].sort((a, b) => a.order - b.order);
-    // console.log('approversAndAgreers : ', approversAndAgreers);
-
-    // // 결재자/합의자 중 첫 번째 결재자 또는 수신참조자 찾기
-    // const sendFirstNoti = approversAndAgreers.filter((a) => a.order === 1 || a.role === 'receiver');
-    // console.log('sendFirstNoti : ', sendFirstNoti);
-
-    // // Id만 추출
-    // const sendFirstNotiId = sendFirstNoti.map((a) => a.data.user_id);
-    // console.log('sendFirstNotiId : ', sendFirstNotiId);
-
-    // //sendFirstNotiId string으로 변환
-    // const sendFirstNotiIdString = sendFirstNotiId.join(',');
-    // console.log('sendFirstNotiIdString : ', sendFirstNotiIdString);
-
-    // const processRoles = sendFirstNoti.map((auditor) => ({
-    //   userId: auditor.data.user_id,
-    //   role: auditor.role,
-    //   order: auditor.order
-    // }));
-    // console.log('processRoles : ', processRoles);
 
     const processRoles = [
       // 결재
@@ -1518,13 +1383,6 @@ const requestAudit = async (e) => {
         order: auditor.order
       }))
     ];
-    console.log('processRoles : ', processRoles);
-
-    // const res = await Promise.all(
-    //   processRoles.map((roleInfo) =>
-    //     postAuditDocRecordId(auditId, auditTitle, roleInfo.userId, roleInfo.role)
-    //   )
-    // );
 
     // 결재자와 합의자를 순서대로 통합 정렬
     const approversAndAgreers = [
@@ -1554,7 +1412,6 @@ const requestAudit = async (e) => {
         )
       )
     );
-    console.log('promiseall : ', res);
 
     // 결재라인 select option '결재'로 초기화
     selectedUsers.value.forEach((user) => {
@@ -1585,8 +1442,6 @@ const requestAudit = async (e) => {
 
 // 기존 결재 양식 저장 (마스터가 저장한 결재 양식)
 const saveDocForm = async () => {
-  console.log('마스터 결재양식 저장');
-
   // 결재 제목이 없을 경우 저장 불가
   if (!formTitle.value) {
     alert('결재 제목을 입력해주세요.');
@@ -1636,33 +1491,8 @@ const saveDocForm = async () => {
       },
       reference: auditId
     });
-    console.log('commentRecord : ', commentRecord);
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
-
-    console.log('uploadedFile.value : ', uploadedFile.value);
-
-    // for (const file of uploadedFile.value) {
-    //   formData.append('form_data', file);
-    // }
-
-    // if (uploadedFile.value.length) {
-    //   const filePromises = uploadedFile.value.map(async (file) => {
-    //     // 파일 데이터 가져오기
-    //     const blob = await skapi.getFile(file.url, { dataType: 'blob' });
-
-    //     // file 객체 생성
-    //     return new File([blob], file.filename, { type: blob.type });
-    //   });
-
-    //   // 모든 파일 변환이 끝날 때까지 기다림
-    //   const fileObjects = await Promise.all(filePromises);
-
-    //   // FormData에 한 번에 추가
-    //   fileObjects.forEach((file) => {
-    //     formData.append('form_data', file);
-    //   });
-    // }
 
     if (uploadedFile.value.length) {
       const filePromises = uploadedFile.value.map(async (file) => {
@@ -1686,11 +1516,8 @@ const saveDocForm = async () => {
         return null;
       });
 
-      console.log('filePromises : ', filePromises);
-
       // 모든 파일 변환이 끝날 때까지 기다림
       const fileObjects = await Promise.all(filePromises);
-      console.log('fileObjects : ', fileObjects);
 
       // null이 아닌 파일만 필터링하여 FormData에 추가
       fileObjects
@@ -1711,11 +1538,7 @@ const saveDocForm = async () => {
       }
     };
 
-    console.log('마스터 == formData : ', formData);
-    console.log('마스터 == options : ', options);
-
     const res = await skapi.postRecord(formData, options);
-    console.log('마스터 == res : ', res);
 
     alert('결재 양식이 저장되었습니다.');
     router.push('/admin/list-form');
@@ -1726,8 +1549,6 @@ const saveDocForm = async () => {
 
 // 내 결재 양식 저장
 const saveMyDocForm = async () => {
-  console.log('내 결재양식 저장');
-
   // 결재 제목이 없을 경우 저장 불가
   if (!formTitle.value || !auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
@@ -1735,9 +1556,7 @@ const saveMyDocForm = async () => {
   }
 
   // 결재의견 권한 부여
-  await grantAuditOpinionAccess(commentRecord.record_id, processRoles).then((res) => {
-    console.log('grantAuditOpinionAccess : ', res);
-  });
+  await grantAuditOpinionAccess(commentRecord.record_id, processRoles);
 
   // 결재자와 합의자를 순서대로 통합 정렬
   const approversAndAgreers = [
@@ -1781,10 +1600,6 @@ const saveMyDocForm = async () => {
 
     formData.append('auditors', JSON.stringify(auditorData ?? []));
 
-    // for (const file of uploadedFile.value) {
-    //   formData.append('form_data', file);
-    // }
-
     if (uploadedFile.value.length) {
       const filePromises = uploadedFile.value.map(async (file) => {
         // 이미 File 객체인 경우 그대로 반환
@@ -1807,11 +1622,8 @@ const saveMyDocForm = async () => {
         return null;
       });
 
-      console.log('filePromises : ', filePromises);
-
       // 모든 파일 변환이 끝날 때까지 기다림
       const fileObjects = await Promise.all(filePromises);
-      console.log('fileObjects : ', fileObjects);
 
       // null이 아닌 파일만 필터링하여 FormData에 추가
       fileObjects
@@ -1831,11 +1643,8 @@ const saveMyDocForm = async () => {
         value: auditTitle.value.replaceAll('.', '_')
       }
     };
-    console.log('내 양식 == formData : ', formData);
-    console.log('내 양식 == options : ', options);
 
     const res = await skapi.postRecord(formData, options);
-    console.log('내 양식 == res : ', res);
 
     alert('결재 양식이 저장되었습니다.');
   } catch (error) {
@@ -1846,8 +1655,6 @@ const saveMyDocForm = async () => {
 
 // 임시 저장
 const tempSaveMyDoc = async () => {
-  console.log('임시 저장');
-
   // 결재 제목이 없을 경우 저장 불가
   if (!formTitle.value || !auditTitle.value) {
     alert('결재 제목을 입력해주세요.');
@@ -1944,18 +1751,11 @@ const tempSaveMyDoc = async () => {
       },
       record_id: route.query.record_id
     });
-    console.log('AA == res : ', res);
-
-    console.log('formData : ', formData);
-    console.log('route.query.record_id : ', route.query.record_id);
 
     if (res.list.length === 0 || route.query.record_id === undefined) {
       const res = await skapi.postRecord(formData, options);
-      console.log('새로 임시저장됨 == res : ', res);
     } else if (route.query.record_id === res.list[0].record_id) {
-      await skapi.deleteRecords({ record_id: res.list[0].record_id }).then((res) => {
-        console.log('삭제완');
-      });
+      await skapi.deleteRecords({ record_id: res.list[0].record_id }).then((res) => {});
 
       await skapi
         .postRecord(formData, {
@@ -1965,7 +1765,7 @@ const tempSaveMyDoc = async () => {
           }
         })
         .then((res) => {
-          console.log('이전 임시저장 해둬서 업뎃 == res : ', res);
+          // console.log('이전 임시저장 해둬서 업뎃 == res : ', res);
         });
     }
 
@@ -2020,7 +1820,6 @@ const getTempSaveMyDocList = async () => {
         access_group: 'private'
       }
     });
-    console.log('임시저장 : ', res);
 
     return res;
   } catch (error) {
@@ -2039,7 +1838,6 @@ const getTempSaveMyDocCont = async () => {
         },
         record_id: route.query.record_id
       });
-      console.log('임시저장 내용 == res : ', res);
 
       temploading.value = true;
 
@@ -2068,7 +1866,6 @@ const getTempSaveMyDocCont = async () => {
         // 결재자 정보
         if (tempSaveData.value.data.auditors) {
           const auditors = JSON.parse(tempSaveData.value.data.auditors);
-          console.log('auditors : ', auditors);
 
           // 순서 정보를 포함한 결재자 변환 함수
           const convertAuditorFormatWithOrder = (auditors, role) => {
@@ -2095,14 +1892,9 @@ const getTempSaveMyDocCont = async () => {
           selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
         }
 
-        console.log('tempSaveData.value : ', tempSaveData.value);
-
         // 첨부파일이 있는 경우
         if (tempSaveData.value.bin && tempSaveData.value.bin.form_data) {
-          console.log('AAA');
-          console.log('isFormSelected.value : ', isFormSelected.value);
           uploadedFile.value = tempSaveData.value.bin.form_data;
-          console.log('uploadedFile.value : ', uploadedFile.value);
         }
       }
 
@@ -2292,8 +2084,6 @@ const newWriteAudit = () => {
 
 // isTempSaveMode에서 취소버튼 클릭시
 const cancelTempSave = () => {
-  console.log('임시저장 취소');
-
   router.push({ path: '/approval/audit-list-tempsave' });
   formCategory.value = 'master';
   rejectSetting.value = false;
@@ -2406,7 +2196,6 @@ const openReferModal = async () => {
     allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
 
     referDocList.value = allDocs;
-    console.log('referDocList.value : ', referDocList.value);
   } catch (error) {
     console.error('참조문서 목록 가져오기 중 오류 : ', error);
   } finally {
@@ -2432,7 +2221,6 @@ const addRefer = () => {
 // 참조문서 제거
 const removeReferDoc = (doc, index) => {
   referDoc.value.splice(index, 1);
-  console.log('referDoc.value : ', referDoc.value);
 };
 
 // 참조문서추가 모달 close
@@ -2446,7 +2234,6 @@ const showDocDetail = async (doc) => {
 
   // 기존 문서 정보 그대로 사용
   currentDetailDoc.value = doc;
-  console.log('currentDetailDoc.value : ', currentDetailDoc.value);
 
   try {
     // 이미 처리된 결재자 정보 사용
@@ -2460,7 +2247,6 @@ const showDocDetail = async (doc) => {
       auditors.agreers.map((a) => a.user_id.replaceAll('_', '-')),
       auditors.receivers.map((a) => a.user_id.replaceAll('_', '-'))
     );
-    console.log('userInfo : ', userInfo);
 
     auditors.approvers.forEach((a) => {
       const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
@@ -2571,7 +2357,6 @@ onMounted(async () => {
   if (isReRequestMode.value && reRequestData.value && reRequestData.value.data) {
     step.value = 2;
     temploading.value = true;
-    console.log('== onMounted == reRequestData : ', reRequestData.value);
 
     // 결재 제목 설정
     formTitle.value = reRequestData.value.data.docform_title;
@@ -2602,7 +2387,6 @@ onMounted(async () => {
     // 첨부파일이 있는 경우
     if (reRequestData.value.bin && reRequestData.value.bin.form_data) {
       uploadedFile.value = reRequestData.value.bin.form_data;
-      console.log('uploadedFile : ', uploadedFile.value);
     }
 
     // 결재자 정보 불러오기
@@ -2659,13 +2443,10 @@ onMounted(async () => {
           agreers: convertAuditors(auditors.agreers, 'agreers'),
           receivers: convertAuditors(auditors.receivers, 'receivers')
         };
-        console.log('selectedAuditors : ', selectedAuditors.value);
 
         // 결재자 순서대로 정렬
         selectedAuditors.value.approvers.sort((a, b) => (a.order || 0) - (b.order || 0));
         selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-        console.log('결재자 정보 설정 완료:', selectedAuditors.value);
       } catch (error) {
         console.error('결재자 정보 처리 중 오류:', error);
       }

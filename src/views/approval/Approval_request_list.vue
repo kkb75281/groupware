@@ -102,13 +102,11 @@ const showSendAuditDoc = (e, audit) => {
     (noti) => !Object.keys(readList.value).includes(noti.noti_id)
   );
 
-  // console.log({unreadNotis})
-
   // 모든 읽지 않은 알람을 병렬로 처리
   Promise.all(unreadNotis.map((noti) => readNoti(noti)));
 
-	goToAuditDetail(e, audit.record_id, router, true)
-}
+  goToAuditDetail(e, audit.record_id, router, true);
+};
 
 // pagination
 const getPage = async (refresh = false) => {
@@ -126,18 +124,14 @@ const getPage = async (refresh = false) => {
   }
 
   if ((!refresh && maxPage.value >= currentPage.value) || endOfList.value) {
-    console.log('== AA ==');
     sendAuditList.value = pager.getPage(currentPage.value).list;
-    console.log('sendAuditList : ', sendAuditList.value);
     return;
   } else if (!endOfList.value || refresh) {
-    console.log('== BB ==');
     fetching.value = true;
 
     // fetch from server
     let fetchOptions = Object.assign({ fetchMore: !refresh }, { limit: 10, ascending: false });
     let fetchedData = await getSendAuditList(fetchOptions);
-    console.log('fetchedData : ', fetchedData);
 
     // save endOfList status
     endOfList.value = fetchedData.endOfList;
@@ -149,15 +143,12 @@ const getPage = async (refresh = false) => {
 
     // get page from pager
     let disp = pager.getPage(currentPage.value);
-    console.log('disp : ', disp);
 
     // set maxpage
     maxPage.value = disp.maxPage;
-    console.log('maxPage : ', maxPage.value);
 
     // render data
     sendAuditList.value = disp.list;
-    console.log('sendAuditList : ', sendAuditList.value);
     fetching.value = false;
   }
 };

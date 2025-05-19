@@ -126,7 +126,6 @@ function disableContentEditable(htmlString) {
 
 // 게시글 수정
 const editNews = () => {
-  console.log('게시글 수정');
   editModeData.value = newsCont.value;
 
   router.push({

@@ -221,7 +221,6 @@ const handleEditorReady = (status) => {
           // 기존 내용 직접 설정
           editorElement.innerHTML = editModeData.value.data.to_news_content;
           editorContent.value = editModeData.value.data.to_news_content;
-          console.log('에디터에 내용 설정됨:', editorContent.value);
         }
         activateTableEditing(editorElement);
       }
@@ -565,13 +564,10 @@ const exportWysiwygData = (content) => {
 const removeFile = (file, index) => {
   // 삭제 파일 removeFiles 변수에 저장
   removeFiles.push(file);
-  console.log('removeFiles : ', removeFiles);
 
   uploadedFile.value.splice(index, 1);
   fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
-  console.log('uploadedFile.value : ', uploadedFile.value);
 };
-console.log('== BB == removeFiles : ', removeFiles);
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
@@ -591,14 +587,12 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       accessUser.push(...includeUser);
     }
   }
-  console.log('accessUser : ', accessUser);
 
   // 다중부서 직원 중복제거
   const uniqueUsers = accessUser.filter(
     (user, index, self) => index === self.findIndex((u) => u.user_id === user.user_id)
   );
   selectedUsers.value = JSON.parse(JSON.stringify(uniqueUsers));
-  console.log('중복제거 = selectedUsers.value : ', selectedUsers.value);
 
   try {
     const dvs = Object.keys(selectedDivision.value);
@@ -608,8 +602,6 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       const name = divisionNameList.value[key] || '-';
       return `${key}.${name}`;
     });
-    console.log('dvs : ', dvs);
-    console.log('dvsWithName : ', dvsWithName);
 
     newsFormData.append('news_title', news_title);
     newsFormData.append('selDvs', dvsWithName.join(','));
@@ -649,8 +641,6 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
           newsFormData.append('form_data', file);
         });
     }
-    console.log('selCate.value : ', selCate.value);
-    console.log('selCateId : ', selCateId);
 
     const options = {
       table: {
@@ -663,10 +653,8 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       },
       reference: selCateId // 카테고리 ID를 레퍼런스
     };
-    console.log('options : ', options);
 
     const res = await skapi.postRecord(newsFormData, options);
-    console.log('== postNewsRecord == res : ', res);
 
     return res;
   } catch (error) {
@@ -678,35 +666,17 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
   }
 };
 
-// 게시글 공개범위에게 권한을 부여하는 함수
-// const grantNewsUserAccess = async ({ news_id, newsUser_id }) => {
-//   return skapi.grantPrivateRecordAccess({
-//     record_id: news_id,
-//     user_id: newsUser_id
-//   });
-// };
-
 // 게시글 등록하고 알림을 보내는 함수
 const createAddNews = async (
   { news_id, newsUser_id, news_title },
   send_newsUser,
   isNotificationTarget = false
 ) => {
-  console.log('== createAddNews == send_newsUser : ', send_newsUser);
-  console.log('== createAddNews == newsUser_id : ', newsUser_id);
-  console.log('== createAddNews == isNotificationTarget : ', isNotificationTarget);
-
   if (!news_id || !newsUser_id) return;
-
-  // skapi.grantPrivateRecordAccess({
-  //   record_id: news_id,
-  //   user_id: newsUser_id
-  // });
 
   // 실시간 알림 보내기
   if (isNotificationTarget === true) {
     let news_title = document.getElementById('news_title').value;
-    console.log('news_title : ', news_title);
 
     skapi
       .postRealtime(
@@ -735,7 +705,7 @@ const createAddNews = async (
         }
       )
       .then((res) => {
-        console.log('실시간 알림 == res : ', res);
+        // console.log('실시간 알림 == res : ', res);
       })
       .catch(async (err) => {
         console.error(err);
@@ -778,12 +748,6 @@ const createAddNews = async (
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTarget = false) => {
   try {
-    // 권한 부여
-    // await grantNewsUserAccess({
-    //   news_id: newsId,
-    //   newsUser_id: userId
-    // });
-
     // 알림 전송
     const res = await createAddNews(
       {
@@ -794,7 +758,6 @@ const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTar
       send_auditors_arr,
       isNotificationTarget
     );
-    console.log('== postAuditDocRecordId == res : ', res);
     return res;
   } catch (error) {
     console.error(error);
@@ -863,20 +826,15 @@ const registerNews = async (e) => {
     mainPageLoading.value = true;
 
     if (isEditMode.value) {
-      console.log('== registerNews == 수정모드');
       // 수정 모드인 경우
       const editNewsId = route.query.news;
       const selNews = newsCateList.value.find((cat) => cat.record_id === selCate.value);
-      console.log('selNews : ', selNews);
-
-      console.log('= AA = removeFiles : ', removeFiles);
 
       if (selNews) {
         selectedDivision.value = selNews.data.access_division;
       } else {
         selectedDivision.value = {};
       }
-      console.log('selectedDivision.value : ', selectedDivision.value);
 
       // 선택된 부서에서 직원 정보 가져오기
       const accessUser = [];
@@ -892,7 +850,6 @@ const registerNews = async (e) => {
         (user, index, self) => index === self.findIndex((u) => u.user_id === user.user_id)
       );
       selectedUsers.value = JSON.parse(JSON.stringify(uniqueUsers));
-      console.log('중복제거 = selectedUsers.value : ', selectedUsers.value);
 
       // FormData 활용
       const updateFormData = new FormData();
@@ -935,12 +892,10 @@ const registerNews = async (e) => {
         });
 
         const fileObjects = await Promise.all(filePromises);
-        console.log('fileObjects : ', fileObjects);
 
         fileObjects
           .filter((file) => file !== null)
           .forEach((file) => {
-            console.log('file : ', file);
             updateFormData.append('form_data', file);
           });
       }
@@ -958,19 +913,15 @@ const registerNews = async (e) => {
           },
           reference: selCateId
         };
-        console.log('config : ', config);
 
         let updateRes;
 
         if (uploadedFile.value.length) {
           // 첨부파일 변경이 있을 경우
           config.remove_bin = removeFiles;
-          console.log('removeFiles : ', removeFiles);
           updateRes = await skapi.postRecord(updateFormData, config);
-          console.log('= AA = updateRes : ', updateRes);
         } else {
           updateRes = await skapi.postRecord(updateFormData, config);
-          console.log('= BB = updateRes : ', updateRes);
         }
 
         if (editModeData.value.data?.noti_setting === 'false' && notiSetting.value === true) {
@@ -982,14 +933,12 @@ const registerNews = async (e) => {
               userId: user.user_id
             }))
           ];
-          console.log('processRoles : ', processRoles);
 
           const res = await Promise.all(
             processRoles.map((roleInfo) =>
               postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value === 'true')
             )
           );
-          console.log('promiseall res : ', res);
 
           selectedUsers.value = [];
           selectedMembers.value = [];
@@ -1010,7 +959,6 @@ const registerNews = async (e) => {
         to_news_content,
         noti_setting: notiSetting.value // 알림 설정 관련 체크박스 값 전달
       });
-      console.log('등록 = newsDoc : ', newsDoc);
 
       const newsId = newsDoc.record_id; // 게시글 ID
       const newsTitle = news_title; // 게시글 제목
@@ -1020,7 +968,6 @@ const registerNews = async (e) => {
           userId: user.user_id
         }))
       ];
-      console.log('processRoles : ', processRoles);
 
       // 공개범위에게 게시글 열람 권한 및 등록 레코드 생성
       const res = await Promise.all(
@@ -1028,7 +975,6 @@ const registerNews = async (e) => {
           postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value === 'true')
         )
       );
-      console.log('promiseall res : ', res);
 
       selectedUsers.value = [];
       selectedMembers.value = [];
@@ -1091,7 +1037,6 @@ onMounted(async () => {
 
         if (record) {
           editModeData.value = record.list[0];
-          console.log('onMounted == editModeData.value : ', editModeData.value);
 
           newsTitle.value = editModeData.value.data?.news_title || '';
           editorContent.value = editModeData.value.data?.to_news_content || '';
@@ -1157,7 +1102,6 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  // max-width: 960px;
   max-width: 992px;
 
   .title {

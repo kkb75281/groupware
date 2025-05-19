@@ -146,7 +146,6 @@ const getEditModeCat = async () => {
       },
       record_id: recordId.value
     });
-    console.log('== getEditModeCat == res : ', res);
 
     if (res.list && res.list.length > 0) {
       const categoryData = res.list[0];
@@ -238,8 +237,6 @@ const handleOrganigramSelection = (users) => {
       selectedDivision.value[division].push(emp);
     }
   });
-
-  console.log('조직도선택 == selectedDivision.value : ', selectedDivision.value);
 };
 
 // 공개범위 모달에서 선택된 부서 저장
@@ -282,21 +279,12 @@ const saveAuditor = () => {
 
   backupSelected.value = null;
   isModalOpen.value = false;
-  console.log('저장 부서 :', selectedDivision.value);
-  console.log('저장 직원 : ', selectedEmps.value);
 };
 
 const undoChecked = (divisionName) => {
-  console.log('divisionName : ', divisionName);
-  console.log('organigram.value : ', organigram.value);
-
   // 재귀적으로 부서 찾기
   const findUncheckDepartment = (departments) => {
-    console.log('departments : ', departments);
-
     for (const dept of departments) {
-      console.log('dept : ', dept);
-
       // 현재 부서가 찾는 부서인지 확인
       if (dept.division === divisionName) {
         // 부서 체크박스 해제
@@ -343,7 +331,6 @@ const removeDvs = (divisionName) => {
 
     delete selectedDivision.value[divisionName];
     selectedDivision.value = JSON.parse(JSON.stringify(selectedDivision.value));
-    console.log('== removeDvs == selectedDivision.value :', selectedDivision.value);
   }
 };
 
@@ -377,7 +364,6 @@ const registerNewsCat = async () => {
     if (isEditMode.value) {
       // 수정 모드
       const res = await skapi.postRecord(data, { record_id: recordId.value });
-      console.log('수정 == res : ', res);
       alert('게시글 카테고리가 수정되었습니다.');
     } else {
       // 등록 모드
@@ -393,7 +379,6 @@ const registerNewsCat = async () => {
       };
 
       const res = await skapi.postRecord(data, config);
-      console.log('== registerNewsCat == res : ', res);
 
       // 카테고리 공개범위에게 권한 부여
       const categoryId = res.record_id;

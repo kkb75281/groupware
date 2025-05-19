@@ -164,7 +164,6 @@ const getDocFormDetail = async () => {
     const formDetail = await skapi.getRecords({
       record_id: formRecordId.value
     });
-    console.log('=== getDocFormDetail === formDetail : ', formDetail);
 
     docFormCont.value = formDetail.list[0];
 
@@ -192,8 +191,6 @@ const getDocFormDetail = async () => {
         // 결재자 순서대로 정렬
         selectedAuditors.value.approvers.sort((a, b) => (a.order || 0) - (b.order || 0));
         selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-        console.log('selectedAuditors.value : ', selectedAuditors.value);
       } catch (error) {
         console.error('결재자 정보 파싱 오류:', error);
         selectedAuditors.value = {

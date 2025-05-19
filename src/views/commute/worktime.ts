@@ -263,7 +263,7 @@ export let startWork = async (router?: any) => {
     // 지각일 경우, 지각한 사유 적기 위해 저장 후 출퇴근 관리 페이지로 이동
     if (isLate && router) {
       alert('지각하셨습니다. 지각 사유를 적어주세요.');
-      console.log('worktime.ts: ', router);
+      // console.log('worktime.ts: ', router);
       router.push({ name: 'commute-record' });
     }
   } catch (error) {

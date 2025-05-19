@@ -380,9 +380,6 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 		.modal-footer(style="padding-top: 0; border-top: none;")
 			button.btn.bg-gray.btn-cancel(type="button" @click="closeReferDetail") 닫기
-
-
-//- button.btn.outline.btn-new(type="button" @click="testDelete") delete
 </template>
 
 <script setup>
@@ -405,16 +402,6 @@ import {
 import Loading from '@/components/loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
 import Wysiwyg from '@/components/wysiwyg.vue';
-
-// const testDelete = () => {
-//   skapi
-//     .deleteRecords({
-//       record_id: 'Ukgjwll1jL49BQRG'
-//     })
-//     .then((res) => {
-//       console.log('삭제완');
-//     });
-// };
 
 const router = useRouter();
 const route = useRoute();
@@ -881,7 +868,6 @@ const getAuditDetail = async () => {
         record_id: auditId.value
       })
     ).list[0];
-    console.log('결재서류 === getAuditDetail === auditDoc : ', auditDoc);
 
     if (auditDoc) {
       auditDoContent.value = auditDoc;
@@ -972,15 +958,12 @@ const getAuditDetail = async () => {
 
       uploadedFile.value = fileList;
     } else {
-      console.log('CC');
       uploadedFile.value = [];
     }
 
     // 참조 문서
-    // console.log('auditDoc : ', auditDoc);
     const referDocIds = auditDoc.data.reference_docs;
     const parseReferDocId = JSON.parse(auditDoc.data.reference_docs).referDocId;
-    // console.log('parseReferDocId : ', parseReferDocId);
 
     if (referDocIds) {
       const fetchPromises = parseReferDocId.map((recordId) =>
@@ -994,7 +977,6 @@ const getAuditDetail = async () => {
       );
 
       referDoc.value = await Promise.all(fetchPromises);
-      // console.log('referDoc.value : ', referDoc.value);
     } else {
       referDoc.value = [];
     }
@@ -1029,7 +1011,6 @@ const getAuditDetail = async () => {
           // 최종결재자가 결재했으면 문서 상태 설정
           auditDoContent.value.documentStatus =
             finalApproval.data.approved === 'approve' ? '완료됨' : '반려됨';
-          console.log('최종결재자 결재 상태 : ', auditDoContent.value.documentStatus);
         }
       }
     }
@@ -1191,18 +1172,15 @@ const postApproval = async () => {
     );
 
     const maxOrder = Math.max(...approverAgreesList.map((auditor) => auditor.order));
-    console.log('maxOrder : ', maxOrder);
 
     const currentUser = auditorList.value.find((auditor) => auditor.user_id === user.user_id);
     const isFinalApprover =
       currentUser &&
       currentUser.order === maxOrder &&
       (currentUser.approved_type === 'approvers' || currentUser.approved_type === 'agreers');
-    console.log('isFinalApprover : ', isFinalApprover);
 
     // 이미 '완료됨' 상태인 문서에 대한 반려 방지 (최종결재자가 승인했는지 확인)
     const finalApprover = approverAgreesList.find((auditor) => auditor.order === maxOrder);
-    console.log('finalApprover : ', finalApprover);
     if (finalApprover && finalApprover.approved === 'approve' && approved === 'reject') {
       alert('이미 최종 승인된 문서는 반려할 수 없습니다.');
       isPosting = false;
@@ -1220,7 +1198,6 @@ const postApproval = async () => {
     if (isFinalApprover) {
       data.isFinalApprover = true;
       data.documentStatus = approved === 'approve' ? '완료됨' : '반려됨';
-      console.log('data : ', data);
     }
 
     // 결재 하는 요청
@@ -1232,7 +1209,6 @@ const postApproval = async () => {
       reference: auditId.value,
       tags: [userId.replaceAll('-', '_')]
     });
-    console.log('=== postApproval === res : ', res);
 
     // 기안자에게 결재 알림
     let postRealtimeBody = {
@@ -1261,7 +1237,6 @@ const postApproval = async () => {
         auditDoContent.value.user_id,
         {
           title: '알림',
-          // body: JSON.stringify(postRealtimeBody)
           body: `${user.name}님께서 결재를 완료했습니다.`,
           config: {
             always: true // 무조건 알림 받기
@@ -1269,7 +1244,7 @@ const postApproval = async () => {
         }
       )
       .then((res) => {
-        console.log('결재알림 === postRealtime === res : ', res);
+        // console.log('결재알림 === postRealtime === res : ', res);
       });
 
     // 실시간 못 받을 경우 알림 기록 저장
@@ -1296,7 +1271,7 @@ const postApproval = async () => {
         }
       )
       .then((res) => {
-        console.log('결재알림기록 === postRecord === res : ', res);
+        // console.log('결재알림기록 === postRecord === res : ', res);
       });
 
     // 결재 완료 후 다음 결재자 알림 처리
@@ -1304,7 +1279,6 @@ const postApproval = async () => {
       if (auditDoContent.value) {
         const doc = auditDoContent.value;
         const auditors = JSON.parse(doc.data.auditors);
-        console.log('doc : ', doc);
 
         // 결재자/합의자 목록 합치기
         const allAuditors = [
@@ -1346,7 +1320,6 @@ const postApproval = async () => {
               nextAuditorId, // 다음 결재자에게 알림
               {
                 title: '[그룹웨어]',
-                // body: `${doc.data.to_audit} 문서의 결재가 귀하의 차례입니다.`,
                 body: `${senderUser.value.name}님께서 결재를 완료했습니다.`,
                 config: {
                   always: true
@@ -1354,7 +1327,7 @@ const postApproval = async () => {
               }
             )
             .then((res) => {
-              console.log('결재알림 === postRealtime === res : ', res);
+              // console.log('결재알림 === postRealtime === res : ', res);
             });
 
           // 알림 기록 저장
@@ -1382,7 +1355,7 @@ const postApproval = async () => {
               }
             )
             .then((res) => {
-              console.log('결재알림기록 === postRecord === res : ', res);
+              // console.log('결재알림기록 === postRecord === res : ', res);
             });
         }
       }
@@ -1667,7 +1640,6 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
         };
       })
     );
-    console.log('결재회수 알림 전송 완료:', results);
   } catch (error) {
     console.error('결재회수 알림 전송 중 오류:', error);
   }
@@ -1696,11 +1668,11 @@ const canceledAudit = async (reason = '회수', isAutoCancel = false) => {
           }
         });
 
-        console.log('요청자 자동 회수 알림 전송 완료:', {
-          senderUserId,
-          realtimeResult,
-          recordResult
-        });
+        // console.log('요청자 자동 회수 알림 전송 완료:', {
+        //   senderUserId,
+        //   realtimeResult,
+        //   recordResult
+        // });
       }
     } catch (error) {
       console.error('요청자 자동 회수 알림 전송 중 오류:', error);
@@ -1758,10 +1730,6 @@ const getCmtRecord = async () => {
 
 // 댓글 (결재 의견) 작성
 const writeComment = async () => {
-  console.log('user : ', user);
-  console.log('auditorList : ', auditorList.value);
-  console.log('cmtRecord.value : ', cmtRecord.value);
-
   if (!comment.value) {
     alert('댓글을 입력해주세요.');
     return;
@@ -1771,7 +1739,6 @@ const writeComment = async () => {
   const writer = auditorList.value.find(
     (auditor) => auditor.user_id.replaceAll('-', '_') === user.user_id.replaceAll('-', '_')
   );
-  console.log('writer : ', writer);
 
   try {
     const data = {
@@ -1791,7 +1758,6 @@ const writeComment = async () => {
     };
 
     const res = await skapi.postRecord(data, config);
-    console.log('== writeComment == res : ', res);
 
     // 댓글 알림
     if (senderUser.value.user_id && senderUser.value.user_id !== user.user_id) {
@@ -1821,7 +1787,7 @@ const writeComment = async () => {
           }
         })
         .then((res) => {
-          console.log('댓글알림 === postRealtime === res : ', res);
+          // console.log('댓글알림 === postRealtime === res : ', res);
         })
         .catch((err) => {
           console.error('댓글알림 실패:', err);
@@ -1837,7 +1803,7 @@ const writeComment = async () => {
           }
         })
         .then((res) => {
-          console.log('댓글알림기록 === postRecord === res : ', res);
+          // console.log('댓글알림기록 === postRecord === res : ', res);
         })
         .catch((err) => {
           console.error('댓글알림기록 저장 실패:', err);
@@ -1870,7 +1836,6 @@ const getComment = async () => {
 
   if (res.list.length > 0) {
     commentList.value = res.list;
-    console.log('commentList.value : ', commentList.value);
     return res.list;
   } else {
     commentList.value = [];
@@ -1915,15 +1880,9 @@ const writeReply = async (type, index, parentId = null) => {
   if (type === 'subReply') {
     const targetParentId = parentId || commentItem.reference || commentId;
     replyContent = subReply.value[targetParentId];
-    console.log('targetParentId:', targetParentId);
-    console.log('subReply 내용:', replyContent);
   } else {
     replyContent = reply.value[commentId];
-    console.log('reply 내용:', replyContent);
   }
-
-  console.log('commentId : ', commentId);
-  console.log('replyContent : ', replyContent);
 
   if (!replyContent) {
     alert('댓글을 입력해주세요.');
@@ -1986,7 +1945,7 @@ const writeReply = async (type, index, parentId = null) => {
           }
         })
         .then((res) => {
-          console.log('대댓글알림 === postRealtime === res : ', res);
+          // console.log('대댓글알림 === postRealtime === res : ', res);
         })
         .catch((err) => {
           console.error('대댓글알림 실패:', err);
@@ -2002,7 +1961,7 @@ const writeReply = async (type, index, parentId = null) => {
           }
         })
         .then((res) => {
-          console.log('대댓글알림기록 === postRecord === res : ', res);
+          // console.log('대댓글알림기록 === postRecord === res : ', res);
         })
         .catch((err) => {
           console.error('대댓글알림기록 저장 실패:', err);
@@ -2011,7 +1970,6 @@ const writeReply = async (type, index, parentId = null) => {
   } catch (error) {
     console.log('error : ', error);
   } finally {
-    console.log('완료');
     // 등록 후 해당 댓글에 대한 대댓글 내용만 초기화
     if (type === 'subReply') {
       subReply.value[commentId] = '';
@@ -2210,7 +2168,6 @@ const deleteReply = async (recordId, isComment = true) => {
 const showReferDetail = async (doc) => {
   isReferDetailModal.value = true;
   referDetail.value = doc;
-  console.log('모달 = referDetail.value : ', referDetail.value);
 
   try {
     // 이미 처리된 결재자 정보 사용
@@ -2224,7 +2181,6 @@ const showReferDetail = async (doc) => {
       auditors.agreers.map((a) => a.user_id.replaceAll('_', '-')),
       auditors.receivers.map((a) => a.user_id.replaceAll('_', '-'))
     );
-    console.log('userInfo : ', userInfo);
 
     auditors.approvers.forEach((a) => {
       const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
@@ -2281,7 +2237,6 @@ const showReferDetail = async (doc) => {
       );
 
       modalReferDoc.value = await Promise.all(fetchPromises);
-      console.log('모달 = modalReferDoc.value : ', modalReferDoc.value);
     } else {
       modalReferDoc.value = [];
     }
