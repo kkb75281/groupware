@@ -235,6 +235,57 @@ const stopColorDrag = () => {
 };
 
 const handleColorInput = (type, colorValue) => {
+    // const selection = window.getSelection();
+    // console.log('선택된 셀:', selection);
+
+    // if (selection.rangeCount > 0) {
+    //     const range = selection.getRangeAt(0);
+    //     console.log('선택된 범위:', range);
+
+    //     const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
+
+    //     if (selectedCells.length > 0) {
+    //         selectedCells.forEach((cell) => {
+    //             if (type === 'textColor') {
+    //                 cell.style.color = colorValue;
+    //             } else if (type === 'bgColor') {
+    //                 cell.style.backgroundColor = colorValue;
+    //             }
+    //             // 클래스 제거 생략 가능 → 드래그 중이라 계속 들어옴
+    //         });
+    //     }
+    //     else if (!range.collapsed) {
+    //         try {
+    //             const span = document.createElement('span');
+
+    //             if (type === 'bgColor') {
+    //                 span.style.backgroundColor = colorValue;
+    //             } else {
+    //                 span.style.color = colorValue;
+    //             }
+
+    //             range.surroundContents(span);
+    //         } catch (e) {
+    //             // 범위가 여러 요소에 걸쳐 있는 경우, 기본 명령 사용
+    //             if (type === 'bgColor') {
+    //                 wysiwyg.command('hiliteColor', colorValue);
+    //             } else {
+    //                 wysiwyg.command('textColor', colorValue);
+    //             }
+    //         }
+    //     }
+    //     else {
+    //         // 선택된 텍스트가 없으면 기본 명령 실행
+    //         if (type === 'bgColor') {
+    //             console.log('BB');
+    //             wysiwyg.command('hiliteColor', colorValue);
+    //         } else {
+    //             console.log('CC');
+    //             wysiwyg.command('textColor', colorValue);
+    //         }
+    //     }
+    // }
+
     const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
 
     if (selectedCells.length > 0) {
@@ -271,7 +322,7 @@ const onColorInputMouseDown = (type, event) => {
 const handleCommand = (command) => {
     if (!wysiwyg) return;
     // 색상 값이 직접 전달된 경우 (#색상값 형식)
-    else if (typeof command === 'string' && command.startsWith('#')) {
+    if (typeof command === 'string' && command.startsWith('#')) {
         console.log('BB 색상 값:', command);
         const colorValue = command;
         const selection = window.getSelection();
@@ -350,34 +401,6 @@ const exportData = async () => {
             console.log('에디터 내용:', html);
             emit('update:content', r);
         });
-    }
-};
-
-// 에디터가 사라지면 다시 생성
-const ensureEditorExists = () => {
-    let editorEl = document.getElementById('myeditor');
-    if (!editorEl) {
-        // console.warn('#myeditor가 사라짐 -> 재생성 중');
-
-        // 부모 요소 찾기
-        const wysiwygContainer = document.querySelector('.wysiwyg'); // 실제 컨테이너 클래스 확인 필요
-        if (!wysiwygContainer) return;
-
-        // div 새로 생성
-        const newEditor = document.createElement('div');
-        newEditor.id = 'myeditor';
-        newEditor.contentEditable = true;
-        newEditor.style.width = '100%';
-        newEditor.style.minHeight = '3rem';
-
-        // 기본 내용 삽입
-        newEditor.innerHTML = '<p><br></p>';
-
-        // 기존 위치에 삽입
-        wysiwygContainer.appendChild(newEditor);
-
-        // wysiwyg 인스턴스 재설정
-        initWysiwyg();
     }
 };
 
@@ -467,11 +490,16 @@ function findUp(node, selector) {
     return null;
 }
 
+let allSelectPrevious = false;
+
 // Ctrl+A 이벤트 처리
 function handleEditorKeyDown(e) {
+    let editorEl = document.getElementById('myeditor');
+
     if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-        const editorEl = document.getElementById('myeditor');
         if (!editorEl) return;
+
+        allSelectPrevious = true;
 
         // 기본 Ctrl+A 동작 유지
         // e.preventDefault()를 제거하여 기본 텍스트 선택 동작을 유지
@@ -482,6 +510,18 @@ function handleEditorKeyDown(e) {
                 table.classList.add('selected-all');
             });
         }, 0); // 기본 동작 이후 실행되도록 딜레이 추가
+    } else if (e.key === 'Delete' || e.key === 'Backspace') { // e.code vs e.key
+        if (allSelectPrevious) {
+            e.preventDefault(); // 기본 동작 방지
+
+            editorEl.innerHTML = '<p></p>'; // 내용 초기화
+            nextTick(() => {
+                editorEl.focus();
+            });
+        }
+    }
+    else {
+        allSelectPrevious = false;
     }
 }
 
@@ -502,56 +542,26 @@ let handleEditorKeyUp = (e) => {
         // Escape 키로 선택 해제
         clearTableSelection();
     }
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-        ensureEditorExists();
-
-        // 현재 포커스된 노드 가져오기
-        const selection = window.getSelection();
-        if (!selection.rangeCount) return;
-
-        const range = selection.getRangeAt(0);
-        let node = range.startContainer;
-
-        // 포커스가 텍스트 노드 내부라면, 부모 엘리먼트로 올라감
-        while (node && node.nodeType !== 1) {
-            node = node.parentNode;
-        }
-
-        if (!node) return;
-
-        if (node.id === 'removeCol') {
-            const customBlock = findUp(node, '._custom_');
-            e.preventDefault(); // 기본 동작 방지
-            customBlock.remove(); // 덩어리 전체 삭제
-            return;
-        }
-    }
 };
 
 onMounted(() => {
     initWysiwyg();
 
-    let retryCount = 0;
-    const maxRetries = 5;
-
-    const intervalId = setInterval(() => {
-        if (ensureEditorExists()) {
-            clearInterval(intervalId);
-        } else {
-            retryCount++;
-            if (retryCount >= maxRetries) {
-                clearInterval(intervalId);
-            }
-        }
-    }, 1000);
-
     document.addEventListener('keydown', handleEditorKeyDown);
     document.addEventListener('keyup', handleEditorKeyUp);
+    document.addEventListener('click', clearTableSelection);
+
+
+    let editorEl = document.getElementById('myeditor');
+    editorEl.addEventListener('click', (e) => {
+        allSelectPrevious = false;
+    });
 });
 
 onUnmounted(() => {
     document.removeEventListener('keydown', handleEditorKeyDown);
     document.removeEventListener('keyup', handleEditorKeyUp);
+    document.removeEventListener('click', clearTableSelection);
 });
 
 onBeforeUnmount(() => {
