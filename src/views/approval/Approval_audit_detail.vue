@@ -133,74 +133,67 @@ Loading#loading(v-if="getAuditDetailRunning")
 			input(type="text" placeholder="의견을 입력해주세요." v-model="comment" style="width: 100%;")
 			button.btn(type="button" @click="writeComment") 등록
 
-			//- 댓글
-			ul.comment-list(v-if="commentList.length > 0")
-				li.comment-item(v-for="(comment, index) in commentList" :key="index")
-					.auditor-info
-						.name {{ comment.data?.writer_name }}
-						//- .approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !comment.data?.approval_type || comment.data?.approval_type === 'undefined' }") {{ comment.data?.approval_type === 'approve' ? '승인자' : comment.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
-					template(v-if="isEditMode[comment.record_id]")
-						.input-wrap.input-edit
-							input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[comment.record_id]" style="width: 100%;")
-							.btn-wrap
-								button.btn.sm.outline.btn-update(type="button" @click="editReply('reply', index)") 등록
-								button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode('reply', index)") 취소
+		//- 댓글
+		ul.comment-list(v-if="commentList.length > 0")
+			li.comment-item(v-for="(comment, index) in commentList" :key="index")
+				.auditor-info
+					.name {{ comment.data?.writer_name }}
+					//- .approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !comment.data?.approval_type || comment.data?.approval_type === 'undefined' }") {{ comment.data?.approval_type === 'approve' ? '승인자' : comment.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
+				template(v-if="isEditMode[comment.record_id]")
+					.input-wrap.input-edit
+						input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[comment.record_id]" style="width: 100%;")
+						.btn-wrap
+							button.btn.sm.outline.btn-update(type="button" @click="editReply('reply', index)") 등록
+							button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode('reply', index)") 취소
+				template(v-else)
+					.text {{ comment?.data?.comment || '-' }}
+				.etc
+					template(v-if="comment.data?.edited")
+						span.date(v-if="comment.data?.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(comment.data?.edit_date) }}
+							span.text 수정됨
 					template(v-else)
-						.text {{ comment?.data?.comment || '-' }}
-					.etc
-						template(v-if="comment.data?.edited")
-							span.date(v-if="comment.data?.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(comment.data?.edit_date) }}
-								span.text 수정됨
-						template(v-else)
-							.date {{ formatTimestampToDate(comment.data?.date) }}
-						button.btn-reply(type="button" @click="toggleReplyInput('reply', index)") 댓글 쓰기
-						.btn-wrap(v-if="comment.data?.writer === user.user_id")
-							button.btn-edit(type="button" @click="toggleEditMode(comment.record_id, true)") 수정
-							button.btn-delete(type="button" @click="deleteReply(comment.record_id, true)") 삭제
+						.date {{ formatTimestampToDate(comment.data?.date) }}
+					button.btn-reply(type="button" @click="toggleReplyInput('reply', index)") 댓글 쓰기
+					.btn-wrap(v-if="comment.data?.writer === user.user_id")
+						button.btn-edit(type="button" @click="toggleEditMode(comment.record_id, true)") 수정
+						button.btn-delete(type="button" @click="deleteReply(comment.record_id, true)") 삭제
 
-					//- 대댓글 :: s
-					ul.reply-list(v-if="replyList[comment.record_id]?.length > 0")
-						li.reply-item(v-for="(reply, index) in replyList[comment.record_id]" :key="index")
-							.icon
-								svg
-									use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
-							.reply
-								.auditor-info
-									.name {{ reply.data?.writer_name }}
-									//- .approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !reply.data?.approval_type || reply.data?.approval_type === 'undefined' }") {{ reply.data?.approval_type === 'approve' ? '승인자' : reply.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
-								template(v-if="isEditMode[reply.record_id]")
-									.input-wrap.input-edit
-										input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[reply.record_id]" style="width: 100%;")
-										.btn-wrap
-											button.btn.sm.outline.btn-update(type="button" @click="editReply('subReply', index, comment.record_id)") 등록
-											button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode(reply.record_id, true)") 취소
+				//- 대댓글 :: s
+				ul.reply-list(v-if="replyList[comment.record_id]?.length > 0")
+					//- li.reply-item(v-for="(reply, index) in replyList[comment.record_id]" :key="index")
+					li.reply-item(v-for="(reply, replyIndex) in replyList[comment.record_id]" :key="replyIndex")
+						.icon
+							svg
+								use(xlink:href="@/assets/icon/material-icon.svg#icon-reply")
+						.reply
+							.auditor-info
+								.name {{ reply.data?.writer_name }}
+								//- .approved(:class="{ 'reject': comment.data?.approval_type === 'reject', 'draft': !reply.data?.approval_type || reply.data?.approval_type === 'undefined' }") {{ reply.data?.approval_type === 'approve' ? '승인자' : reply.data?.approval_type === 'reject' ? '반려자' : '대기자' }}
+							template(v-if="isEditMode[reply.record_id]")
+								.input-wrap.input-edit
+									input(type="text" placeholder="의견을 입력해주세요." v-model="editComment[reply.record_id]" style="width: 100%;")
+									.btn-wrap
+										button.btn.sm.outline.btn-update(type="button" @click="editReply('subReply', replyIndex, comment.record_id)") 등록
+										button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode(reply.record_id, true)") 취소
+							template(v-else)
+								.text {{ reply.data?.comment || '-' }}
+							.etc
+								template(v-if="reply.data.edited")
+									span.date(v-if="reply.data?.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(reply.data?.edit_date) }}
+										span.text 수정됨
 								template(v-else)
-									.text {{ reply.data?.comment || '-' }}
-								.etc
-									template(v-if="reply.data.edited")
-										span.date(v-if="reply.data?.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(reply.data?.edit_date) }}
-											span.text 수정됨
-									template(v-else)
-										.date {{ formatTimestampToDate(reply.data?.date) }}
-									//- button.btn-reply(type="button" @click="toggleReplyInput('subReply', index)") 댓글 쓰기
-									.btn-wrap(v-if="reply.data.writer === user.user_id")
-										button.btn-edit(type="button" @click="toggleEditMode(reply.record_id, false)") 수정
-										button.btn-delete(type="button" @click="deleteReply(reply.record_id, false)") 삭제
+									.date {{ formatTimestampToDate(reply.data?.date) }}
+								//- button.btn-reply(type="button" @click="toggleReplyInput('subReply', index)") 댓글 쓰기
+								.btn-wrap(v-if="reply.data.writer === user.user_id")
+									button.btn-edit(type="button" @click="toggleEditMode(reply.record_id, false)") 수정
+									button.btn-delete(type="button" @click="deleteReply(reply.record_id, false)") 삭제
 
-						template(v-if="commentList[index]?.record_id && isSubReplyOpen[commentList[index]?.record_id]")
-							.input-wrap.input-reply(style="padding-left: 2.5rem; margin-top: 1rem;")
-								input(type="text" placeholder="댓글을 입력해주세요." v-model="subReply[commentList[index]?.record_id]" style="width: 100%;")
-								.btn-wrap
-									button.btn(type="button" @click="writeReply('subReply', index, comment.record_id)") 등록
-									button.btn.bg-gray(type="button" @click="toggleReplyInput(reply.record_id, true)") 취소
-					//- 대댓글 :: e
-
-					template(v-if="isReplyOpen[comment.record_id]")
-						.input-wrap.input-reply
-							input(type="text" placeholder="댓글을 입력해주세요." v-model="reply[comment.record_id]" style="width: 100%;")
+					template(v-if="commentList[index]?.record_id && isSubReplyOpen[commentList[index]?.record_id]")
+						.input-wrap.input-reply(style="padding-left: 2.5rem; margin-top: 1rem;")
+							input(type="text" placeholder="댓글을 입력해주세요." v-model="subReply[commentList[index]?.record_id]" style="width: 100%;")
 							.btn-wrap
-								button.btn(type="button" @click="writeReply('subReply', index)") 등록
-								button.btn.bg-gray(type="button" @click="toggleReplyInput('subReply', index)") 취소
+								button.btn(type="button" @click="writeReply('subReply', index, comment.record_id)") 등록
+								button.btn.bg-gray(type="button" @click="toggleReplyInput(reply.record_id, true)") 취소
 				//- 대댓글 :: e
 
 				template(v-if="isReplyOpen[comment.record_id]")
@@ -209,6 +202,14 @@ Loading#loading(v-if="getAuditDetailRunning")
 						.btn-wrap
 							button.btn(type="button" @click="writeReply('reply', index)") 등록
 							button.btn.bg-gray(type="button" @click="toggleReplyInput('reply', index)") 취소
+			//- 대댓글 :: e
+
+			template(v-if="isReplyOpen[comment.record_id]")
+				.input-wrap.input-reply
+					input(type="text" placeholder="댓글을 입력해주세요." v-model="reply[comment.record_id]" style="width: 100%;")
+					.btn-wrap
+						button.btn(type="button" @click="writeReply('reply', index)") 등록
+						button.btn.bg-gray(type="button" @click="toggleReplyInput('reply', index)") 취소
 		.empty(v-else style="margin-top: 3rem;") 결재 의견이 없습니다.
 
 
@@ -237,7 +238,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 					textarea(name="comment" rows="5" placeholder="결재의견을 추가하고 싶다면 입력해주세요." v-model="approvedComment" style="width: 100%;resize: none;")
 				p.label 결재 사항을 선택해주세요.
 
-			template(v-if="approvalStep === 2")
+			template(v-else-if="approvalStep === 2")
 				.tab-menu
 					ul(:class="{ 'stamp': stempType === 'stamp', 'sign': stempType === 'sign' }")
 						//- li(:class="{ 'active': stempType === 'stamp' }" @click="stempType = 'stamp'; previewStamp = null; selectedStamp = null; selectedStampComplete = false") 도장/서명 선택
@@ -274,7 +275,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 				//- button.btn.warning.btn-edit(type="button" @click="rejectAudit") 반려하기
 				button.btn.warning.btn-edit(type="button" @click="rejectAudit" :disabled="auditorList.some(a => a.approved === 'approve' && a.order === Math.max(...auditorList.filter(auditor => auditor.approved_type === 'approvers' || auditor.approved_type === 'agreers').map(auditor => auditor.order)))") 반려하기
 				button.btn.btn-edit(type="button" @click="approveAudit = true; approvalStep++; getMainStamp()") 승인하기
-			template(v-if="approvalStep === 2")
+			template(v-else-if="approvalStep === 2")
 				button.btn.bg-gray.btn-edit(v-if="stempType === 'sign' ? handleStampBlobComplete : true" type="button" @click="approvalStep--") 이전
 				button.btn.btn-edit(v-if="selectedStampComplete" type="button" @click="postApproval") 결재승인
 
@@ -1877,8 +1878,8 @@ const getComment = async () => {
 };
 
 // 댓글 입력 영역 toggle
-const toggleReplyInput = (type, index) => {
-  const commentItem = type === 'reply' ? commentList.value[index] : replyList.value[index];
+const toggleReplyInput = (type, index, parentId = null) => {
+  const commentItem = commentList.value[index];
 
   if (!commentItem) {
     console.error('댓글을 찾을 수 없습니다:', type, index);
@@ -1894,21 +1895,35 @@ const toggleReplyInput = (type, index) => {
       reply.value[commentId] = '';
     }
   } else if (type === 'subReply') {
-    // subReply의 경우 부모 댓글의 ID를 저장
-    const parentId = commentItem.reference || commentId;
-    isSubReplyOpen.value[parentId] = !isSubReplyOpen.value[parentId];
+    const targetParentId = parentId || commentItem.reference || commentId;
 
-    if (!isSubReplyOpen.value[parentId]) {
-      subReply.value[parentId] = '';
+    isSubReplyOpen.value[targetParentId] = !isSubReplyOpen.value[targetParentId];
+
+    if (!isSubReplyOpen.value[targetParentId]) {
+      subReply.value[targetParentId] = '';
     }
   }
 };
 
 // 대댓글 작성
-const writeReply = async (type, index) => {
-  // 댓글 ID -> 문자열 변환
-  const commentId = String(commentList.value[index].record_id);
-  const replyContent = type === 'subReply' ? subReply.value[commentId] : reply.value[commentId];
+const writeReply = async (type, index, parentId = null) => {
+  const commentItem = commentList.value[index];
+  const commentId = String(commentItem.record_id);
+
+  // 대댓글인 경우 targetParentId 계산
+  let replyContent;
+  if (type === 'subReply') {
+    const targetParentId = parentId || commentItem.reference || commentId;
+    replyContent = subReply.value[targetParentId];
+    console.log('targetParentId:', targetParentId);
+    console.log('subReply 내용:', replyContent);
+  } else {
+    replyContent = reply.value[commentId];
+    console.log('reply 내용:', replyContent);
+  }
+
+  console.log('commentId : ', commentId);
+  console.log('replyContent : ', replyContent);
 
   if (!replyContent) {
     alert('댓글을 입력해주세요.');
