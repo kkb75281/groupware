@@ -244,20 +244,37 @@ const handleOrganigramSelection = (users) => {
 
 // 공개범위 모달에서 선택된 부서 저장
 const saveAuditor = () => {
+  // 기존 선택된 직원 목록을 초기화하고 새로 구성
+  selectedEmps.value = [];
+
   // 선택된 모든 부서의 사용자 추가
   if (Object.keys(selectedDivision.value).length > 0) {
     Object.keys(selectedDivision.value).forEach((division) => {
       const departmentUsers = selectedDivision.value[division];
 
       departmentUsers.forEach((user) => {
-        // 이미 추가된 사용자인지 확인
+        const userCopy = JSON.parse(JSON.stringify(user));
+
+        // 중복 체크 - 같은 사용자가 여러 부서에 속할 수 있으므로
         const isDuplicate = selectedEmps.value.some(
-          (existingUser) => existingUser.user_id === user.user_id
+          (existingUser) => existingUser.data?.user_id === userCopy.user_id
         );
 
         if (!isDuplicate) {
-          const userCopy = JSON.parse(JSON.stringify(user));
-          selectedEmps.value.push(userCopy);
+          // 구조에 맞게 데이터 구성
+          let pushUser = {
+            data: {
+              user_id: userCopy.user_id
+            },
+            index: {
+              name: userCopy.dvs.split('.')[0] + '.' + userCopy.position,
+              value: userCopy.name
+            },
+            dvs: userCopy.dvs,
+            position: userCopy.position,
+            name: userCopy.name
+          };
+          selectedEmps.value.push(pushUser);
         }
       });
     });
@@ -271,6 +288,7 @@ const saveAuditor = () => {
 
 const undoChecked = (divisionName) => {
   console.log('divisionName : ', divisionName);
+  console.log('organigram.value : ', organigram.value);
 
   // 재귀적으로 부서 찾기
   const findUncheckDepartment = (departments) => {
