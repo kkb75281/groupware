@@ -257,99 +257,189 @@ function rangeToArray(a, b) {
 }
 
 // 행 너비 조절
+// function resizeColumn(e, tableState, cell) {
+//   e.stopPropagation();
+
+//   //   const isMergedCell = cell.rowSpan > 1 || cell.colSpan > 1;
+//   //   const { startRow, startCol, endRow, endCol } = getCellRange(cell);
+
+//   //   //   console.log(startRow, startCol, endRow, endCol);
+
+//   //   const resizer = e.currentTarget;
+//   //   const startX = e.clientX;
+//   //   const startCellWidth = cell.offsetWidth;
+
+//   //   function onMouseMove(e) {
+//   //     if (!tableState.isDragging || !tableState.isResizing) {
+//   //       resizer.classList.add('active');
+//   //     }
+
+//   //     let rows = tableState.table.rows.length;
+//   //     let cols = tableState.table.rows[0].cells.length;
+//   //     let diffX = e.clientX - startX;
+
+//   //     // 모든 행의 해당 열 셀 크기 변경
+//   //     for (let i = 0; i < rows; i++) {
+//   //       const currentCell = tableState.table.rows[i].cells[startCol];
+
+//   //       if (currentCell) {
+//   //         console.log('currentCell', currentCell);
+//   //         currentCell.style.width = `${startCellWidth + diffX}px`;
+//   //       } else {
+//   //         console.log('셀 없음', i, j);
+//   //       }
+//   //     }
+//   //   }
+
+//   const colIndex = parseInt(cell.dataset.col);
+//   const nextCell = tableState.table.rows[0].cells[colIndex + 1];
+//   const resizer = e.currentTarget;
+
+//   const startX = e.clientX;
+//   const startCellWidth = cell.offsetWidth;
+
+//   function onMouseMove(e) {
+//     const diffX = e.clientX - startX;
+
+//     if (!tableState.isDragging || !tableState.isResizing) {
+//       resizer.classList.add('active');
+//     }
+
+//     // const cell = targetTable.querySelector(`td[data-row='${r}'][data-col='${c}']`);
+
+//     // 모든 행의 해당 열 셀 크기 변경
+//     for (let i = 0; i < tableState.table.rows.length; i++) {
+//       const currentCell = tableState.table.rows[i].cells[colIndex];
+//       const currentNextCell = tableState.table.rows[i].cells[colIndex + 1];
+
+//       console.log('currentCell', currentCell);
+
+//       currentCell.style.width = `${startCellWidth + diffX}px`;
+//     }
+
+//     cell.style.width = `${startCellWidth + diffX}px`;
+//   }
+
+//   function onMouseUp() {
+//     tableState.isResizing = false;
+//     resizer.classList.remove('active');
+
+//     document.removeEventListener('mousemove', onMouseMove);
+//     document.removeEventListener('mouseup', onMouseUp);
+
+//     setTimeout(() => updateButtonPositions(tableState), 0);
+//   }
+
+//   document.addEventListener('mousemove', onMouseMove); // 드래그하는 동안 크기 변경
+//   document.addEventListener('mouseup', onMouseUp); // 리사이징 종료
+// }
+
 function resizeColumn(e, tableState, cell) {
   e.stopPropagation();
 
-  const isMergedCell = cell.rowSpan > 1 || cell.colSpan > 1;
-  const { startRow, startCol, endRow, endCol } = getCellRange(cell);
-
-  //   console.log(startRow, startCol, endRow, endCol);
-
   const resizer = e.currentTarget;
   const startX = e.clientX;
-  const startCellWidth = cell.offsetWidth;
 
-  function onMouseMove(e) {
-    if (!tableState.isDragging || !tableState.isResizing) {
-      resizer.classList.add('active');
+  let startCellWidth = cell.offsetWidth;
+  let colIndex = parseInt(cell.dataset.col);
+
+  if (cell.colSpan > 1) {
+    let { startRow, startCol, endRow, endCol } = getCellRange(cell);
+    let checkEndCol = startCol + (endCol - startCol) - 1;
+    let ckeckedCol = [];
+    let minusWidth = 0;
+
+    for (let i = 0; i <= tableState.table.rows.length; i++) {
+      for (let j = startCol; j <= checkEndCol; j++) {
+        const checkCell = tableState.table.querySelector(`td[data-row='${i}'][data-col='${j}']`);
+
+        if (ckeckedCol.includes(j) || !checkCell || checkCell.colSpan > 1) continue;
+
+        minusWidth += checkCell.offsetWidth;
+        ckeckedCol.push(j);
+      }
+
+      if (ckeckedCol[ckeckedCol.length - 1] === checkEndCol) break;
     }
 
-    let rows = tableState.table.rows.length;
-    let cols = tableState.table.rows[0].cells.length;
-    let diffX = e.clientX - startX;
+    startCellWidth -= minusWidth;
+    colIndex = colIndex === 0 ? cell.colSpan - 1 : cell.colSpan;
+  }
 
-    // 모든 행의 해당 열 셀 크기 변경
-    for (let i = 0; i < rows; i++) {
-      const currentCell = tableState.table.rows[i].cells[startCol];
+  function onMouseMove(e) {
+    const diffX = e.clientX - startX;
+
+    for (let i = 0; i < tableState.table.rows.length; i++) {
+      const currentCell = tableState.table.querySelector(
+        `td[data-row='${i}'][data-col='${colIndex}']`
+      );
       if (currentCell) {
-        // console.log(currentCell.offsetWidth)
+        if (currentCell.colSpan > 1) continue;
         currentCell.style.width = `${startCellWidth + diffX}px`;
-      } else {
-        console.log('셀 없음', i, j);
       }
     }
   }
 
-  //   const colIndex = parseInt(cell.dataset.col);
-  //   const nextCell = tableState.table.rows[0].cells[colIndex + 1];
-  //   const resizer = e.currentTarget;
-
-  //   const startX = e.clientX;
-  //   const startCellWidth = cell.offsetWidth;
-
-  //   function onMouseMove(e) {
-  //     const diffX = e.clientX - startX;
-
-  //     if (!tableState.isDragging || !tableState.isResizing) {
-  //       resizer.classList.add('active');
-  //     }
-
-  //     // const cell = targetTable.querySelector(`td[data-row='${r}'][data-col='${c}']`);
-
-  //     // 모든 행의 해당 열 셀 크기 변경
-  //     for (let i = 0; i < tableState.table.rows.length; i++) {
-  //       const currentCell = tableState.table.rows[i].cells[colIndex];
-  //       const currentNextCell = tableState.table.rows[i].cells[colIndex + 1];
-
-  //       console.log('currentCell', currentCell);
-
-  //       currentCell.style.width = `${startCellWidth + diffX}px`;
-  //     }
-
-  //     cell.style.width = `${startCellWidth + diffX}px`;
-  //   }
-
   function onMouseUp() {
     tableState.isResizing = false;
     resizer.classList.remove('active');
-
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
-
     setTimeout(() => updateButtonPositions(tableState), 0);
   }
 
-  document.addEventListener('mousemove', onMouseMove); // 드래그하는 동안 크기 변경
-  document.addEventListener('mouseup', onMouseUp); // 리사이징 종료
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
 }
 
 // 행 높이 조절
 function resizeRow(e, tableState, cell) {
-  e.preventDefault();
   e.stopPropagation();
-  const rowIndex = parseInt(cell.dataset.row);
-  const resizer = e.currentTarget;
 
-  let startY = e.pageY;
-  let startHeight = cell.offsetHeight;
+  const resizer = e.currentTarget;
+  const startY = e.pageY;
+
+  let startCellHeight = cell.offsetHeight;
+  let rowIndex = parseInt(cell.dataset.row);
+
+  if (cell.rowSpan > 1) {
+    let { startRow, startCol, endRow, endCol } = getCellRange(cell);
+    let checkEndRow = startRow + (endRow - startRow) - 1;
+    let ckeckedRow = [];
+    let minusHeight = 0;
+
+    for (let i = startRow; i <= checkEndRow; i++) {
+      for (let j = 0; j <= tableState.table.rows[i].cells.length; j++) {
+        const checkCell = tableState.table.querySelector(`td[data-row='${i}'][data-col='${j}']`);
+
+        console.log('checkCell', checkCell);
+
+        if (ckeckedRow.includes(i) || !checkCell || checkCell.rowSpan > 1) continue;
+
+        minusHeight += checkCell.offsetHeight;
+        ckeckedRow.push(i);
+      }
+
+      if (ckeckedRow[ckeckedRow.length - 1] === checkEndRow) break;
+    }
+
+    startCellHeight -= minusHeight;
+    // rowIndex = rowIndex === 0 ? cell.rowSpan - 1 : cell.rowSpan;
+    rowIndex = endRow;
+  }
 
   function onMouseMove(e) {
     const diffY = e.pageY - startY;
-    const newHeight = Math.max(20, startHeight + diffY);
-
     const row = tableState.table.rows[rowIndex];
+
+    console.log('row', row);
+
     for (let i = 0; i < row.cells.length; i++) {
-      row.cells[i].style.height = `${newHeight}px`;
+      const currentCell = row.cells[i];
+      if (currentCell) {
+        if (currentCell.rowSpan > 1) continue;
+        currentCell.style.height = `${startCellHeight + diffY}px`;
+      }
     }
   }
 

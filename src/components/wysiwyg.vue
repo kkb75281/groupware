@@ -196,117 +196,6 @@ const insertTable = () => {
 
 let colorDragInterval = null;
 
-// 선택된 셀의 색상을 팔레트에 적용
-const updateColorPickerToSelectedCells = () => {
-    const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
-
-    if (selectedCells.length === 0) return;
-
-    const firstCell = selectedCells[0];
-
-    // RGB → HEX 변환 함수
-    function rgbToHex(rgb) {
-        const matches = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-        if (!matches) return '#000000';
-        const r = parseInt(matches[1]);
-        const g = parseInt(matches[2]);
-        const b = parseInt(matches[3]);
-        return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
-    }
-
-    // 텍스트 색상
-    if (colorInput.value) {
-        const currentTextColor = window.getComputedStyle(firstCell).color;
-        colorInput.value.value = rgbToHex(currentTextColor);
-    }
-
-    // 배경 색상
-    if (bgColorInput.value) {
-        const currentBgColor = window.getComputedStyle(firstCell).backgroundColor;
-        bgColorInput.value.value = rgbToHex(currentBgColor);
-    }
-};
-
-const stopColorDrag = () => {
-    if (colorDragInterval) {
-        clearInterval(colorDragInterval);
-        colorDragInterval = null;
-    }
-};
-
-const handleColorInput = (type, colorValue) => {
-    // const selection = window.getSelection();
-    // console.log('선택된 셀:', selection);
-
-    // if (selection.rangeCount > 0) {
-    //     const range = selection.getRangeAt(0);
-    //     console.log('선택된 범위:', range);
-
-    //     const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
-
-    //     if (selectedCells.length > 0) {
-    //         selectedCells.forEach((cell) => {
-    //             if (type === 'textColor') {
-    //                 cell.style.color = colorValue;
-    //             } else if (type === 'bgColor') {
-    //                 cell.style.backgroundColor = colorValue;
-    //             }
-    //             // 클래스 제거 생략 가능 → 드래그 중이라 계속 들어옴
-    //         });
-    //     }
-    //     else if (!range.collapsed) {
-    //         try {
-    //             const span = document.createElement('span');
-
-    //             if (type === 'bgColor') {
-    //                 span.style.backgroundColor = colorValue;
-    //             } else {
-    //                 span.style.color = colorValue;
-    //             }
-
-    //             range.surroundContents(span);
-    //         } catch (e) {
-    //             // 범위가 여러 요소에 걸쳐 있는 경우, 기본 명령 사용
-    //             if (type === 'bgColor') {
-    //                 wysiwyg.command('hiliteColor', colorValue);
-    //             } else {
-    //                 wysiwyg.command('textColor', colorValue);
-    //             }
-    //         }
-    //     }
-    //     else {
-    //         // 선택된 텍스트가 없으면 기본 명령 실행
-    //         if (type === 'bgColor') {
-    //             console.log('BB');
-    //             wysiwyg.command('hiliteColor', colorValue);
-    //         } else {
-    //             console.log('CC');
-    //             wysiwyg.command('textColor', colorValue);
-    //         }
-    //     }
-    // }
-
-    const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
-
-    if (selectedCells.length > 0) {
-        selectedCells.forEach((cell) => {
-            if (type === 'textColor') {
-                cell.style.color = colorValue;
-            } else if (type === 'bgColor') {
-                cell.style.backgroundColor = colorValue;
-            }
-            // 클래스 제거 생략 가능 → 드래그 중이라 계속 들어옴
-        });
-    } else {
-        wysiwyg.restoreLastSelection();
-        if (type === 'textColor') {
-            wysiwyg.command('textColor', colorValue);
-        } else if (type === 'bgColor') {
-            wysiwyg.command('hiliteColor', colorValue);
-        }
-    }
-};
-
 const onColorInputMouseDown = (type, event) => {
     updateColorPickerToSelectedCells(type); // 선택된 셀 색상으로 초기값 설정
     setTimeout(() => {
@@ -318,7 +207,65 @@ const onColorInputMouseDown = (type, event) => {
     }, 50);
 };
 
-// 에디터 명령어 처리
+// 선택된 셀의 색상을 팔레트에 적용
+const updateColorPickerToSelectedCells = (type) => {
+    const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
+
+    // RGB → HEX 변환 함수
+    function rgbToHex(rgb) {
+        const matches = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+        if (!matches) return '#000000';
+        const r = parseInt(matches[1]);
+        const g = parseInt(matches[2]);
+        const b = parseInt(matches[3]);
+        return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
+    }
+
+    if (selectedCells.length > 0) {
+        const firstCell = selectedCells[0];
+
+        // 텍스트 색상
+        if (type === 'textColor' && colorInput.value) {
+            const currentTextColor = window.getComputedStyle(firstCell).color;
+            colorInput.value.value = rgbToHex(currentTextColor);
+        }
+
+        // 배경 색상
+        if (type === 'bgColor' && bgColorInput.value) {
+            const currentBgColor = window.getComputedStyle(firstCell).backgroundColor;
+            bgColorInput.value.value = rgbToHex(currentBgColor);
+        }
+    } else {
+        // 일반 텍스트를 선택한 경우
+    }
+
+};
+
+const stopColorDrag = () => {
+    if (colorDragInterval) {
+        clearInterval(colorDragInterval);
+        colorDragInterval = null;
+    }
+};
+
+const handleColorInput = (type, colorValue) => {
+    const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
+
+    if (selectedCells.length > 0) {
+        // 테이블 셀에 색상 적용
+        selectedCells.forEach((cell) => {
+            if (type === 'textColor') {
+                cell.style.color = colorValue;
+            } else if (type === 'bgColor') {
+                cell.style.backgroundColor = colorValue;
+            }
+        });
+    } else {
+        wysiwyg.restoreLastSelection();
+        wysiwyg.command(colorValue);
+    }
+};
+
 const handleCommand = (command) => {
     if (!wysiwyg) return;
     // 색상 값이 직접 전달된 경우 (#색상값 형식)
