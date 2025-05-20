@@ -80,7 +80,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 
 								tr.mo(v-if="!isTemplateMode && !isDesktop")
 									th 기안자
-									td
+									td.left
 										span.drafter {{ user.name }}
 								//- 작성일자 기안사 :: e
 
@@ -460,7 +460,7 @@ import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe, verifiedEmail } from '@/user.ts';
 import { getUserInfo } from '@/employee.ts';
 import { divisionNameList } from '@/division.ts';
-import { reRequestData } from '@/audit.ts';
+import { reRequestData, getAuditList, getSendAuditList, getAuditReferenceList } from '@/audit.ts';
 import {
   addResizer,
   bindCellEvents,
@@ -1043,8 +1043,13 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
 
   try {
     // 첨부파일 업로드
-    const filebox = document.querySelector('input[name="additional_data"]');
     const additionalFormData = new FormData();
+
+    // 참조문서 정보
+    const referDocInfo = {
+      referDocId: referDoc.value.map((doc) => doc.record_id),
+      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
+    };
 
     additionalFormData.append('docform_title', docform_title);
     additionalFormData.append('to_audit', to_audit);
@@ -1052,6 +1057,7 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     additionalFormData.append('to_audit_content', to_audit_content);
     additionalFormData.append('reject_setting', rejectSetting.value);
     additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
+    additionalFormData.append('reference_docs', JSON.stringify(referDocInfo));
 
     if (uploadedFile.value.length) {
       const filePromises = uploadedFile.value.map(async (file) => {
@@ -1106,6 +1112,7 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     };
 
     const res = await skapi.postRecord(additionalFormData, options);
+    console.log('== postAuditDoc == res : ', res);
 
     return res;
   } catch (error) {
@@ -1452,11 +1459,18 @@ const saveDocForm = async () => {
     // 첨부파일 업로드
     const formData = new FormData();
 
+    // 참조문서 정보
+    const referDocInfo = {
+      referDocId: referDoc.value.map((doc) => doc.record_id),
+      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
+    };
+
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value)); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
+    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -1539,6 +1553,7 @@ const saveDocForm = async () => {
     };
 
     const res = await skapi.postRecord(formData, options);
+    console.log('마스터 == res : ', res);
 
     alert('결재 양식이 저장되었습니다.');
     router.push('/admin/list-form');
@@ -1555,23 +1570,30 @@ const saveMyDocForm = async () => {
     return;
   }
 
-  // 결재의견 권한 부여
-  await grantAuditOpinionAccess(commentRecord.record_id, processRoles);
+  // // 결재의견 권한 부여
+  // await grantAuditOpinionAccess(commentRecord.record_id, processRoles);
 
-  // 결재자와 합의자를 순서대로 통합 정렬
-  const approversAndAgreers = [
-    ...selectedAuditors.value.approvers,
-    ...selectedAuditors.value.agreers
-  ].sort((a, b) => a.order - b.order);
+  // // 결재자와 합의자를 순서대로 통합 정렬
+  // const approversAndAgreers = [
+  //   ...selectedAuditors.value.approvers,
+  //   ...selectedAuditors.value.agreers
+  // ].sort((a, b) => a.order - b.order);
   try {
     // 첨부파일 업로드
     const formData = new FormData();
+
+    // 참조문서 정보
+    const referDocInfo = {
+      referDocId: referDoc.value.map((doc) => doc.record_id),
+      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
+    };
 
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
+    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -1645,6 +1667,7 @@ const saveMyDocForm = async () => {
     };
 
     const res = await skapi.postRecord(formData, options);
+    console.log('내 양식 == options : ', options);
 
     alert('결재 양식이 저장되었습니다.');
   } catch (error) {
@@ -1666,11 +1689,18 @@ const tempSaveMyDoc = async () => {
     const filebox = document.querySelector('input[name="additional_data"]');
     const formData = new FormData();
 
+    // 참조문서 정보
+    const referDocInfo = {
+      referDocId: referDoc.value.map((doc) => doc.record_id),
+      referDocTitle: referDoc.value.map((doc) => doc.data.to_audit)
+    };
+
     formData.append('docform_title', formTitle.value);
     formData.append('form_title', auditTitle.value);
     formData.append('form_content', editorContent.value);
     formData.append('custom_rows', JSON.stringify(addRows.value ?? [])); // 추가 행 데이터
     formData.append('reject_setting', rejectSetting.value); // 반려 설정 관련 체크박스
+    formData.append('reference_docs', JSON.stringify(referDocInfo)); // 참조문서 정보
 
     // 결재자 정보 저장
     const auditorData = {
@@ -1896,6 +1926,26 @@ const getTempSaveMyDocCont = async () => {
         if (tempSaveData.value.bin && tempSaveData.value.bin.form_data) {
           uploadedFile.value = tempSaveData.value.bin.form_data;
         }
+
+        // 참조문서가 있는 경우
+        if (tempSaveData.value.data.reference_docs) {
+          try {
+            const referDocId = JSON.parse(tempSaveData.value.data.reference_docs).referDocId;
+            const fetchPromises = referDocId.map((recordId) =>
+              skapi
+                .getRecords({ record_id: recordId })
+                .then((res) => res.list?.[0] || null)
+                .catch((err) => {
+                  console.error(`record_id ${recordId} 호출 실패:`, err);
+                  return null;
+                })
+            );
+            referDoc.value = await Promise.all(fetchPromises);
+            console.log('referDoc.value : ', referDoc.value);
+          } catch (error) {
+            console.error('참조문서 정보 처리 중 오류:', error);
+          }
+        }
       }
 
       return res;
@@ -2039,6 +2089,26 @@ const selDocForm = async (e) => {
     } else {
       uploadedFile.value = [];
       fileNames.value = [];
+    }
+
+    // 참조문서가 있는 경우
+    if (selectedForm.value.data.reference_docs) {
+      try {
+        const referDocId = JSON.parse(selectedForm.value.data.reference_docs).referDocId;
+        const fetchPromises = referDocId.map((recordId) =>
+          skapi
+            .getRecords({ record_id: recordId })
+            .then((res) => res.list?.[0] || null)
+            .catch((err) => {
+              console.error(`record_id ${recordId} 호출 실패:`, err);
+              return null;
+            })
+        );
+        referDoc.value = await Promise.all(fetchPromises);
+        console.log('referDoc.value : ', referDoc.value);
+      } catch (error) {
+        console.error('참조문서 정보 처리 중 오류:', error);
+      }
     }
 
     // 체크박스 설정 불러오기
@@ -2452,6 +2522,26 @@ onMounted(async () => {
       }
     }
 
+    // 참조문서 정보 불러오기
+    if (reRequestData.value.data.reference_docs) {
+      try {
+        const referDocId = JSON.parse(reRequestData.value.data.reference_docs).referDocId;
+        const fetchPromises = referDocId.map((recordId) =>
+          skapi
+            .getRecords({ record_id: recordId })
+            .then((res) => res.list?.[0] || null)
+            .catch((err) => {
+              console.error(`record_id ${recordId} 호출 실패:`, err);
+              return null;
+            })
+        );
+        referDoc.value = await Promise.all(fetchPromises);
+        console.log('referDoc.value : ', referDoc.value);
+      } catch (error) {
+        console.error('참조문서 정보 처리 중 오류:', error);
+      }
+    }
+
     isFormSelected.value = true;
   }
 });
@@ -2796,7 +2886,7 @@ onUnmounted(() => {
 
       .btn {
         height: 28px;
-        min-width: auto;
+        min-width: 110px;
       }
 
       input,
@@ -3222,6 +3312,225 @@ onUnmounted(() => {
   }
 }
 
+// 참조문서
+.refer-doc-wrap {
+  .btn-open-modal {
+    width: 110px;
+    height: 28px;
+    display: flex;
+  }
+
+  .btn-remove {
+    padding: 0;
+    width: initial;
+    height: initial;
+    border: none;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--warning-color-500);
+    }
+  }
+}
+
+.refer-doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 8px;
+
+  &:first-of-type {
+    margin-top: 16px;
+  }
+}
+
+.refer-doc-name {
+  margin-left: 0;
+  width: 100%;
+  border: 1px dashed var(--gray-color-300);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.75rem;
+  color: var(--gray-color-400);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// 참조문서 추가 모달
+.modal-refer-list {
+  .top-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .sub-title {
+    font-size: 1rem;
+    flex-wrap: 500;
+  }
+
+  .sel-filter {
+    width: 10.4rem;
+    cursor: pointer;
+  }
+
+  .doc-title {
+    color: var(--primary-color-500);
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .status {
+    border: 1px solid var(--gray-color-400);
+    border-radius: 6px;
+    padding: 1px 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--gray-color-500);
+
+    &.approve {
+      color: var(--primary-color-400);
+      border-color: var(--primary-color-400);
+    }
+
+    &.reject {
+      color: var(--warning-color-500);
+      border-color: var(--warning-color-500);
+    }
+  }
+}
+
+// 참조문서 상세 모달
+.modal-refer-detail {
+  .table {
+    tr {
+      border-top: 1px solid var(--gray-color-300);
+      font-weight: 400;
+
+      td {
+        background-color: #fff;
+        padding: 0.5rem;
+      }
+    }
+  }
+
+  .approver-wrap {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    text-align: center;
+    height: 100%;
+
+    .approver-list {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-width: 100px;
+      min-height: 8rem;
+      border-right: 1px solid var(--gray-color-300);
+      border-bottom: 1px solid var(--gray-color-300);
+      margin-bottom: -1px;
+      position: relative;
+
+      &.noexist {
+        background-color: var(--gray-color-50);
+
+        span {
+          color: var(--gray-color-300);
+        }
+      }
+    }
+
+    .num {
+      border-bottom: 1px solid var(--gray-color-200);
+      padding: 0.25rem;
+    }
+
+    .sign {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      border-bottom: 1px solid var(--gray-color-200);
+    }
+
+    .approver {
+      height: initial;
+    }
+  }
+
+  .reference-wrap {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    text-align: center;
+
+    .reference-list {
+      display: flex;
+      justify-content: center;
+      background-color: var(--gray-color-50);
+      border: 1px solid var(--gray-color-300);
+      border-radius: 8px;
+    }
+
+    .referencer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      padding: 0.25rem;
+      gap: 2px;
+
+      .icon {
+        padding: 0;
+
+        &:hover {
+          cursor: pointer;
+        }
+      }
+    }
+  }
+
+  .upload-file {
+    .file-list {
+      margin-top: 0;
+    }
+
+    .file-item {
+      &:first-of-type {
+        margin-top: 0;
+      }
+    }
+  }
+
+  .refer-doc-item {
+    &:first-of-type {
+      margin-top: 0;
+    }
+  }
+
+  .refer-doc-name {
+    cursor: default;
+    color: var(--gray-color-500);
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .approver-wrap {
     grid-template-columns: repeat(5, 1fr);
@@ -3288,7 +3597,6 @@ onUnmounted(() => {
     &.upload-file {
       .btn-upload-file {
         input,
-        label,
         button {
           flex-grow: 1;
         }
@@ -3303,6 +3611,14 @@ onUnmounted(() => {
       .file-item {
         width: 100%;
       }
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .refer-doc-wrap {
+    .btn-open-modal {
+      width: 100%;
     }
   }
 }

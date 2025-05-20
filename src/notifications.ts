@@ -276,7 +276,6 @@ export const readNoti = async (rt: any) => {
     rt.comment_notification?.audit_type ||
     rt.reply_notification?.audit_type ||
     '';
-  console.log('auditType : ', auditType);
 
   // 읽은 알람 리스트를 업데이트
   // updateReadList(rt.audit_info.audit_type);
@@ -285,8 +284,6 @@ export const readNoti = async (rt: any) => {
 
 async function updateReadList(type: string) {
   let id;
-
-  console.log('readAudit.value : ', readAudit.value);
 
   if (type === 'email') {
     id = readAudit.value.id;
@@ -350,7 +347,6 @@ export async function updateEmails(refresh = false) {
 
 // 이메일 알림
 export const addEmailNotification = (emailData: any) => {
-  // console.log('=== addEmailNotification === emailData : ', emailData);
   let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
 
   if (checkOrigin) return;
@@ -374,52 +370,14 @@ export const addEmailNotification = (emailData: any) => {
   realtimes.value.push(addEmailData);
   realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
 
-  // console.log('Updated realtimes:', realtimes.value);
-
   unreadCount.value++;
 };
-
-// export const addEmailNotification = (emailData) => {
-// 	// // console.log('=== addEmailNotification === emailData : ', emailData);
-// 	let checkOrigin = realtimes.value.find((audit) => audit.id === emailData.id);
-
-// 	if (checkOrigin) return;
-
-// 	// const addEmailData = {
-// 	// 	...emailData,
-// 	// 	noti_id: emailData.id,
-// 	// 	send_date: emailData.dateTimeStamp,
-// 	// 	audit_info: {
-// 	// 		audit_type: 'email',
-// 	// 	}
-// 	// };
-
-// 	realtimes.value.push(emailData);
-// 	realtimes.value = [...realtimes.value].sort((a, b) => b.send_date - a.send_date); // 최신 날짜 순
-
-// 	// console.log('Updated realtimes:', realtimes.value);
-
-// 	// notifications.emails.unshift({
-// 	//     type: 'email',
-// 	//     title: emailData.subject,
-// 	//     from: emailData.from,
-// 	//     date: emailData.date,
-// 	//     dateTimeStamp: emailData.dateTimeStamp,
-// 	//     link: emailData.link
-// 	// });
-
-// 	unreadCount.value++;
-
-// 	// return notifications.emails;
-// }
 
 export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
 // 카테고리 해당 게시글 리스트
 export const getNewsletterList = async (tag, refresh = false) => {
-  console.log('=== getNewsletterList === tag : ', tag);
-
   const getNews = await skapi.getRecords({
     table: {
       name: 'newsletter',
@@ -427,7 +385,6 @@ export const getNewsletterList = async (tag, refresh = false) => {
     },
     reference: tag
   });
-  console.log('=== getNewsletterList === getNews : ', getNews);
 
   if (!getNews.list) {
     newsletterList.value = [];
@@ -443,38 +400,8 @@ export const getNewsletterList = async (tag, refresh = false) => {
       writer: writer[index]?.list?.[0]?.name || '-'
     };
   });
-  console.log('-newsletter fin-');
   return newsletterList.value;
 };
-
-// export const getNewsletterList = async (refresh = false) => {
-//   if (getNewsletterListRunning instanceof Promise) {
-//     // 이미 실행중인 경우
-//     await getNewsletterListRunning;
-//     return newsletterList.value;
-//   }
-
-//   if (newsletterList.value && newsletterList.value.length && !refresh) {
-//     // 기존 데이터가 있는 경우
-//     return newsletterList.value;
-//   }
-
-//   getNewsletterListRunning = skapi
-//     .getNewsletters()
-//     .catch((err) => console.log(err))
-//     .finally(() => {
-//       getNewsletterListRunning = null;
-//     });
-
-//   let res = await getNewsletterListRunning;
-
-//   if (res && res.list) {
-//     newsletterList.value = res.list.slice(0, 10);
-//     console.log('=== getNewsletterList === newsletterList : ', newsletterList.value);
-//   }
-
-//   return newsletterList.value;
-// };
 
 export async function subscribeNotification() {
   let vapid = localStorage.getItem(skapi.service + '-vapid');

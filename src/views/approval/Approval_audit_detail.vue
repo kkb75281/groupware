@@ -146,7 +146,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 							button.btn.sm.outline.btn-update(type="button" @click="editReply('reply', index)") 등록
 							button.btn.sm.outline.btn-cancel(type="button" @click="toggleEditMode('reply', index)") 취소
 				template(v-else)
-					.text {{ comment?.data?.comment || '-' }}
+					.text {{ comment.data?.comment || '-' }}
 				.etc
 					template(v-if="comment.data?.edited")
 						span.date(v-if="comment.data?.edited" style="margin-left: 0.5rem;") {{ formatTimestampToDate(comment.data?.edit_date) }}
@@ -388,7 +388,17 @@ import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { skapi, RealtimeCallback } from '@/main.ts';
 import { user, makeSafe } from '@/user.ts';
 import { getUserInfo } from '@/employee.ts';
-import { auditList, reRequestData } from '@/audit.ts';
+import {
+  reRequestData,
+  auditList,
+  auditListRunning,
+  auditReferenceList,
+  auditReferenceListRunning,
+  getAuditList,
+  getAuditReferenceList,
+  sendAuditList,
+  getSendAuditList
+} from '@/audit.ts';
 import { getStampList, uploadedStamp, uploadedRecordId, uploadGeneratedStamp } from '@/stamp.ts';
 import {
   openStampModal,
@@ -1717,7 +1727,7 @@ const getCmtRecord = async () => {
   const res = await skapi.getRecords({
     table: {
       name: `audit_comment_${auditId.value}`,
-      access_group: 'private'
+      access_group: 'authorized'
     },
     reference: auditId.value
   });
@@ -1759,6 +1769,7 @@ const writeComment = async () => {
     };
 
     const res = await skapi.postRecord(data, config);
+    console.log('결재 의견 작성 결과:', res);
 
     // 댓글 알림
     if (senderUser.value.user_id && senderUser.value.user_id !== user.user_id) {
@@ -1837,6 +1848,7 @@ const getComment = async () => {
 
   if (res.list.length > 0) {
     commentList.value = res.list;
+    console.log('commentList.value : ', commentList.value);
     return res.list;
   } else {
     commentList.value = [];
@@ -1913,6 +1925,7 @@ const writeReply = async (type, index, parentId = null) => {
     };
 
     const res = await skapi.postRecord(data, config);
+    console.log('대댓글 작성 결과:', res);
 
     // 대댓글 알림
     if (senderUser.value.user_id && senderUser.value.user_id !== user.user_id) {
@@ -2009,6 +2022,7 @@ const getReply = async () => {
   });
 
   replyList.value = groupReplies;
+  console.log('replyList.value : ', replyList.value);
   return res.list;
 };
 
@@ -2096,6 +2110,7 @@ const editReply = async (type, index, parentId = null) => {
         ...(type === 'reply' ? {} : { reference: targetItem.reference || parentId }) // 대댓글인 경우 reference 추가
       }
     );
+    console.log('댓글 수정 결과:', result);
 
     isEditMode.value[recordId] = false;
 

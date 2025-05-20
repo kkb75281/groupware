@@ -30,13 +30,13 @@
 							//- 모바일 경우 레이아웃
 							tr.mo(v-if="!isDesktop")
 								th 작성 일자
-								td
+								td.left(style="width: 100%")
 									.input-wrap
 										input#inp_date(type="date" name="inp_date" v-model="dateValue")
 
 							tr.mo(v-if="!isDesktop")
 								th 작성자
-								td
+								td.left
 									span.writer {{ user.name }}
 							//- 작성일자 작성자 :: e
 
@@ -112,7 +112,7 @@
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
 			.button-wrap
-				button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/newsletter-category')") 취소
+				button.btn.bg-gray.btn-cancel(type="button" @click="router.back()") 취소
 				button.btn(type="submit") {{ isEditMode ? '수정' : '등록' }}
 </template>
 

@@ -114,7 +114,7 @@ watch(
       .item {
         .router {
           .text {
-            display: inline;
+            display: flex;
           }
         }
       }
@@ -123,6 +123,7 @@ watch(
 
   .icon {
     padding: 0 8px;
+    flex: none;
   }
 
   .logo {
@@ -168,8 +169,6 @@ watch(
     padding: 20px 16px 40px;
 
     .item {
-      // margin-top: 0.8rem;
-
       display: flex;
       align-items: center;
 
@@ -218,9 +217,6 @@ watch(
       width: 100%;
 
       .text {
-        // display: flex;
-        // align-items: center;
-        // justify-content: center;
         padding-right: 12px;
         display: none;
         white-space: nowrap;
@@ -286,40 +282,11 @@ watch(
       }
     }
 
-    .menu-item {
-      .router {
-        .text {
-          // display: none !important;
-        }
-      }
-    }
-
     .sub-menu-item {
       display: none !important;
     }
   }
 }
-
-// @media (max-width: 1200px) {
-// 	#navbar {
-// 		.btn-close {
-// 			display: block;
-// 		}
-
-// 		.menu-item {
-// 			.router {
-// 				// padding: 1.2rem 1.25rem 1.2rem 0.75rem;
-// 			}
-// 		}
-// 	}
-
-// 	.open {
-// 		#navbar {
-// 			left: 0;
-// 			width: 100% !important;
-// 		}
-// 	}
-// }
 
 @media (max-width: 768px) {
   #navbar {
@@ -331,18 +298,25 @@ watch(
     border-right: 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
+    &:hover {
+      width: 100%;
+    }
+
     .navbar-wrap {
       overflow-x: auto;
     }
 
     .menu-item {
       padding: 20px;
-      // display: block;
       flex-direction: row;
       justify-content: flex-start;
       gap: 1.2rem;
 
       .item {
+        &:last-of-type {
+          padding-right: 20px;
+        }
+
         .icon {
           svg {
             width: 20px;
@@ -353,9 +327,6 @@ watch(
         .router {
           display: inline-block;
           text-align: center;
-
-          // flex-wrap: wrap;
-          // gap: 4px;
           padding: 0;
 
           .text {
@@ -364,6 +335,7 @@ watch(
             width: 100%;
             padding: 0;
             font-size: 14px;
+            margin-top: 0.5rem;
           }
 
           svg {
@@ -403,58 +375,7 @@ watch(
           }
         }
       }
-
-      // .router {
-      // 	&:hover {
-      // 		.text {
-      // 			display: block !important;
-      // 		}
-      // 	}
-      // }
     }
   }
-  // #navbar {
-  // 	// display: none;
-  // 	top: 0;
-  // 	left: 110%;
-  // 	width: 100%;
-
-  // 	.logo {
-  // 		display: flex;
-  // 	}
-  // }
-  // .open {
-  // 	#navbar {
-  // 		display: block;
-  // 		width: 100% !important;
-  // 		top: 0;
-  // 		border-right: 0;
-  // 		// transform: translateX(-100vw) !important;
-  // 		left: 0;
-
-  // 		.btn-close {
-  // 			display: block;
-  // 		}
-  // 		.menu-item {
-  // 			.item {
-  // 				.router {
-  // 					.text {
-  // 						display: flex;
-  // 					}
-  // 				}
-  // 			}
-  // 		}
-  // 	}
-  // }
 }
-
-// @media (hover: none) {
-// 	#navbar .menu-item .item:hover .router {
-// 		background-color: transparent !important;
-// 	}
-
-// 	#navbar .menu-item .item.active:hover .router {
-// 		background-color: var(--primary-color-400) !important;
-// 	}
-// }
 </style>
