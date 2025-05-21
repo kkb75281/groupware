@@ -409,10 +409,10 @@ function resizeRow(e, tableState, cell) {
     let minusHeight = 0;
 
     for (let i = startRow; i <= checkEndRow; i++) {
-      for (let j = 0; j <= tableState.table.rows[i].cells.length; j++) {
-        const checkCell = tableState.table.querySelector(`td[data-row='${i}'][data-col='${j}']`);
+      let checkCellsArr = Array.from(tableState.table.rows[i].cells);
 
-        console.log('checkCell', checkCell);
+      for (let j = 0; j <= checkCellsArr.length; j++) {
+        const checkCell = checkCellsArr[j];
 
         if (ckeckedRow.includes(i) || !checkCell || checkCell.rowSpan > 1) continue;
 
@@ -424,15 +424,12 @@ function resizeRow(e, tableState, cell) {
     }
 
     startCellHeight -= minusHeight;
-    // rowIndex = rowIndex === 0 ? cell.rowSpan - 1 : cell.rowSpan;
     rowIndex = endRow;
   }
 
   function onMouseMove(e) {
     const diffY = e.pageY - startY;
     const row = tableState.table.rows[rowIndex];
-
-    console.log('row', row);
 
     for (let i = 0; i < row.cells.length; i++) {
       const currentCell = row.cells[i];
