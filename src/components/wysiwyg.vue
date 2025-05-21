@@ -1,117 +1,117 @@
 <template lang="pug">
-    .wysiwyg
-        .btns-wrap(:class="isDetail ? 'disalbed' : ''")
-            button.btn-custom(:class="{active : commandTracker.bold}" type="button" @click="handleCommand('bold')")
-                .icon
+.wysiwyg(ref="wysiwygRef")
+    .btns-wrap(:class="{disalbed : isDetail, fixed : isFixed}")
+        button.btn-custom(:class="{active : commandTracker.bold}" type="button" @click="handleCommand('bold')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-bold")
+        button.btn-custom(:class="{active : commandTracker.italic}" type="button" @click="handleCommand('italic')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-italic")
+        button.btn-custom(:class="{active : commandTracker.underline}" type="button" @click="handleCommand('underline')")
+            .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-bold")
-            button.btn-custom(:class="{active : commandTracker.italic}" type="button" @click="handleCommand('italic')")
-                .icon
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-underline")
+        button.btn-custom(:class="{active : commandTracker.strike}" type="button" @click="handleCommand('strike')" style="border-right: 1px solid #e4e4e7;")
+            .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-italic")
-            button.btn-custom(:class="{active : commandTracker.underline}" type="button" @click="handleCommand('underline')")
-                .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-underline")
-            button.btn-custom(:class="{active : commandTracker.strike}" type="button" @click="handleCommand('strike')" style="border-right: 1px solid #e4e4e7;")
-                .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-strike")
-            button.btn-custom(:class="{active : commandTracker.h1}" type="button" @click="handleCommand('h1')")
-                .icon.text 20pt
-            button.btn-custom(:class="{active : commandTracker.h2}" type="button" @click="handleCommand('h2')")
-                .icon.text 18pt
-            button.btn-custom(:class="{active : commandTracker.h3}" type="button" @click="handleCommand('h3')")
-                .icon.text 16pt
-            button.btn-custom(:class="{active : commandTracker.h4}" type="button" @click="handleCommand('h4')")
-                .icon.text 14pt
-            button.btn-custom(:class="{active : commandTracker.h5}" type="button" @click="handleCommand('h5')")
-                .icon.text 12pt
-            button.btn-custom(:class="{active : commandTracker.h6}" type="button" @click="handleCommand('h6')" style="border-right: 1px solid #e4e4e7;")
-                .icon.text 10pt
-            //- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
-        
-            // 텍스트 색상 변경
-            .btn-custom.input-color
-                input#colorInput(
-                    type="color"
-                    ref="colorInputRef"
-                    @mousedown="onColorInputMouseDown('textColor', $event)"
-                    @mouseup="stopColorDrag"
-                    @input="handleColorInput('textColor', $event.target.value)"
-                )
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-text")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-strike")
+        button.btn-custom(:class="{active : commandTracker.h1}" type="button" @click="handleCommand('h1')")
+            .icon.text 20pt
+        button.btn-custom(:class="{active : commandTracker.h2}" type="button" @click="handleCommand('h2')")
+            .icon.text 18pt
+        button.btn-custom(:class="{active : commandTracker.h3}" type="button" @click="handleCommand('h3')")
+            .icon.text 16pt
+        button.btn-custom(:class="{active : commandTracker.h4}" type="button" @click="handleCommand('h4')")
+            .icon.text 14pt
+        button.btn-custom(:class="{active : commandTracker.h5}" type="button" @click="handleCommand('h5')")
+            .icon.text 12pt
+        button.btn-custom(:class="{active : commandTracker.h6}" type="button" @click="handleCommand('h6')" style="border-right: 1px solid #e4e4e7;")
+            .icon.text 10pt
+        //- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
     
-            // 셀 배경색 변경
-            .btn-custom.input-color(style="border-right: 1px solid #e4e4e7;")
-                input#bgColorInput(
-                    type="color"
-                    ref="bgColorInputRef"
-                    @mousedown="onColorInputMouseDown('bgColor', $event)"
-                    @mouseup="stopColorDrag"
-                    @input="handleColorInput('bgColor', $event.target.value)"
-                )
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
+        // 텍스트 색상 변경
+        .btn-custom.input-color
+            input#colorInput(
+                type="color"
+                ref="colorInputRef"
+                @mousedown="onColorInputMouseDown('textColor', $event)"
+                @mouseup="stopColorDrag"
+                @input="handleColorInput('textColor', $event.target.value)"
+            )
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-color-text")
+
+        // 셀 배경색 변경
+        .btn-custom.input-color(style="border-right: 1px solid #e4e4e7;")
+            input#bgColorInput(
+                type="color"
+                ref="bgColorInputRef"
+                @mousedown="onColorInputMouseDown('bgColor', $event)"
+                @mouseup="stopColorDrag"
+                @input="handleColorInput('bgColor', $event.target.value)"
+            )
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
+
+        button.btn-custom(type="button" @click="handleCommand('divider')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-divider")
+        button.btn-custom(type="button" @click="handleCommand('quote')" style="border-right: 1px solid #e4e4e7;")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
+        button.btn-custom(type="button" @click="handleCommand('table')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
+        button.btn-custom(type="button" @click="handleCommand('unorderedList')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-list-bullet")
+        button.btn-custom(type="button" @click="handleCommand('orderedList')" style="border-right: 1px solid #e4e4e7;")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-list-number")
+        button.btn-custom(type="button" @click="handleCommand('alignLeft')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-align-left")
+        button.btn-custom(type="button" @click="handleCommand('alignCenter')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-align-center")
+        button.btn-custom(type="button" @click="handleCommand('alignRight')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-align-right")
+        //- button.btn-custom(type="button" @click="handleCommand('image')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
+        //- button.btn-custom(type="button" @click="exportData") Export
+
+    // 테이블 생성 모달
+    .modal-tb-set(v-if="showTableDialog")
+        .modal-overlay(@click="showTableDialog = false")
+        .modal-cont
+            h3 테이블 생성
+            .input-group
+                label(for="table-rows") 행
+                input#table-rows(type="number" v-model.number="tableRows" min="1" max="10")
+            .input-group
+                label(for="table-cols") 열
+                input#table-cols(type="number" v-model.number="tableCols" min="1" max="10")
+            .button-group
+                button.btn-cancel(type="button" @click="showTableDialog = false") 취소
+                button.btn-confirm(type="button" @click="insertTable") 생성
     
-            button.btn-custom(type="button" @click="handleCommand('divider')")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-divider")
-            button.btn-custom(type="button" @click="handleCommand('quote')" style="border-right: 1px solid #e4e4e7;")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
-            button.btn-custom(type="button" @click="handleCommand('table')")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
-            button.btn-custom(type="button" @click="handleCommand('unorderedList')")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-list-bullet")
-            button.btn-custom(type="button" @click="handleCommand('orderedList')" style="border-right: 1px solid #e4e4e7;")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-list-number")
-            button.btn-custom(type="button" @click="handleCommand('alignLeft')")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-align-left")
-            button.btn-custom(type="button" @click="handleCommand('alignCenter')")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-align-center")
-            button.btn-custom(type="button" @click="handleCommand('alignRight')")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-align-right")
-            //- button.btn-custom(type="button" @click="handleCommand('image')")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
-            //- button.btn-custom(type="button" @click="exportData") Export
-    
-        // 테이블 생성 모달
-        .modal-tb-set(v-if="showTableDialog")
-            .modal-overlay(@click="showTableDialog = false")
-            .modal-cont
-                h3 테이블 생성
-                .input-group
-                    label(for="table-rows") 행
-                    input#table-rows(type="number" v-model.number="tableRows" min="1" max="10")
-                .input-group
-                    label(for="table-cols") 열
-                    input#table-cols(type="number" v-model.number="tableCols" min="1" max="10")
-                .button-group
-                    button.btn-cancel(type="button" @click="showTableDialog = false") 취소
-                    button.btn-confirm(type="button" @click="insertTable") 생성
-        
-        #myeditor(style="width: 100%; min-height: 3rem;")
-    </template>
+    #myeditor(style="width: 100%; min-height: 3rem;")
+</template>
 
 <script setup>
 import { onMounted, onBeforeUnmount, nextTick, ref, computed, onUnmounted } from 'vue';
@@ -124,7 +124,8 @@ import wysiwygTable from '@/components/wysiwygTable.vue';
 const emit = defineEmits(['update:content', 'editor-ready']);
 const props = defineProps(['savedContent', 'showBtn']);
 
-let wysiwyg = null;
+let wysiwyg = null; // wysiwyg4all 인스턴스
+let wysiwygRef = ref(null); // .wysiwyg
 let colorInput = ref(null);
 let bgColorInput = ref(null);
 let commandTracker = ref({
@@ -151,6 +152,7 @@ const tableCols = ref(5);
 const isDetail = computed(() => {
     return !props.showBtn;
 });
+let isFixed = ref(false);
 
 // 테이블 생성 함수
 const insertTable = () => {
@@ -166,32 +168,32 @@ const insertTable = () => {
 
     showTableDialog.value = false;
 
-    nextTick(() => {
-        const editorEl = document.getElementById('myeditor');
-        const tables = editorEl.querySelectorAll('table');
-        const table = tables[tables.length - 1]; // 마지막 테이블 선택
+    // nextTick(() => {
+    //     const editorEl = document.getElementById('myeditor');
+    //     const tables = editorEl.querySelectorAll('table');
+    //     const table = tables[tables.length - 1]; // 마지막 테이블 선택
 
-        if (table) {
-            // 표 다음에 <p><br></p> 삽입
-            const newParagraph = document.createElement('p');
-            newParagraph.innerHTML = '<br>';
+    //     if (table) {
+    //         // 표 다음에 <p><br></p> 삽입
+    //         const newParagraph = document.createElement('p');
+    //         newParagraph.innerHTML = '<br>';
 
-            editorEl.appendChild(newParagraph);
+    //         editorEl.appendChild(newParagraph);
 
-            // 커서를 새로 삽입한 줄로 이동
-            const range = document.createRange();
-            const sel = window.getSelection();
+    //         // 커서를 새로 삽입한 줄로 이동
+    //         const range = document.createRange();
+    //         const sel = window.getSelection();
 
-            range.setStart(newParagraph, 0);
-            range.collapse(true);
+    //         range.setStart(newParagraph, 0);
+    //         range.collapse(true);
 
-            sel.removeAllRanges();
-            sel.addRange(range);
+    //         sel.removeAllRanges();
+    //         sel.addRange(range);
 
-            // 포커스 설정
-            // wysiwyg.focus();
-        }
-    });
+    //         // 포커스 설정
+    //         // wysiwyg.focus();
+    //     }
+    // });
 };
 
 let colorDragInterval = null;
@@ -237,6 +239,14 @@ const updateColorPickerToSelectedCells = (type) => {
         }
     } else {
         // 일반 텍스트를 선택한 경우
+        const selection = window.getSelection();
+
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const fragment = range.cloneContents(); // #document-fragment 반환
+
+            console.log(fragment); // 여기서는 #document-fragment 형태로 출력됨
+        }
     }
 
 };
@@ -261,8 +271,12 @@ const handleColorInput = (type, colorValue) => {
             }
         });
     } else {
-        wysiwyg.restoreLastSelection();
-        wysiwyg.command(colorValue);
+        const selection = window.getSelection();
+
+        if (selection.rangeCount > 0) {
+            wysiwyg.restoreLastSelection();
+            wysiwyg.command(colorValue);
+        }
     }
 };
 
@@ -356,6 +370,8 @@ const initWysiwyg = () => {
     const editorEl = document.getElementById('myeditor');
     if (!editorEl) return;
 
+    let navBarHeight = document.getElementById('header').getBoundingClientRect().height;
+
     wysiwyg = new Wysiwyg4All({
         elementId: 'myeditor',
         placeholder: '결재 내용',
@@ -377,6 +393,18 @@ const initWysiwyg = () => {
             h6: '13px'
         },
         callback: (c) => {
+            let windowHeight = window.innerHeight - navBarHeight;
+            let wysiwygRefHeight = wysiwygRef.value.scrollHeight;
+            let wysiwygRefLeft = wysiwygRef.value.getBoundingClientRect().left;
+
+            console.log('wysiwygRefLeft:', wysiwygRefLeft);
+
+            if (wysiwygRefHeight > windowHeight) {
+                isFixed.value = true;
+            } else {
+                isFixed.value = false;
+            }
+
             if (c.caratPosition) {
                 // 뷰포트 내에 커서 위치 유지하기 위한 기존 코드 유지
                 let viewPortHeight = Math.min(
@@ -521,10 +549,21 @@ defineExpose({
 </script>
 
 <style lang="less">
+.wysiwyg {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    // min-height: 18rem;
+    // max-height: calc(100vh - var(--header-height) - 32px);
+}
+
 ._wysiwyg4all {
-    padding: 1.5rem 1rem 1rem 1rem;
-    min-height: 18rem !important;
-    overflow: hidden !important;
+    padding: 1rem;
+    padding-top: 3rem;
+    height: 100%;
+    min-height: calc(18rem - 2rem) !important;
+    // height: calc(100% - 2rem) !important;
+    overflow-x: auto;
 
     &::before {
         color: var(--gray-color-300) !important;
@@ -660,6 +699,12 @@ defineExpose({
 }
 
 .btns-wrap {
+    // position: sticky;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 99;
+    background-color: #fff;
     justify-content: flex-start !important;
     gap: 0 !important;
     display: flex;
@@ -674,6 +719,16 @@ defineExpose({
     &.disalbed {
         display: none;
     }
+
+    // &.fixed {
+    //     // position: fixed;
+    //     // top: var(--header-height);
+    //     // left: 0;
+    //     // width: 100%;
+    //     position: sticky;
+    //     top: 0;
+    //     z-index: 99;
+    // }
 }
 
 .btn-custom {
@@ -707,12 +762,11 @@ defineExpose({
 /* 테이블 스타일링 */
 .wysiwyg-table-wrap {
     max-width: var(--wysiwyg-table-max-width);
-    // min-height: 100%;
-    // height: 100%;
     position: relative;
-    overflow-x: auto;
-    overflow-y: unset !important;
+    /* overflow-x: auto; */
+    /* overflow-y: unset !important; */
     white-space: nowrap;
+    padding-bottom: 30px;
 
     &::-webkit-scrollbar {
         display: none;

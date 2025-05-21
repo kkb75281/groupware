@@ -43,6 +43,7 @@ export function createTable(rows, cols) {
   const tableWrap = document.createElement('div');
 
   tableWrap.className = 'wysiwyg-table-wrap';
+  tableWrap.setAttribute('contenteditable', 'false');
   tableWrap.style.setProperty('--wysiwyg-table-max-width', `calc(${wysrapWidth}px - 2rem + 30px)`);
 
   // 테이블 요소 생성
@@ -65,12 +66,12 @@ export function createTable(rows, cols) {
 
     for (let c = 0; c < cols; c++) {
       const cell = document.createElement('td');
-      cell.contentEditable = 'true';
+      //   cell.contentEditable = 'true';
       cell.innerHTML = '&nbsp;';
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.setAttribute('tabindex', '0');
-      //   cell.setAttribute('contenteditable', 'true');
+      cell.setAttribute('contenteditable', 'true');
 
       addResizer(tableState, cell);
       bindCellEvents(tableState, cell);
@@ -124,7 +125,6 @@ export function createTable(rows, cols) {
 // 셀에 이벤트 바인딩
 export function bindCellEvents(tableState, cell) {
   cell.addEventListener('click', (e) => {
-    // if (!tableState.isMouseDown) return;
     function isMergedCell(cell) {
       return cell.rowSpan > 1 || cell.colSpan > 1;
     }
@@ -143,20 +143,21 @@ export function bindCellEvents(tableState, cell) {
     tableSelection(tableState);
   });
   cell.addEventListener('mousedown', (e) => {
-    // if (e.target.classList.contains('resizer') || e.target.classList.contains('resizer-bottom')) {
-    //   return;
-    // }
-    // if (e.button !== 0) return;
     tableState.isMouseDown = true;
     tableState.isDragging = true;
+    tableState.isSelection = false;
+    tableState.table.classList.add('dragging');
     tableState.selectionStart = cell;
     tableState.mergeBtn.classList.remove('active');
     tableState.unmergeBtn.classList.remove('active');
     clearSelection(tableState.table);
+    tableSelection(tableState);
     highlightDrag(tableState, cell);
   });
   cell.addEventListener('mouseover', () => {
     if (tableState.isDragging) {
+      tableState.isSelection = false;
+      tableSelection(tableState);
       highlightDrag(tableState, cell);
     }
   });
@@ -195,6 +196,8 @@ export function addResizer(tableState, cell) {
   resizer.onmousedown = (e) => {
     e.stopPropagation();
     tableState.isResizing = true;
+    tableState.mergeBtn.classList.remove('active');
+    tableState.unmergeBtn.classList.remove('active');
     document.querySelectorAll('.resizer').forEach((r) => r.classList.remove('active'));
     resizer.classList.add('active');
     resizeColumn(e, tableState, cell);
@@ -257,83 +260,6 @@ function rangeToArray(a, b) {
 }
 
 // 행 너비 조절
-// function resizeColumn(e, tableState, cell) {
-//   e.stopPropagation();
-
-//   //   const isMergedCell = cell.rowSpan > 1 || cell.colSpan > 1;
-//   //   const { startRow, startCol, endRow, endCol } = getCellRange(cell);
-
-//   //   //   console.log(startRow, startCol, endRow, endCol);
-
-//   //   const resizer = e.currentTarget;
-//   //   const startX = e.clientX;
-//   //   const startCellWidth = cell.offsetWidth;
-
-//   //   function onMouseMove(e) {
-//   //     if (!tableState.isDragging || !tableState.isResizing) {
-//   //       resizer.classList.add('active');
-//   //     }
-
-//   //     let rows = tableState.table.rows.length;
-//   //     let cols = tableState.table.rows[0].cells.length;
-//   //     let diffX = e.clientX - startX;
-
-//   //     // 모든 행의 해당 열 셀 크기 변경
-//   //     for (let i = 0; i < rows; i++) {
-//   //       const currentCell = tableState.table.rows[i].cells[startCol];
-
-//   //       if (currentCell) {
-//   //         console.log('currentCell', currentCell);
-//   //         currentCell.style.width = `${startCellWidth + diffX}px`;
-//   //       } else {
-//   //         console.log('셀 없음', i, j);
-//   //       }
-//   //     }
-//   //   }
-
-//   const colIndex = parseInt(cell.dataset.col);
-//   const nextCell = tableState.table.rows[0].cells[colIndex + 1];
-//   const resizer = e.currentTarget;
-
-//   const startX = e.clientX;
-//   const startCellWidth = cell.offsetWidth;
-
-//   function onMouseMove(e) {
-//     const diffX = e.clientX - startX;
-
-//     if (!tableState.isDragging || !tableState.isResizing) {
-//       resizer.classList.add('active');
-//     }
-
-//     // const cell = targetTable.querySelector(`td[data-row='${r}'][data-col='${c}']`);
-
-//     // 모든 행의 해당 열 셀 크기 변경
-//     for (let i = 0; i < tableState.table.rows.length; i++) {
-//       const currentCell = tableState.table.rows[i].cells[colIndex];
-//       const currentNextCell = tableState.table.rows[i].cells[colIndex + 1];
-
-//       console.log('currentCell', currentCell);
-
-//       currentCell.style.width = `${startCellWidth + diffX}px`;
-//     }
-
-//     cell.style.width = `${startCellWidth + diffX}px`;
-//   }
-
-//   function onMouseUp() {
-//     tableState.isResizing = false;
-//     resizer.classList.remove('active');
-
-//     document.removeEventListener('mousemove', onMouseMove);
-//     document.removeEventListener('mouseup', onMouseUp);
-
-//     setTimeout(() => updateButtonPositions(tableState), 0);
-//   }
-
-//   document.addEventListener('mousemove', onMouseMove); // 드래그하는 동안 크기 변경
-//   document.addEventListener('mouseup', onMouseUp); // 리사이징 종료
-// }
-
 function resizeColumn(e, tableState, cell) {
   e.stopPropagation();
 
@@ -363,7 +289,7 @@ function resizeColumn(e, tableState, cell) {
     }
 
     startCellWidth -= minusWidth;
-    colIndex = colIndex === 0 ? cell.colSpan - 1 : cell.colSpan;
+    colIndex = endCol;
   }
 
   function onMouseMove(e) {
@@ -525,10 +451,14 @@ function highlightDrag(tableState, end) {
     setBtnPosition(tableState, finalCells);
   }
 
+  console.log('hihihihi');
+
   if (tableState.selectionStart === end) {
     end.classList.add('selected-cell');
+    tableState.isSelection = true;
   } else {
     tableState.selectionStart.classList.add('selected-cell');
+    tableState.isSelection = false;
     finalCells.forEach((cell) => {
       cell.classList.add('dragged-cell');
     });
@@ -860,7 +790,7 @@ export function initButtons(tableState) {
     setTimeout(() => updateButtonPositions(tableState), 0); // ✅ 딜레이 주어 DOM 갱신 대기
 
     setTimeout(() => {
-      const scrollContainer = tableState.tableWrap; // .wysiwyg-table-wrap
+      const scrollContainer = tableState.tableWrap.parentElement; // .myeditor
       if (scrollContainer) {
         scrollContainer.scrollLeft = scrollContainer.scrollWidth;
       }
@@ -883,7 +813,7 @@ export function initButtons(tableState) {
     setTimeout(() => {
       updateButtonPositions(tableState);
 
-      const scrollContainer = tableState.tableWrap; // .wysiwyg-table-wrap
+      const scrollContainer = tableState.tableWrap.parentElement; // .wysiwyg-table-wrap
 
       if (scrollContainer) {
         const newScrollLeft = Math.min(
