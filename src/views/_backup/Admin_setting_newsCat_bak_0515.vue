@@ -11,7 +11,7 @@
 				.tb-overflow
 					table.table#tb-write-newsForm
 						colgroup
-							col(style="width: 13%; min-width: 92px")
+							col(style="width: 13%")
 							col
 							col(style="width: 15%")
 							col(style="width: 20%")
@@ -66,7 +66,7 @@
 		.modal-body
 			.select-dvs-wrap
 				.organigram-wrap
-					Organigram(:selectedEmployees="selectedEmps" :excludeCurrentUser="false" :useCheckbox="true" :selectedAuditors="selectedEmpsArr" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
+					Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedEmps" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
 
 				br
 
@@ -104,10 +104,24 @@
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
+import { user, makeSafe, verifiedEmail } from '@/user.ts';
 import { divisionNameList } from '@/division.ts';
 
 import Organigram from '@/components/organigram.vue';
-import { organigram } from '@/components/organigram';
+
+// 게시판 공지
+// 이메일 발송의 기존 방식 -> 게시판 형태의 공지 방식으로 변경
+// 직원 모두 작성 가능
+// 공지사항은 레코드에 저장
+// 작성 시 공개범위, 알림발송 설정 가능하게
+// --> 공개범위는 부서별로 선택 가능하게
+// --> 알림발송은 허용/비허용 설정 가능하게 (공개범위에 해당하는 사람들에게만 알림발송)
+// 목록에서 클릭 시, 상세 페이지로 이동
+// 등록한 공지사항 삭제, 수정 가능
+// 처음 작성시: 알람 허용이면 공개 범위에 해당하는 사람에게만 알람 보내기
+// 올리고 수정시: 공개범위에 추가된 부서가 있으면 추가 부서 사람들에게만 알람 보내기
+// 댓글 알람: 작성자에게만 알람 보내기, 만약 작성자가 본인글에 댓글 작성시에는 알람 안가는게 맞음
+// 대댓글: 댓글 작성자 + 게시물 작성자 알람
 
 const router = useRouter();
 const route = useRoute();
@@ -116,23 +130,19 @@ const route = useRoute();
 const isEditMode = computed(() => !!route.query.record_id);
 const recordId = ref(route.query.record_id || null);
 
-const disabled = ref(false);
 const isDesktop = ref(window.innerWidth > 768); // 반응형
 const isModalOpen = ref(false); // 공개범위 설정 모달
 const selectedDivision = ref({}); // 조직도에서 선택된 부서
-const selectedUsers = ref([]); // 조직도에서 선택된 부서의 직원
+const selectedUsers = ref({}); // 조직도에서 선택된 부서의 직원
 const selectedEmps = ref([]); // 공개범위 직원 정보 저장
-const selectedEmpsArr = ref([]); // 공개범위 직원 정보 저장
 const notiSetting = ref(true); // 알림 설정 관련 체크박스
 const backupSelected = ref(null); // 선택된 공개범위 직원 백업
-const checkedUsers = ref([]); // 체크된 직원
 
 const uploadedFile = ref([]); // 첨부파일
 const fileNames = ref([]);
 
 const newsCatName = ref(''); // 게시글 제목
-
-const adminId = ref([]);
+const disabled = ref(false);
 
 // 수정 모드일 경우 데이터 가져오기
 const getEditModeCat = async () => {
@@ -141,11 +151,12 @@ const getEditModeCat = async () => {
   try {
     const res = await skapi.getRecords({
       table: {
-        name: 'news_category',
+        name: 'news_category_list',
         access_group: 1
       },
       record_id: recordId.value
     });
+    console.log('== getEditModeCat == res : ', res);
 
     if (res.list && res.list.length > 0) {
       const categoryData = res.list[0];
@@ -160,20 +171,7 @@ const getEditModeCat = async () => {
         Object.keys(selectedDivision.value).forEach((division) => {
           const departmentUsers = selectedDivision.value[division];
           departmentUsers.forEach((user) => {
-            let parseUser = JSON.parse(JSON.stringify(user));
-            let pushUser = {
-              data: {
-                user_id: parseUser.user_id
-              },
-              index: {
-                name: user.dvs.split('.')[0] + '.' + parseUser.position,
-                value: parseUser.name
-              },
-              dvs: `${parseUser.dvs.split('.')[0]}.${divisionNameList[division]}`,
-              position: parseUser.position,
-              name: parseUser.name
-            };
-            selectedEmps.value.push(pushUser);
+            selectedEmps.value.push(JSON.parse(JSON.stringify(user)));
           });
         });
       }
@@ -187,14 +185,11 @@ const getEditModeCat = async () => {
 // 공개범위 모달 열기
 const openModal = () => {
   // 열렸을 때 selectedEmps 전체를 original로 백업
-  backupSelected.value = {
-    employees: [...selectedEmps.value],
-    divisions: JSON.parse(JSON.stringify(selectedDivision.value))
-  };
+  backupSelected.value = [...selectedEmps.value];
 
-  selectedEmpsArr.value = selectedEmps.value.map((user) => {
-    return [user];
-  });
+  // selectedMembers에 있는 모든 유저를 selectedUsers에 추가
+  selectedUsers.value = [];
+  console.log('selectedUsers.value : ', selectedUsers.value);
 
   isModalOpen.value = true;
 };
@@ -202,16 +197,46 @@ const openModal = () => {
 // 공개범위 모달 닫기
 const closeModal = () => {
   if (backupSelected.value) {
-    selectedEmps.value = [...backupSelected.value.employees];
-    selectedDivision.value = JSON.parse(JSON.stringify(backupSelected.value.divisions));
+    selectedEmps.value = [...backupSelected.value];
   } else {
     selectedEmps.value = [];
-    selectedDivision.value = {};
   }
 
+  selectedDivision.value = {};
   selectedUsers.value = [];
+
   backupSelected.value = null;
   isModalOpen.value = false;
+};
+
+// 직원 부서 가져오기
+const getEmpDivision = async (userId) => {
+  if (!userId) return;
+
+  const userDvsList = await skapi.getRecords({
+    table: {
+      name: 'emp_division' + makeSafe(emp.user_id),
+      access_group: 1
+    },
+    tag: '[emp_id]' + makeSafe(emp.user_id)
+  });
+  const currentUserDvs = userDvsList.list[userDvsList.list.length - 1];
+  const userDvs = currentUserDvs?.tags[0]?.split(']')[1];
+
+  await skapi
+    .getRecords({
+      table: {
+        name: 'emp_position_current',
+        access_group: 1
+      },
+      unique_id: `[emp_position_current]${makeSafe(userId)}:${userDvs}`
+    })
+    .then((r) => {
+      if (r.list.length === 0) return;
+
+      user.division = r.list[0].index.name.split('.')[0];
+      user.position = r.list[0].index.name.split('.')[1];
+    });
 };
 
 // 공개범위 모달에서 조직도 선택시
@@ -237,41 +262,26 @@ const handleOrganigramSelection = (users) => {
       selectedDivision.value[division].push(emp);
     }
   });
+
+  console.log('조직도선택 == selectedDivision.value : ', selectedDivision.value);
 };
 
 // 공개범위 모달에서 선택된 부서 저장
 const saveAuditor = () => {
-  // 기존 선택된 직원 목록을 초기화하고 새로 구성
-  selectedEmps.value = [];
-
   // 선택된 모든 부서의 사용자 추가
   if (Object.keys(selectedDivision.value).length > 0) {
     Object.keys(selectedDivision.value).forEach((division) => {
       const departmentUsers = selectedDivision.value[division];
 
       departmentUsers.forEach((user) => {
-        const userCopy = JSON.parse(JSON.stringify(user));
-
-        // 중복 체크 - 같은 사용자가 여러 부서에 속할 수 있으므로
+        // 이미 추가된 사용자인지 확인
         const isDuplicate = selectedEmps.value.some(
-          (existingUser) => existingUser.data?.user_id === userCopy.user_id
+          (existingUser) => existingUser.user_id === user.user_id
         );
 
         if (!isDuplicate) {
-          // 구조에 맞게 데이터 구성
-          let pushUser = {
-            data: {
-              user_id: userCopy.user_id
-            },
-            index: {
-              name: userCopy.dvs.split('.')[0] + '.' + userCopy.position,
-              value: userCopy.name
-            },
-            dvs: userCopy.dvs,
-            position: userCopy.position,
-            name: userCopy.name
-          };
-          selectedEmps.value.push(pushUser);
+          const userCopy = JSON.parse(JSON.stringify(user));
+          selectedEmps.value.push(userCopy);
         }
       });
     });
@@ -279,61 +289,25 @@ const saveAuditor = () => {
 
   backupSelected.value = null;
   isModalOpen.value = false;
-
   console.log('저장 부서 :', selectedDivision.value);
   console.log('저장 직원 : ', selectedEmps.value);
-};
-
-const undoChecked = (divisionName) => {
-  // 재귀적으로 부서 찾기
-  const findUncheckDepartment = (departments) => {
-    for (const dept of departments) {
-      // 현재 부서가 찾는 부서인지 확인
-      if (dept.division === divisionName) {
-        // 부서 체크박스 해제
-        dept.isChecked = false;
-
-        // 부서 멤버들도 체크 해제
-        if (dept.members && dept.members.length > 0) {
-          dept.members.forEach((member) => {
-            member.isChecked = false;
-
-            // checkedUsers에서도 제거
-            const index = checkedUsers.value.findIndex(
-              (user) => user.data?.user_id === member.data?.user_id
-            );
-            if (index !== -1) {
-              checkedUsers.value.splice(index, 1);
-            }
-          });
-        }
-
-        return true; // 찾았으면 종료
-      }
-
-      // 하위 부서에서 찾기
-      if (dept.subDepartments && dept.subDepartments.length > 0) {
-        if (findUncheckDepartment(dept.subDepartments)) {
-          return true;
-        }
-      }
-    }
-
-    return false; // 못 찾았으면 계속 진행
-  };
-
-  // 최상위 부서부터 검색 시작
-  findUncheckDepartment(organigram.value);
 };
 
 // 공개범위 모달에서 선택된 부서 삭제
 const removeDvs = (divisionName) => {
   if (selectedDivision.value[divisionName]) {
-    // 조직도에서 해당 부서 찾아 체크 해제하는 함수 호출
-    undoChecked(divisionName);
+    // 해당 부서의 모든 사용자 체크 해제
+    selectedUsers.value = selectedUsers.value.filter(
+      (user) => user.index.name.split('.')[0] !== divisionName
+    );
 
+    // 부서 삭제
     delete selectedDivision.value[divisionName];
+
+    // Vue 반응성을 위해 객체 갱신
     selectedDivision.value = JSON.parse(JSON.stringify(selectedDivision.value));
+
+    console.log('삭제 == selectedDivision :', selectedDivision.value);
   }
 };
 
@@ -367,12 +341,13 @@ const registerNewsCat = async () => {
     if (isEditMode.value) {
       // 수정 모드
       const res = await skapi.postRecord(data, { record_id: recordId.value });
+      console.log('수정 == res : ', res);
       alert('게시글 카테고리가 수정되었습니다.');
     } else {
       // 등록 모드
       const config = {
         table: {
-          name: 'news_category',
+          name: 'news_category_list',
           access_group: 1
         },
         index: {
@@ -380,26 +355,40 @@ const registerNewsCat = async () => {
           value: newsCatName.value
         }
       };
-
       const res = await skapi.postRecord(data, config);
+      console.log('카테고리명 == res : ', res);
 
-      // 카테고리 공개범위에게 권한 부여
-      const categoryId = res.record_id;
-      const accessUserId = selectedEmps.value.map((user) => user.user_id);
+      if (res) {
+        // 카테고리별 게시글 더미 레코드 생성
+        const newsCatRecord = await skapi.postRecord(null, {
+          table: {
+            name: `newsCatRecord_${res.record_id}`,
+            access_group: 'private'
+          }
+        });
+        console.log('카테고리별 게시글 더미 레코드 : ', newsCatRecord);
 
-      await Promise.all(
-        accessUserId.map((userId) =>
-          grantNewsUserAccess({ news_id: categoryId, newsUser_id: userId })
-        )
-      );
+        // 게시글 공개범위에게 권한을 부여
+        const newsCatId = newsCatRecord.record_id;
+        const newsUserIds = selectedEmps.value.map((user) => user.user_id);
+        console.log('newsUserIds : ', newsUserIds);
+        console.log('newsCatId : ', newsCatId);
 
+        await Promise.all(
+          newsUserIds.map((userId) =>
+            grantNewsUserAccess({ news_id: newsCatId, newsUser_id: userId })
+          )
+        ).then((res) => {
+          console.log('게시글 공개범위 권한 부여 결과 : ', res);
+        });
+      }
       alert('게시글 카테고리가 추가되었습니다.');
     }
+
+    router.push('/admin/list-newsletter');
   } catch (err) {
     console.error('게시글 카테고리가 추가 중 오류 발생: ', err);
     alert('게시글 카테고리가 추가 중 오류가 발생했습니다.');
-  } finally {
-    router.push('/admin/list-newsletter');
   }
 };
 
@@ -622,6 +611,64 @@ onUnmounted(() => {
 .btn {
   margin-top: 1rem;
 }
+
+// .dvs-wrap {
+//   display: grid;
+//   grid-template-columns: repeat(8, 1fr);
+//   text-align: center;
+//   height: 100%;
+
+//   .dvs-list {
+//     display: flex;
+//     flex-direction: column;
+//     width: 100%;
+//     min-height: 6rem;
+//     border-right: 1px solid var(--gray-color-300);
+//     border-bottom: 1px solid var(--gray-color-300);
+//     margin-bottom: -1px;
+//     position: relative;
+//   }
+
+//   .num {
+//     border-bottom: 1px solid var(--gray-color-200);
+//     padding: 0.25rem;
+//   }
+
+//   .dvs-name {
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     height: 100%;
+//     padding: 0.25rem;
+//   }
+
+//   .add-dvs {
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     height: 100%;
+//     cursor: pointer;
+
+//     .icon {
+//       svg {
+//         fill: var(--gray-color-400);
+//       }
+//     }
+//   }
+
+//   .btn-remove {
+//     margin-left: 4px;
+
+//     .icon {
+//       padding: 0;
+
+//       svg {
+//         width: 16px;
+//         height: 16px;
+//       }
+//     }
+//   }
+// }
 
 .dvs-wrap {
   display: flex;
@@ -966,7 +1013,6 @@ onUnmounted(() => {
           flex-grow: 1;
         }
       }
-
       .btn-upload-file + .file-list {
         .file-item {
           width: 100%;

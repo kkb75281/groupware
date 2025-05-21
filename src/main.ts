@@ -484,7 +484,7 @@ export async function refreshAccessToken() {
 }
 
 export async function loginCheck(profile: any) {
-  // console.log('=== loginCheck === profile : ', profile);
+  console.log('=== loginCheck === profile : ', profile);
 
   for (let key in user) {
     delete user[key];

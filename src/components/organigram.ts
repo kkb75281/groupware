@@ -233,11 +233,15 @@ async function addDepartment(path: string[], division: string | null, currentLev
         };
       })
     );
+    console.log('filteredMembersInfo : ', filteredMembersInfo);
+    console.log('excludeCurrentUser.value : ', excludeCurrentUser.value);
 
     // excludeCurrentUser가 true일 때만 현재 사용자 제외
     department.members = excludeCurrentUser.value
       ? filteredMembersInfo.filter((data) => data.data.user_id !== user.user_id)
       : filteredMembersInfo;
+
+    console.log('department.members : ', department.members);
 
     // 현재 부서의 직접 멤버 수만 설정 (전체 total은 나중에 recalculateTotals에서 계산됨)
     department.total = department.members.length;

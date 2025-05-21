@@ -123,7 +123,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 										ul.refer-doc-list
 											template(v-if="referDoc.length > 0")
 												li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
-													span.refer-doc-name(@click="showReferDetail(doc)") {{ doc.data.to_audit }}
+													span.refer-doc-name(@click="showReferDetail(doc)" :class="{ 'no-access': doc?.data?.to_audit === undefined || doc?.data?.to_audit === null }") {{ doc?.data?.to_audit || '참조문서에 대한 권한이 없습니다.' }}
 											template(v-else)
 												li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
@@ -305,7 +305,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 									td {{ formatTimestampToDate(referDetail.uploaded) }}
 									th 기안자
 									td
-										span.drafter {{ referDetail.drafter  }}
+										span.drafter {{ referDetail.data.drafter  }}
 
 								//- 모바일 경우 레이아웃
 								tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
@@ -374,7 +374,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 											ul.refer-doc-list
 												template(v-if="modalReferDoc.length > 0")
 													li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index")
-														span.refer-doc-name {{ doc?.data?.to_audit }}
+														span.refer-doc-name(:class="{ 'no-access': doc?.data?.to_audit === undefined || doc?.data?.to_audit === null }") {{ doc?.data?.to_audit || '참조문서에 대한 권한이 없습니다.' }}
 												template(v-else)
 													li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
@@ -2184,6 +2184,7 @@ const deleteReply = async (recordId, isComment = true) => {
 const showReferDetail = async (doc) => {
   isReferDetailModal.value = true;
   referDetail.value = doc;
+  console.log('referDetail.value : ', referDetail.value);
 
   try {
     // 이미 처리된 결재자 정보 사용
@@ -2253,6 +2254,7 @@ const showReferDetail = async (doc) => {
       );
 
       modalReferDoc.value = await Promise.all(fetchPromises);
+      console.log('modalReferDoc.value : ', modalReferDoc.value);
     } else {
       modalReferDoc.value = [];
     }
@@ -2469,6 +2471,14 @@ onUnmounted(() => {
 
   &:hover {
     text-decoration: underline;
+  }
+}
+
+.refer-doc-name {
+  &.no-access {
+    color: var(--gray-color-400);
+    text-decoration: none;
+    cursor: default;
   }
 }
 
@@ -3152,6 +3162,12 @@ onUnmounted(() => {
       cursor: default;
     }
   }
+
+  // .refer-doc-name {
+  //   &.no-access {
+  //     color: var(--gray-color-400);
+  //   }
+  // }
 }
 
 // 참조문서 :: e

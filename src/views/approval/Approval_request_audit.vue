@@ -996,19 +996,29 @@ let updateFileList = (e) => {
   e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
 };
 
-// 결재의견 권한 부여
-const grantAuditOpinionAccess = async (cmtId, processRoles) => {
+// 참조문서 권한 부여
+const grantReferDocAccess = async (referId, processRoles) => {
+  console.log('referId : ', referId);
+  console.log('processRoles : ', processRoles);
+
   try {
     // 모든 결재자 ID 목록 생성
     const allAuditorIds = processRoles.map((role) => role.userId);
+    console.log('allAuditorIds : ', allAuditorIds);
 
-    // 결재의견 테이블에 권한 부여
-    await skapi.grantPrivateRecordAccess({
-      record_id: cmtId,
-      user_id: allAuditorIds
-    });
+    for (const id of referId) {
+      await skapi
+        .grantPrivateRecordAccess({
+          record_id: id,
+          user_id: allAuditorIds
+        })
+        .then((res) => {
+          console.log('참조문서 권한 부여 성공 : ', res);
+        });
+    }
   } catch (error) {
-    console.error('결재의견 권한 부여 중 오류 : ', error);
+    console.error('참조문서 권한 부여 중 오류 : ', error);
+    throw new Error('참조문서 권한 부여 중 오류가 발생했습니다.');
   }
 };
 
@@ -1058,6 +1068,7 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     additionalFormData.append('reject_setting', rejectSetting.value);
     additionalFormData.append('custom_rows', JSON.stringify(addRows.value));
     additionalFormData.append('reference_docs', JSON.stringify(referDocInfo));
+    additionalFormData.append('drafter', user.name);
 
     if (uploadedFile.value.length) {
       const filePromises = uploadedFile.value.map(async (file) => {
@@ -1103,7 +1114,8 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
         value: to_audit.replaceAll('.', '_')
       },
       source: {
-        prevent_multiple_referencing: true // 중복 결재 방지
+        prevent_multiple_referencing: true, // 중복 결재 방지
+        allow_granted_to_grant_others: true // 결재자가 다른 결재자에게 권한 부여 가능
       },
       tags: send_auditors_arr, // 결재, 합의, 수신참조 태그를 각각 구분,
       data: {
@@ -1118,7 +1130,7 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
   } catch (error) {
     console.error(error);
     if (error?.message?.includes('index.value should not have special characters')) {
-      throw new Error('index.value should not have special characters');
+      throw new Error('특수 문자로 인해 오류가 발생했습니다.');
     }
     throw error;
   }
@@ -1254,9 +1266,7 @@ const postAuditDocRecordId = async (
     // 권한 부여
     await grantAuditorAccess({
       audit_id: auditId,
-      auditor_id: userId,
-      form_title: formTitle,
-      audit_title: auditTitle
+      auditor_id: userId
     });
 
     // 알림 전송
@@ -1397,6 +1407,14 @@ const requestAudit = async (e) => {
       ...selectedAuditors.value.agreers
     ].sort((a, b) => a.order - b.order);
 
+    // 참조문서 권한 부여
+    console.log('referDoc.value : ', referDoc.value);
+    if (referDoc.value.length > 0) {
+      const referDocIds = referDoc.value.map((doc) => doc.record_id);
+      console.log('referDocIds : ', referDocIds);
+      await grantReferDocAccess(referDocIds, processRoles);
+    }
+
     // 통합된 목록에서 첫 번째 사람과 모든 수신참조자
     const notificationTargets = [
       // 첫 번째 결재/합의자 (전체 목록 중 첫 번째)
@@ -1454,6 +1472,9 @@ const saveDocForm = async () => {
     alert('결재 제목을 입력해주세요.');
     return;
   }
+
+  // 에디터에서 내용 가져오기
+  await importWysiwygData();
 
   try {
     // 첨부파일 업로드
@@ -1570,14 +1591,9 @@ const saveMyDocForm = async () => {
     return;
   }
 
-  // // 결재의견 권한 부여
-  // await grantAuditOpinionAccess(commentRecord.record_id, processRoles);
+  // 에디터에서 내용 가져오기
+  await importWysiwygData();
 
-  // // 결재자와 합의자를 순서대로 통합 정렬
-  // const approversAndAgreers = [
-  //   ...selectedAuditors.value.approvers,
-  //   ...selectedAuditors.value.agreers
-  // ].sort((a, b) => a.order - b.order);
   try {
     // 첨부파일 업로드
     const formData = new FormData();
@@ -1684,9 +1700,11 @@ const tempSaveMyDoc = async () => {
     return;
   }
 
+  // 에디터에서 내용 가져오기
+  await importWysiwygData();
+
   try {
     // 첨부파일 업로드
-    const filebox = document.querySelector('input[name="additional_data"]');
     const formData = new FormData();
 
     // 참조문서 정보
@@ -2177,6 +2195,7 @@ const filteredReferDocList = computed(() => {
 
 // 참조문서추가 모달 open
 const openReferModal = async () => {
+  console.log('!!!!!!!!!!!!!!!!!!!!!!!!!');
   loading.value = true;
   isReferModal.value = true;
   referDocFilter.value = 'all'; // 필터 초기화
@@ -2196,9 +2215,12 @@ const openReferModal = async () => {
     const allDocs = [];
     const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
 
+    const fetchOptions = { limit: 1000 };
+
     // 결재 수신함 가져오기
     try {
-      const receivedDocs = await getAuditList();
+      const receivedDocs = await getAuditList(fetchOptions);
+      console.log('수신함 : ', receivedDocs);
 
       if (receivedDocs && receivedDocs.list && Array.isArray(receivedDocs.list)) {
         receivedDocs.list.forEach((doc) => {
@@ -2220,7 +2242,8 @@ const openReferModal = async () => {
 
     // 결재 발신함 가져오기
     try {
-      const sentDocs = await getSendAuditList();
+      const sentDocs = await getSendAuditList(fetchOptions);
+      console.log('발신함 : ', sentDocs);
 
       if (sentDocs && sentDocs.list && Array.isArray(sentDocs.list)) {
         sentDocs.list.forEach((doc) => {
@@ -2242,7 +2265,8 @@ const openReferModal = async () => {
 
     // 수신참조 가져오기
     try {
-      const referenceDocs = await getAuditReferenceList();
+      const referenceDocs = await getAuditReferenceList(fetchOptions);
+      console.log('수신참조 : ', referenceDocs);
 
       if (referenceDocs && referenceDocs.list && Array.isArray(referenceDocs.list)) {
         referenceDocs.list.forEach((doc) => {
@@ -2266,6 +2290,7 @@ const openReferModal = async () => {
     allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
 
     referDocList.value = allDocs;
+    console.log('referDocList.value : ', referDocList.value);
   } catch (error) {
     console.error('참조문서 목록 가져오기 중 오류 : ', error);
   } finally {

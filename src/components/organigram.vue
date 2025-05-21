@@ -117,6 +117,7 @@ function recalculateDepartmentCheckStatus() {
 
 onMounted(() => {
   excludeCurrentUser.value = props.excludeCurrentUser;
+  console.log('excludeCurrentUser', excludeCurrentUser.value);
   onlyMyDepartment.value = props.onlyMyDepartment;
 });
 

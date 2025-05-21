@@ -766,8 +766,8 @@ onMounted(async () => {
   }
 
   .mo-btn-wrap {
-    display: block;
     display: flex;
+    gap: 0.5rem;
   }
 
   .gmail {

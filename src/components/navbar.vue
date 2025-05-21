@@ -108,7 +108,7 @@ watch(
   }
 
   &:hover {
-    width: 10rem;
+    width: 10.8rem;
 
     .menu-item {
       .item {
