@@ -48,7 +48,7 @@ export function createTable(rows, cols) {
   // 테이블 요소 생성
   const table = document.createElement('table');
   table.className = 'wysiwyg-table';
-  table.setAttribute('contenteditable', 'false');
+  //   table.setAttribute('contenteditable', 'false');
 
   const tbody = document.createElement('tbody');
 
@@ -70,7 +70,7 @@ export function createTable(rows, cols) {
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.setAttribute('tabindex', '0');
-      cell.setAttribute('contenteditable', 'true');
+      //   cell.setAttribute('contenteditable', 'true');
 
       addResizer(tableState, cell);
       bindCellEvents(tableState, cell);
@@ -189,7 +189,7 @@ export function addResizer(tableState, cell) {
 
   const resizer = document.createElement('div');
   resizer.className = 'resizer';
-  resizer.setAttribute('contenteditable', 'false');
+  //   resizer.setAttribute('contenteditable', 'false');
 
   // 리사이징 시작
   resizer.onmousedown = (e) => {
@@ -219,7 +219,7 @@ export function addResizer(tableState, cell) {
   // 하단 리사이저도 동일하게 처리 가능
   const resizerBottom = document.createElement('div');
   resizerBottom.className = 'resizer-bottom';
-  resizerBottom.setAttribute('contenteditable', 'false');
+  //   resizerBottom.setAttribute('contenteditable', 'false');
 
   resizerBottom.onmousedown = (e) => {
     e.stopPropagation();
@@ -694,7 +694,7 @@ function unmergeCell(tableState, mergedCell) {
         const newCell = row.insertCell(c); // 특정 위치에 셀 삽입
         newCell.dataset.row = r;
         newCell.dataset.col = c;
-        newCell.setAttribute('contenteditable', 'true');
+        // newCell.setAttribute('contenteditable', 'true');
 
         // 첫 번째 셀에 병합된 셀의 내용을 넣음
         if (r === startRow && c === startCol) {
@@ -799,7 +799,7 @@ export function initButtons(tableState) {
       const newCell = document.createElement('td');
       newCell.dataset.row = rows;
       newCell.dataset.col = c;
-      newCell.setAttribute('contenteditable', 'true');
+      //   newCell.setAttribute('contenteditable', 'true');
       newCell.innerHTML = '&nbsp;';
       addResizer(tableState, newCell);
       bindCellEvents(tableState, newCell);
@@ -849,7 +849,7 @@ export function initButtons(tableState) {
       const newCell = document.createElement('td');
       newCell.dataset.row = r;
       newCell.dataset.col = existingCols;
-      newCell.setAttribute('contenteditable', 'true');
+      //   newCell.setAttribute('contenteditable', 'true');
       newCell.innerHTML = '&nbsp;';
       addResizer(tableState, newCell);
       bindCellEvents(tableState, newCell);
