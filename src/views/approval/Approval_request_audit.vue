@@ -3367,16 +3367,11 @@ onUnmounted(() => {
 }
 
 .wysiwyg-wrap {
-	max-width: 42rem;
-	// min-height: 18rem;
-	// max-height: calc(100vh - var(--header-height) - 32px);
-	// height: 100%;
+	max-width: calc(100vw - 120px);
 	text-align: left;
 	border: 1px solid var(--gray-color-200);
 	border-radius: 0.5rem;
-	// overflow: hidden;
-	overflow-y: auto;
-	overscroll-behavior: contain;
+	overflow: hidden;
 }
 
 .modal {

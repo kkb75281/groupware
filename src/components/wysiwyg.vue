@@ -1,94 +1,106 @@
 <template lang="pug">
 .wysiwyg(ref="wysiwygRef")
-    .btns-wrap(:class="{disalbed : isDetail, fixed : isFixed}")
-        button.btn-custom(:class="{active : commandTracker.bold}" type="button" @click="handleCommand('bold')")
+    .btns-wrap(ref="wysiwygTool" :class="{disalbed : isDetail, fixed : isFixed}")
+        .btn-custom.input-size.line
+            button(type="button" @click.stop.prevent="handleFontSize('decrease')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-remove")
+            .font-size {{ fontSize }}
+            button(type="button" @click.stop.prevent="handleFontSize('increase')") 
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
+        button.btn-custom(:class="{active : commandTracker.bold}" type="button" @click.stop="handleCommand('bold')")
             .icon
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-bold")
-        button.btn-custom(:class="{active : commandTracker.italic}" type="button" @click="handleCommand('italic')")
+        button.btn-custom(:class="{active : commandTracker.italic}" type="button" @click.stop="handleCommand('italic')")
             .icon
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-italic")
-        button.btn-custom(:class="{active : commandTracker.underline}" type="button" @click="handleCommand('underline')")
+        button.btn-custom(:class="{active : commandTracker.underline}" type="button" @click.stop="handleCommand('underline')")
             .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-underline")
-        button.btn-custom(:class="{active : commandTracker.strike}" type="button" @click="handleCommand('strike')" style="border-right: 1px solid #e4e4e7;")
+        button.btn-custom.line(:class="{active : commandTracker.strike}" type="button" @click.stop="handleCommand('strike')")
             .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-strike")
-        button.btn-custom(:class="{active : commandTracker.h1}" type="button" @click="handleCommand('h1')")
-            .icon.text 20pt
-        button.btn-custom(:class="{active : commandTracker.h2}" type="button" @click="handleCommand('h2')")
-            .icon.text 18pt
-        button.btn-custom(:class="{active : commandTracker.h3}" type="button" @click="handleCommand('h3')")
-            .icon.text 16pt
-        button.btn-custom(:class="{active : commandTracker.h4}" type="button" @click="handleCommand('h4')")
-            .icon.text 14pt
-        button.btn-custom(:class="{active : commandTracker.h5}" type="button" @click="handleCommand('h5')")
-            .icon.text 12pt
-        button.btn-custom(:class="{active : commandTracker.h6}" type="button" @click="handleCommand('h6')" style="border-right: 1px solid #e4e4e7;")
-            .icon.text 10pt
+        //- button.btn-custom(:class="{active : commandTracker.h1}" type="button" @click="handleCommand('h1')")
+        //-     .icon.text 20pt
+        //- button.btn-custom(:class="{active : commandTracker.h2}" type="button" @click="handleCommand('h2')")
+        //-     .icon.text 18pt
+        //- button.btn-custom(:class="{active : commandTracker.h3}" type="button" @click="handleCommand('h3')")
+        //-     .icon.text 16pt
+        //- button.btn-custom(:class="{active : commandTracker.h4}" type="button" @click="handleCommand('h4')")
+        //-     .icon.text 14pt
+        //- button.btn-custom(:class="{active : commandTracker.h5}" type="button" @click="handleCommand('h5')")
+        //-     .icon.text 12pt
+        //- button.btn-custom(:class="{active : commandTracker.h6}" type="button" @click="handleCommand('h6')" style="border-right: 1px solid #e4e4e7;")
+        //-     .icon.text 10pt
         //- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
     
-        // 텍스트 색상 변경
-        .btn-custom.input-color
-            input#colorInput(
-                type="color"
-                ref="colorInputRef"
-                @mousedown="onColorInputMouseDown('textColor', $event)"
-                @mouseup="stopColorDrag"
-                @input="handleColorInput('textColor', $event.target.value)"
-            )
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-color-text")
+        .divider
+            // 텍스트 색상 변경
+            .btn-custom.input-color
+                input#colorInput(
+                    type="color"
+                    ref="colorInputRef"
+                    @mousedown="onColorInputMouseDown('textColor', $event)"
+                    @mouseup="stopColorDrag"
+                    @input="handleColorInput('textColor', $event.target.value)"
+                )
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-text")
 
-        // 셀 배경색 변경
-        .btn-custom.input-color(style="border-right: 1px solid #e4e4e7;")
-            input#bgColorInput(
-                type="color"
-                ref="bgColorInputRef"
-                @mousedown="onColorInputMouseDown('bgColor', $event)"
-                @mouseup="stopColorDrag"
-                @input="handleColorInput('bgColor', $event.target.value)"
-            )
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
+            // 셀 배경색 변경
+            .btn-custom.input-color.line
+                input#bgColorInput(
+                    type="color"
+                    ref="bgColorInputRef"
+                    @mousedown="onColorInputMouseDown('bgColor', $event)"
+                    @mouseup="stopColorDrag"
+                    @input="handleColorInput('bgColor', $event.target.value)"
+                )
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
 
-        button.btn-custom(type="button" @click="handleCommand('divider')")
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-divider")
-        button.btn-custom(type="button" @click="handleCommand('quote')" style="border-right: 1px solid #e4e4e7;")
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
-        button.btn-custom(type="button" @click="handleCommand('table')")
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
-        button.btn-custom(type="button" @click="handleCommand('unorderedList')")
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-list-bullet")
-        button.btn-custom(type="button" @click="handleCommand('orderedList')" style="border-right: 1px solid #e4e4e7;")
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-list-number")
-        button.btn-custom(type="button" @click="handleCommand('alignLeft')")
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-align-left")
-        button.btn-custom(type="button" @click="handleCommand('alignCenter')")
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-align-center")
-        button.btn-custom(type="button" @click="handleCommand('alignRight')")
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-align-right")
+            button.btn-custom(type="button" @click.stop="handleCommand('divider')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-divider")
+            button.btn-custom.line(type="button" @click.stop="handleCommand('quote')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
+        .divider
+            button.btn-custom(type="button" @click.stop="handleCommand('table')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
+            button.btn-custom(type="button" @click.stop="handleCommand('unorderedList')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-list-bullet")
+            button.btn-custom.line(type="button" @click.stop="handleCommand('orderedList')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-list-number")
+            button.btn-custom(type="button" @click.stop="handleCommand('alignLeft')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-align-left")
+            button.btn-custom(type="button" @click.stop="handleCommand('alignCenter')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-align-center")
+            button.btn-custom(type="button" @click.stop="handleCommand('alignRight')")
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-align-right")
         //- button.btn-custom(type="button" @click="handleCommand('image')")
             .icon
                 svg
@@ -126,8 +138,18 @@ const props = defineProps(['savedContent', 'showBtn']);
 
 let wysiwyg = null; // wysiwyg4all 인스턴스
 let wysiwygRef = ref(null); // .wysiwyg
+let wysiwygTool = ref(null); // .btns-wrap
 let colorInput = ref(null);
 let bgColorInput = ref(null);
+let fontSize = ref(12);
+let fontVariables = {
+    h1: 20,
+    h2: 18,
+    h3: 16,
+    h4: 14,
+    h5: 12,
+    h6: 10
+}
 let commandTracker = ref({
     bold: false,
     color: false,
@@ -196,9 +218,52 @@ const insertTable = () => {
     // });
 };
 
+function saveSelection() {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        return { range };
+    }
+    return null;
+}
+
+function restoreSelection(saved) {
+    if (!saved) return;
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(saved.range);
+}
+
+const handleFontSize = (action) => {
+    if (!wysiwyg) return;
+
+    const minFontSize = 10;
+    const maxFontSize = 20;
+
+    if (action === 'increase') {
+        if (fontSize.value >= maxFontSize) {
+            alert('최대 글자 크기는 20px 입니다.');
+            return;
+        }
+        fontSize.value += 2;
+    } else if (action === 'decrease') {
+        if (fontSize.value <= minFontSize) {
+            alert('최소 글자 크기는 10px 입니다.');
+            return;
+        }
+        fontSize.value -= 2;
+    }
+
+    const fontSizeValue = Object.keys(fontVariables).find(key => fontVariables[key] === fontSize.value);
+
+    wysiwyg.restoreLastSelection();
+    handleCommand(fontSizeValue);
+}
+
 let colorDragInterval = null;
 
 const onColorInputMouseDown = (type, event) => {
+    event.preventDefault(); // 기본 동작 방지
     updateColorPickerToSelectedCells(type); // 선택된 셀 색상으로 초기값 설정
     setTimeout(() => {
         if (type === 'textColor' && colorInput.value) {
@@ -370,8 +435,6 @@ const initWysiwyg = () => {
     const editorEl = document.getElementById('myeditor');
     if (!editorEl) return;
 
-    let navBarHeight = document.getElementById('header').getBoundingClientRect().height;
-
     wysiwyg = new Wysiwyg4All({
         elementId: 'myeditor',
         placeholder: '결재 내용',
@@ -393,17 +456,8 @@ const initWysiwyg = () => {
             h6: '13px'
         },
         callback: (c) => {
-            let windowHeight = window.innerHeight - navBarHeight;
-            let wysiwygRefHeight = wysiwygRef.value.scrollHeight;
-            let wysiwygRefLeft = wysiwygRef.value.getBoundingClientRect().left;
-
-            console.log('wysiwygRefLeft:', wysiwygRefLeft);
-
-            if (wysiwygRefHeight > windowHeight) {
-                isFixed.value = true;
-            } else {
-                isFixed.value = false;
-            }
+            checkToolBar();
+            // console.log('wysiwyg4all callback', c);
 
             if (c.caratPosition) {
                 // 뷰포트 내에 커서 위치 유지하기 위한 기존 코드 유지
@@ -428,6 +482,21 @@ const initWysiwyg = () => {
                 commandTracker.value.small = c.commandTracker.small;
                 commandTracker.value.strike = c.commandTracker.strike;
                 commandTracker.value.underline = c.commandTracker.underline;
+
+                console.log('commandTracker', commandTracker.value);
+
+                const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+                let selectedHeadings = headings.filter(h => commandTracker.value[h]);
+
+                if (selectedHeadings.length === 0) {
+                    fontSize.value = 12;
+                } else if (selectedHeadings.length === 1) {
+                    fontSize.value = fontVariables[selectedHeadings[0]];
+                } else {
+                    let sort = selectedHeadings.sort();
+                    console.log('sort', sort);
+                    fontSize.value = fontVariables[sort[0]];
+                }
             }
 
             if (editorEl && editorEl.innerHTML.trim() === '') {
@@ -519,13 +588,46 @@ let handleEditorKeyUp = (e) => {
     }
 };
 
+const updateToolbarPosition = () => {
+    const editorEl = document.getElementById('myeditor');
+    if (editorEl) {
+        const editorRect = editorEl.getBoundingClientRect();
+        const newLeft = editorRect.left + window.scrollX;
+        document.body.style.setProperty('--wysiwyg-tool-bar-left', `${newLeft}px`);
+        document.body.style.setProperty('--wysiwyg-tool-bar-width', `${editorRect.width}px`);
+    }
+};
+
+let checkToolBar = () => {
+    const wysiwygToolEl = wysiwygTool.value;
+    const editorEl = document.getElementById('myeditor');
+    const headerEl = document.getElementById('header');
+
+    if (!wysiwygToolEl || !editorEl || !headerEl) return;
+
+    const navBarHeight = headerEl.offsetHeight;
+    const toolRect = wysiwygToolEl.getBoundingClientRect();
+    const editorRect = editorEl.getBoundingClientRect();
+
+    if (toolRect.top <= navBarHeight && editorRect.top < navBarHeight) {
+        isFixed.value = true;
+    } else {
+        isFixed.value = false;
+    }
+}
+
 onMounted(() => {
     initWysiwyg();
+    updateToolbarPosition();
 
     document.addEventListener('keydown', handleEditorKeyDown);
     document.addEventListener('keyup', handleEditorKeyUp);
     document.addEventListener('click', clearTableSelection);
-
+    document.addEventListener('scroll', checkToolBar);
+    window.addEventListener('resize', () => {
+        updateToolbarPosition();
+        checkToolBar();
+    });
 
     let editorEl = document.getElementById('myeditor');
     editorEl.addEventListener('click', (e) => {
@@ -537,6 +639,11 @@ onUnmounted(() => {
     document.removeEventListener('keydown', handleEditorKeyDown);
     document.removeEventListener('keyup', handleEditorKeyUp);
     document.removeEventListener('click', clearTableSelection);
+    document.removeEventListener('scroll', checkToolBar);
+    window.removeEventListener('resize', () => {
+        updateToolbarPosition();
+        checkToolBar();
+    });
 });
 
 onBeforeUnmount(() => {
@@ -561,7 +668,8 @@ defineExpose({
     padding: 1rem;
     padding-top: 3rem;
     height: 100%;
-    min-height: calc(18rem - 2rem) !important;
+    min-height: 20rem !important;
+    // min-height: calc(18rem - 2rem) !important;
     // height: calc(100% - 2rem) !important;
     overflow-x: auto;
 
@@ -699,54 +807,78 @@ defineExpose({
 }
 
 .btns-wrap {
-    // position: sticky;
     position: absolute;
     top: 0;
     left: 0;
     z-index: 99;
+    width: 100%;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--gray-color-200);
+    border-radius: 0.5rem 0.5rem 0 0;
     background-color: #fff;
-    justify-content: flex-start !important;
-    gap: 0 !important;
+    overflow: hidden;
+    gap: 8px;
     display: flex;
     flex-wrap: wrap;
-
-    &:after {
-        content: '';
-        flex: 1 1 auto;
-        border-bottom: 1px solid var(--gray-color-200);
-    }
+    justify-content: center;
+    align-items: center;
 
     &.disalbed {
         display: none;
     }
 
-    // &.fixed {
-    //     // position: fixed;
-    //     // top: var(--header-height);
-    //     // left: 0;
-    //     // width: 100%;
-    //     position: sticky;
-    //     top: 0;
-    //     z-index: 99;
-    // }
+    &.fixed {
+        position: fixed;
+        top: var(--header-height);
+        left: var(--wysiwyg-tool-bar-left);
+        width: var(--wysiwyg-tool-bar-width);
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 }
 
 .btn-custom {
-    display: inline-block;
-    border-bottom: 1px solid var(--gray-color-200);
-    padding: 0 8px;
-    height: 2rem;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 8px;
 
     &:hover,
     &:focus,
     &:active {
-        border-bottom: 1px solid var(--gray-color-200);
         background-color: var(--gray-color-200);
     }
 
     &.active {
-        border-bottom: 1px solid var(--gray-color-200);
         background-color: var(--gray-color-200);
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: -10px;
+        width: 1px;
+        height: 100%;
+        background-color: var(--gray-color-200);
+        opacity: 0;
+    }
+
+    &.line {
+        margin-right: 12px;
+
+        &::after {
+            opacity: 1;
+        }
     }
 
     .icon {
@@ -757,6 +889,46 @@ defineExpose({
             color: var(--gray-color-500);
         }
     }
+}
+
+.input-size {
+    padding: 0;
+    width: unset;
+    height: unset;
+    cursor: default;
+
+    &:hover,
+    &:focus,
+    &:active {
+        background-color: transparent;
+    }
+
+    button {
+        padding: 4px 6px;
+        border-radius: 8px;
+
+        .icon {
+            svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        &:hover {
+            background-color: var(--gray-color-200);
+        }
+    }
+}
+
+.font-size {
+    border: 1px solid var(--gray-color-300);
+    background-color: var(--gray-color-50);
+    border-radius: 8px;
+    padding: 2px 8px;
+    height: unset;
+    text-align: center;
+    font-size: 14px;
+    margin: 0 4px;
 }
 
 /* 테이블 스타일링 */
@@ -1010,6 +1182,18 @@ defineExpose({
         cursor: pointer;
         font-weight: bold;
         border: none;
+    }
+}
+
+@media (max-width: 1017px) {
+    ._wysiwyg4all {
+        padding-top: 5rem;
+    }
+}
+
+@media (max-width: 522px) {
+    ._wysiwyg4all {
+        padding-top: 7rem;
     }
 }
 </style>

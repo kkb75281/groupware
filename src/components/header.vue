@@ -432,7 +432,7 @@ watch(
     padding: 0 1rem;
     transition: padding 0.15s linear;
     transition: top 0.3s;
-    z-index: 999;
+    z-index: 9999;
     // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
     border-bottom: 1px solid var(--gray-color-300);
 
