@@ -66,7 +66,7 @@
 		.modal-body
 			.select-dvs-wrap
 				.organigram-wrap
-					Organigram(:selectedEmployees="selectedEmps" :excludeCurrentUser="false" :useCheckbox="true" :selectedAuditors="selectedEmpsArr" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
+					Organigram(:selectedEmployees="selectedEmps" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedEmpsArr" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
 
 				br
 
@@ -304,6 +304,7 @@ const undoChecked = (divisionName) => {
             );
             if (index !== -1) {
               checkedUsers.value.splice(index, 1);
+              console.log('checkedUsers.value : ', checkedUsers.value);
             }
           });
         }
@@ -334,6 +335,7 @@ const removeDvs = (divisionName) => {
 
     delete selectedDivision.value[divisionName];
     selectedDivision.value = JSON.parse(JSON.stringify(selectedDivision.value));
+    console.log('selectedDivision.value : ', selectedDivision.value);
   }
 };
 
@@ -357,6 +359,15 @@ const registerNewsCat = async () => {
     return;
   }
 
+  const accessUserId = selectedEmps.value.map((user) => user.data.user_id).filter(Boolean);
+  console.log('accessUserId : ', accessUserId);
+
+  if (accessUserId.length === 0) {
+    alert('권한 부여 대상 사용자가 없습니다.');
+    router.push('/admin/list-newsletter');
+    return;
+  }
+
   try {
     const data = {
       news_category: newsCatName.value,
@@ -364,10 +375,12 @@ const registerNewsCat = async () => {
       notiSetting: notiSetting.value
     };
 
+    let res;
+
     if (isEditMode.value) {
       // 수정 모드
-      const res = await skapi.postRecord(data, { record_id: recordId.value });
-      alert('게시글 카테고리가 수정되었습니다.');
+      res = await skapi.postRecord(data, { record_id: recordId.value });
+      console.log('게시글 카테고리 수정 결과: ', res);
     } else {
       // 등록 모드
       const config = {
@@ -380,21 +393,26 @@ const registerNewsCat = async () => {
           value: newsCatName.value
         }
       };
-
-      const res = await skapi.postRecord(data, config);
-
-      // 카테고리 공개범위에게 권한 부여
-      const categoryId = res.record_id;
-      const accessUserId = selectedEmps.value.map((user) => user.user_id);
-
-      await Promise.all(
-        accessUserId.map((userId) =>
-          grantNewsUserAccess({ news_id: categoryId, newsUser_id: userId })
-        )
-      );
-
-      alert('게시글 카테고리가 추가되었습니다.');
+      res = await skapi.postRecord(data, config);
+      console.log('게시글 카테고리 등록 결과: ', res);
     }
+
+    console.log('selectedEmps.value : ', selectedEmps.value);
+
+    // 카테고리 공개범위에게 권한 부여
+    const categoryId = res.record_id;
+    console.log('categoryId : ', categoryId);
+
+    await Promise.all(
+      accessUserId.map((userId) =>
+        grantNewsUserAccess({ news_id: categoryId, newsUser_id: userId })
+      )
+    ).then((promise) => {
+      console.log('Promise.all == promise : ', promise);
+      console.log(`${promise.length}명의 사용자에게 권한이 부여되었습니다.`);
+    });
+
+    alert(`게시글 카테고리가 ${isEditMode.value ? '수정' : '추가'}되었습니다.`);
   } catch (err) {
     console.error('게시글 카테고리가 추가 중 오류 발생: ', err);
     alert('게시글 카테고리가 추가 중 오류가 발생했습니다.');

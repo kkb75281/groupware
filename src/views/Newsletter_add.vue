@@ -461,6 +461,7 @@ const createAddNews = async (
       )
       .then((res) => {
         console.log('실시간 알림 == res : ', res);
+        console.log('selCateId : ', selCateId);
       })
       .catch(async (err) => {
         console.error(err);
@@ -492,6 +493,7 @@ const createAddNews = async (
       )
       .then((res) => {
         console.log('알림 기록 == res : ', res);
+        console.log('selCateId : ', selCateId);
       });
   }
 

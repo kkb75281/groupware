@@ -122,8 +122,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 									.refer-doc-wrap
 										ul.refer-doc-list
 											template(v-if="referDoc.length > 0")
-												li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index")
-													span.refer-doc-name(@click="showReferDetail(doc)" :class="{ 'no-access': doc?.data?.to_audit === undefined || doc?.data?.to_audit === null }") {{ doc?.data?.to_audit || '참조문서에 대한 권한이 없습니다.' }}
+												li.refer-doc-item(v-for="(doc, index) in referDoc" :key="index" :class="{ 'no-access': doc?.data?.to_audit === undefined || doc?.data?.to_audit === null }")
+													span.refer-doc-name(@click="showReferDetail(doc)" ) {{ doc?.data?.to_audit || '참조문서에 대한 권한이 없습니다.' }}
 											template(v-else)
 												li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
@@ -373,8 +373,8 @@ Loading#loading(v-if="getAuditDetailRunning")
 										.refer-doc-wrap
 											ul.refer-doc-list
 												template(v-if="modalReferDoc.length > 0")
-													li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index")
-														span.refer-doc-name(:class="{ 'no-access': doc?.data?.to_audit === undefined || doc?.data?.to_audit === null }") {{ doc?.data?.to_audit || '참조문서에 대한 권한이 없습니다.' }}
+													li.refer-doc-item(v-for="(doc, index) in modalReferDoc" :key="index" :class="{ 'no-access': doc?.data?.to_audit === undefined || doc?.data?.to_audit === null }")
+														span.refer-doc-name {{ doc?.data?.to_audit || '참조문서에 대한 권한이 없습니다.' }}
 												template(v-else)
 													li(style="color:var(--gray-color-300); text-align: left;") 등록된 참조 문서가 없습니다.
 
@@ -973,8 +973,8 @@ const getAuditDetail = async () => {
     }
 
     // 참조 문서
-    const referDocIds = auditDoc.data.reference_docs;
-    const parseReferDocId = JSON.parse(auditDoc.data.reference_docs).referDocId;
+    const referDocIds = auditDoc.data?.reference_docs;
+    const parseReferDocId = JSON.parse(auditDoc.data?.reference_docs).referDocId;
 
     if (referDocIds) {
       const fetchPromises = parseReferDocId.map((recordId) =>
@@ -2472,13 +2472,14 @@ onUnmounted(() => {
   &:hover {
     text-decoration: underline;
   }
-}
 
-.refer-doc-name {
   &.no-access {
-    color: var(--gray-color-400);
+    color: var(--gray-color-300);
+    border: none;
     text-decoration: none;
     cursor: default;
+    font-size: 0.9rem;
+    padding: 0;
   }
 }
 
@@ -3162,12 +3163,6 @@ onUnmounted(() => {
       cursor: default;
     }
   }
-
-  // .refer-doc-name {
-  //   &.no-access {
-  //     color: var(--gray-color-400);
-  //   }
-  // }
 }
 
 // 참조문서 :: e

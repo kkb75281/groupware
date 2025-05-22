@@ -220,6 +220,7 @@ async function addDepartment(path: string[], division: string | null, currentLev
     const filteredMembers = searchDepartmentMembers.list.filter((member) =>
       approvedIdsSet.has(member?.data?.user_id)
     );
+    console.log('filteredMembers : ', filteredMembers);
 
     const filteredMembersInfo = await Promise.all(
       filteredMembers.map(async (member) => {
