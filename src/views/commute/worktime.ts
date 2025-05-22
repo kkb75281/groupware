@@ -46,6 +46,7 @@ export let getSystemWorktime = async (refresh = false) => {
     });
 
   let res = await getSystemWorktimeRunning;
+  console.log('= getSystemWorktime = res : ', res);
 
   if (res && res.list && res.list.length) {
     getSystemWorktimeId.value = res.list[0].record_id;
@@ -147,7 +148,7 @@ export const getMyWorktimeStorage = async (refresh = false) => {
     // 그룹화 및 계산
     my_worktime_storage_data.value = Object.values(
       onlyData.reduce((acc, item) => {
-        const { date, startTime, endTime, startTimeStamp, endTimeStamp } = item;
+        const { date, startTime, endTime, startTimeStamp, endTimeStamp, remark } = item;
 
         // console.log(acc, item);
 
@@ -162,7 +163,8 @@ export const getMyWorktimeStorage = async (refresh = false) => {
             endTime: null,
             startTimeStamp: Infinity,
             endTimeStamp: -Infinity,
-            dailyCommuteTime: null
+            dailyCommuteTime: null,
+            remark: null
           };
           //   console.log('aaa', acc[date]);
         }
@@ -177,6 +179,11 @@ export const getMyWorktimeStorage = async (refresh = false) => {
         if (endTime && endTimeStamp !== null && endTimeStamp > acc[date].endTimeStamp) {
           acc[date].endTime = endTime;
           acc[date].endTimeStamp = endTimeStamp;
+        }
+
+        // remark 처리 (마지막 기록으로 업데이트)
+        if (remark) {
+          acc[date].remark = remark;
         }
 
         // 출근과 퇴근 기록이 모두 있는 경우 dailyCommuteTime 계산
