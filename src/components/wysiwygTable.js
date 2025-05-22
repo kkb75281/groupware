@@ -13,6 +13,14 @@ export function insertTableToWysiwyg(wysiwyg, rows, cols) {
     // contenteditable: true,
     focus: true
   });
+
+  // DocumentFragment
+  // let docf = new DocumentFragment();
+  // docf.textContent = modifiedHtml;
+  // wysiwyg.paste(docf);
+  // wysiwyg.paste(tableElement);
+
+  return tableElement;
 }
 
 // 테이블 생성
@@ -36,15 +44,15 @@ export function createTable(rows, cols) {
     }
   };
 
-  const wysrap = document.querySelector('.wysiwyg-wrap');
-  const wysrapWidth = wysrap.offsetWidth;
+  const wyswrap = document.querySelector('.wysiwyg-wrap');
+  const wyswrapWidth = wyswrap.offsetWidth;
 
   // 전체 테이블 컨테이너 생성
   const tableWrap = document.createElement('div');
 
   tableWrap.className = 'wysiwyg-table-wrap';
   tableWrap.setAttribute('contenteditable', 'false');
-  tableWrap.style.setProperty('--wysiwyg-table-max-width', `calc(${wysrapWidth}px - 2rem + 30px)`);
+  tableWrap.style.setProperty('--wysiwyg-table-max-width', `calc(${wyswrapWidth}px - 2rem + 30px)`);
 
   // 테이블 요소 생성
   const table = document.createElement('table');
@@ -70,7 +78,6 @@ export function createTable(rows, cols) {
       cell.innerHTML = '&nbsp;';
       cell.dataset.row = r;
       cell.dataset.col = c;
-      cell.setAttribute('tabindex', '0');
       cell.setAttribute('contenteditable', 'true');
 
       addResizer(tableState, cell);
@@ -173,7 +180,7 @@ function removeLastRow(tableState) {
 }
 
 // 테이블 리사이저 갱신
-function refreshAllResizers(tableState) {
+export function refreshAllResizers(tableState) {
   const cells = tableState.table.querySelectorAll('td');
   cells.forEach((cell) => {
     addResizer(tableState, cell); // 리사이저 다시 붙이기

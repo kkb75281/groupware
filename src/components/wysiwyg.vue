@@ -127,7 +127,7 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, nextTick, ref, computed, onUnmounted } from 'vue';
-import { insertTableToWysiwyg } from '@/components/wysiwygTable.js';
+import { insertTableToWysiwyg, addResizer, bindCellEvents, resetTableCellData } from '@/components/wysiwygTable.js';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
 import wysiwygTable from '@/components/wysiwygTable.vue';
@@ -458,7 +458,10 @@ const initWysiwyg = () => {
         callback: (c) => {
             checkToolBar();
             // console.log('wysiwyg4all callback', c);
-
+            if (c.range) {
+                console.log('range', c.range);
+                // c.range.insertNode(document.createTextNode('Hi'));
+            }
             if (c.caratPosition) {
                 // 뷰포트 내에 커서 위치 유지하기 위한 기존 코드 유지
                 let viewPortHeight = Math.min(
@@ -616,6 +619,183 @@ let checkToolBar = () => {
     }
 }
 
+function copyTableContent(originalTable, newTable) {
+    const originalRows = originalTable.rows;
+    const newRows = newTable.rows;
+    const removeCells = new Set();
+
+    const tableState = {
+        tableWrap: newTable.parentNode,
+        table: newTable,
+        tbody: newTable.querySelector('tbody'),
+        mergeBtn: newTable.querySelector('.btn-merge'),
+        unmergeBtn: newTable.querySelector('.btn-unmerge'),
+        isResizing: false,
+        isDragging: false,
+        isSelection: false,
+        isMouseDown: false,
+        selectionStart: null,
+        outlinePosition: {
+            top: 0,
+            left: 0,
+            width: 0,
+            height: 0
+        }
+    }
+
+    function getMergedCellRemoveRange(startRow, startCol, endRow, endCol) {
+        for (let r = startRow; r <= endRow; r++) {
+            for (let c = startCol; c <= endCol; c++) {
+                if (!(r === startRow && c === startCol)) {
+                    removeCells.add(`${r},${c}`);
+                }
+            }
+        }
+    }
+
+    // 병합 셀 범위 먼저 모두 수집
+    for (let r = 0; r < originalRows.length && r < newRows.length; r++) {
+        const originalCells = originalRows[r].cells;
+        for (let c = 0; c < originalCells.length; c++) {
+            const originalCell = originalCells[c];
+            const originalCellRange = {
+                startRow: r,
+                startCol: c,
+                endRow: r + originalCell.rowSpan - 1,
+                endCol: c + originalCell.colSpan - 1
+            };
+            if (originalCellRange.startRow !== originalCellRange.endRow || originalCellRange.startCol !== originalCellRange.endCol) {
+                getMergedCellRemoveRange(
+                    originalCellRange.startRow,
+                    originalCellRange.startCol,
+                    originalCellRange.endRow,
+                    originalCellRange.endCol
+                );
+            }
+        }
+    }
+
+    // 셀 삭제는 역순으로(인덱스 꼬임 방지)
+    for (let r = 0; r < newRows.length; r++) {
+        const newCells = newRows[r].cells;
+        for (let c = newCells.length - 1; c >= 0; c--) {
+            if (removeCells.has(`${r},${c}`)) {
+                newRows[r].deleteCell(c);
+            }
+        }
+    }
+
+    // 그 후 남은 셀에 대해 colSpan/rowSpan, 내용 복사
+    for (let r = 0; r < originalRows.length && r < newRows.length; r++) {
+        const originalCells = originalRows[r].cells;
+        const newCells = newRows[r].cells;
+        for (let c = 0; c < originalCells.length && c < newCells.length; c++) {
+            const originalCell = originalCells[c];
+            const newCell = newCells[c];
+            if (originalCell.colSpan > 1) newCell.setAttribute('colspan', originalCell.colSpan);
+            if (originalCell.rowSpan > 1) newCell.setAttribute('rowspan', originalCell.rowSpan);
+            newCell.innerHTML = originalCell.innerHTML.trim() || '&nbsp;';
+
+            addResizer(tableState, newCell);
+            bindCellEvents(tableState, newCell);
+        }
+    }
+
+    resetTableCellData(newTable);
+}
+
+const insertHtmlToWysiwyg = (html) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    console.log('Parsed HTML:', doc);
+
+    const tables = doc.querySelectorAll('table');
+    console.log({ tables });
+
+    if (tables.length) {
+        tables.forEach((originalTable) => {
+            // 테이블 행(row) 수와 열(column) 수 계산
+            const rows = originalTable.rows.length;
+            let cols = 0;
+
+            if (rows > 0) {
+                cols = Array.from(originalTable.rows[0].cells).reduce((acc, cell) => {
+                    return acc + (cell.colSpan || 1);
+                }, 0);
+            }
+
+            let newTableWrap = insertTableToWysiwyg(wysiwyg, rows, cols);
+            let newTable = newTableWrap.querySelector('table');
+
+            if (newTable) {
+                // 셀 데이터 복사
+                copyTableContent(originalTable, newTable);
+            }
+        })
+        // const wyswrap = document.querySelector('.wysiwyg-wrap');
+        // const wyswrapWidth = wyswrap.offsetWidth;
+
+        // tables.forEach((originalTable) => {
+        //     let tableState = {
+        //         tableWrap: null,
+        //         table: null,
+        //         tbody: null,
+        //         mergeBtn: null,
+        //         unmergeBtn: null,
+        //         isResizing: false,
+        //         isDragging: false,
+        //         isSelection: false,
+        //         isMouseDown: false,
+        //         selectionStart: null,
+        //         outlinePosition: {
+        //             top: 0,
+        //             left: 0,
+        //             width: 0,
+        //             height: 0
+        //         }
+        //     };
+
+        //     const tableWrap = document.createElement('div');
+        //     tableWrap.className = 'wysiwyg-table-wrap';
+        //     tableWrap.setAttribute('contenteditable', 'false');
+        //     tableWrap.style.setProperty('--wysiwyg-table-max-width', `calc(${wyswrapWidth}px - 2rem + 30px)`);
+        //     tableState.tableWrap = tableWrap;
+
+        //     const customTable = document.createElement('table');
+        //     customTable.className = 'wysiwyg-table _custom_';
+        //     customTable.innerHTML = originalTable.innerHTML;
+        //     tableState.table = customTable;
+
+        //     tableWrap.appendChild(customTable);
+
+        //     if (!customTable.querySelector('tbody')) {
+        //         const tbody = document.createElement('tbody');
+        //         tbody.innerHTML = customTable.innerHTML;
+        //         customTable.innerHTML = '';
+        //         customTable.appendChild(tbody);
+        //         tableState.tbody = tbody;
+        //     }
+
+        //     const cells = customTable.querySelectorAll('td, th');
+        //     cells.forEach(cell => {
+        //         cell.setAttribute('contenteditable', 'true');
+        //         addResizer(tableState, cell);
+        //         bindCellEvents(tableState, cell);
+        //     });
+
+        //     initButtons(tableState);
+
+        //     originalTable.replaceWith(tableWrap);
+        // });
+    }
+
+    // const modifiedHtml = doc.body.innerHTML;
+    // console.log('Modified HTML:', modifiedHtml);
+
+    // let editorEl = document.getElementById('myeditor');
+    // editorEl.innerHTML = modifiedHtml;
+}
+
 onMounted(() => {
     initWysiwyg();
     updateToolbarPosition();
@@ -632,6 +812,22 @@ onMounted(() => {
     let editorEl = document.getElementById('myeditor');
     editorEl.addEventListener('click', (e) => {
         allSelectPrevious = false;
+    });
+    editorEl.addEventListener('paste', (e) => {
+        const clipboardData = e.clipboardData || window.Clipboard;
+        const items = clipboardData.items;
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+
+            if (item.type === 'text/html') {
+                e.preventDefault();
+
+                item.getAsString((data) => {
+                    insertHtmlToWysiwyg(data);
+                });
+            }
+        }
     });
 });
 

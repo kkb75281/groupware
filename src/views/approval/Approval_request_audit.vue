@@ -674,12 +674,12 @@ const previewAudit = () => {
 		const style = document.createElement('style');
 		style.id = 'print-style';
 		style.textContent = `
-          @media print {
-            body * { visibility: hidden !important; }
-            #printArea, #printArea * { visibility: visible !important; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; }
-          }
-        `;
+		  @media print {
+			body * { visibility: hidden !important; }
+			#printArea, #printArea * { visibility: visible !important; }
+			#printArea { position: absolute; left: 0; top: 0; width: 100%; }
+		  }
+		`;
 		document.head.appendChild(style);
 	};
 
@@ -2558,55 +2558,8 @@ const updateScreenSize = () => {
 	isDesktop.value = window.innerWidth > 768;
 };
 
-let ticking = false;
-let preventing = false;
-
-const checkScrollPosition = (e) => {
-	if (!ticking) {
-		requestAnimationFrame(() => {
-			doCheck(e);
-			ticking = false;
-		});
-		ticking = true;
-	}
-};
-
-const doCheck = (e) => {
-	let scrollTop = window.scrollY;
-	let navBarHeight = document.getElementById('header').getBoundingClientRect().height;
-	let trPosition = wysiwygTr.value.getBoundingClientRect().top + scrollTop - navBarHeight;
-	let wysiwygWrap = document.querySelector('.wysiwyg-wrap');
-
-	if (!wysiwygWrap) return;
-
-	const deltaY = e.deltaY;
-
-	if (deltaY === 0) return;
-
-	if (trPosition <= scrollTop && deltaY > 0) {
-		// ↓ 아래 스크롤
-		const isAtBottom =
-			wysiwygWrap.scrollHeight - wysiwygWrap.scrollTop === wysiwygWrap.clientHeight;
-
-		if (!isAtBottom) {
-			e.preventDefault();
-			wysiwygWrap.scrollTop += deltaY;
-			// window.scrollTo(0, trPosition);
-			window.scrollTo({ top: trPosition, behavior: 'auto' });
-		}
-	} else if (trPosition >= scrollTop && deltaY < 0) {
-		if (wysiwygWrap.scrollTop > 0) {
-			e.preventDefault();
-			wysiwygWrap.scrollTop += deltaY;
-			// window.scrollTo(0, trPosition);
-			window.scrollTo({ top: trPosition, behavior: 'auto' });
-		}
-	}
-}
-
 onMounted(async () => {
 	window.addEventListener('resize', updateScreenSize);
-	// window.addEventListener('wheel', checkScrollPosition, { passive: false });
 	getDocForm();
 	getMyDocForm();
 
@@ -2725,7 +2678,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
 	window.removeEventListener('resize', updateScreenSize);
-	// window.removeEventListener('wheel', checkScrollPosition, { passive: false });
 });
 </script>
 
