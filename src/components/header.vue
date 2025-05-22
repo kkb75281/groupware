@@ -806,8 +806,8 @@ watch(
     width: calc(100% - 16px);
 
     .popup-header {
-      // padding: 34px 30px 24px;
-      // border-bottom: 1px solid var(--gray-color-300);
+      margin-bottom: 0.5rem;
+      padding: 0.5rem 0.5rem 0;
 
       .title {
         font-size: 1.1rem;
@@ -815,19 +815,26 @@ watch(
     }
 
     .popup-main {
-      // padding-bottom: 1.1rem;
-
       ul {
-        max-height: 240px;
+        max-height: 228px;
         overflow-y: scroll;
-        padding-top: 8px;
 
-        li {
-          // border-top: none;
+        &::-webkit-scrollbar {
+          width: 8px;
+        }
 
-          // &:first-child {
-          // 	padding-top: 0.5rem;
-          // }
+        &::-webkit-scrollbar-thumb {
+          background-color: #ccc; /* 스크롤 핸들 색상 */
+          border-radius: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent; /* 스크롤 트랙 배경 */
+          border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+          background-color: #999; /* 마우스 호버 시 색상 */
         }
       }
 
@@ -938,6 +945,8 @@ watch(
   .popup-header {
     // padding: 34px 30px 24px;
     // border-bottom: 1px solid var(--gray-color-300);
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.5rem 0;
 
     .title {
       font-size: 1.1rem;
@@ -948,9 +957,26 @@ watch(
     // padding-bottom: 1.1rem;
 
     ul {
-      max-height: 240px;
+      max-height: 228px;
       overflow-y: scroll;
-      padding-top: 8px;
+
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background-color: #ccc; /* 스크롤 핸들 색상 */
+        border-radius: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent; /* 스크롤 트랙 배경 */
+        border-radius: 4px;
+      }
+
+      &::-webkit-scrollbar-thumb:hover {
+        background-color: #999; /* 마우스 호버 시 색상 */
+      }
 
       li {
         // border-top: none;

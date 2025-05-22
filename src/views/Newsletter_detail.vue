@@ -158,6 +158,12 @@ onMounted(async () => {
   if (res) {
     newsCont.value = res.find((el) => el.record_id === newsId.value);
 
+    if (newsCont.value === 'undefined' || !newsCont.value) {
+      alert('게시글이 삭제되었습니다.');
+      router.back();
+      return;
+    }
+
     // 첨부파일 리스트
     if (Object.keys(newsCont.value.bin).length && newsCont.value.bin.form_data.length) {
       let fileList = [];

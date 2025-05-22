@@ -2195,7 +2195,6 @@ const filteredReferDocList = computed(() => {
 
 // 참조문서추가 모달 open
 const openReferModal = async () => {
-  console.log('!!!!!!!!!!!!!!!!!!!!!!!!!');
   loading.value = true;
   isReferModal.value = true;
   referDocFilter.value = 'all'; // 필터 초기화
@@ -2220,7 +2219,6 @@ const openReferModal = async () => {
     // 결재 수신함 가져오기
     try {
       const receivedDocs = await getAuditList(fetchOptions);
-      console.log('수신함 : ', receivedDocs);
 
       if (receivedDocs && receivedDocs.list && Array.isArray(receivedDocs.list)) {
         receivedDocs.list.forEach((doc) => {
@@ -2243,7 +2241,6 @@ const openReferModal = async () => {
     // 결재 발신함 가져오기
     try {
       const sentDocs = await getSendAuditList(fetchOptions);
-      console.log('발신함 : ', sentDocs);
 
       if (sentDocs && sentDocs.list && Array.isArray(sentDocs.list)) {
         sentDocs.list.forEach((doc) => {
@@ -2266,7 +2263,6 @@ const openReferModal = async () => {
     // 수신참조 가져오기
     try {
       const referenceDocs = await getAuditReferenceList(fetchOptions);
-      console.log('수신참조 : ', referenceDocs);
 
       if (referenceDocs && referenceDocs.list && Array.isArray(referenceDocs.list)) {
         referenceDocs.list.forEach((doc) => {
@@ -2336,53 +2332,91 @@ const showDocDetail = async (doc) => {
       ? JSON.parse(currentDetailDoc.value.data.auditors)
       : { approvers: [], agreers: [], receivers: [] };
 
+    const docApprovals = await skapi.getRecords({
+      table: {
+        name: 'audit_approval',
+        access_group: 'authorized'
+      },
+      reference: doc.record_id // 문서의 record_id로 결재 정보 조회
+    });
+
+    console.log('참조문서 결재 현황:', docApprovals.list);
+
     // 결재자 이름 가져오기
-    const userInfo = await getUserInfo(
-      auditors.approvers.map((a) => a.user_id.replaceAll('_', '-')),
-      auditors.agreers.map((a) => a.user_id.replaceAll('_', '-')),
-      auditors.receivers.map((a) => a.user_id.replaceAll('_', '-'))
-    );
+    const approverIds = auditors.approvers?.map((a) => a.user_id.replaceAll('_', '-')) || [];
+    const agreerIds = auditors.agreers?.map((a) => a.user_id.replaceAll('_', '-')) || [];
+    const receiverIds = auditors.receivers?.map((a) => a.user_id.replaceAll('_', '-')) || [];
 
-    auditors.approvers.forEach((a) => {
-      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
-      if (user) {
-        a.name = user.name;
-      }
+    const allUserIds = [...approverIds, ...agreerIds, ...receiverIds];
+
+    let userInfo = { list: [] };
+    if (allUserIds.length > 0) {
+      userInfo = await getUserInfo(allUserIds);
+    }
+
+    currentDetailDoc.value.approvers = (auditors.approvers || []).map((a) => {
+      const userId = a.user_id.replaceAll('_', '-');
+      const userInfoData = userInfo.list.find((user) => user.user_id === userId);
+      const approvalData = docApprovals.list.find((approval) => approval.user_id === userId);
+
+      return {
+        userId: userId,
+        name: userInfoData?.name || a.name || '알 수 없음',
+        order: a.order || 0,
+        approved: approvalData?.data?.approved || null, // 최신 결재 상태 반영
+        stamp: approvalData?.data?.stamp || null, // 도장 정보도 반영
+        date: approvalData?.data?.date || null // 결재 날짜도 반영
+      };
     });
 
-    auditors.agreers.forEach((a) => {
-      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
-      if (user) {
-        a.name = user.name;
-      }
+    currentDetailDoc.value.agreers = (auditors.agreers || []).map((a) => {
+      const userId = a.user_id.replaceAll('_', '-');
+      const userInfoData = userInfo.list.find((user) => user.user_id === userId);
+      const approvalData = docApprovals.list.find((approval) => approval.user_id === userId);
+
+      return {
+        userId: userId,
+        name: userInfoData?.name || a.name || '알 수 없음',
+        order: a.order || 0,
+        approved: approvalData?.data?.approved || null, // 최신 결재 상태 반영
+        stamp: approvalData?.data?.stamp || null, // 도장 정보도 반영
+        date: approvalData?.data?.date || null // 결재 날짜도 반영
+      };
     });
 
-    auditors.receivers.forEach((a) => {
-      const user = userInfo.list.find((user) => user.user_id === a.user_id.replaceAll('_', '-'));
-      if (user) {
-        a.name = user.name;
-      }
+    currentDetailDoc.value.receivers = (auditors.receivers || []).map((r) => {
+      const userId = r.user_id.replaceAll('_', '-');
+      const userInfoData = userInfo.list.find((user) => user.user_id === userId);
+
+      return {
+        userId: userId,
+        name: userInfoData?.name || r.name || '알 수 없음'
+      };
     });
 
-    // 결재자 정보를 UI에 표시하기 위한 형태로 변환
-    currentDetailDoc.value.approvers = (auditors.approvers || []).map((a) => ({
-      userId: a.user_id.replaceAll('_', '-'),
-      name: a.name || '알 수 없음',
-      order: a.order || 0,
-      approved: a.approved || null
-    }));
+    // 최종결재자 정보 확인
+    const allApprovers = [
+      ...(auditors.approvers || []).map((a) => ({ ...a, type: 'approvers' })),
+      ...(auditors.agreers || []).map((a) => ({ ...a, type: 'agreers' }))
+    ];
 
-    currentDetailDoc.value.agreers = (auditors.agreers || []).map((a) => ({
-      userId: a.user_id.replaceAll('_', '-'),
-      name: a.name || '알 수 없음',
-      order: a.order || 0,
-      approved: a.approved || null
-    }));
+    if (allApprovers.length > 0) {
+      const maxOrder = Math.max(...allApprovers.map((a) => a.order));
+      const finalApproverData = allApprovers.find((a) => a.order === maxOrder);
 
-    currentDetailDoc.value.receivers = (auditors.receivers || []).map((r) => ({
-      userId: r.user_id.replaceAll('_', '-'),
-      name: r.name || '알 수 없음'
-    }));
+      if (finalApproverData) {
+        const finalApproverId = finalApproverData.user_id.replaceAll('_', '-');
+        const finalApproval = docApprovals.list.find((a) => a.user_id === finalApproverId);
+        const statusApproval = docApprovals.list.find((a) => a.data.documentStatus);
+
+        if (statusApproval && statusApproval.data.documentStatus) {
+          currentDetailDoc.value.documentStatus = statusApproval.data.documentStatus;
+        } else if (finalApproval && finalApproval.data.approved) {
+          currentDetailDoc.value.documentStatus =
+            finalApproval.data.approved === 'approve' ? '완료됨' : '반려됨';
+        }
+      }
+    }
   } catch (error) {
     console.error('문서 상세정보 처리 오류:', error);
   } finally {
@@ -3389,6 +3423,42 @@ onUnmounted(() => {
 
 // 참조문서 추가 모달
 .modal-refer-list {
+  .modal-cont {
+    overflow-y: hidden;
+  }
+
+  .modal-header {
+    margin-bottom: 0;
+  }
+
+  .modal-body {
+    max-height: calc(100vh - 10rem);
+    overflow-y: hidden;
+  }
+
+  .refer-list-wrap {
+    overflow-y: auto;
+    max-height: calc(100vh - 15rem);
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #ccc; /* 스크롤 핸들 색상 */
+      border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent; /* 스크롤 트랙 배경 */
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: #999; /* 마우스 호버 시 색상 */
+    }
+  }
+
   .top-wrap {
     display: flex;
     justify-content: space-between;
@@ -3416,6 +3486,14 @@ onUnmounted(() => {
     &:hover {
       text-decoration: underline;
     }
+  }
+
+  .doc-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
   }
 
   .status {
@@ -3493,6 +3571,18 @@ onUnmounted(() => {
 
     .approver {
       height: initial;
+    }
+
+    .approved {
+      color: var(--primary-color-400);
+    }
+
+    .rejected {
+      color: var(--warning-color-400);
+    }
+
+    .waitting {
+      color: var(--gray-color-500);
     }
   }
 
@@ -3613,6 +3703,15 @@ onUnmounted(() => {
   .modal {
     .modal-cont {
       min-width: calc(100% - 16px);
+    }
+  }
+
+  // 참조문서 추가 모달
+  .modal-refer-list {
+    .refer-list-wrap {
+      &::-webkit-scrollbar {
+        display: none;
+      }
     }
   }
 }

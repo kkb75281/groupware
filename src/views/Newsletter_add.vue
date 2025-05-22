@@ -719,7 +719,7 @@ const registerNews = async (e) => {
         console.error('게시글 수정 중 오류 발생:', err);
         alert('게시글 수정 중 오류가 발생했습니다.');
       } finally {
-        router.push(`/newsletter-category?category=${selCate.value}`);
+        router.push(`/newsletter?category=${selCate.value}`);
       }
     } else {
       // 등록 모드인 경우
