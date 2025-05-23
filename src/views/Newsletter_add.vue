@@ -54,8 +54,10 @@
 									.input-wrap
 										template(v-if="!isEditMode")
 											input#news_title(type="text" v-model="newsTitle" name="news_title" placeholder="제목을 입력해주세요." required)
+											p.sub-desc 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.
 										template(v-else-if="isEditMode && editModeData.data")
 											input#news_title(type="text" v-model="editModeData.data.news_title" name="news_title" placeholder="제목을 입력해주세요." required)
+											p.sub-desc 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.
 
 
 							tr(v-if="Object.keys(selectedDivision).length === 0" style="height: 100px;")
@@ -1031,6 +1033,14 @@ onUnmounted(() => {
       color: var(--gray-color-900);
       background-image: none;
     }
+  }
+
+  .sub-desc {
+    font-size: 0.7rem;
+    color: var(--warning-color-400);
+    line-height: 1.4;
+    margin-top: 0.25rem;
+    text-align: left;
   }
 }
 

@@ -367,83 +367,6 @@ watch(
   background-color: #fff;
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  .icon {
-    cursor: pointer;
-    padding: 0;
-
-    svg {
-      fill: var(--gray-color-300);
-    }
-
-    &:hover:not(.nohover) {
-      svg {
-        fill: var(--primary-color-400);
-      }
-    }
-
-    &.active {
-      svg {
-        fill: var(--primary-color-400);
-      }
-    }
-  }
-}
-
-.btn-mo-navbar,
-.btn-mo-logout {
-  display: none;
-  margin-right: auto;
-}
-
-.btn-noti {
-  position: relative;
-
-  &::after {
-    content: attr(data-count);
-    display: inline-block;
-    position: absolute;
-    top: -8px;
-    right: 4px;
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #fff;
-    background-color: var(--primary-color-400);
-    border-radius: 50%;
-    text-align: center;
-  }
-}
-
-.icon-bell {
-  svg {
-    fill: var(--primary-color-400);
-  }
-}
-
-.btn-profile {
-  flex: none;
-  height: 3rem;
-  border-radius: 30px;
-  background: linear-gradient(90.25deg, var(--primary-color-400) 5%, var(--primary-color-300) 98%);
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 600;
-  padding-left: 1.25rem;
-  padding-right: 3.75rem;
-  position: relative;
-  user-select: none;
-  cursor: pointer;
-}
-
-.thumbnail {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 1rem;
@@ -483,21 +406,35 @@ watch(
         }
       }
     }
+
+    .btn-mo-logout {
+      display: none;
+    }
   }
 
-  .btn-mo-navbar,
-  .btn-mo-logout {
+  .btn-mo-navbar {
     display: none;
     margin-right: auto;
   }
 
   .btn-noti {
+    // width: 2.75rem;
+    // height: 2.75rem;
+    // background-color: var(--primary-color-100);
     position: relative;
+    // margin-right: 2rem;
+    // border-radius: 0.5rem;
+    // border-radius: 50%;
 
     &::after {
       content: attr(data-count);
       display: inline-block;
       position: absolute;
+      // top: -0.5rem;
+      // right: -14px;
+      // min-width: 1.625rem;
+      // height: 1.625rem;
+      // line-height: 1.625rem;
       top: -8px;
       right: 4px;
       width: 20px;
@@ -507,6 +444,9 @@ watch(
       font-weight: 700;
       color: #fff;
       background-color: var(--primary-color-400);
+      // padding: 0 0.3125rem;
+      // border-radius: 0.75rem;
+      // padding: 0 4px;
       border-radius: 50%;
       text-align: center;
     }
@@ -521,6 +461,7 @@ watch(
   .btn-profile {
     flex: none;
     height: 3rem;
+    // border-radius: 0.5rem;
     border-radius: 30px;
     background: linear-gradient(
       90.25deg,
