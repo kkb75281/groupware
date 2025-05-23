@@ -1120,7 +1120,7 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     } catch (error) {
         console.error(error);
         if (error?.message?.includes('index.value should not have special characters')) {
-			// alert('제목에 특수 문자가 포함되어 있습니다. [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
+            // alert('제목에 특수 문자가 포함되어 있습니다. [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
             throw new Error('특수 문자로 인해 오류가 발생했습니다.');
         }
         throw error;
@@ -1571,7 +1571,7 @@ const saveDocForm = async () => {
         router.push('/admin/list-form');
     } catch (error) {
         console.error('결재 양식 저장 중 오류 발생: ', error);
-		alert('제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
+        alert('제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
     }
 };
 
@@ -2605,7 +2605,7 @@ onUnmounted(() => {
 <style scoped lang="less">
 .form-wrap {
     position: relative;
-    max-width: 992px;
+    max-width: 960px;
 
     .title {
         position: relative;
@@ -2757,13 +2757,13 @@ onUnmounted(() => {
         }
     }
 
-	.sub-desc {
-		font-size: 0.7rem;
-		color: var(--warning-color-400);
-		line-height: 1.4;
-		margin-top: 0.25rem;
-		text-align: left;
-	}
+    .sub-desc {
+        font-size: 0.7rem;
+        color: var(--warning-color-400);
+        line-height: 1.4;
+        margin-top: 0.25rem;
+        text-align: left;
+    }
 }
 
 .row-wrap {
@@ -3039,11 +3039,11 @@ onUnmounted(() => {
         }
     }
 
-	.sub-desc {
-		font-size: 0.8rem;
-		margin-top: 0.5rem;
-		text-align: center;
-	}
+    .sub-desc {
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
 }
 
 .audit-title {
