@@ -97,12 +97,12 @@ export function createTable(rows, cols) {
   tableState.tbody = tbody;
 
   document.addEventListener('mouseup', () => {
-    tableState.mergeBtn.classList.remove('active');
+    tableState.mergeBtn?.classList.remove('active');
 
     if (tableState.isDragging) {
       const selected = tableState.table.querySelectorAll('td.dragged-cell');
       if (selected.length >= 2) {
-        tableState.mergeBtn.classList.add('active');
+        tableState.mergeBtn?.classList.add('active');
       }
     }
 
@@ -137,11 +137,11 @@ export function bindCellEvents(tableState, cell) {
     }
     if (isMergedCell(cell)) {
       setBtnPosition(tableState, [cell]);
-      tableState.unmergeBtn.classList.add('active');
+      tableState.unmergeBtn?.classList.add('active');
     } else {
-      tableState.unmergeBtn.classList.remove('active');
+      tableState.unmergeBtn?.classList.remove('active');
     }
-    tableState.mergeBtn.classList.remove('active');
+    tableState.mergeBtn?.classList.remove('active');
     clearSelection(tableState.table);
     cell.classList.add('selected-cell');
     tableState.isSelection = true;
@@ -155,8 +155,8 @@ export function bindCellEvents(tableState, cell) {
     tableState.isSelection = false;
     tableState.table.classList.add('dragging');
     tableState.selectionStart = cell;
-    tableState.mergeBtn.classList.remove('active');
-    tableState.unmergeBtn.classList.remove('active');
+    tableState.mergeBtn?.classList.remove('active');
+    tableState.unmergeBtn?.classList.remove('active');
     clearSelection(tableState.table);
     tableSelection(tableState);
     highlightDrag(tableState, cell);
@@ -203,8 +203,8 @@ export function addResizer(tableState, cell) {
   resizer.onmousedown = (e) => {
     e.stopPropagation();
     tableState.isResizing = true;
-    tableState.mergeBtn.classList.remove('active');
-    tableState.unmergeBtn.classList.remove('active');
+    tableState.mergeBtn?.classList.remove('active');
+    tableState.unmergeBtn?.classList.remove('active');
     document.querySelectorAll('.resizer').forEach((r) => r.classList.remove('active'));
     resizer.classList.add('active');
     resizeColumn(e, tableState, cell);
@@ -514,7 +514,7 @@ export function clearSelection(table) {
   });
 
   const mergeBtn = table.querySelector('.btn-merge');
-  if (mergeBtn) mergeBtn.classList.remove('active');
+  if (mergeBtn) mergeBtn?.classList.remove('active');
 }
 
 // 드래그 시에만 selection 막기
@@ -655,7 +655,7 @@ function unmergeCell(tableState, mergedCell) {
   }
 
   resetTableCellData(tableState.table); // 데이터 초기화
-  tableState.unmergeBtn.classList.remove('active'); // 버튼 비활성화
+  tableState.unmergeBtn?.classList.remove('active'); // 버튼 비활성화
 }
 
 // 셀 데이터 초기화

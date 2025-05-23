@@ -697,7 +697,6 @@ function copyTableContent(originalTable, newTable) {
             newCell.innerHTML = originalCell.innerHTML.trim() || '&nbsp;';
 
             addResizer(tableState, newCell);
-            bindCellEvents(tableState, newCell);
         }
     }
 
