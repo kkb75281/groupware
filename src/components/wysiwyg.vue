@@ -127,6 +127,9 @@ const props = defineProps(['savedContent', 'showBtn']);
 let wysiwyg = null; // wysiwyg4all 인스턴스
 let wysiwygRef = ref(null); // .wysiwyg
 let wysiwygTool = ref(null); // .btns-wrap
+let showTableDialog = ref(false);
+let tableRows = ref(5);
+let tableCols = ref(5);
 let colorInput = ref(null);
 let bgColorInput = ref(null);
 let fontSize = ref(12);
@@ -154,11 +157,7 @@ let commandTracker = ref({
     strike: false,
     underline: false
 });
-
-// 테이블 행, 열 크기 설정
-const showTableDialog = ref(false);
-const tableRows = ref(5);
-const tableCols = ref(5);
+let currentRange = null;
 
 // showBtn이 true일 경우, Create 페이지 / false일 경우, Detail 페이지
 const isDetail = computed(() => {
@@ -410,9 +409,10 @@ const initWysiwyg = () => {
         },
         callback: (c) => {
             checkToolBar();
-            // console.log('wysiwyg4all callback', c);
+
             if (c.range) {
-                // console.log('range', c.range);
+                currentRange = c.range;
+                console.log('currentRange', currentRange);
                 // c.range.insertNode(document.createTextNode('Hi'));
             }
             if (c.caratPosition) {
@@ -508,6 +508,15 @@ function handleEditorKeyDown(e) {
                 table.classList.add('selected-all');
             });
         }, 0); // 기본 동작 이후 실행되도록 딜레이 추가
+    } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        let startLine = currentRange.startLine;
+        let endLine = currentRange.endLine;
+
+        if (startLine?.classList.contains('wysiwyg-table-wrap') || endLine?.classList.contains('wysiwyg-table-wrap')) {
+            // 테이블 선택 해제
+            // clearTableSelection();
+            console.log('테이블 선택 되어 있었음');
+        }
     } else if (e.key === 'Delete' || e.key === 'Backspace') { // e.code vs e.key
         if (allSelectPrevious) {
             e.preventDefault(); // 기본 동작 방지
@@ -667,30 +676,6 @@ function copyTableContent(originalTable, newTable) {
     resetTableCellData(newTable);
 }
 
-function insertHtmlAtCursor(html) {
-    let sel = window.getSelection();
-    if (!sel.rangeCount) return;
-
-    let range = sel.getRangeAt(0);
-    range.deleteContents();
-
-    // HTML을 파싱해서 fragment로 변환
-    let temp = document.createElement('div');
-    temp.innerHTML = html;
-    let frag = document.createDocumentFragment();
-    let node;
-    while ((node = temp.firstChild)) {
-        frag.appendChild(node);
-    }
-
-    range.insertNode(frag);
-
-    // 커서를 마지막에 위치시키기
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-}
-
 const insertHtmlToWysiwyg = (html) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -717,18 +702,42 @@ const insertHtmlToWysiwyg = (html) => {
             if (newTable) {
                 copyTableContent(originalTable, newTable); // 테이블 내용 복사
                 originalTable.replaceWith(newTableWrap);
+                newTableWrap.remove();
             }
         });
     }
 
     const editorEl = document.getElementById('myeditor');
     if (editorEl) {
-        console.log(body.innerHTML)
+        console.log(body.innerHTML);
         insertHtmlAtCursor(body.innerHTML);
         // // 커서 위치에 삽입하려면 execCommand 사용, 아니면 그냥 innerHTML로 대체
         // document.execCommand('insertHTML', false, body.innerHTML);
-        // // 또는 editorEl.innerHTML = body.innerHTML; (전체 교체)
     }
+}
+
+function insertHtmlAtCursor(html) {
+    let sel = window.getSelection();
+    if (!sel.rangeCount) return;
+
+    let range = sel.getRangeAt(0);
+    range.deleteContents();
+
+    // HTML을 파싱해서 fragment로 변환
+    let temp = document.createElement('div');
+    temp.innerHTML = html;
+    let frag = document.createDocumentFragment();
+    let node;
+    while ((node = temp.firstChild)) {
+        frag.appendChild(node);
+    }
+
+    range.insertNode(frag);
+
+    // 커서를 마지막에 위치시키기
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
 }
 
 onMounted(() => {
@@ -794,14 +803,6 @@ defineExpose({
     height: 100%;
     // min-height: 18rem;
     // max-height: calc(100vh - var(--header-height) - 32px);
-}
-
-p {
-
-    .wysiwyg-table-wrap,
-    table {
-        display: none !important;
-    }
 }
 
 ._wysiwyg4all {

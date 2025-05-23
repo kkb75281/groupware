@@ -2998,7 +2998,7 @@ onUnmounted(() => {
 }
 
 .wysiwyg-wrap {
-    max-width: 42rem;
+    max-width: calc(100vw - 117px);
     text-align: left;
     border: 1px solid var(--gray-color-200);
     border-radius: 0.5rem;

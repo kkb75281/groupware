@@ -1,3 +1,28 @@
+import { nextTick, ref } from 'vue';
+
+export let undoStack = [];
+export let redoStack = [];
+export let isRestoring = ref(false);
+
+function saveEditorState() {
+  if (isRestoring) return; // 복원 중에는 저장하지 않음
+  const editorEl = document.getElementById('myeditor');
+  if (!editorEl) return;
+  // 필요하다면 selection 정보도 같이 저장
+  undoStack.push(editorEl.innerHTML);
+  // 새 작업이 발생하면 redoStack은 비움
+  redoStack = [];
+}
+
+function restoreEditorState(state) {
+  isRestoring = true;
+  const editorEl = document.getElementById('myeditor');
+  if (editorEl) {
+    editorEl.innerHTML = state;
+  }
+  isRestoring = false;
+}
+
 // 테이블을 wysiwyg에 삽입
 export function insertTableToWysiwyg(wysiwyg, rows, cols) {
   if (!wysiwyg) return;
@@ -170,15 +195,6 @@ export function bindCellEvents(tableState, cell) {
   });
 }
 
-// 테이블 마지막 행 삭제
-function removeLastRow(tableState) {
-  const lastRow = tableState.table.lastElementChild;
-  if (lastRow && lastRow.tagName === 'TR') {
-    lastRow.remove();
-  }
-  refreshAllResizers(tableState);
-}
-
 // 테이블 리사이저 갱신
 export function refreshAllResizers(tableState) {
   const cells = tableState.table.querySelectorAll('td');
@@ -254,18 +270,6 @@ export function addResizer(tableState, cell) {
   cell.appendChild(resizerBottom);
 }
 
-function rangeToArray(a, b) {
-  let start = Math.min(a, b);
-  let end = Math.max(a, b);
-  let result = [];
-
-  for (let i = start; i <= end; i++) {
-    result.push(i);
-  }
-
-  return result;
-}
-
 // 행 너비 조절
 function resizeColumn(e, tableState, cell) {
   e.stopPropagation();
@@ -323,6 +327,7 @@ function resizeColumn(e, tableState, cell) {
 
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
+  saveEditorState();
 }
 
 // 행 높이 조절
@@ -383,6 +388,7 @@ function resizeRow(e, tableState, cell) {
 
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
+  saveEditorState();
 }
 
 // 드래그 시 선택된 셀 강조
@@ -595,6 +601,15 @@ function mergeCell(tableState, mergedCell) {
   master.style.width = `${totalWidth}px`;
 
   refreshAllResizers(tableState); // 리사이저 갱신
+  saveEditorState();
+
+  // 병합된 셀에 커서 포커스
+  const range = document.createRange();
+  const selection = window.getSelection();
+  range.selectNodeContents(master);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  master.focus();
 }
 
 // 병합된 셀 해제
@@ -631,6 +646,7 @@ function unmergeCell(tableState, mergedCell) {
         const newCell = row.insertCell(c); // 특정 위치에 셀 삽입
         newCell.dataset.row = r;
         newCell.dataset.col = c;
+        newCell.classList.add('dragged-cell');
         // newCell.setAttribute('contenteditable', 'true');
 
         // 첫 번째 셀에 병합된 셀의 내용을 넣음
@@ -650,12 +666,26 @@ function unmergeCell(tableState, mergedCell) {
 
         addResizer(tableState, newCell);
         bindCellEvents(tableState, newCell);
+      } else {
+        existingCell.classList.add('dragged-cell');
       }
     }
   }
 
   resetTableCellData(tableState.table); // 데이터 초기화
+
+  //   // 병합된 셀의 범위에 해당하는 셀에 dragged-cell 클래스 추가
+  //   for (let r = startRow; r <= endRow; r++) {
+  //     for (let c = startCol; c <= endCol; c++) {
+  //       const cell = tableState.table.querySelector(`td[data-row='${r}'][data-col='${c}']`);
+  //       if (cell) {
+  //         cell.classList.add('dragged-cell');
+  //       }
+  //     }
+  //   }
+
   tableState.unmergeBtn?.classList.remove('active'); // 버튼 비활성화
+  saveEditorState();
 }
 
 // 셀 데이터 초기화
