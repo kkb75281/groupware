@@ -240,7 +240,8 @@ const updateColorPickerToSelectedCells = (type) => {
         return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
     }
 
-    if (selectedCells.length > 0) {
+    if (selectedCells.length > 1) {
+        console.log('여러 셀 선택됨');
         const firstCell = selectedCells[0];
 
         // 텍스트 색상
@@ -278,7 +279,7 @@ const stopColorDrag = () => {
 const handleColorInput = (type, colorValue) => {
     const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
 
-    if (selectedCells.length > 0) {
+    if (selectedCells.length > 1) {
         // 테이블 셀에 색상 적용
         selectedCells.forEach((cell) => {
             if (type === 'textColor') {
@@ -411,7 +412,7 @@ const initWysiwyg = () => {
             checkToolBar();
             // console.log('wysiwyg4all callback', c);
             if (c.range) {
-                console.log('range', c.range);
+                // console.log('range', c.range);
                 // c.range.insertNode(document.createTextNode('Hi'));
             }
             if (c.caratPosition) {
@@ -437,8 +438,6 @@ const initWysiwyg = () => {
                 commandTracker.value.small = c.commandTracker.small;
                 commandTracker.value.strike = c.commandTracker.strike;
                 commandTracker.value.underline = c.commandTracker.underline;
-
-                console.log('commandTracker', commandTracker.value);
 
                 const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
                 let selectedHeadings = headings.filter(h => commandTracker.value[h]);
@@ -644,9 +643,22 @@ function copyTableContent(originalTable, newTable) {
         for (let c = 0; c < originalCells.length && c < newCells.length; c++) {
             const originalCell = originalCells[c];
             const newCell = newCells[c];
+
             if (originalCell.colSpan > 1) newCell.setAttribute('colspan', originalCell.colSpan);
             if (originalCell.rowSpan > 1) newCell.setAttribute('rowspan', originalCell.rowSpan);
+
+            // originalCell.innerHTML.trim() 안에 br 태그 제거 -> 제거 안하면 붙여넣었을때 지워지지 않고 공간만 남음
+            const brTags = originalCell.querySelectorAll('br');
+            brTags.forEach((br) => {
+                if (br.parentNode) {
+                    br.parentNode.removeChild(br);
+                }
+            });
+
             newCell.innerHTML = originalCell.innerHTML.trim() || '&nbsp;';
+            newCell.style = originalCell.style.cssText || '';
+            newCell.style.width = originalCell.width + 'px' || 'auto';
+            newCell.style.height = originalCell.height + 'px' || 'auto';
 
             addResizer(tableState, newCell);
         }
@@ -655,15 +667,39 @@ function copyTableContent(originalTable, newTable) {
     resetTableCellData(newTable);
 }
 
+function insertHtmlAtCursor(html) {
+    let sel = window.getSelection();
+    if (!sel.rangeCount) return;
+
+    let range = sel.getRangeAt(0);
+    range.deleteContents();
+
+    // HTML을 파싱해서 fragment로 변환
+    let temp = document.createElement('div');
+    temp.innerHTML = html;
+    let frag = document.createDocumentFragment();
+    let node;
+    while ((node = temp.firstChild)) {
+        frag.appendChild(node);
+    }
+
+    range.insertNode(frag);
+
+    // 커서를 마지막에 위치시키기
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
 const insertHtmlToWysiwyg = (html) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    console.log('Parsed HTML:', doc);
+    const body = doc.body;
 
-    const tables = doc.querySelectorAll('table');
-    console.log({ tables });
+    const tables = body.querySelectorAll('table');
 
     if (tables.length) {
+        console.log(tables.length, '테이블 개수');
         tables.forEach((originalTable) => {
             // 테이블 행(row) 수와 열(column) 수 계산
             const rows = originalTable.rows.length;
@@ -679,72 +715,20 @@ const insertHtmlToWysiwyg = (html) => {
             let newTable = newTableWrap.querySelector('table');
 
             if (newTable) {
-                // 셀 데이터 복사
-                copyTableContent(originalTable, newTable);
+                copyTableContent(originalTable, newTable); // 테이블 내용 복사
+                originalTable.replaceWith(newTableWrap);
             }
-        })
-        // const wyswrap = document.querySelector('.wysiwyg-wrap');
-        // const wyswrapWidth = wyswrap.offsetWidth;
-
-        // tables.forEach((originalTable) => {
-        //     let tableState = {
-        //         tableWrap: null,
-        //         table: null,
-        //         tbody: null,
-        //         mergeBtn: null,
-        //         unmergeBtn: null,
-        //         isResizing: false,
-        //         isDragging: false,
-        //         isSelection: false,
-        //         isMouseDown: false,
-        //         selectionStart: null,
-        //         outlinePosition: {
-        //             top: 0,
-        //             left: 0,
-        //             width: 0,
-        //             height: 0
-        //         }
-        //     };
-
-        //     const tableWrap = document.createElement('div');
-        //     tableWrap.className = 'wysiwyg-table-wrap';
-        //     tableWrap.setAttribute('contenteditable', 'false');
-        //     tableWrap.style.setProperty('--wysiwyg-table-max-width', `calc(${wyswrapWidth}px - 2rem + 30px)`);
-        //     tableState.tableWrap = tableWrap;
-
-        //     const customTable = document.createElement('table');
-        //     customTable.className = 'wysiwyg-table _custom_';
-        //     customTable.innerHTML = originalTable.innerHTML;
-        //     tableState.table = customTable;
-
-        //     tableWrap.appendChild(customTable);
-
-        //     if (!customTable.querySelector('tbody')) {
-        //         const tbody = document.createElement('tbody');
-        //         tbody.innerHTML = customTable.innerHTML;
-        //         customTable.innerHTML = '';
-        //         customTable.appendChild(tbody);
-        //         tableState.tbody = tbody;
-        //     }
-
-        //     const cells = customTable.querySelectorAll('td, th');
-        //     cells.forEach(cell => {
-        //         cell.setAttribute('contenteditable', 'true');
-        //         addResizer(tableState, cell);
-        //         bindCellEvents(tableState, cell);
-        //     });
-
-        //     initButtons(tableState);
-
-        //     originalTable.replaceWith(tableWrap);
-        // });
+        });
     }
 
-    // const modifiedHtml = doc.body.innerHTML;
-    // console.log('Modified HTML:', modifiedHtml);
-
-    // let editorEl = document.getElementById('myeditor');
-    // editorEl.innerHTML = modifiedHtml;
+    const editorEl = document.getElementById('myeditor');
+    if (editorEl) {
+        console.log(body.innerHTML)
+        insertHtmlAtCursor(body.innerHTML);
+        // // 커서 위치에 삽입하려면 execCommand 사용, 아니면 그냥 innerHTML로 대체
+        // document.execCommand('insertHTML', false, body.innerHTML);
+        // // 또는 editorEl.innerHTML = body.innerHTML; (전체 교체)
+    }
 }
 
 onMounted(() => {
@@ -775,6 +759,7 @@ onMounted(() => {
                 e.preventDefault();
 
                 item.getAsString((data) => {
+                    console.log('data', data);
                     insertHtmlToWysiwyg(data);
                 });
             }
@@ -809,6 +794,14 @@ defineExpose({
     height: 100%;
     // min-height: 18rem;
     // max-height: calc(100vh - var(--header-height) - 32px);
+}
+
+p {
+
+    .wysiwyg-table-wrap,
+    table {
+        display: none !important;
+    }
 }
 
 ._wysiwyg4all {
