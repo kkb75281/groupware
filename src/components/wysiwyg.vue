@@ -2,12 +2,12 @@
 .wysiwyg(ref="wysiwygRef")
     .btns-wrap(ref="wysiwygTool" :class="{disalbed : isDetail, fixed : isFixed}")
         .btn-custom.input-size.line
-            button(type="button" @click.stop.prevent="handleFontSize('decrease')")
+            button(type="button" :disabled="fontSize <= minFontSize" @click.stop.prevent="handleFontSize('decrease')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-remove")
             .font-size {{ fontSize }}
-            button(type="button" @click.stop.prevent="handleFontSize('increase')") 
+            button(type="button" :disabled="fontSize >= maxFontSize" @click.stop.prevent="handleFontSize('increase')") 
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
@@ -27,19 +27,6 @@
             .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-strike")
-        //- button.btn-custom(:class="{active : commandTracker.h1}" type="button" @click="handleCommand('h1')")
-        //-     .icon.text 20pt
-        //- button.btn-custom(:class="{active : commandTracker.h2}" type="button" @click="handleCommand('h2')")
-        //-     .icon.text 18pt
-        //- button.btn-custom(:class="{active : commandTracker.h3}" type="button" @click="handleCommand('h3')")
-        //-     .icon.text 16pt
-        //- button.btn-custom(:class="{active : commandTracker.h4}" type="button" @click="handleCommand('h4')")
-        //-     .icon.text 14pt
-        //- button.btn-custom(:class="{active : commandTracker.h5}" type="button" @click="handleCommand('h5')")
-        //-     .icon.text 12pt
-        //- button.btn-custom(:class="{active : commandTracker.h6}" type="button" @click="handleCommand('h6')" style="border-right: 1px solid #e4e4e7;")
-        //-     .icon.text 10pt
-        //- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
     
         .divider
             // 텍스트 색상 변경
@@ -76,6 +63,7 @@
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
+
         .divider
             button.btn-custom(type="button" @click.stop="handleCommand('table')")
                 .icon
@@ -142,6 +130,8 @@ let wysiwygTool = ref(null); // .btns-wrap
 let colorInput = ref(null);
 let bgColorInput = ref(null);
 let fontSize = ref(12);
+let minFontSize = 10;
+let maxFontSize = 20;
 let fontVariables = {
     h1: 20,
     h2: 18,
@@ -184,38 +174,9 @@ const insertTable = () => {
         wysiwyg,
         tableRows.value,
         tableCols.value
-        // true, // Vue 컴포넌트 사용 (false로 설정하면 DOM 방식 사용)
-        // props.showBtn // 행, 열 추가 버튼 사용
     );
 
     showTableDialog.value = false;
-
-    // nextTick(() => {
-    //     const editorEl = document.getElementById('myeditor');
-    //     const tables = editorEl.querySelectorAll('table');
-    //     const table = tables[tables.length - 1]; // 마지막 테이블 선택
-
-    //     if (table) {
-    //         // 표 다음에 <p><br></p> 삽입
-    //         const newParagraph = document.createElement('p');
-    //         newParagraph.innerHTML = '<br>';
-
-    //         editorEl.appendChild(newParagraph);
-
-    //         // 커서를 새로 삽입한 줄로 이동
-    //         const range = document.createRange();
-    //         const sel = window.getSelection();
-
-    //         range.setStart(newParagraph, 0);
-    //         range.collapse(true);
-
-    //         sel.removeAllRanges();
-    //         sel.addRange(range);
-
-    //         // 포커스 설정
-    //         // wysiwyg.focus();
-    //     }
-    // });
 };
 
 function saveSelection() {
@@ -237,20 +198,11 @@ function restoreSelection(saved) {
 const handleFontSize = (action) => {
     if (!wysiwyg) return;
 
-    const minFontSize = 10;
-    const maxFontSize = 20;
-
     if (action === 'increase') {
-        if (fontSize.value >= maxFontSize) {
-            alert('최대 글자 크기는 20px 입니다.');
-            return;
-        }
+        if (fontSize.value >= maxFontSize) return;
         fontSize.value += 2;
     } else if (action === 'decrease') {
-        if (fontSize.value <= minFontSize) {
-            alert('최소 글자 크기는 10px 입니다.');
-            return;
-        }
+        if (fontSize.value <= minFontSize) return;
         fontSize.value -= 2;
     }
 
@@ -1102,15 +1054,29 @@ defineExpose({
         padding: 4px 6px;
         border-radius: 8px;
 
+        &:hover {
+            background-color: var(--gray-color-200);
+        }
+
+        &:disabled {
+            cursor: default;
+
+            &:hover {
+                background-color: transparent;
+            }
+
+            .icon {
+                svg {
+                    fill: var(--gray-color-300);
+                }
+            }
+        }
+
         .icon {
             svg {
                 width: 16px;
                 height: 16px;
             }
-        }
-
-        &:hover {
-            background-color: var(--gray-color-200);
         }
     }
 }

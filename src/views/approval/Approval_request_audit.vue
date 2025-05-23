@@ -1,9 +1,4 @@
 <template lang="pug">
-//- .title
-	h1 {{ pageTitle }}
-
-//- hr
-
 template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode && !isReRequestMode")
 	.item-wrap
 		.selected-wrap
@@ -53,7 +48,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 				.table-wrap
 					.tb-overflow
 						table.table#tb-auditRequest
-							colgroup
+							//- colgroup
 								col(style="width: 13%")
 								col
 								template(v-if="isTemplateMode")
@@ -151,7 +146,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 									td(colspan="3")
 										.input-wrap
 											input#to_audit(type="text" v-model="auditTitle" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
-								tr(ref="wysiwygTr")
+								tr
 									th.essential 결재 내용
 										.add-btn(v-if="isTemplateMode" @click="isRowModalOpen = true")
 											.icon
@@ -168,7 +163,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 										.input-wrap.upload-file
 											.file-wrap
 												.btn-upload-file
-													input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail || disabled" @change="updateFileList" hidden)
+													input#file(type="file" name="additional_data" multiple :disabled="verifiedEmail" @change="updateFileList" hidden)
 													label.btn.sm.outline.btn-upload(for="file") 파일 올리기
 
 												ul.upload-file-list
@@ -455,8 +450,8 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
-import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { skapi, mainPageLoading } from '@/main.ts';
 import { user, makeSafe, verifiedEmail } from '@/user.ts';
 import { getUserInfo } from '@/employee.ts';
 import { divisionNameList } from '@/division.ts';
@@ -479,12 +474,6 @@ const isTemplateMode = computed(() => route.query.mode === 'template'); // 결�
 const isTempSaveMode = computed(() => route.query.mode === 'tempsave'); // 임시 저장 경로인지 확인
 const isReRequestMode = computed(() => route.query.mode === 'reRequest'); // 재요청 모드인지 확인
 
-// 페이지 제목 변경
-const pageTitle = computed(() => {
-    return route.query.mode === 'template' ? '결재 양식 등록' : '결재 작성';
-});
-
-const wysiwygTr = ref(null);
 const myWysiwyg = ref(null);
 const isModalOpen = ref(false);
 const isRowModalOpen = ref(false); // 작성란 추가 모달
@@ -515,14 +504,12 @@ const backupSelected = ref(null); // 선택된 결재자 백업
 let send_auditors_arr = [];
 
 const uploadedFile = ref([]);
-const removeFileList = ref([]);
 const fileNames = ref([]);
 
 let step = ref(1);
 const addRows = ref([]);
 const formTitle = ref(''); // 상단 양식 제목 (ex.마스터가 저장한 양식제목)
 const auditTitle = ref(''); // 결재건 제목
-const disabled = ref(false);
 const temploading = ref(false);
 
 // 참조문서 관련 변수
@@ -2612,216 +2599,8 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="less">
-@media print {
-
-    /* 숨기고 싶은 요소 */
-    button,
-    .btn,
-    .icon,
-    input,
-    textarea,
-    .file-wrap .btn-upload-file,
-    header,
-    .title,
-    hr,
-    .approver-list:last-of-type,
-    .reference-list:last-of-type,
-    .empty,
-    .essential::after {
-        display: none !important;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    #printArea,
-    #printArea * {
-        visibility: visible;
-        /* printArea와 그 내부 요소만 보이게 설정 */
-    }
-
-    #printArea {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-
-    body {
-        font-size: 12px;
-        line-height: 1.5;
-        color: black;
-        background: transparent;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-
-        th,
-        tr,
-        td {
-            border: 1px solid var(--gray-color-300);
-            padding: 8px;
-            text-align: left;
-            background-color: #fff;
-        }
-
-        tr {
-            border-right: 1px solid var(--gray-color-300);
-        }
-    }
-
-    #printArea {
-        .title {
-            display: block !important;
-            margin-bottom: 2rem;
-
-            h2 {
-                text-align: center !important;
-            }
-        }
-    }
-
-    input,
-    textarea {
-        border: none;
-        background: none;
-    }
-
-    input[type='hidden'],
-    textarea {
-        display: none !important;
-    }
-
-    .wysiwyg-wrap {
-        border: none !important;
-
-        // wysiwyg 컴포넌트 내용만 표시
-        :deep(.wysiwyg) {
-
-            // 에디터 내용 컨테이너
-            ._wysiwyg4all {
-                visibility: visible !important;
-                padding: 0 !important;
-            }
-
-            .btn-wrap {
-                display: none !important;
-            }
-        }
-
-        #tb-auditRequest {
-            font-size: 0.75rem;
-        }
-
-        .sub-title {
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--gray-color-300);
-        }
-
-        .reply-list {
-            .auditor {
-                margin-bottom: 0.75rem;
-            }
-
-            .comment {
-                border: 1px solid var(--gray-color-300);
-                font-size: 0.75rem;
-                padding: 0.75rem 1rem;
-            }
-        }
-
-        .approver-wrap {
-            .approver-list {
-                min-height: 5rem;
-
-                .auditor {
-                    .name {
-                        font-size: 0.75rem;
-                    }
-
-                    .approved {
-                        font-size: 0.625rem;
-                    }
-
-                    .date {
-                        font-size: 0.75rem;
-                    }
-                }
-            }
-
-            .sign {
-                height: 4rem;
-
-                img {
-                    width: 4rem;
-                    height: 4rem;
-                }
-            }
-        }
-
-        .input-wrap.upload-file .file-item,
-        .selected-wrap.upload-file .file-item {
-            border-color: var(--gray-color-400);
-        }
-
-        .table {
-            tbody {
-                th {
-                    border-right: 1px solid var(--gray-color-300);
-                    border-left: 1px solid var(--gray-color-300);
-                }
-
-                td {
-                    height: 2rem;
-                    padding: 0.5rem;
-                }
-            }
-
-            tr {
-                td {
-                    border-right: 1px solid var(--gray-color-300);
-                }
-            }
-        }
-    }
-
-    #main,
-    .wrap {
-        padding: 0 !important;
-    }
-
-    .wrap {
-        +.title {
-            display: none !important;
-        }
-    }
-
-    hr {
-        display: none !important;
-    }
-
-    .form-wrap {
-        position: absolute !important;
-        top: 5% !important;
-        left: 0 !important;
-        width: 100% !important;
-    }
-
-    .input-title {
-        font-size: 2rem;
-        font-weight: 700;
-        line-height: 1.3;
-        text-align: center;
-    }
-}
-
 .form-wrap {
     position: relative;
-    // max-width: 960px;
     max-width: 992px;
 
     .title {
@@ -2845,8 +2624,6 @@ onUnmounted(() => {
 }
 
 .table {
-    // min-width: 20rem;
-
     tr {
         td {
             padding: 0.75rem;
@@ -2855,6 +2632,7 @@ onUnmounted(() => {
 
     tbody {
         th {
+            max-width: 3rem;
             position: relative;
 
             .add-btn {
@@ -3007,33 +2785,8 @@ onUnmounted(() => {
     }
 }
 
-.refer-doc-wrap {
-    .btn-open-modal {
-        width: 110px;
-        height: 28px;
-        display: flex;
-    }
-
-    .btn-remove {
-        padding: 0;
-        width: initial;
-        height: initial;
-        border: none;
-
-        svg {
-            width: 16px;
-            height: 16px;
-            fill: var(--warning-color-500);
-        }
-    }
-}
-
 .button-wrap {
     margin-top: 3rem;
-}
-
-.btn {
-    margin-top: 1rem;
 }
 
 .approver-wrap {
@@ -3184,10 +2937,6 @@ onUnmounted(() => {
     font-size: 0.875rem;
     line-height: 1.3;
     color: var(--gray-color-400);
-}
-
-.btn {
-    margin-top: 0;
 }
 
 #selected_auditors {
