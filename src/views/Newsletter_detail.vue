@@ -21,7 +21,7 @@
                 //- 작성일자 기안사 :: s
                 tr.pc(v-show="isDesktop")
                   th 작성 일자
-                  td {{ formatTimestampToDate(newsCont?.uploaded) }}
+                  td.left {{ formatTimestampToDate(newsCont?.uploaded) }}
                   th 작성자
                   td
                     span.writer {{ newsCont?.writer }}
@@ -29,7 +29,7 @@
                 //- 모바일 경우 레이아웃
                 tr.mo(v-show="!isDesktop" style="border-top: 1px solid var(--gray-color-300);")
                   th 작성 일자
-                  td(colspan="3") {{ formatTimestampToDate(newsCont?.uploaded) }}
+                  td.left(colspan="3") {{ formatTimestampToDate(newsCont?.uploaded) }}
                 tr.mo(v-show="!isDesktop")
                   th 기안자
                   td(colspan="3" style="text-align: left")
@@ -126,7 +126,6 @@ function disableContentEditable(htmlString) {
 
 // 게시글 수정
 const editNews = () => {
-  console.log('게시글 수정');
   editModeData.value = newsCont.value;
 
   router.push({
@@ -158,6 +157,12 @@ onMounted(async () => {
 
   if (res) {
     newsCont.value = res.find((el) => el.record_id === newsId.value);
+
+    if (newsCont.value === 'undefined' || !newsCont.value) {
+      alert('게시글이 삭제되었습니다.');
+      router.back();
+      return;
+    }
 
     // 첨부파일 리스트
     if (Object.keys(newsCont.value.bin).length && newsCont.value.bin.form_data.length) {

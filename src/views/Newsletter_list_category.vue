@@ -65,7 +65,6 @@ const getNewsCat = async () => {
       access_group: 1
     }
   });
-  console.log('== getNewsCat == res : ', res);
 
   if (res && res.list) {
     newsCatList.value = res.list.reduce((acc, cur) => {

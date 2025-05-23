@@ -146,7 +146,6 @@ const getEditModeCat = async () => {
       },
       record_id: recordId.value
     });
-    console.log('== getEditModeCat == res : ', res);
 
     if (res.list && res.list.length > 0) {
       const categoryData = res.list[0];
@@ -238,26 +237,41 @@ const handleOrganigramSelection = (users) => {
       selectedDivision.value[division].push(emp);
     }
   });
-
-  console.log('조직도선택 == selectedDivision.value : ', selectedDivision.value);
 };
 
 // 공개범위 모달에서 선택된 부서 저장
 const saveAuditor = () => {
+  // 기존 선택된 직원 목록을 초기화하고 새로 구성
+  selectedEmps.value = [];
+
   // 선택된 모든 부서의 사용자 추가
   if (Object.keys(selectedDivision.value).length > 0) {
     Object.keys(selectedDivision.value).forEach((division) => {
       const departmentUsers = selectedDivision.value[division];
 
       departmentUsers.forEach((user) => {
-        // 이미 추가된 사용자인지 확인
+        const userCopy = JSON.parse(JSON.stringify(user));
+
+        // 중복 체크 - 같은 사용자가 여러 부서에 속할 수 있으므로
         const isDuplicate = selectedEmps.value.some(
-          (existingUser) => existingUser.user_id === user.user_id
+          (existingUser) => existingUser.data?.user_id === userCopy.user_id
         );
 
         if (!isDuplicate) {
-          const userCopy = JSON.parse(JSON.stringify(user));
-          selectedEmps.value.push(userCopy);
+          // 구조에 맞게 데이터 구성
+          let pushUser = {
+            data: {
+              user_id: userCopy.user_id
+            },
+            index: {
+              name: userCopy.dvs.split('.')[0] + '.' + userCopy.position,
+              value: userCopy.name
+            },
+            dvs: userCopy.dvs,
+            position: userCopy.position,
+            name: userCopy.name
+          };
+          selectedEmps.value.push(pushUser);
         }
       });
     });
@@ -265,20 +279,15 @@ const saveAuditor = () => {
 
   backupSelected.value = null;
   isModalOpen.value = false;
+
   console.log('저장 부서 :', selectedDivision.value);
   console.log('저장 직원 : ', selectedEmps.value);
 };
 
 const undoChecked = (divisionName) => {
-  console.log('divisionName : ', divisionName);
-
   // 재귀적으로 부서 찾기
   const findUncheckDepartment = (departments) => {
-    console.log('departments : ', departments);
-
     for (const dept of departments) {
-      console.log('dept : ', dept);
-
       // 현재 부서가 찾는 부서인지 확인
       if (dept.division === divisionName) {
         // 부서 체크박스 해제
@@ -295,6 +304,7 @@ const undoChecked = (divisionName) => {
             );
             if (index !== -1) {
               checkedUsers.value.splice(index, 1);
+              console.log('checkedUsers.value : ', checkedUsers.value);
             }
           });
         }
@@ -325,7 +335,7 @@ const removeDvs = (divisionName) => {
 
     delete selectedDivision.value[divisionName];
     selectedDivision.value = JSON.parse(JSON.stringify(selectedDivision.value));
-    console.log('== removeDvs == selectedDivision.value :', selectedDivision.value);
+    console.log('selectedDivision.value : ', selectedDivision.value);
   }
 };
 
@@ -349,6 +359,15 @@ const registerNewsCat = async () => {
     return;
   }
 
+  const accessUserId = selectedEmps.value.map((user) => user.data.user_id).filter(Boolean);
+  console.log('accessUserId : ', accessUserId);
+
+  if (accessUserId.length === 0) {
+    alert('권한 부여 대상 사용자가 없습니다.');
+    router.push('/admin/list-newsletter');
+    return;
+  }
+
   try {
     const data = {
       news_category: newsCatName.value,
@@ -356,11 +375,12 @@ const registerNewsCat = async () => {
       notiSetting: notiSetting.value
     };
 
+    let res;
+
     if (isEditMode.value) {
       // 수정 모드
-      const res = await skapi.postRecord(data, { record_id: recordId.value });
-      console.log('수정 == res : ', res);
-      alert('게시글 카테고리가 수정되었습니다.');
+      res = await skapi.postRecord(data, { record_id: recordId.value });
+      console.log('게시글 카테고리 수정 결과: ', res);
     } else {
       // 등록 모드
       const config = {
@@ -373,22 +393,26 @@ const registerNewsCat = async () => {
           value: newsCatName.value
         }
       };
-
-      const res = await skapi.postRecord(data, config);
-      console.log('== registerNewsCat == res : ', res);
-
-      // 카테고리 공개범위에게 권한 부여
-      const categoryId = res.record_id;
-      const accessUserId = selectedEmps.value.map((user) => user.user_id);
-
-      await Promise.all(
-        accessUserId.map((userId) =>
-          grantNewsUserAccess({ news_id: categoryId, newsUser_id: userId })
-        )
-      );
-
-      alert('게시글 카테고리가 추가되었습니다.');
+      res = await skapi.postRecord(data, config);
+      console.log('게시글 카테고리 등록 결과: ', res);
     }
+
+    console.log('selectedEmps.value : ', selectedEmps.value);
+
+    // 카테고리 공개범위에게 권한 부여
+    const categoryId = res.record_id;
+    console.log('categoryId : ', categoryId);
+
+    await Promise.all(
+      accessUserId.map((userId) =>
+        grantNewsUserAccess({ news_id: categoryId, newsUser_id: userId })
+      )
+    ).then((promise) => {
+      console.log('Promise.all == promise : ', promise);
+      console.log(`${promise.length}명의 사용자에게 권한이 부여되었습니다.`);
+    });
+
+    alert(`게시글 카테고리가 ${isEditMode.value ? '수정' : '추가'}되었습니다.`);
   } catch (err) {
     console.error('게시글 카테고리가 추가 중 오류 발생: ', err);
     alert('게시글 카테고리가 추가 중 오류가 발생했습니다.');

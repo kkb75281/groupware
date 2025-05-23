@@ -113,8 +113,6 @@ const getTempSaveMyDoc = async () => {
 
 // 결재 양식 삭제
 const deleteDocForm = async () => {
-  console.log('결재 양식 삭제');
-
   if (!Object.keys(selectedList.value).length) {
     alert('삭제할 결재 양식을 선택해주세요.');
     loading.value = false;
@@ -164,7 +162,7 @@ onMounted(() => {
 <style scoped lang="less">
 .table-wrap {
   position: relative;
-//   margin-top: 3rem;
+  //   margin-top: 3rem;
 }
 
 .go-detail {

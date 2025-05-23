@@ -117,6 +117,7 @@ function recalculateDepartmentCheckStatus() {
 
 onMounted(() => {
   excludeCurrentUser.value = props.excludeCurrentUser;
+  console.log('excludeCurrentUser', excludeCurrentUser.value);
   onlyMyDepartment.value = props.onlyMyDepartment;
 });
 
@@ -151,12 +152,8 @@ function onDepartmentCheck(obj) {
 
     // 체크된 멤버를 checkedUsers 배열에 추가
     if (isChecked) {
-      console.log('AA');
       if (!checkedUsers.value.some((user) => user.data.user_id === target.data.user_id)) {
-        console.log('AA == checkedUsers.value : ', checkedUsers.value);
-        console.log('target : ', target);
         checkedUsers.value.push(target);
-        console.log('BB == checkedUsers.value : ', checkedUsers.value);
       }
     } else {
       // 체크 해제된 멤버를 checkedUsers 배열에서 제거
@@ -270,25 +267,21 @@ watch(
     if (!ov) {
       // 모달 열었을때 체크된 사용자가 있을 경우
       if (nv && nv.length > 0) {
-        console.log('nv : ', nv);
         await nextTick();
 
         // 먼저 모든 체크박스 상태 초기화
         resetAllCheckStatus();
-        console.log('AA');
 
         // 선택된 사용자들에 대해 체크 상태 설정
         for (const user of nv) {
           // 직원 객체 찾기
           const employeeToCheck = findEmployeeInOrganigram(user.data?.user_id);
-          console.log('employeeToCheck : ', employeeToCheck);
 
           if (employeeToCheck) {
             employeeToCheck.isChecked = true;
 
             // 체크된 사용자를 checkedUsers 배열에 추가
             if (!checkedUsers.value.some((u) => u.data?.user_id === user.data?.user_id)) {
-              console.log('CC == checkedUsers.value : ', checkedUsers.value);
               checkedUsers.value.push(employeeToCheck);
             }
           }
@@ -333,7 +326,6 @@ watch(
 
 // 조직도에서 특정 사용자 ID를 가진 직원 객체를 찾는 함수
 function findEmployeeInOrganigram(userId) {
-  console.log('userId : ', userId);
   // 재귀적으로 모든 부서를 검색하는 내부 함수
   function searchInDepartment(department) {
     // 현재 부서의 멤버 중에서 찾기

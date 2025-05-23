@@ -39,61 +39,68 @@ const getIconPath = computed(() => (iconName) => {
 });
 
 let checkRouteName = (routeName) => {
-	if(routeName === 'audit-detail' && isSendingValue.value) {
-		activeMenu.value = 'request-list';
-		return;
-	} else if(routeName === 'audit-detail' && !isSendingValue.value) {
-		activeMenu.value = 'audit-list';
-		return;
-	}
+  if (routeName === 'audit-detail' && isSendingValue.value) {
+    activeMenu.value = 'request-list';
+    return;
+  } else if (routeName === 'audit-detail' && !isSendingValue.value) {
+    activeMenu.value = 'audit-list';
+    return;
+  }
 
-	let childList = menuList.value.filter((item) => item.child);
-	let foundChild = childList.find((item) => item.child.some((child) => child === routeName));
+  let childList = menuList.value.filter((item) => item.child);
+  let foundChild = childList.find((item) => item.child.some((child) => child === routeName));
 
-	if (foundChild) {
-		activeMenu.value = foundChild.name;
-		return;
-	}
+  if (foundChild) {
+    activeMenu.value = foundChild.name;
+    return;
+  }
 
-	activeMenu.value = routeName;
-}
+  activeMenu.value = routeName;
+};
 
-watch(() => props.menuList, (nv) => {
-	menuList.value = nv;
-	checkRouteName(route.name);
-}, { immediate: true });
+watch(
+  () => props.menuList,
+  (nv) => {
+    menuList.value = nv;
+    checkRouteName(route.name);
+  },
+  { immediate: true }
+);
 
-watch(() => route.query, (nv) => {
-	if(nv.isSending) {
-		isSendingValue.value = true;
-	} else {
-		isSendingValue.value = false;
-	}
-}, { immediate: true });
+watch(
+  () => route.query,
+  (nv) => {
+    if (nv.isSending) {
+      isSendingValue.value = true;
+    } else {
+      isSendingValue.value = false;
+    }
+  },
+  { immediate: true }
+);
 
-watch(() => route.name, (nv) => {
-	checkRouteName(nv);
-},{ immediate: true });
+watch(
+  () => route.name,
+  (nv) => {
+    checkRouteName(nv);
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped lang="less">
 #navbar {
-  // width: var(--navbar-width);
-  // height: 100vh;
+  width: 4.625rem;
   height: calc(100vh - var(--header-height));
   position: fixed;
   top: var(--header-height);
   left: 0;
-  // margin-top: var(--header-height);
+  overflow-x: hidden;
   overflow-y: overlay;
   background-color: #fff;
-  // box-shadow: 5px 1px 20px rgba(0, 0, 0, 0.2);
   border-right: 1px solid rgba(0, 0, 0, 0.1);
-
-	z-index: 9998;
-	// transition: width 0.15s linear;
-	// transition: left 0.15s linear;
-	transition: all 0.3s;
+  z-index: 9998;
+  transition: width 0.3s ease-in-out;
 
   .navbar-wrap {
     overflow: hidden;
@@ -101,6 +108,8 @@ watch(() => route.name, (nv) => {
   }
 
   &:hover {
+    width: 10.8rem;
+
     .menu-item {
       .item {
         .router {
@@ -114,16 +123,15 @@ watch(() => route.name, (nv) => {
 
   .icon {
     padding: 0 8px;
+    flex: none;
   }
 
   .logo {
     height: var(--header-height);
-    // box-shadow: 1px 1px 10px rgba(0,0,0,0.03);
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
-    // padding: 1rem 20px 0;
     padding: 0 16px;
     margin-bottom: 30px;
     cursor: pointer;
@@ -161,7 +169,8 @@ watch(() => route.name, (nv) => {
     padding: 20px 16px 40px;
 
     .item {
-      // margin-top: 0.8rem;
+      display: flex;
+      align-items: center;
 
       &:first-child {
         margin-top: 0;
@@ -196,33 +205,29 @@ watch(() => route.name, (nv) => {
       }
     }
 
-		.router {
-			display: flex;
-			flex-wrap: nowrap;
-			align-items: center;
-			gap: 4px;
-			// justify-content: center;
-			// padding: 1.2rem 1.25rem 1.2rem 0.75rem;
-			// padding: 1.2rem 0.875rem 1.2rem 0.25rem;
-			padding: 1rem 0.5rem;
-			border-radius: 36px;
-			transition: all 0.3s;
-			cursor: pointer;
+    .router {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 4px;
+      padding: 1rem 0.5rem;
+      border-radius: 36px;
+      transition: all 0.3s;
+      cursor: pointer;
+      width: 100%;
 
-			.text {
-				// flex-grow: 1;
-				display: flex;
-				align-items: center;
-				// justify-content: space-between;
-				justify-content: center;
-				padding-right: 12px;
-				display: none;
-			}
-			.arrow {
-				width: max(1.2rem, 16px);
-				height: max(1.2rem, 16px);
-				fill: #b7b7b7;
-				transition: all 0.3s;
+      .text {
+        padding-right: 12px;
+        display: none;
+        white-space: nowrap;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      .arrow {
+        width: max(1.2rem, 16px);
+        height: max(1.2rem, 16px);
+        fill: #b7b7b7;
+        transition: all 0.3s;
 
         &.down {
           transform: rotate(90deg);
@@ -277,40 +282,11 @@ watch(() => route.name, (nv) => {
       }
     }
 
-    .menu-item {
-      .router {
-        .text {
-          // display: none !important;
-        }
-      }
-    }
-
     .sub-menu-item {
       display: none !important;
     }
   }
 }
-
-// @media (max-width: 1200px) {
-// 	#navbar {
-// 		.btn-close {
-// 			display: block;
-// 		}
-
-// 		.menu-item {
-// 			.router {
-// 				// padding: 1.2rem 1.25rem 1.2rem 0.75rem;
-// 			}
-// 		}
-// 	}
-
-// 	.open {
-// 		#navbar {
-// 			left: 0;
-// 			width: 100% !important;
-// 		}
-// 	}
-// }
 
 @media (max-width: 768px) {
   #navbar {
@@ -322,18 +298,25 @@ watch(() => route.name, (nv) => {
     border-right: 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
+    &:hover {
+      width: 100%;
+    }
+
     .navbar-wrap {
       overflow-x: auto;
     }
 
     .menu-item {
       padding: 20px;
-      // display: block;
       flex-direction: row;
       justify-content: flex-start;
       gap: 1.2rem;
 
       .item {
+        &:last-of-type {
+          padding-right: 20px;
+        }
+
         .icon {
           svg {
             width: 20px;
@@ -344,9 +327,6 @@ watch(() => route.name, (nv) => {
         .router {
           display: inline-block;
           text-align: center;
-
-          // flex-wrap: wrap;
-          // gap: 4px;
           padding: 0;
 
           .text {
@@ -355,6 +335,7 @@ watch(() => route.name, (nv) => {
             width: 100%;
             padding: 0;
             font-size: 14px;
+            margin-top: 0.5rem;
           }
 
           svg {
@@ -394,58 +375,7 @@ watch(() => route.name, (nv) => {
           }
         }
       }
-
-      // .router {
-      // 	&:hover {
-      // 		.text {
-      // 			display: block !important;
-      // 		}
-      // 	}
-      // }
     }
   }
-  // #navbar {
-  // 	// display: none;
-  // 	top: 0;
-  // 	left: 110%;
-  // 	width: 100%;
-
-  // 	.logo {
-  // 		display: flex;
-  // 	}
-  // }
-  // .open {
-  // 	#navbar {
-  // 		display: block;
-  // 		width: 100% !important;
-  // 		top: 0;
-  // 		border-right: 0;
-  // 		// transform: translateX(-100vw) !important;
-  // 		left: 0;
-
-  // 		.btn-close {
-  // 			display: block;
-  // 		}
-  // 		.menu-item {
-  // 			.item {
-  // 				.router {
-  // 					.text {
-  // 						display: flex;
-  // 					}
-  // 				}
-  // 			}
-  // 		}
-  // 	}
-  // }
 }
-
-// @media (hover: none) {
-// 	#navbar .menu-item .item:hover .router {
-// 		background-color: transparent !important;
-// 	}
-
-// 	#navbar .menu-item .item.active:hover .router {
-// 		background-color: var(--primary-color-400) !important;
-// 	}
-// }
 </style>

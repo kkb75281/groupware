@@ -30,13 +30,13 @@
 							//- 모바일 경우 레이아웃
 							tr.mo(v-if="!isDesktop")
 								th 작성 일자
-								td
+								td.left(style="width: 100%")
 									.input-wrap
 										input#inp_date(type="date" name="inp_date" v-model="dateValue")
 
 							tr.mo(v-if="!isDesktop")
 								th 작성자
-								td
+								td.left
 									span.writer {{ user.name }}
 							//- 작성일자 작성자 :: e
 
@@ -84,7 +84,7 @@
 								th.essential 내용
 								td(colspan="3")
 									.wysiwyg-wrap(style="cursor: text;")
-										Wysiwyg(@editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'edit' ? editModeData?.data?.to_news_content : selectedForm?.data?.form_content" :showBtn="true")
+										Wysiwyg(ref="myWysiwyg" @editor-ready="handleEditorReady" @update:content="exportWysiwygData" :savedContent="route.query.mode === 'edit' ? editModeData?.data?.to_news_content : selectedForm?.data?.form_content" :showBtn="true")
 										textarea#inp_content(type="text" placeholder="결재 내용" name="inp_content" v-model="editorContent" hidden)
 
 							tr
@@ -112,7 +112,7 @@
 																use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
 			.button-wrap
-				button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/newsletter-category')") 취소
+				button.btn.bg-gray.btn-cancel(type="button" @click="router.back()") 취소
 				button.btn(type="submit") {{ isEditMode ? '수정' : '등록' }}
 </template>
 
@@ -155,6 +155,12 @@ const editModeData = ref({}); // 수정 모드 데이터
 let selCateId = ''; // 선택된 카테고리 ID
 const removeFiles = []; // 삭제할 파일 리스트
 
+// 에디터 상태 관리
+const editor = ref(null);
+const editorContent = ref('');
+const editorIsReady = ref(false);
+const myWysiwyg = ref(null);
+
 watch(selCate, (n) => {
   if (n) {
     const selCate = newsCateList.value.find((cat) => cat.record_id === n);
@@ -192,10 +198,6 @@ const getNewsCateList = async () => {
   }
 };
 
-// 에디터 상태 관리
-const editorContent = ref('');
-const editorIsReady = ref(false);
-
 // 에디터 내용 변경 감지
 watch(editorContent, (newContent) => {
   if (!newContent || newContent === '') {
@@ -221,7 +223,6 @@ const handleEditorReady = (status) => {
           // 기존 내용 직접 설정
           editorElement.innerHTML = editModeData.value.data.to_news_content;
           editorContent.value = editModeData.value.data.to_news_content;
-          console.log('에디터에 내용 설정됨:', editorContent.value);
         }
         activateTableEditing(editorElement);
       }
@@ -231,347 +232,97 @@ const handleEditorReady = (status) => {
 
 // 테이블 편집 기능 활성화 함수
 const activateTableEditing = (editorElement) => {
-  // 테이블 찾기
-  const tables = editorElement.querySelectorAll('table');
+  const tableWraps = editorElement.querySelectorAll('.wysiwyg-table-wrap');
 
-  tables.forEach((table) => {
-    // 테이블 클래스 추가
-    if (!table.classList.contains('wysiwyg-table')) {
-      table.classList.add('wysiwyg-table');
-    }
-
-    // 테이블에 리사이즈 속성 추가
-    table.setAttribute('data-resizable', 'true');
-
-    // 테이블 내 모든 셀을 편집 가능하게 설정
-    const cells = table.querySelectorAll('td');
-    cells.forEach((cell) => {
-      cell.contentEditable = 'true';
-      cell.removeAttribute('disabled');
-
-      // 포커스 이벤트 추가
-      cell.addEventListener('focus', () => {
-        cell.style.outline = '2px solid #4a90e2';
-      });
-
-      cell.addEventListener('blur', () => {
-        cell.style.outline = 'none';
-      });
-    });
-
-    // 테이블 컨테이너 확인 또는 생성
-    let tableWrap = table.closest('.wysiwyg-table-wrap');
-    if (!tableWrap) {
-      // 테이블을 컨테이너로 감싸기
-      tableWrap = document.createElement('div');
-      tableWrap.className = 'wysiwyg-table-wrap';
-      table.parentNode.insertBefore(tableWrap, table);
-      tableWrap.appendChild(table);
-    }
-
-    // 기존 컨트롤 버튼과 리사이저 제거
-    const existingControls = tableWrap.querySelectorAll('.btn-control-wrap, .table-resizer');
-    existingControls.forEach((control) => control.remove());
-
-    // 테이블 리사이저 추가
-    addTableResizers(table, tableWrap);
-
-    // 행 컨트롤 버튼 그룹 생성
-    const rowControlWrap = document.createElement('div');
-    rowControlWrap.contentEditable = 'false';
-    rowControlWrap.tabIndex = '-1';
-    rowControlWrap.className = 'btn-control-wrap control-row';
-
-    // 행 추가 버튼
-    const addRowBtn = document.createElement('button');
-    addRowBtn.className = 'btn-add';
-    addRowBtn.type = 'button';
-    addRowBtn.textContent = '+';
-
-    // 행 추가 이벤트
-    addRowBtn.addEventListener('click', () => {
-      const tr = document.createElement('tr');
-
-      // 현재 테이블의 첫 번째 행을 기준으로 열 수 가져오기
-      const tbody = table.querySelector('tbody') || table;
-      const currentCols = tbody.firstChild ? tbody.firstChild.childNodes.length : 3;
-
-      for (let c = 0; c < currentCols; c++) {
-        const td = document.createElement('td');
-        td.contentEditable = 'true';
-        td.innerHTML = '&nbsp;';
-
-        // 포커스 이벤트
-        td.addEventListener('focus', () => {
-          td.style.outline = '2px solid #4a90e2';
-        });
-
-        td.addEventListener('blur', () => {
-          td.style.outline = 'none';
-        });
-
-        tr.appendChild(td);
+  // 테이블 각각에 대해 편집 기능 활성화
+  tableWraps.forEach((wrap) => {
+    let state = {
+      tableWrap: wrap,
+      table: wrap.querySelector('table'),
+      tbody: wrap.querySelector('tbody'),
+      mergeBtn: wrap.querySelector('.btn-merge'),
+      unmergeBtn: wrap.querySelector('.btn-unmerge'),
+      isResizing: false,
+      isDragging: false,
+      isSelection: false,
+      isMouseDown: false,
+      selectionStart: null,
+      outlinePosition: {
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0
       }
-
-      tbody.appendChild(tr);
-
-      // 행 추가 후 리사이저 업데이트
-      addTableResizers(table, tableWrap);
-    });
-
-    // 행 삭제 버튼
-    const removeRowBtn = document.createElement('button');
-    removeRowBtn.className = 'btn-remove';
-    removeRowBtn.type = 'button';
-    removeRowBtn.textContent = '-';
-
-    // 행 삭제 이벤트
-    removeRowBtn.addEventListener('click', () => {
-      const tbody = table.querySelector('tbody') || table;
-      if (tbody.childNodes.length > 1) {
-        tbody.removeChild(tbody.lastChild);
-
-        // 행 삭제 후 리사이저 업데이트
-        addTableResizers(table, tableWrap);
-      }
-    });
-
-    // 열 컨트롤 버튼 그룹 생성
-    const colControlWrap = document.createElement('div');
-    colControlWrap.contentEditable = 'false';
-    colControlWrap.tabIndex = '-1';
-    colControlWrap.className = 'btn-control-wrap control-col';
-
-    // 열 추가 버튼
-    const addColBtn = document.createElement('button');
-    addColBtn.className = 'btn-add';
-    addColBtn.type = 'button';
-    addColBtn.textContent = '+';
-
-    // 열 추가 이벤트
-    addColBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      const rows = table.rows;
-      for (let i = 0; i < rows.length; i++) {
-        const td = document.createElement('td');
-        td.contentEditable = 'true';
-        td.innerHTML = '&nbsp;';
-
-        td.addEventListener('focus', () => {
-          td.style.outline = '2px solid #4a90e2';
-        });
-
-        td.addEventListener('blur', () => {
-          td.style.outline = 'none';
-        });
-
-        rows[i].appendChild(td);
-      }
-
-      // 열 추가 후 리사이저 업데이트
-      addTableResizers(table, tableWrap);
-    });
-
-    // 열 삭제 버튼
-    const removeColBtn = document.createElement('button');
-    removeColBtn.className = 'btn-remove';
-    removeColBtn.type = 'button';
-    removeColBtn.textContent = '-';
-
-    // 열 삭제 이벤트
-    removeColBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      const rows = table.rows;
-      for (let i = 0; i < rows.length; i++) {
-        if (rows[i].childNodes.length > 1) {
-          rows[i].removeChild(rows[i].lastChild);
-        }
-      }
-
-      // 열 삭제 후 리사이저 업데이트
-      addTableResizers(table, tableWrap);
-    });
-
-    // 컨트롤 버튼 추가
-    rowControlWrap.appendChild(addRowBtn);
-    rowControlWrap.appendChild(removeRowBtn);
-
-    colControlWrap.appendChild(addColBtn);
-    colControlWrap.appendChild(removeColBtn);
-
-    // 모든 컨트롤 추가
-    tableWrap.appendChild(rowControlWrap);
-    tableWrap.appendChild(colControlWrap);
+    };
+    addEventListeners(state);
   });
-};
 
-// 테이블 리사이저 추가 함수
-const addTableResizers = (table, tableWrap) => {
-  // 기존 리사이저 제거
-  const existingResizers = tableWrap.querySelectorAll('.table-resizer');
-  existingResizers.forEach((resizer) => resizer.remove());
+  function addEventListeners(state) {
+    const rows = state.table.querySelectorAll('tr');
 
-  // 열 리사이저 추가
-  if (table.rows.length > 0) {
-    const firstRow = table.rows[0];
-    const cellCount = firstRow.cells.length;
+    for (let r = 0; r < rows.length; r++) {
+      const cols = rows[r].querySelectorAll('td');
 
-    for (let i = 0; i < cellCount - 1; i++) {
-      const cell = firstRow.cells[i];
+      for (let c = 0; c < cols.length; c++) {
+        const cell = cols[c];
 
-      const resizer = document.createElement('div');
-      resizer.className = 'table-resizer col-resizer';
-      resizer.setAttribute('data-col-index', i);
-
-      // 위치 계산 및 설정
-      const left = cell.offsetLeft + cell.offsetWidth + 4;
-
-      resizer.style.left = `${left}px`;
-      resizer.style.height = `${table.offsetHeight}px`;
-
-      // 드래그 이벤트 설정
-      resizer.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        tableWrap.classList.add('resizing-table');
-
-        const startX = e.clientX;
-        const startWidthCell = cell.offsetWidth;
-        const nextCell = firstRow.cells[i + 1];
-        const startWidthNextCell = nextCell.offsetWidth;
-
-        resizer.classList.add('active');
-
-        function onMouseMove(e) {
-          const diffX = e.clientX - startX;
-
-          // 최소 너비 제한
-          if (startWidthCell + diffX < 30 || startWidthNextCell - diffX < 30) return;
-
-          // 모든 행의 해당 열 셀 크기 변경
-          for (let j = 0; j < table.rows.length; j++) {
-            const currentCell = table.rows[j].cells[i];
-            const currentNextCell = table.rows[j].cells[i + 1];
-
-            currentCell.style.width = `${startWidthCell + diffX}px`;
-            currentNextCell.style.width = `${startWidthNextCell - diffX}px`;
-          }
-
-          // 리사이저 위치 업데이트
-          const newLeft = currentCell.offsetLeft + currentCell.offsetWidth - 4;
-          resizer.style.left = `${newLeft}px`;
-        }
-
-        function onMouseUp() {
-          resizer.classList.remove('active');
-          tableWrap.classList.remove('resizing-table');
-
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-
-          // 리사이저 위치 업데이트
-          addTableResizers(table, tableWrap);
-        }
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-      });
-
-      tableWrap.appendChild(resizer);
+        addResizer(state, cell);
+        bindCellEvents(state, cell);
+      }
     }
-  }
 
-  // 행 리사이저 추가
-  const rowCount = table.rows.length;
+    initButtons(state);
 
-  // 행 리사이저 추가 부분 수정
-  for (let i = 0; i < rowCount; i++) {
-    const row = table.rows[i];
+    document.addEventListener('mouseup', () => {
+      const mergeBtn = state.tableWrap.querySelector('.btn-merge');
+      state.mergeBtn.classList.remove('active');
 
-    const resizer = document.createElement('div');
-    resizer.className = 'table-resizer row-resizer';
-    resizer.setAttribute('data-row-index', i);
-
-    // 위치 계산 및 설정
-    const top = row.offsetTop + row.offsetHeight + 2;
-    const left = row.offsetLeft + 5;
-
-    resizer.style.top = `${top}px`;
-    resizer.style.left = `${left}px`;
-    resizer.style.width = `${table.offsetWidth}px`;
-
-    // 드래그 이벤트 설정
-    resizer.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      tableWrap.classList.add('resizing-table');
-
-      const startY = e.clientY;
-      const startHeight = row.offsetHeight;
-
-      resizer.classList.add('active');
-
-      function onMouseMove(e) {
-        const diffY = e.clientY - startY;
-
-        // 최소 높이 제한
-        if (startHeight + diffY < 20) return;
-
-        // 셀들의 높이 지정
-        const cells = row.cells;
-        for (let j = 0; j < cells.length; j++) {
-          cells[j].style.height = `${startHeight + diffY}px`;
+      if (state.isDragging) {
+        const selected = state.table.querySelectorAll('td.dragged-cell');
+        if (selected.length >= 2) {
+          mergeBtn.classList.add('active'); // 조건에 따라 활성화
         }
-
-        // 전체 행의 높이도 설정
-        row.style.height = `${startHeight + diffY}px`;
-
-        // 리사이저 위치 업데이트
-        resizer.style.top = `${row.offsetTop + row.offsetHeight - 4}px`;
       }
 
-      function onMouseUp() {
-        resizer.classList.remove('active');
-        tableWrap.classList.remove('resizing-table');
+      state.isMouseDown = false;
+      state.isDragging = false;
+      state.isSelection = false;
 
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-
-        // 리사이저 위치 업데이트
-        setTimeout(() => {
-          addTableResizers(table, tableWrap);
-        }, 0);
-      }
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+      tableSelection(state);
     });
 
-    tableWrap.appendChild(resizer);
+    document.addEventListener('click', (e) => {
+      if (state.table && !state.table.contains(e.target)) {
+        if (e.target.closest('.btn-custom')) {
+          return;
+        }
+        state.isSelection = false;
+        clearSelection(state.table);
+        tableSelection(state);
+      }
+    });
   }
 };
 
 // 에디터 내보내기
 const exportWysiwygData = (content) => {
-  // 내용이 비어있을 때 기본 p 태그 유지
-  editorContent.value = content && content.trim() !== '' ? content : '<p><br></p>';
+  console.log('exportWysiwygData', content);
+  editor.value = content;
+  editorContent.value = content.html;
+};
+
+const importWysiwygData = async () => {
+  await myWysiwyg.value.exportData();
 };
 
 // 첨부파일 삭제
 const removeFile = (file, index) => {
   // 삭제 파일 removeFiles 변수에 저장
   removeFiles.push(file);
-  console.log('removeFiles : ', removeFiles);
 
   uploadedFile.value.splice(index, 1);
   fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
-  console.log('uploadedFile.value : ', uploadedFile.value);
 };
-console.log('== BB == removeFiles : ', removeFiles);
 
 // 파일 추가시 파일명 표시
 let updateFileList = (e) => {
@@ -591,14 +342,12 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       accessUser.push(...includeUser);
     }
   }
-  console.log('accessUser : ', accessUser);
 
   // 다중부서 직원 중복제거
   const uniqueUsers = accessUser.filter(
     (user, index, self) => index === self.findIndex((u) => u.user_id === user.user_id)
   );
   selectedUsers.value = JSON.parse(JSON.stringify(uniqueUsers));
-  console.log('중복제거 = selectedUsers.value : ', selectedUsers.value);
 
   try {
     const dvs = Object.keys(selectedDivision.value);
@@ -608,8 +357,6 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       const name = divisionNameList.value[key] || '-';
       return `${key}.${name}`;
     });
-    console.log('dvs : ', dvs);
-    console.log('dvsWithName : ', dvsWithName);
 
     newsFormData.append('news_title', news_title);
     newsFormData.append('selDvs', dvsWithName.join(','));
@@ -649,8 +396,6 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
           newsFormData.append('form_data', file);
         });
     }
-    console.log('selCate.value : ', selCate.value);
-    console.log('selCateId : ', selCateId);
 
     const options = {
       table: {
@@ -663,10 +408,8 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
       },
       reference: selCateId // 카테고리 ID를 레퍼런스
     };
-    console.log('options : ', options);
 
     const res = await skapi.postRecord(newsFormData, options);
-    console.log('== postNewsRecord == res : ', res);
 
     return res;
   } catch (error) {
@@ -678,35 +421,17 @@ const postNewsRecord = async ({ news_title, to_news_content }) => {
   }
 };
 
-// 게시글 공개범위에게 권한을 부여하는 함수
-// const grantNewsUserAccess = async ({ news_id, newsUser_id }) => {
-//   return skapi.grantPrivateRecordAccess({
-//     record_id: news_id,
-//     user_id: newsUser_id
-//   });
-// };
-
 // 게시글 등록하고 알림을 보내는 함수
 const createAddNews = async (
   { news_id, newsUser_id, news_title },
   send_newsUser,
   isNotificationTarget = false
 ) => {
-  console.log('== createAddNews == send_newsUser : ', send_newsUser);
-  console.log('== createAddNews == newsUser_id : ', newsUser_id);
-  console.log('== createAddNews == isNotificationTarget : ', isNotificationTarget);
-
   if (!news_id || !newsUser_id) return;
-
-  // skapi.grantPrivateRecordAccess({
-  //   record_id: news_id,
-  //   user_id: newsUser_id
-  // });
 
   // 실시간 알림 보내기
   if (isNotificationTarget === true) {
     let news_title = document.getElementById('news_title').value;
-    console.log('news_title : ', news_title);
 
     skapi
       .postRealtime(
@@ -736,34 +461,40 @@ const createAddNews = async (
       )
       .then((res) => {
         console.log('실시간 알림 == res : ', res);
+        console.log('selCateId : ', selCateId);
       })
       .catch(async (err) => {
         console.error(err);
       });
 
     // 실시간 못 받을 경우 알림 기록 저장
-    skapi.postRecord(
-      {
-        noti_id: news_id,
-        noti_type: 'notice',
-        send_date: new Date().getTime(),
-        send_user: user.user_id,
-        news_info: {
-          news_title: news_title,
-          news_id: news_id,
-          news_refer: selCateId,
-          news_noti_id: news_id,
-          send_newsUser: send_newsUser
+    skapi
+      .postRecord(
+        {
+          noti_id: news_id,
+          noti_type: 'notice',
+          send_date: new Date().getTime(),
+          send_user: user.user_id,
+          news_info: {
+            news_title: news_title,
+            news_id: news_id,
+            news_refer: selCateId,
+            news_noti_id: news_id,
+            send_newsUser: send_newsUser
+          }
+        },
+        {
+          readonly: true,
+          table: {
+            name: `realtime:${newsUser_id.replaceAll('-', '_')}`,
+            access_group: 'authorized'
+          }
         }
-      },
-      {
-        readonly: true,
-        table: {
-          name: `realtime:${newsUser_id.replaceAll('-', '_')}`,
-          access_group: 'authorized'
-        }
-      }
-    );
+      )
+      .then((res) => {
+        console.log('알림 기록 == res : ', res);
+        console.log('selCateId : ', selCateId);
+      });
   }
 
   return {
@@ -777,13 +508,12 @@ const createAddNews = async (
 
 // 결재 요청 Alarm
 const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTarget = false) => {
-  try {
-    // 권한 부여
-    // await grantNewsUserAccess({
-    //   news_id: newsId,
-    //   newsUser_id: userId
-    // });
+  console.log('newsId : ', newsId);
+  console.log('newsTitle : ', newsTitle);
+  console.log('userId : ', userId);
+  console.log('isNotificationTarget : ', isNotificationTarget);
 
+  try {
     // 알림 전송
     const res = await createAddNews(
       {
@@ -794,7 +524,7 @@ const postAuditDocRecordId = async (newsId, newsTitle, userId, isNotificationTar
       send_auditors_arr,
       isNotificationTarget
     );
-    console.log('== postAuditDocRecordId == res : ', res);
+    console.log('결재 요청 알림 전송 결과 : ', res);
     return res;
   } catch (error) {
     console.error(error);
@@ -831,6 +561,9 @@ const removeButtonTags = (content) => {
 const registerNews = async (e) => {
   e.preventDefault();
 
+  // 에디터에서 내용 가져오기
+  await importWysiwygData();
+
   // 카테고리 선택 안했을 경우 등록 불가
   if (!selCate.value) {
     alert('카테고리를 선택해주세요.');
@@ -863,20 +596,15 @@ const registerNews = async (e) => {
     mainPageLoading.value = true;
 
     if (isEditMode.value) {
-      console.log('== registerNews == 수정모드');
       // 수정 모드인 경우
       const editNewsId = route.query.news;
       const selNews = newsCateList.value.find((cat) => cat.record_id === selCate.value);
-      console.log('selNews : ', selNews);
-
-      console.log('= AA = removeFiles : ', removeFiles);
 
       if (selNews) {
         selectedDivision.value = selNews.data.access_division;
       } else {
         selectedDivision.value = {};
       }
-      console.log('selectedDivision.value : ', selectedDivision.value);
 
       // 선택된 부서에서 직원 정보 가져오기
       const accessUser = [];
@@ -892,7 +620,6 @@ const registerNews = async (e) => {
         (user, index, self) => index === self.findIndex((u) => u.user_id === user.user_id)
       );
       selectedUsers.value = JSON.parse(JSON.stringify(uniqueUsers));
-      console.log('중복제거 = selectedUsers.value : ', selectedUsers.value);
 
       // FormData 활용
       const updateFormData = new FormData();
@@ -935,12 +662,10 @@ const registerNews = async (e) => {
         });
 
         const fileObjects = await Promise.all(filePromises);
-        console.log('fileObjects : ', fileObjects);
 
         fileObjects
           .filter((file) => file !== null)
           .forEach((file) => {
-            console.log('file : ', file);
             updateFormData.append('form_data', file);
           });
       }
@@ -958,19 +683,15 @@ const registerNews = async (e) => {
           },
           reference: selCateId
         };
-        console.log('config : ', config);
 
         let updateRes;
 
         if (uploadedFile.value.length) {
           // 첨부파일 변경이 있을 경우
           config.remove_bin = removeFiles;
-          console.log('removeFiles : ', removeFiles);
           updateRes = await skapi.postRecord(updateFormData, config);
-          console.log('= AA = updateRes : ', updateRes);
         } else {
           updateRes = await skapi.postRecord(updateFormData, config);
-          console.log('= BB = updateRes : ', updateRes);
         }
 
         if (editModeData.value.data?.noti_setting === 'false' && notiSetting.value === true) {
@@ -982,14 +703,12 @@ const registerNews = async (e) => {
               userId: user.user_id
             }))
           ];
-          console.log('processRoles : ', processRoles);
 
           const res = await Promise.all(
             processRoles.map((roleInfo) =>
               postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value === 'true')
             )
           );
-          console.log('promiseall res : ', res);
 
           selectedUsers.value = [];
           selectedMembers.value = [];
@@ -1000,7 +719,7 @@ const registerNews = async (e) => {
         console.error('게시글 수정 중 오류 발생:', err);
         alert('게시글 수정 중 오류가 발생했습니다.');
       } finally {
-        router.push(`/newsletter-category?category=${selCate.value}`);
+        router.push(`/newsletter?category=${selCate.value}`);
       }
     } else {
       // 등록 모드인 경우
@@ -1010,7 +729,6 @@ const registerNews = async (e) => {
         to_news_content,
         noti_setting: notiSetting.value // 알림 설정 관련 체크박스 값 전달
       });
-      console.log('등록 = newsDoc : ', newsDoc);
 
       const newsId = newsDoc.record_id; // 게시글 ID
       const newsTitle = news_title; // 게시글 제목
@@ -1020,7 +738,6 @@ const registerNews = async (e) => {
           userId: user.user_id
         }))
       ];
-      console.log('processRoles : ', processRoles);
 
       // 공개범위에게 게시글 열람 권한 및 등록 레코드 생성
       const res = await Promise.all(
@@ -1028,7 +745,6 @@ const registerNews = async (e) => {
           postAuditDocRecordId(newsId, newsTitle, roleInfo.userId, notiSetting.value === 'true')
         )
       );
-      console.log('promiseall res : ', res);
 
       selectedUsers.value = [];
       selectedMembers.value = [];
@@ -1091,7 +807,6 @@ onMounted(async () => {
 
         if (record) {
           editModeData.value = record.list[0];
-          console.log('onMounted == editModeData.value : ', editModeData.value);
 
           newsTitle.value = editModeData.value.data?.news_title || '';
           editorContent.value = editModeData.value.data?.to_news_content || '';
@@ -1157,7 +872,6 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  // max-width: 960px;
   max-width: 992px;
 
   .title {

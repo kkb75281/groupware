@@ -41,7 +41,6 @@ export async function getUserPositionCurrent(refresh = false) {
         const parts = r.unique_id.split(':');
         if (parts.length) {
           const divisionId = parts[1];
-          console.log('divisionId', divisionId);
 
           const getPosition = await skapi.getRecords({
             unique_id: `[emp_position_current]${makeSafe(user.user_id)}:${divisionId}`
@@ -61,8 +60,6 @@ export async function getUserPositionCurrent(refresh = false) {
   } else {
     userPositionCurrent.value = [];
   }
-
-  //   console.log('userPositionCurrent', userPositionCurrent.value);
 
   return userPositionCurrent.value;
 }

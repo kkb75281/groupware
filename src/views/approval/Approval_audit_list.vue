@@ -146,10 +146,8 @@ const toggleFavoriteAudit = async (audit) => {
     );
 
     const isFavorite = !!favoriteRecord;
-    // console.log('isFavorite : ', isFavorite);
 
     if (isFavorite) {
-      // console.log('중요 결재 해제');
       // 중요 결재 해제
       await skapi.deleteRecords({
         table: {
@@ -185,7 +183,6 @@ const toggleFavoriteAudit = async (audit) => {
         maxPage.value = disp.value.maxPage;
       }
     } else {
-      // console.log('중요 결재 저장');
       // 중요 결재 저장
       const data = {
         auditId: audit.record_id
@@ -199,11 +196,7 @@ const toggleFavoriteAudit = async (audit) => {
         }
       };
 
-      // console.log('data : ', data);
-      // console.log('config : ', config);
-
       const saveFavoriteAudit = await skapi.postRecord(data, config);
-      // console.log('saveFavoriteAudit : ', saveFavoriteAudit);
 
       // UI 업데이트
       favoriteAuditRecords.value.push(saveFavoriteAudit);
@@ -328,18 +321,12 @@ const getPage = async (refresh = false) => {
     const fetchOptions = { fetchMore: !refresh, limit: 10, ascending: false };
 
     if (isCurrentPage.value === 'audit-reference') {
-      // console.log('수신참조 페이지');
       // 수신참조 페이지
       fetchedData = (await getAuditReferenceList(fetchOptions)) || [];
-      // console.log('수신참조 fetchedData : ', fetchedData);
     } else if (isCurrentPage.value === 'audit-list') {
-      // console.log('결재 수신함 페이지');
       // 결재 수신함 페이지
       fetchedData = await getAuditList(fetchOptions || []);
-      // console.log('결재 수신함 fetchedData : ', fetchedData);
     } else if (isCurrentPage.value === 'audit-list-favorite') {
-      // console.log('즐겨찾기 페이지');
-
       // 먼저 기본 결재 데이터를 로드 (첫 로드 시 또는 refresh 시에만)
       if (refresh || auditList.value.length === 0 || auditReferenceList.value.length === 0) {
         // 병렬로 모든 결재 데이터 로드
@@ -348,12 +335,10 @@ const getPage = async (refresh = false) => {
 
       // 즐겨찾기 목록 가져오기
       fetchedData = await getFavoriteAuditList(fetchOptions);
-      // console.log('즐겨찾기 fetchedData : ', fetchedData);
     }
 
     // endOfList 상태 저장
     endOfList.value = (fetchedData && fetchedData.endOfList) || false;
-    // console.log('endOfList.value : ', endOfList.value);
 
     // 페이저에 데이터 삽입
     if (Array.isArray(fetchedData.list) && fetchedData.list.length > 0) {
@@ -362,11 +347,9 @@ const getPage = async (refresh = false) => {
 
     // 페이지 데이터 가져오기
     disp.value = pager.getPage(currentPage.value);
-    // console.log('disp : ', disp.value);
 
     // 최대 페이지 설정
     maxPage.value = disp.value.maxPage;
-    // console.log('maxPage : ', maxPage.value);
   } catch (error) {
     console.error('데이터 초기화 실패:', error);
   } finally {

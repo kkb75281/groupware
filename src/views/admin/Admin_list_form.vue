@@ -127,7 +127,6 @@ const getDocForm = async () => {
 
   const res = await skapi.getRecords(query, fetchOptions);
   docFormList.value = res.list;
-  console.log('=== getDocForm === docFormList.value : ', docFormList.value);
 
   loading.value = false;
   return res;
@@ -164,8 +163,6 @@ const searchDocForm = async () => {
 
 // 결재 양식 삭제
 const deleteDocForm = async () => {
-  console.log('결재 양식 삭제');
-
   if (!Object.keys(selectedList.value).length) {
     alert('삭제할 결재 양식을 선택해주세요.');
     loading.value = false;
@@ -173,7 +170,6 @@ const deleteDocForm = async () => {
   }
 
   const deleteList = Object.keys(selectedList.value);
-  console.log('=== deleteDocForm === deleteList : ', deleteList);
 
   let isSuccess = [];
   let isFail = [];
@@ -188,9 +184,8 @@ const deleteDocForm = async () => {
           isSuccess.push(res);
         })
         .catch((err) => {
-          console.log('결재 양식 삭제 실패 : ', err);
+          // console.log('결재 양식 삭제 실패 : ', err);
           isFail.push(err);
-          console.log('isFail : ', isFail);
           alert('부서 삭제에 실패하였습니다. 관리자에게 문의해주세요.');
           throw err;
         });

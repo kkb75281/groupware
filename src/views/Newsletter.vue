@@ -71,7 +71,6 @@ const route = useRoute();
 
 const loading = ref(false);
 const cateId = ref(route.query.category);
-console.log('== cateId == : ', cateId.value);
 
 const searchFor = ref('subject', 'writer'); // 검색 조건
 const searchValue = ref({

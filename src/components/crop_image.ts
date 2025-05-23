@@ -53,8 +53,6 @@ export let setCroppedImage = async (croppedImage: any) => {
       // Blob 객체를 저장 (서버 전송용)
       croppedImages.value[currentTargetId.value] = blob;
 
-      console.log({ blob });
-
       document.querySelector('body').style.overflow = 'auto';
       openCropModal.value = false;
       currentImageSrc.value = '';

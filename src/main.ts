@@ -43,7 +43,7 @@ export let getSystemBannerRunning: Promise<any> | null = null;
 export let system_banner = ref(null);
 export let system_banner_style = ref('contain'); // object-fill (contain, cover, fill, none)
 
-console.log('바뀐 버전 입니다. 0509 18:00');
+console.log('바뀐 버전 입니다. 0516 18:00');
 
 window.addEventListener('load', () => {
   isUpdateLoading.value = false;
@@ -484,7 +484,7 @@ export async function refreshAccessToken() {
 }
 
 export async function loginCheck(profile: any) {
-  // console.log('=== loginCheck === profile : ', profile);
+  console.log('=== loginCheck === profile : ', profile);
 
   for (let key in user) {
     delete user[key];

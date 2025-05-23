@@ -27,7 +27,6 @@
   &:focus {
     background-color: var(--primary-color-400-dark);
     border: 1px solid var(--primary-color-400-dark);
-    // -webkit-tap-highlight-color : transparent !important;
   }
 
   &:disabled {
@@ -278,25 +277,16 @@
     }
 
     .file-wrap {
-      // display: flex;
-      // gap: 8px 16px;
-      // flex-wrap: wrap;
-
       margin-top: 12px;
     }
 
     .file-list {
-      // flex: 1;
       margin-top: 16px;
     }
 
     .btn-upload-file {
-      // width: fit-content;
-
       input {
         margin-bottom: 12px;
-        // border-bottom: 1px solid var(--gray-color-200);
-        // padding-bottom: 16px;
       }
 
       input[type='file']:disabled + .btn {
@@ -315,20 +305,6 @@
         cursor: pointer;
         margin-right: 12px;
       }
-
-      // .upload-file-list {
-      //     display: inline-block;
-
-      //     .file-name {
-      //         display: inline-block;
-      //         font-size: 16px;
-      //         font-weight: 400;
-      //         color: var(--gray-color-500);
-      //         line-height: 1.2;
-      //         margin-right: 12px;
-      //         word-break: break-all;
-      //     }
-      // }
     }
 
     .upload-file-list {
@@ -439,7 +415,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    // letter-spacing: -0.05rem;
     cursor: pointer;
 
     option[disabled] {
@@ -746,7 +721,6 @@
     th,
     td {
       position: relative;
-      // padding: 0.5rem 1rem;
       padding: 0.5rem;
 
       &.left {
@@ -782,7 +756,6 @@
         vertical-align: middle;
         height: 3rem;
         border-bottom: none;
-        //border-right: 1px solid var(--gray-color-300);
 
         &:last-of-type {
           border-right: none;
@@ -795,7 +768,6 @@
           &::before {
             content: '';
             display: inline-block;
-            //vertical-align: 0.255em;
             border-top: 0;
             border-right: 0.3rem solid transparent;
             border-bottom: 0.3rem solid var(--gray-color-400);
@@ -808,7 +780,6 @@
           &::after {
             content: '';
             display: inline-block;
-            //vertical-align: 0.255em;
             border-top: 0.3rem solid var(--gray-color-400);
             border-right: 0.3rem solid transparent;
             border-bottom: 0;
@@ -856,7 +827,6 @@
     th {
       background-color: var(--gray-color-100);
       color: var(--gray-color-900);
-      // border-bottom: 1px solid var(--gray-color-400);
 
       &.essential {
         position: relative;
@@ -875,7 +845,6 @@
     td {
       height: 2.75rem;
       vertical-align: middle;
-      // white-space: nowrap;
 
       a {
         &:hover {
@@ -945,19 +914,6 @@
 
   .btn {
     white-space: nowrap;
-
-    // &::before {
-    //     content: '';
-    //     display: inline-block;
-    //     width: .75rem;
-    //     height: .75rem;
-    //     background-position: center;
-    //     background-size: 100%;
-    //     background-repeat: no-repeat;
-    //     margin-right: .25rem;
-    //     position: relative;
-    //     top: .0625rem;
-    // }
   }
 
   th,
@@ -990,7 +946,6 @@
 
     &.active,
     &:hover {
-      // background-color: var(--primary-color-100);
       border-radius: 0.5rem;
       color: var(--primary-color-400);
 
@@ -1045,7 +1000,6 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  // align-items: center;
   align-items: flex-start;
   justify-content: center;
   overflow: auto;
@@ -1053,13 +1007,11 @@
 
   .modal-cont {
     background-color: #fff;
-    // padding: 24px;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     position: relative;
     min-width: 544px;
     max-width: 544px;
-    // height: calc(100% - 16px);
     margin-top: 16px;
     margin-bottom: 16px;
   }
@@ -1069,7 +1021,6 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 32px;
-    // padding-bottom: 16px;
     padding: 1rem;
     border-bottom: 1px solid var(--gray-color-200);
 
@@ -1085,16 +1036,10 @@
         height: 36px;
         fill: var(--gray-color-500);
       }
-
-      // &:hover {
-      //     transform: rotate(90deg);
-      // }
     }
   }
 
   .modal-body {
-    // overflow-y: scroll;
-    // height: calc(100% - 176px);
     padding: 1rem;
   }
 
@@ -1103,9 +1048,7 @@
     justify-content: flex-end;
     gap: 8px;
     margin-top: 24px;
-    // padding-top: 20px;
     padding: 1rem;
-    // border-top: 1px solid var(--gray-color-200);
   }
 
   .input-wrap {
@@ -1159,7 +1102,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    // border-top: 1px solid var(--gray-color-100);
     gap: 1rem;
     padding: 1rem;
     padding-top: 0;
@@ -1167,19 +1109,6 @@
     button {
       flex-grow: 1;
     }
-
-    // button {
-    //     flex-grow: 1;
-    //     padding: 1rem;
-    //     font-size: 0.8rem;
-
-    //     &:first-child {
-    //         border-right: 1px solid var(--gray-color-100);
-    //     }
-    //     &.warning {
-    //         color: var(--warning-color-400);
-    //     }
-    // }
   }
 }
 
@@ -1218,16 +1147,13 @@
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
     border-radius: 16px;
     overflow: hidden;
-    // transition: all 0.2s ease-in-out;
 
     &:hover {
-      // transform: translateY(-6px);
       box-shadow: 0px 0px 5px rgba(72, 127, 242, 0.8);
     }
 
     .router {
       display: inline-block;
-      // padding: 2.5rem 1.2rem 1.5rem;
       padding: 2.5rem 0 1.5rem;
       width: 100%;
       height: 100%;
@@ -1333,26 +1259,11 @@
 }
 
 @media (max-width: 576px) {
-  // .table-wrap {
-  //   .tb-head-wrap {
-  //     > .tb-toolbar {
-  //       .btn-wrap {
-  //         gap: 0.25rem;
-  //       }
-
-  //       .btn {
-  //         padding: 0 0.5rem;
-  //       }
-  //     }
-  //   }
-  // }
-
   .input-wrap {
     &.upload-file {
       .btn-upload-file {
         .btn {
           margin: 0;
-          width: 100%;
         }
       }
     }
@@ -1365,10 +1276,6 @@
       margin-bottom: 8px;
     }
 
-    // .modal-body {
-    //     height: calc(100% - 168px);
-    // }
-
     .modal-footer {
       margin-top: 20px;
       padding-top: 20px;
@@ -1380,6 +1287,18 @@
 
     .content-wrap {
       width: 100%;
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .input-wrap {
+    &.upload-file {
+      .btn-upload-file {
+        .btn {
+          width: 100%;
+        }
+      }
     }
   }
 }

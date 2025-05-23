@@ -103,7 +103,6 @@ const searchValue = ref('');
 const searchPositionValue = ref('');
 
 const extractTimeFromDateTime = (dateTimeStr) => {
-    console.log('dateTimeStr:', dateTimeStr);
   if (!dateTimeStr) return '';
 
   return dateTimeStr.split(' ')[1]; // 시간만 추출 (ex. 2021-08-01 15:00:00 -> 15:00:00)

@@ -98,7 +98,6 @@ const getNewsCat = async () => {
       access_group: 1
     }
   });
-  console.log('== getNewsCat == res : ', res);
 
   newsCatList.value = res.list.reduce((acc, cur) => {
     acc[cur.record_id] = cur;
