@@ -78,29 +78,6 @@
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
                 p 마스터 페이지
     
-        //- ul.card-wrap.gmail
-            li.card
-                .title-wrap
-                    h3.title
-                        .icon.img
-                            svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-campaign")
-                        | 공지사항
-                    router-link.go-detail(to="/newsletter") 더보기
-                        .icon
-                                svg
-                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-                ul.newsletter-mail
-                    li.mail(v-for="news in newsletterList" :key="news.message_id" @click="router.push('/newsletter-detail/' + news.message_id)")
-                        .link
-                            span.mail-title {{ news.subject }}
-                            span.mail-date {{ convertTimestampToDateMillis(news.timestamp) }}
-                    .empty(v-if="newsletterList && !newsletterList.length")
-                        .icon
-                            svg
-                                use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
-                        | 등록된 공지사항이 없습니다.
-    
         .box-shadow-card.gmail(v-if="googleAccountCheck")
             a.title-with-icon.alink(:href="`https://mail.google.com/mail/u/${encodedEmail}/?authuser=${encodedEmail}&login_hint=${encodedEmail}`" target="_blank")
                 h3.title 이메일
@@ -182,8 +159,6 @@ import {
   mailList,
   serviceWorkerRegistMsg,
   notificationNotWorkingMsg,
-  newsletterList,
-  getNewsletterList,
   onlyUserGesture,
   setNotificationPermission
 } from '@/notifications.ts';
@@ -262,7 +237,6 @@ let uploadBanner = async () => {
         }
       })
       .catch((err) => {
-        // console.log('배너 삭제 중 오류 발생', err);
         alert('배너 업로드 중 오류 발생');
         return;
       });
@@ -276,12 +250,6 @@ let uploadBanner = async () => {
   imgFormData.append('banner_pic', croppedFile);
   imgFormData.append('banner_style', bannerStyle.value);
 
-  // for (const x of imgFormData.entries()) {
-  //     console.log(x);
-  // };
-  // console.log('croppedFile', croppedFile);
-  // console.log('bannerStyle', bannerStyle.value);
-
   await skapi
     .postRecord(imgFormData, {
       table: {
@@ -290,12 +258,10 @@ let uploadBanner = async () => {
       }
     })
     .then((res) => {
-      // console.log('배너 업로드 성공', res);
       alert('배너 업로드 성공');
       getSystemBanner(true);
     })
     .catch((err) => {
-      // console.log('배너 업로드 중 오류 발생', err);
       alert('배너 업로드 중 오류 발생');
     })
     .finally(() => {
@@ -319,26 +285,19 @@ let openModal = (e) => {
 };
 
 let showMailDoc = (e, rt) => {
-  console.log('rt', rt);
-  console.log('mailList', mailList.value);
   openGmailAppOrWeb(rt.link, rt.id);
 };
 
 let checkCommuteRecord = async () => {
   if (todayWorkStarting.value) {
-    console.log('퇴근');
     await endWork(router);
   } else {
-    console.log('출근');
-    console.log('dashboard router:', router);
     await startWork(router);
   }
 };
 
 onMounted(async () => {
   await Promise.all([getUserPositionCurrent(), getSystemWorktime(), getMyWorktimeStorage()]);
-
-  getNewsletterList();
 });
 </script>
 

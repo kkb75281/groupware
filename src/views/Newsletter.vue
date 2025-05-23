@@ -219,6 +219,14 @@ onMounted(async () => {
   align-items: center;
   gap: 0.5rem;
 
+  .title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
   .edit {
     font-size: 0.625rem;
     background-color: var(--gray-color-200);

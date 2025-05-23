@@ -44,6 +44,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 				.title
 					.input-wrap.input-title
 						input#docform_title(v-model="formTitle" type="text" name="docform_title" placeholder="결재 제목을 입력해주세요." required)
+						p.sub-desc 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.
 
 				.table-wrap
 					.tb-overflow
@@ -146,6 +147,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
 									td(colspan="3")
 										.input-wrap
 											input#to_audit(type="text" v-model="auditTitle" name="to_audit" placeholder="결재 제목을 입력해주세요." required)
+											p.sub-desc 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.
 								tr
 									th.essential 결재 내용
 										.add-btn(v-if="isTemplateMode" @click="isRowModalOpen = true")
@@ -1118,6 +1120,7 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     } catch (error) {
         console.error(error);
         if (error?.message?.includes('index.value should not have special characters')) {
+			// alert('제목에 특수 문자가 포함되어 있습니다. [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
             throw new Error('특수 문자로 인해 오류가 발생했습니다.');
         }
         throw error;
@@ -1444,9 +1447,9 @@ const requestAudit = async (e) => {
     } catch (error) {
         console.error('결재 요청 중 오류 발생:', error);
         if (error?.message === 'index.value should not have special characters') {
-            alert('제목은 특수문자 [ ] ^ _ ` : ; < = > ? @ 만 포함 가능합니다.');
+            alert('제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
         } else {
-            alert('결재 요청 중 오류가 발생했습니다.');
+            alert('결재 요청 중 오류가 발생했습니다. 제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
         }
     } finally {
         mainPageLoading.value = false;
@@ -1568,6 +1571,7 @@ const saveDocForm = async () => {
         router.push('/admin/list-form');
     } catch (error) {
         console.error('결재 양식 저장 중 오류 발생: ', error);
+		alert('제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
     }
 };
 
@@ -1676,7 +1680,7 @@ const saveMyDocForm = async () => {
         alert('결재 양식이 저장되었습니다.');
     } catch (error) {
         console.error('결재 양식 저장 중 오류 발생: ', error);
-        alert('결재 양식 저장 중 오류가 발생했습니다.');
+        alert('결재 양식 저장 중 오류가 발생했습니다. 제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
     }
 };
 
@@ -1809,7 +1813,7 @@ const tempSaveMyDoc = async () => {
         router.push({ path: '/approval/audit-list-tempsave' });
     } catch (error) {
         console.error('임시 저장 중 오류 발생: ', error);
-        alert('임시 저장 중 오류가 발생했습니다.');
+        alert('임시 저장 중 오류가 발생했습니다. 제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.');
     }
 };
 
@@ -2752,6 +2756,14 @@ onUnmounted(() => {
             }
         }
     }
+
+	.sub-desc {
+		font-size: 0.7rem;
+		color: var(--warning-color-400);
+		line-height: 1.4;
+		margin-top: 0.25rem;
+		text-align: left;
+	}
 }
 
 .row-wrap {
@@ -3026,6 +3038,12 @@ onUnmounted(() => {
             font-size: 1.75rem;
         }
     }
+
+	.sub-desc {
+		font-size: 0.8rem;
+		margin-top: 0.5rem;
+		text-align: center;
+	}
 }
 
 .audit-title {
