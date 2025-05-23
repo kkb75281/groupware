@@ -1,36 +1,47 @@
 <template lang="pug">
-    .wysiwyg
-        .btns-wrap(:class="isDetail ? 'disalbed' : ''")
-            button.btn-custom(:class="{active : commandTracker.bold}" type="button" @click="handleCommand('bold')")
+.wysiwyg(ref="wysiwygRef")
+    .btns-wrap(ref="wysiwygTool" :class="{disalbed : isDetail, fixed : isFixed}")
+        .btn-custom.input-size.line
+            button(type="button" @click.stop.prevent="handleFontSize('decrease')")
                 .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-bold")
-            button.btn-custom(:class="{active : commandTracker.italic}" type="button" @click="handleCommand('italic')")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-remove")
+            .font-size {{ fontSize }}
+            button(type="button" @click.stop.prevent="handleFontSize('increase')") 
                 .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-italic")
-            button.btn-custom(:class="{active : commandTracker.underline}" type="button" @click="handleCommand('underline')")
-                .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-underline")
-            button.btn-custom(:class="{active : commandTracker.strike}" type="button" @click="handleCommand('strike')" style="border-right: 1px solid #e4e4e7;")
-                .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-strike")
-            button.btn-custom(:class="{active : commandTracker.h1}" type="button" @click="handleCommand('h1')")
-                .icon.text 20pt
-            button.btn-custom(:class="{active : commandTracker.h2}" type="button" @click="handleCommand('h2')")
-                .icon.text 18pt
-            button.btn-custom(:class="{active : commandTracker.h3}" type="button" @click="handleCommand('h3')")
-                .icon.text 16pt
-            button.btn-custom(:class="{active : commandTracker.h4}" type="button" @click="handleCommand('h4')")
-                .icon.text 14pt
-            button.btn-custom(:class="{active : commandTracker.h5}" type="button" @click="handleCommand('h5')")
-                .icon.text 12pt
-            button.btn-custom(:class="{active : commandTracker.h6}" type="button" @click="handleCommand('h6')" style="border-right: 1px solid #e4e4e7;")
-                .icon.text 10pt
-            //- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
-        
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
+        button.btn-custom(:class="{active : commandTracker.bold}" type="button" @click.stop="handleCommand('bold')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-bold")
+        button.btn-custom(:class="{active : commandTracker.italic}" type="button" @click.stop="handleCommand('italic')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-italic")
+        button.btn-custom(:class="{active : commandTracker.underline}" type="button" @click.stop="handleCommand('underline')")
+            .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-underline")
+        button.btn-custom.line(:class="{active : commandTracker.strike}" type="button" @click.stop="handleCommand('strike')")
+            .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-strike")
+        //- button.btn-custom(:class="{active : commandTracker.h1}" type="button" @click="handleCommand('h1')")
+        //-     .icon.text 20pt
+        //- button.btn-custom(:class="{active : commandTracker.h2}" type="button" @click="handleCommand('h2')")
+        //-     .icon.text 18pt
+        //- button.btn-custom(:class="{active : commandTracker.h3}" type="button" @click="handleCommand('h3')")
+        //-     .icon.text 16pt
+        //- button.btn-custom(:class="{active : commandTracker.h4}" type="button" @click="handleCommand('h4')")
+        //-     .icon.text 14pt
+        //- button.btn-custom(:class="{active : commandTracker.h5}" type="button" @click="handleCommand('h5')")
+        //-     .icon.text 12pt
+        //- button.btn-custom(:class="{active : commandTracker.h6}" type="button" @click="handleCommand('h6')" style="border-right: 1px solid #e4e4e7;")
+        //-     .icon.text 10pt
+        //- button.btn-custom(type="button" @click="handleCommand('small')" style="border-right: 1px solid #e4e4e7;") Small
+    
+        .divider
             // 텍스트 색상 변경
             .btn-custom.input-color
                 input#colorInput(
@@ -43,9 +54,9 @@
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-color-text")
-    
+
             // 셀 배경색 변경
-            .btn-custom.input-color(style="border-right: 1px solid #e4e4e7;")
+            .btn-custom.input-color.line
                 input#bgColorInput(
                     type="color"
                     ref="bgColorInputRef"
@@ -56,66 +67,67 @@
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
-    
-            button.btn-custom(type="button" @click="handleCommand('divider')")
+
+            button.btn-custom(type="button" @click.stop="handleCommand('divider')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-divider")
-            button.btn-custom(type="button" @click="handleCommand('quote')" style="border-right: 1px solid #e4e4e7;")
+            button.btn-custom.line(type="button" @click.stop="handleCommand('quote')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-quote")
-            button.btn-custom(type="button" @click="handleCommand('table')")
+        .divider
+            button.btn-custom(type="button" @click.stop="handleCommand('table')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
-            button.btn-custom(type="button" @click="handleCommand('unorderedList')")
+            button.btn-custom(type="button" @click.stop="handleCommand('unorderedList')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-list-bullet")
-            button.btn-custom(type="button" @click="handleCommand('orderedList')" style="border-right: 1px solid #e4e4e7;")
+            button.btn-custom.line(type="button" @click.stop="handleCommand('orderedList')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-list-number")
-            button.btn-custom(type="button" @click="handleCommand('alignLeft')")
+            button.btn-custom(type="button" @click.stop="handleCommand('alignLeft')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-align-left")
-            button.btn-custom(type="button" @click="handleCommand('alignCenter')")
+            button.btn-custom(type="button" @click.stop="handleCommand('alignCenter')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-align-center")
-            button.btn-custom(type="button" @click="handleCommand('alignRight')")
+            button.btn-custom(type="button" @click.stop="handleCommand('alignRight')")
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-align-right")
-            //- button.btn-custom(type="button" @click="handleCommand('image')")
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
-            //- button.btn-custom(type="button" @click="exportData") Export
+        //- button.btn-custom(type="button" @click="handleCommand('image')")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-image")
+        //- button.btn-custom(type="button" @click="exportData") Export
+
+    // 테이블 생성 모달
+    .modal-tb-set(v-if="showTableDialog")
+        .modal-overlay(@click="showTableDialog = false")
+        .modal-cont
+            h3 테이블 생성
+            .input-group
+                label(for="table-rows") 행
+                input#table-rows(type="number" v-model.number="tableRows" min="1" max="10")
+            .input-group
+                label(for="table-cols") 열
+                input#table-cols(type="number" v-model.number="tableCols" min="1" max="10")
+            .button-group
+                button.btn-cancel(type="button" @click="showTableDialog = false") 취소
+                button.btn-confirm(type="button" @click="insertTable") 생성
     
-        // 테이블 생성 모달
-        .modal-tb-set(v-if="showTableDialog")
-            .modal-overlay(@click="showTableDialog = false")
-            .modal-cont
-                h3 테이블 생성
-                .input-group
-                    label(for="table-rows") 행
-                    input#table-rows(type="number" v-model.number="tableRows" min="1" max="10")
-                .input-group
-                    label(for="table-cols") 열
-                    input#table-cols(type="number" v-model.number="tableCols" min="1" max="10")
-                .button-group
-                    button.btn-cancel(type="button" @click="showTableDialog = false") 취소
-                    button.btn-confirm(type="button" @click="insertTable") 생성
-        
-        #myeditor(style="width: 100%; min-height: 3rem;")
-    </template>
+    #myeditor(style="width: 100%; min-height: 3rem;")
+</template>
 
 <script setup>
 import { onMounted, onBeforeUnmount, nextTick, ref, computed, onUnmounted } from 'vue';
-import { insertTableToWysiwyg } from '@/components/wysiwygTable.js';
+import { insertTableToWysiwyg, addResizer, bindCellEvents, resetTableCellData } from '@/components/wysiwygTable.js';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
 import wysiwygTable from '@/components/wysiwygTable.vue';
@@ -124,9 +136,20 @@ import wysiwygTable from '@/components/wysiwygTable.vue';
 const emit = defineEmits(['update:content', 'editor-ready']);
 const props = defineProps(['savedContent', 'showBtn']);
 
-let wysiwyg = null;
+let wysiwyg = null; // wysiwyg4all 인스턴스
+let wysiwygRef = ref(null); // .wysiwyg
+let wysiwygTool = ref(null); // .btns-wrap
 let colorInput = ref(null);
 let bgColorInput = ref(null);
+let fontSize = ref(12);
+let fontVariables = {
+    h1: 20,
+    h2: 18,
+    h3: 16,
+    h4: 14,
+    h5: 12,
+    h6: 10
+}
 let commandTracker = ref({
     bold: false,
     color: false,
@@ -151,6 +174,7 @@ const tableCols = ref(5);
 const isDetail = computed(() => {
     return !props.showBtn;
 });
+let isFixed = ref(false);
 
 // 테이블 생성 함수
 const insertTable = () => {
@@ -166,37 +190,80 @@ const insertTable = () => {
 
     showTableDialog.value = false;
 
-    nextTick(() => {
-        const editorEl = document.getElementById('myeditor');
-        const tables = editorEl.querySelectorAll('table');
-        const table = tables[tables.length - 1]; // 마지막 테이블 선택
+    // nextTick(() => {
+    //     const editorEl = document.getElementById('myeditor');
+    //     const tables = editorEl.querySelectorAll('table');
+    //     const table = tables[tables.length - 1]; // 마지막 테이블 선택
 
-        if (table) {
-            // 표 다음에 <p><br></p> 삽입
-            const newParagraph = document.createElement('p');
-            newParagraph.innerHTML = '<br>';
+    //     if (table) {
+    //         // 표 다음에 <p><br></p> 삽입
+    //         const newParagraph = document.createElement('p');
+    //         newParagraph.innerHTML = '<br>';
 
-            editorEl.appendChild(newParagraph);
+    //         editorEl.appendChild(newParagraph);
 
-            // 커서를 새로 삽입한 줄로 이동
-            const range = document.createRange();
-            const sel = window.getSelection();
+    //         // 커서를 새로 삽입한 줄로 이동
+    //         const range = document.createRange();
+    //         const sel = window.getSelection();
 
-            range.setStart(newParagraph, 0);
-            range.collapse(true);
+    //         range.setStart(newParagraph, 0);
+    //         range.collapse(true);
 
-            sel.removeAllRanges();
-            sel.addRange(range);
+    //         sel.removeAllRanges();
+    //         sel.addRange(range);
 
-            // 포커스 설정
-            // wysiwyg.focus();
-        }
-    });
+    //         // 포커스 설정
+    //         // wysiwyg.focus();
+    //     }
+    // });
 };
+
+function saveSelection() {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        return { range };
+    }
+    return null;
+}
+
+function restoreSelection(saved) {
+    if (!saved) return;
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(saved.range);
+}
+
+const handleFontSize = (action) => {
+    if (!wysiwyg) return;
+
+    const minFontSize = 10;
+    const maxFontSize = 20;
+
+    if (action === 'increase') {
+        if (fontSize.value >= maxFontSize) {
+            alert('최대 글자 크기는 20px 입니다.');
+            return;
+        }
+        fontSize.value += 2;
+    } else if (action === 'decrease') {
+        if (fontSize.value <= minFontSize) {
+            alert('최소 글자 크기는 10px 입니다.');
+            return;
+        }
+        fontSize.value -= 2;
+    }
+
+    const fontSizeValue = Object.keys(fontVariables).find(key => fontVariables[key] === fontSize.value);
+
+    wysiwyg.restoreLastSelection();
+    handleCommand(fontSizeValue);
+}
 
 let colorDragInterval = null;
 
 const onColorInputMouseDown = (type, event) => {
+    event.preventDefault(); // 기본 동작 방지
     updateColorPickerToSelectedCells(type); // 선택된 셀 색상으로 초기값 설정
     setTimeout(() => {
         if (type === 'textColor' && colorInput.value) {
@@ -237,6 +304,14 @@ const updateColorPickerToSelectedCells = (type) => {
         }
     } else {
         // 일반 텍스트를 선택한 경우
+        const selection = window.getSelection();
+
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const fragment = range.cloneContents(); // #document-fragment 반환
+
+            console.log(fragment); // 여기서는 #document-fragment 형태로 출력됨
+        }
     }
 
 };
@@ -261,8 +336,12 @@ const handleColorInput = (type, colorValue) => {
             }
         });
     } else {
-        wysiwyg.restoreLastSelection();
-        wysiwyg.command(colorValue);
+        const selection = window.getSelection();
+
+        if (selection.rangeCount > 0) {
+            wysiwyg.restoreLastSelection();
+            wysiwyg.command(colorValue);
+        }
     }
 };
 
@@ -377,6 +456,12 @@ const initWysiwyg = () => {
             h6: '13px'
         },
         callback: (c) => {
+            checkToolBar();
+            // console.log('wysiwyg4all callback', c);
+            if (c.range) {
+                console.log('range', c.range);
+                // c.range.insertNode(document.createTextNode('Hi'));
+            }
             if (c.caratPosition) {
                 // 뷰포트 내에 커서 위치 유지하기 위한 기존 코드 유지
                 let viewPortHeight = Math.min(
@@ -400,6 +485,21 @@ const initWysiwyg = () => {
                 commandTracker.value.small = c.commandTracker.small;
                 commandTracker.value.strike = c.commandTracker.strike;
                 commandTracker.value.underline = c.commandTracker.underline;
+
+                console.log('commandTracker', commandTracker.value);
+
+                const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+                let selectedHeadings = headings.filter(h => commandTracker.value[h]);
+
+                if (selectedHeadings.length === 0) {
+                    fontSize.value = 12;
+                } else if (selectedHeadings.length === 1) {
+                    fontSize.value = fontVariables[selectedHeadings[0]];
+                } else {
+                    let sort = selectedHeadings.sort();
+                    console.log('sort', sort);
+                    fontSize.value = fontVariables[sort[0]];
+                }
             }
 
             if (editorEl && editorEl.innerHTML.trim() === '') {
@@ -491,17 +591,242 @@ let handleEditorKeyUp = (e) => {
     }
 };
 
+const updateToolbarPosition = () => {
+    const editorEl = document.getElementById('myeditor');
+    if (editorEl) {
+        const editorRect = editorEl.getBoundingClientRect();
+        const newLeft = editorRect.left + window.scrollX;
+        document.body.style.setProperty('--wysiwyg-tool-bar-left', `${newLeft}px`);
+        document.body.style.setProperty('--wysiwyg-tool-bar-width', `${editorRect.width}px`);
+    }
+};
+
+let checkToolBar = () => {
+    const wysiwygToolEl = wysiwygTool.value;
+    const editorEl = document.getElementById('myeditor');
+    const headerEl = document.getElementById('header');
+
+    if (!wysiwygToolEl || !editorEl || !headerEl) return;
+
+    const navBarHeight = headerEl.offsetHeight;
+    const toolRect = wysiwygToolEl.getBoundingClientRect();
+    const editorRect = editorEl.getBoundingClientRect();
+
+    if (toolRect.top <= navBarHeight && editorRect.top < navBarHeight) {
+        isFixed.value = true;
+    } else {
+        isFixed.value = false;
+    }
+}
+
+function copyTableContent(originalTable, newTable) {
+    const originalRows = originalTable.rows;
+    const newRows = newTable.rows;
+    const removeCells = new Set();
+
+    const tableState = {
+        tableWrap: newTable.parentNode,
+        table: newTable,
+        tbody: newTable.querySelector('tbody'),
+        mergeBtn: newTable.querySelector('.btn-merge'),
+        unmergeBtn: newTable.querySelector('.btn-unmerge'),
+        isResizing: false,
+        isDragging: false,
+        isSelection: false,
+        isMouseDown: false,
+        selectionStart: null,
+        outlinePosition: {
+            top: 0,
+            left: 0,
+            width: 0,
+            height: 0
+        }
+    }
+
+    function getMergedCellRemoveRange(startRow, startCol, endRow, endCol) {
+        for (let r = startRow; r <= endRow; r++) {
+            for (let c = startCol; c <= endCol; c++) {
+                if (!(r === startRow && c === startCol)) {
+                    removeCells.add(`${r},${c}`);
+                }
+            }
+        }
+    }
+
+    // 병합 셀 범위 먼저 모두 수집
+    for (let r = 0; r < originalRows.length && r < newRows.length; r++) {
+        const originalCells = originalRows[r].cells;
+        for (let c = 0; c < originalCells.length; c++) {
+            const originalCell = originalCells[c];
+            const originalCellRange = {
+                startRow: r,
+                startCol: c,
+                endRow: r + originalCell.rowSpan - 1,
+                endCol: c + originalCell.colSpan - 1
+            };
+            if (originalCellRange.startRow !== originalCellRange.endRow || originalCellRange.startCol !== originalCellRange.endCol) {
+                getMergedCellRemoveRange(
+                    originalCellRange.startRow,
+                    originalCellRange.startCol,
+                    originalCellRange.endRow,
+                    originalCellRange.endCol
+                );
+            }
+        }
+    }
+
+    // 셀 삭제는 역순으로(인덱스 꼬임 방지)
+    for (let r = 0; r < newRows.length; r++) {
+        const newCells = newRows[r].cells;
+        for (let c = newCells.length - 1; c >= 0; c--) {
+            if (removeCells.has(`${r},${c}`)) {
+                newRows[r].deleteCell(c);
+            }
+        }
+    }
+
+    // 그 후 남은 셀에 대해 colSpan/rowSpan, 내용 복사
+    for (let r = 0; r < originalRows.length && r < newRows.length; r++) {
+        const originalCells = originalRows[r].cells;
+        const newCells = newRows[r].cells;
+        for (let c = 0; c < originalCells.length && c < newCells.length; c++) {
+            const originalCell = originalCells[c];
+            const newCell = newCells[c];
+            if (originalCell.colSpan > 1) newCell.setAttribute('colspan', originalCell.colSpan);
+            if (originalCell.rowSpan > 1) newCell.setAttribute('rowspan', originalCell.rowSpan);
+            newCell.innerHTML = originalCell.innerHTML.trim() || '&nbsp;';
+
+            addResizer(tableState, newCell);
+        }
+    }
+
+    resetTableCellData(newTable);
+}
+
+const insertHtmlToWysiwyg = (html) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    console.log('Parsed HTML:', doc);
+
+    const tables = doc.querySelectorAll('table');
+    console.log({ tables });
+
+    if (tables.length) {
+        tables.forEach((originalTable) => {
+            // 테이블 행(row) 수와 열(column) 수 계산
+            const rows = originalTable.rows.length;
+            let cols = 0;
+
+            if (rows > 0) {
+                cols = Array.from(originalTable.rows[0].cells).reduce((acc, cell) => {
+                    return acc + (cell.colSpan || 1);
+                }, 0);
+            }
+
+            let newTableWrap = insertTableToWysiwyg(wysiwyg, rows, cols);
+            let newTable = newTableWrap.querySelector('table');
+
+            if (newTable) {
+                // 셀 데이터 복사
+                copyTableContent(originalTable, newTable);
+            }
+        })
+        // const wyswrap = document.querySelector('.wysiwyg-wrap');
+        // const wyswrapWidth = wyswrap.offsetWidth;
+
+        // tables.forEach((originalTable) => {
+        //     let tableState = {
+        //         tableWrap: null,
+        //         table: null,
+        //         tbody: null,
+        //         mergeBtn: null,
+        //         unmergeBtn: null,
+        //         isResizing: false,
+        //         isDragging: false,
+        //         isSelection: false,
+        //         isMouseDown: false,
+        //         selectionStart: null,
+        //         outlinePosition: {
+        //             top: 0,
+        //             left: 0,
+        //             width: 0,
+        //             height: 0
+        //         }
+        //     };
+
+        //     const tableWrap = document.createElement('div');
+        //     tableWrap.className = 'wysiwyg-table-wrap';
+        //     tableWrap.setAttribute('contenteditable', 'false');
+        //     tableWrap.style.setProperty('--wysiwyg-table-max-width', `calc(${wyswrapWidth}px - 2rem + 30px)`);
+        //     tableState.tableWrap = tableWrap;
+
+        //     const customTable = document.createElement('table');
+        //     customTable.className = 'wysiwyg-table _custom_';
+        //     customTable.innerHTML = originalTable.innerHTML;
+        //     tableState.table = customTable;
+
+        //     tableWrap.appendChild(customTable);
+
+        //     if (!customTable.querySelector('tbody')) {
+        //         const tbody = document.createElement('tbody');
+        //         tbody.innerHTML = customTable.innerHTML;
+        //         customTable.innerHTML = '';
+        //         customTable.appendChild(tbody);
+        //         tableState.tbody = tbody;
+        //     }
+
+        //     const cells = customTable.querySelectorAll('td, th');
+        //     cells.forEach(cell => {
+        //         cell.setAttribute('contenteditable', 'true');
+        //         addResizer(tableState, cell);
+        //         bindCellEvents(tableState, cell);
+        //     });
+
+        //     initButtons(tableState);
+
+        //     originalTable.replaceWith(tableWrap);
+        // });
+    }
+
+    // const modifiedHtml = doc.body.innerHTML;
+    // console.log('Modified HTML:', modifiedHtml);
+
+    // let editorEl = document.getElementById('myeditor');
+    // editorEl.innerHTML = modifiedHtml;
+}
+
 onMounted(() => {
     initWysiwyg();
+    updateToolbarPosition();
 
     document.addEventListener('keydown', handleEditorKeyDown);
     document.addEventListener('keyup', handleEditorKeyUp);
     document.addEventListener('click', clearTableSelection);
-
+    document.addEventListener('scroll', checkToolBar);
+    window.addEventListener('resize', () => {
+        updateToolbarPosition();
+        checkToolBar();
+    });
 
     let editorEl = document.getElementById('myeditor');
     editorEl.addEventListener('click', (e) => {
         allSelectPrevious = false;
+    });
+    editorEl.addEventListener('paste', (e) => {
+        const clipboardData = e.clipboardData || window.Clipboard;
+        const items = clipboardData.items;
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+
+            if (item.type === 'text/html') {
+                e.preventDefault();
+
+                item.getAsString((data) => {
+                    insertHtmlToWysiwyg(data);
+                });
+            }
+        }
     });
 });
 
@@ -509,6 +834,11 @@ onUnmounted(() => {
     document.removeEventListener('keydown', handleEditorKeyDown);
     document.removeEventListener('keyup', handleEditorKeyUp);
     document.removeEventListener('click', clearTableSelection);
+    document.removeEventListener('scroll', checkToolBar);
+    window.removeEventListener('resize', () => {
+        updateToolbarPosition();
+        checkToolBar();
+    });
 });
 
 onBeforeUnmount(() => {
@@ -521,10 +851,22 @@ defineExpose({
 </script>
 
 <style lang="less">
+.wysiwyg {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    // min-height: 18rem;
+    // max-height: calc(100vh - var(--header-height) - 32px);
+}
+
 ._wysiwyg4all {
-    padding: 1.5rem 1rem 1rem 1rem;
-    min-height: 18rem !important;
-    overflow: hidden !important;
+    padding: 1rem;
+    padding-top: 3rem;
+    height: 100%;
+    min-height: 20rem !important;
+    // min-height: calc(18rem - 2rem) !important;
+    // height: calc(100% - 2rem) !important;
+    overflow-x: auto;
 
     &::before {
         color: var(--gray-color-300) !important;
@@ -660,38 +1002,78 @@ defineExpose({
 }
 
 .btns-wrap {
-    justify-content: flex-start !important;
-    gap: 0 !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 99;
+    width: 100%;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--gray-color-200);
+    border-radius: 0.5rem 0.5rem 0 0;
+    background-color: #fff;
+    overflow: hidden;
+    gap: 8px;
     display: flex;
     flex-wrap: wrap;
-
-    &:after {
-        content: '';
-        flex: 1 1 auto;
-        border-bottom: 1px solid var(--gray-color-200);
-    }
+    justify-content: center;
+    align-items: center;
 
     &.disalbed {
         display: none;
     }
+
+    &.fixed {
+        position: fixed;
+        top: var(--header-height);
+        left: var(--wysiwyg-tool-bar-left);
+        width: var(--wysiwyg-tool-bar-width);
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 }
 
 .btn-custom {
-    display: inline-block;
-    border-bottom: 1px solid var(--gray-color-200);
-    padding: 0 8px;
-    height: 2rem;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 8px;
 
     &:hover,
     &:focus,
     &:active {
-        border-bottom: 1px solid var(--gray-color-200);
         background-color: var(--gray-color-200);
     }
 
     &.active {
-        border-bottom: 1px solid var(--gray-color-200);
         background-color: var(--gray-color-200);
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: -10px;
+        width: 1px;
+        height: 100%;
+        background-color: var(--gray-color-200);
+        opacity: 0;
+    }
+
+    &.line {
+        margin-right: 12px;
+
+        &::after {
+            opacity: 1;
+        }
     }
 
     .icon {
@@ -704,15 +1086,54 @@ defineExpose({
     }
 }
 
+.input-size {
+    padding: 0;
+    width: unset;
+    height: unset;
+    cursor: default;
+
+    &:hover,
+    &:focus,
+    &:active {
+        background-color: transparent;
+    }
+
+    button {
+        padding: 4px 6px;
+        border-radius: 8px;
+
+        .icon {
+            svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        &:hover {
+            background-color: var(--gray-color-200);
+        }
+    }
+}
+
+.font-size {
+    border: 1px solid var(--gray-color-300);
+    background-color: var(--gray-color-50);
+    border-radius: 8px;
+    padding: 2px 8px;
+    height: unset;
+    text-align: center;
+    font-size: 14px;
+    margin: 0 4px;
+}
+
 /* 테이블 스타일링 */
 .wysiwyg-table-wrap {
     max-width: var(--wysiwyg-table-max-width);
-    // min-height: 100%;
-    // height: 100%;
     position: relative;
-    overflow-x: auto;
-    overflow-y: unset !important;
+    /* overflow-x: auto; */
+    /* overflow-y: unset !important; */
     white-space: nowrap;
+    padding-bottom: 30px;
 
     &::-webkit-scrollbar {
         display: none;
@@ -956,6 +1377,18 @@ defineExpose({
         cursor: pointer;
         font-weight: bold;
         border: none;
+    }
+}
+
+@media (max-width: 1017px) {
+    ._wysiwyg4all {
+        padding-top: 5rem;
+    }
+}
+
+@media (max-width: 522px) {
+    ._wysiwyg4all {
+        padding-top: 7rem;
     }
 }
 </style>
