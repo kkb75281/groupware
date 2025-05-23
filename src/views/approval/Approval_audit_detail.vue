@@ -131,7 +131,7 @@ Loading#loading(v-if="getAuditDetailRunning")
 
 		.input-wrap.input-comment
 			input(type="text" placeholder="의견을 입력해주세요." v-model="comment" style="width: 100%;")
-			button.btn(type="button" @click="writeComment") 등록
+			button.btn.btn-comment(type="button" @click="writeComment") 등록
 
 		//- 댓글
 		ul.comment-list(v-if="commentList.length > 0")
@@ -2558,12 +2558,6 @@ onUnmounted(() => {
 
   .approver {
     font-size: 0.9rem;
-
-    // &::after {
-    // 	content: ' : ';
-    // 	display: inline-block;
-    // 	margin-left: 0.5rem;
-    // }
   }
 
   .reply-cont {
@@ -2639,8 +2633,6 @@ onUnmounted(() => {
   }
 
   .approved {
-    // display: inline-block;
-    // margin-right: 4px;
     font-size: 12px;
     border: 1px solid var(--primary-color-300);
     padding: 3px 4px;
@@ -2709,7 +2701,6 @@ onUnmounted(() => {
   font-size: 0.875rem;
   line-height: 1.2;
   color: var(--gray-color-400);
-  // cursor: pointer;
 }
 
 .button-wrap {
@@ -2770,8 +2761,6 @@ onUnmounted(() => {
 .stamp-wrap {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  // grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  // grid-template-columns: repeat(4, minmax(220px, 1fr));
   gap: 1rem;
 
   .stamp-grid {
@@ -2787,13 +2776,6 @@ onUnmounted(() => {
     &.loading {
       border: 0;
     }
-
-    // .checkbox {
-    // 	position: absolute;
-    // 	top: 4px;
-    // 	left: 4px;
-    // 	z-index: 10;
-    // }
 
     .stamp {
       position: absolute;
@@ -2813,12 +2795,6 @@ onUnmounted(() => {
         background-color: var(--primary-color-25);
       }
 
-      // .checkbox {
-      //     position: absolute;
-      //     top: 0.5rem;
-      //     left: 0.5rem;
-      // }
-
       .add-icon {
         position: absolute;
         width: 30px;
@@ -2827,8 +2803,6 @@ onUnmounted(() => {
         left: 50%;
         transform: translate(-50%, -50%);
         fill: var(--primary-color-400);
-        // transition: all 0.3s;
-        // fill: var(--gray-color-300);
       }
 
       .delete-icon {
@@ -2851,7 +2825,6 @@ onUnmounted(() => {
 
         #stamp-img {
           background-color: unset;
-          // transition: all 0.3s;
           border-color: var(--primary-color-300);
 
           &::before {
@@ -2861,8 +2834,6 @@ onUnmounted(() => {
         }
 
         .name {
-          // transition: all 0.3s;
-          // color: var(--gray-color-300);
           color: var(--primary-color-400);
         }
 
@@ -2882,18 +2853,6 @@ onUnmounted(() => {
             color: var(--gray-color-300);
           }
         }
-
-        // &:hover {
-        //     #stamp-img {
-        //         border-color: var(--primary-color-300);
-        //     }
-        //     .add-icon {
-        //         fill: var(--primary-color-400);
-        //     }
-        //     .name {
-        //         color:var(--primary-color-400);
-        //     }
-        // }
       }
 
       &.upload-preview {
@@ -2920,10 +2879,7 @@ onUnmounted(() => {
       position: absolute;
       top: 50%;
       left: 50%;
-      // transform: translateX(-50% + 50px) translateY(-50% + 25px);
       transform: translateX(11%) translateY(-16%);
-      // right: -113px;
-      // bottom: -40px;
       z-index: 9;
       background-color: var(--gray-color-100);
       border: 1px solid var(--gray-color-300);
@@ -2985,9 +2941,7 @@ onUnmounted(() => {
   display: block;
   object-fit: contain;
   position: relative;
-  // background-color: #fff;
   border: 2px dashed var(--gray-color-100);
-  // margin-bottom: 0.5rem;
 
   &::before {
     content: '도장 등록';
@@ -3042,7 +2996,7 @@ onUnmounted(() => {
   .btn-wrap {
     display: flex;
     flex: none;
-    gap: 0.125rem;
+    gap: 0.25rem;
   }
 
   .btn {
@@ -3340,6 +3294,16 @@ onUnmounted(() => {
 
   .reject-setting {
     text-align: left;
+  }
+
+  .input-comment {
+    input {
+      height: 2rem;
+    }
+  }
+
+  .btn-comment {
+    height: 2rem;
   }
 }
 

@@ -704,6 +704,24 @@
     word-break: keep-all;
     overflow-x: auto;
     overflow-y: hidden;
+
+    &::-webkit-scrollbar {
+      height: 5px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #ccc; /* 스크롤 핸들 색상 */
+      border-radius: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent; /* 스크롤 트랙 배경 */
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: #999; /* 마우스 호버 시 색상 */
+    }
   }
 }
 
@@ -1221,7 +1239,8 @@
   display: flex;
   align-items: center;
   justify-content: end;
-  gap: 8px;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 @keyframes spin {
@@ -1234,8 +1253,44 @@
 }
 
 @media (max-width: 768px) {
+  .btn {
+    font-size: 0.875rem;
+    padding: 0 0.5rem;
+  }
+
+  .button-wrap,
+  .btn-wrap {
+    gap: 0.25rem;
+  }
+
+  .form-wrap {
+    .button-wrap {
+      gap: 0.25rem;
+    }
+  }
+
+  .btn-print {
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
   .table-wrap {
     .tb-head-wrap {
+      > .tb-toolbar {
+        .btn-wrap {
+          gap: 0.25rem;
+        }
+
+        .btn {
+          svg {
+            width: 20px;
+            height: 20px;
+          }
+        }
+      }
+
       .input-wrap {
         &.search {
           input {
@@ -1243,6 +1298,12 @@
           }
         }
       }
+    }
+  }
+
+  .modal {
+    .modal-footer {
+      gap: 0.25rem;
     }
   }
 }

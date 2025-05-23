@@ -50,10 +50,6 @@ header#header
                     svg(style="width:27px;height:27px")
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-manage-accounts")
                 template(v-slot:tip) 마스터 페이지
-
-        //- button.btn-profile(type="button" ref="btnProfile" @click="openProfile")
-            span.user-name {{ user.name }}
-            span.hello
         .thumbnail(ref="btnProfile" @click="isProfileOpen = !isProfileOpen")
             template(v-if="profileImage")
                 img(:src="profileImage" alt="img-profile")
@@ -66,11 +62,11 @@ header#header
             .icon(:class="{'active': isMobileMenuOpen}" style="padding:0")
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-apps")
-
-    //- button.btn-noti(type="button" :data-count="unreadCount" ref="btnNoti" @click="openNotification")
-        .icon.icon-bell
-            svg
-                use(xlink:href="@/assets/icon/material-icon.svg#icon-bell")
+        
+        button.btn-mo-logout(ref="btnMobileMenu" v-if="route.name === 'home'" @click="logout")
+            .icon
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-logout")
 
 
 #popup.notification(v-if="isNotiOpen" @click.stop)
@@ -89,7 +85,6 @@ header#header
                         template(v-if="rt.audit_info && rt.audit_info?.audit_type === 'comment'")
                             h4.noti-type [결재의견]
                             h5.noti-title {{ rt.send_name + '님이 [' + rt.audit_info?.to_audit + '] 문서에 의견을 남겼습니다.' }}
-                            //- p.noti-comment {{ rt.audit_info?.comment }}
                             p.upload-time {{ formatTimeAgo(rt.send_date) }}
                     
                         template(v-else-if="rt.audit_info && rt.audit_info?.audit_type === 'reply'")
@@ -107,9 +102,6 @@ header#header
                         template(v-else-if="rt.audit_info && rt.audit_info?.audit_type === 'email'")
                             h4.noti-type [새이메일]
                             h5.noti-title 읽지 않은 메일이 있습니다.
-                            //- h5.noti-title {{ rt.subject }}
-                            //- //- .noti-info
-                            //- p.noti-sender {{ rt.from }}
                             span.upload-time {{ formatTimeAgo(rt.dateTimeStamp) }}
 
                         template(v-else-if="rt.audit_info && rt.audit_info?.audit_type === 'canceled'")
@@ -138,25 +130,8 @@ header#header
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
                 | 새로운 알림이 없습니다.
 
-    //- .popup-bottom
-        router-link.router.view-all(to="/approval/audit-list" @click="closePopup")
-            p 전체보기
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
-
 #popup.profile(v-show="isProfileOpen" @click.stop)
     .popup-header
-        //- h4 {{ user.name }}
-        //- span {{ user.access_group === 99 ? '마스터' : user.access_group === 98 ? '관리자' : '직원' }}
-        //- p {{ user.email }}
-        //- .image
-            template(v-if="profileImage")
-                img(:src="profileImage" alt="img-profile")
-            template(v-else)
-                .icon
-                    svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-person")
         .content
             .user
                 h4 {{ user.name }}
@@ -164,47 +139,12 @@ header#header
             p {{ user.email }}
     .popup-main
         ul
-            //- li
-                router-link.router(to="/" @click="closePopup")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-home")
-                    p 홈
-
-            //- li
-                router-link.router(to="/approval" @click="closePopup")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-approval")
-                    p 전자결재
-
             li
                 router-link.router(to="/mypage/edit-myinfo" @click="closePopup")
                     .icon
                         svg
                             use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
                     p 마이페이지
-            
-            //- li(v-if="user.access_group > 98")
-                router-link.router(to="/admin" @click="closePopup")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-settings")
-                    p 마스터 페이지
-
-            //- li(v-if="user.access_group < 99")
-                router-link.router(to="/list-employee" @click="closePopup")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-groups")
-                    p 직원 목록
-            
-            //- li
-                router-link.router(to="/organigram" @click="closePopup")
-                    .icon
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-account-tree")
-                    p 조직도
 
             li(@click="logout")
                 .router
@@ -468,29 +408,19 @@ watch(
     }
   }
 
-  .btn-mo-navbar {
+  .btn-mo-navbar,
+  .btn-mo-logout {
     display: none;
     margin-right: auto;
   }
 
   .btn-noti {
-    // width: 2.75rem;
-    // height: 2.75rem;
-    // background-color: var(--primary-color-100);
     position: relative;
-    // margin-right: 2rem;
-    // border-radius: 0.5rem;
-    // border-radius: 50%;
 
     &::after {
       content: attr(data-count);
       display: inline-block;
       position: absolute;
-      // top: -0.5rem;
-      // right: -14px;
-      // min-width: 1.625rem;
-      // height: 1.625rem;
-      // line-height: 1.625rem;
       top: -8px;
       right: 4px;
       width: 20px;
@@ -500,9 +430,6 @@ watch(
       font-weight: 700;
       color: #fff;
       background-color: var(--primary-color-400);
-      // padding: 0 0.3125rem;
-      // border-radius: 0.75rem;
-      // padding: 0 4px;
       border-radius: 50%;
       text-align: center;
     }
@@ -517,7 +444,6 @@ watch(
   .btn-profile {
     flex: none;
     height: 3rem;
-    // border-radius: 0.5rem;
     border-radius: 30px;
     background: linear-gradient(
       90.25deg,
@@ -528,10 +454,8 @@ watch(
     font-size: 1rem;
     font-weight: 600;
     padding-left: 1.25rem;
-    // padding-right: 2.75rem;
     padding-right: 3.75rem;
     position: relative;
-    // margin-right: 1rem;
     user-select: none;
     cursor: pointer;
   }
@@ -539,16 +463,13 @@ watch(
   .thumbnail {
     width: 2.5rem;
     height: 2.5rem;
-    // border: 0.1875rem solid #fff;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    // padding: 0 1rem;
     transition: padding 0.15s linear;
     transition: top 0.3s;
     z-index: 9999;
-    // box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.3);
     border-bottom: 1px solid var(--gray-color-300);
     overflow: hidden;
 
@@ -585,29 +506,19 @@ watch(
       }
     }
 
-    .btn-mo-navbar {
+    .btn-mo-navbar,
+    .btn-mo-logout {
       display: none;
       margin-right: auto;
     }
 
     .btn-noti {
-      // width: 2.75rem;
-      // height: 2.75rem;
-      // background-color: var(--primary-color-100);
       position: relative;
-      // margin-right: 2rem;
-      // border-radius: 0.5rem;
-      // border-radius: 50%;
 
       &::after {
         content: attr(data-count);
         display: inline-block;
         position: absolute;
-        // top: -0.5rem;
-        // right: -14px;
-        // min-width: 1.625rem;
-        // height: 1.625rem;
-        // line-height: 1.625rem;
         top: -8px;
         right: 4px;
         width: 20px;
@@ -617,9 +528,6 @@ watch(
         font-weight: 700;
         color: #fff;
         background-color: var(--primary-color-400);
-        // padding: 0 0.3125rem;
-        // border-radius: 0.75rem;
-        // padding: 0 4px;
         border-radius: 50%;
         text-align: center;
       }
@@ -634,7 +542,6 @@ watch(
     .btn-profile {
       flex: none;
       height: 3rem;
-      // border-radius: 0.5rem;
       border-radius: 30px;
       background: linear-gradient(
         90.25deg,
@@ -1180,6 +1087,10 @@ watch(
     .btn-wrap {
       > *:not(.btn-mo-navbar) {
         display: none;
+      }
+
+      .btn-mo-logout {
+        display: block;
       }
     }
 

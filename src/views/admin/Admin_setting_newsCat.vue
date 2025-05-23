@@ -447,7 +447,6 @@ onUnmounted(() => {
 
 .form-wrap {
   position: relative;
-  // max-width: 960px;
   max-width: 992px;
 
   .title {
@@ -471,8 +470,6 @@ onUnmounted(() => {
 }
 
 .table {
-  // min-width: 20rem;
-
   tr {
     td {
       padding: 0.75rem;
@@ -824,7 +821,7 @@ onUnmounted(() => {
 
 .select-dvs {
   .table {
-    min-width: 27rem;
+    // min-width: 27rem;
   }
 }
 

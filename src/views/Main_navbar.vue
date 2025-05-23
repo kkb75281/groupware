@@ -167,7 +167,7 @@ watch(
 @media (max-width: 768px) {
   #main-nav {
     .main-nav-wrap {
-      padding: 1rem;
+      padding: 1rem 1rem 2.5rem;
     }
   }
 }
