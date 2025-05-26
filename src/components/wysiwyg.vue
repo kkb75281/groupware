@@ -34,27 +34,26 @@
                 input#colorInput(
                     type="color"
                     :value="textColor"
-                    @input="(e) => {handleColorInput(e, 'textColor')}"
+                    @change="wysiwyg.command($event.target.value)"
+                    @blur="wysiwyg.restoreLastSelection()"
                 )
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-color-text")
 
-            // 셀 배경색 변경
             .btn-custom.input-color.line
-                input#bgColorInput(
+                input#colorInput(
                     type="color"
-                    ref="bgColorInputRef"
-                    :value="bgColor"
-                    @mousedown="onColorInputMouseDown"
-                    @input="(e) => {handleColorInput(e, 'bgColor')}"
+                    :value="textColor"
+                    @change="wysiwyg.command({backgroundColor: $event.target.value})"
+                    @blur="wysiwyg.restoreLastSelection()"
                 )
                 .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-highlighter")
 
             button.btn-custom(type="button" @click.stop="handleCommand('divider')")
-                .icon
+                .icons
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-divider")
             button.btn-custom.line(type="button" @click.stop="handleCommand('quote')")
@@ -67,6 +66,18 @@
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
+            // 셀 배경색 변경
+            .btn-custom.input-color
+                input#bgColorInput(
+                    type="color"
+                    ref="bgColorInputRef"
+                    :value="bgColor"
+                    @mousedown="onColorInputMouseDown"
+                    @input="(e) => {handleColorInput(e, 'bgColor')}"
+                )
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
             button.btn-custom(type="button" @click.stop="handleCommand('unorderedList')")
                 .icon
                     svg
@@ -240,7 +251,7 @@ const handleColorInput = (e, type) => {
     const colorValue = e.target.value;
     const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
 
-    if (selectedCells.length > 1) {
+    if (selectedCells.length > 0) {
         // 테이블 셀에 색상 적용
         selectedCells.forEach((cell) => {
             if (type === 'textColor') {
@@ -249,13 +260,6 @@ const handleColorInput = (e, type) => {
                 cell.style.backgroundColor = colorValue;
             }
         });
-    } else {
-        const selection = window.getSelection();
-
-        if (selection.rangeCount > 0) {
-            wysiwyg.restoreLastSelection();
-            wysiwyg.command(colorValue);
-        }
     }
 };
 
@@ -1062,7 +1066,6 @@ defineExpose({
     /* overflow-x: auto; */
     /* overflow-y: unset !important; */
     white-space: nowrap;
-    padding-bottom: 30px;
 
     &::-webkit-scrollbar {
         display: none;
