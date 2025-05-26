@@ -33,10 +33,8 @@
             .btn-custom.input-color
                 input#colorInput(
                     type="color"
-                    ref="colorInputRef"
-                    @mousedown="onColorInputMouseDown('textColor', $event)"
-                    @mouseup="stopColorDrag"
-                    @input="handleColorInput('textColor', $event.target.value)"
+                    :value="textColor"
+                    @input="(e) => {handleColorInput(e, 'textColor')}"
                 )
                 .icon
                     svg
@@ -47,9 +45,9 @@
                 input#bgColorInput(
                     type="color"
                     ref="bgColorInputRef"
-                    @mousedown="onColorInputMouseDown('bgColor', $event)"
-                    @mouseup="stopColorDrag"
-                    @input="handleColorInput('bgColor', $event.target.value)"
+                    :value="bgColor"
+                    @mousedown="onColorInputMouseDown"
+                    @input="(e) => {handleColorInput(e, 'bgColor')}"
                 )
                 .icon
                     svg
@@ -130,8 +128,9 @@ let wysiwygTool = ref(null); // .btns-wrap
 let showTableDialog = ref(false);
 let tableRows = ref(5);
 let tableCols = ref(5);
-let colorInput = ref(null);
-let bgColorInput = ref(null);
+let bgColorInputRef = ref(null);
+let textColor = ref('#000000'); // 기본 텍스트 색상
+let bgColor = ref('#ffffff'); // 기본 배경 색상
 let fontSize = ref(12);
 let minFontSize = 10;
 let maxFontSize = 20;
@@ -211,71 +210,34 @@ const handleFontSize = (action) => {
     handleCommand(fontSizeValue);
 }
 
-let colorDragInterval = null;
+// RGB → HEX 변환 함수
+function rgbToHex(rgb) {
+    const matches = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!matches) return '#000000';
+    const r = parseInt(matches[1]);
+    const g = parseInt(matches[2]);
+    const b = parseInt(matches[3]);
+    return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
-const onColorInputMouseDown = (type, event) => {
+const onColorInputMouseDown = (event) => {
     event.preventDefault(); // 기본 동작 방지
-    updateColorPickerToSelectedCells(type); // 선택된 셀 색상으로 초기값 설정
+
+    const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
+    const firstCell = selectedCells[0];
+
+    if (!firstCell) return;
+
+    const currentBgColor = window.getComputedStyle(firstCell).backgroundColor;
+    bgColor.value = rgbToHex(currentBgColor);
+
     setTimeout(() => {
-        if (type === 'textColor' && colorInput.value) {
-            colorInput.value.click(); // 강제로 팔레트 열기
-        } else if (type === 'bgColor' && bgColorInput.value) {
-            bgColorInput.value.click(); // 강제로 팔레트 열기
-        }
+        bgColorInputRef.value.click(); // 강제로 팔레트 열기
     }, 50);
 };
 
-// 선택된 셀의 색상을 팔레트에 적용
-const updateColorPickerToSelectedCells = (type) => {
-    const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
-
-    // RGB → HEX 변환 함수
-    function rgbToHex(rgb) {
-        const matches = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-        if (!matches) return '#000000';
-        const r = parseInt(matches[1]);
-        const g = parseInt(matches[2]);
-        const b = parseInt(matches[3]);
-        return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
-    }
-
-    if (selectedCells.length > 1) {
-        console.log('여러 셀 선택됨');
-        const firstCell = selectedCells[0];
-
-        // 텍스트 색상
-        if (type === 'textColor' && colorInput.value) {
-            const currentTextColor = window.getComputedStyle(firstCell).color;
-            colorInput.value.value = rgbToHex(currentTextColor);
-        }
-
-        // 배경 색상
-        if (type === 'bgColor' && bgColorInput.value) {
-            const currentBgColor = window.getComputedStyle(firstCell).backgroundColor;
-            bgColorInput.value.value = rgbToHex(currentBgColor);
-        }
-    } else {
-        // 일반 텍스트를 선택한 경우
-        const selection = window.getSelection();
-
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const fragment = range.cloneContents(); // #document-fragment 반환
-
-            console.log(fragment); // 여기서는 #document-fragment 형태로 출력됨
-        }
-    }
-
-};
-
-const stopColorDrag = () => {
-    if (colorDragInterval) {
-        clearInterval(colorDragInterval);
-        colorDragInterval = null;
-    }
-};
-
-const handleColorInput = (type, colorValue) => {
+const handleColorInput = (e, type) => {
+    const colorValue = e.target.value;
     const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
 
     if (selectedCells.length > 1) {
@@ -408,11 +370,12 @@ const initWysiwyg = () => {
             h6: '13px'
         },
         callback: (c) => {
+            console.log('wysiwyg callback', c);
             checkToolBar();
 
             if (c.range) {
                 currentRange = c.range;
-                console.log('currentRange', currentRange);
+                // console.log('currentRange', currentRange);
                 // c.range.insertNode(document.createTextNode('Hi'));
             }
             if (c.caratPosition) {
@@ -438,6 +401,12 @@ const initWysiwyg = () => {
                 commandTracker.value.small = c.commandTracker.small;
                 commandTracker.value.strike = c.commandTracker.strike;
                 commandTracker.value.underline = c.commandTracker.underline;
+
+                if (typeof (c.commandTracker.color) === 'string' && c.commandTracker.color.startsWith('#')) {
+                    textColor.value = c.commandTracker.color;
+                } else {
+                    textColor.value = '#000000'; // 기본 색상
+                }
 
                 const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
                 let selectedHeadings = headings.filter(h => commandTracker.value[h]);
