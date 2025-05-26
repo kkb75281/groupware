@@ -23,10 +23,10 @@ export type Organigram = {
 export let organigram: Ref<Organigram[]> = ref([]);
 export let getOrganigramRunning = ref(false);
 export let excludeCurrentUser = ref(false);
-export let onlyMyDivision = ref(false);
+export let onlyMyDepartment = ref(false);
 
 export async function getOrganigram(refresh = false, myDepartment = false) {
-  onlyMyDivision.value = myDepartment;
+  onlyMyDepartment.value = myDepartment;
 
   if (getDivisionNamesRunning instanceof Promise) {
     await getDivisionNamesRunning;
@@ -44,7 +44,7 @@ export async function getOrganigram(refresh = false, myDepartment = false) {
     // 현재 사용자의 부서 정보를 가져오기
     const currentUserDepartment = await getCurrentUserDepartment();
 
-    if (onlyMyDivision.value && currentUserDepartment) {
+    if (onlyMyDepartment.value && currentUserDepartment) {
       // 내 부서만 보기가 활성화되어 있고, 사용자의 부서 정보가 있을 때
       // 현재 사용자의 최상위 부서와 관련된 모든 부서를 표시
       for (const division in divisionNameList.value) {
