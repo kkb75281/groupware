@@ -555,8 +555,6 @@ const convertAuditorFormat = (auditors, role) => {
 
 // 결재라인 모달 열기
 const openModal = () => {
-    console.log('결재라인 모달');
-
     // 열렸을 때 selectedAuditors 전체를 original로 백업
     backupSelected.value = {
         approvers: [...selectedAuditors.value.approvers],
@@ -1162,12 +1160,6 @@ const createAuditRequest = async (
     // 실시간 알림 보내기
     if (isNotificationTarget) {
         let to_audit = document.getElementById('to_audit').value;
-
-        let postRealtimeBody = {
-            text: `${user.name}님께서 결재를 올렸습니다.`,
-            type: 'audit',
-            id: audit_id
-        };
 
         skapi
             .postRealtime(
@@ -1785,58 +1777,38 @@ const getTempSaveMyDocCont = async () => {
 
 // 결재자 순서 변경 버튼
 const moveUser = (user, direction) => {
-    if (direction === 'up') {
-        // 현재 선택된 사용자의 인덱스 찾기
-        const currentIndex = selectedUsers.value.findIndex(
-            (u) => u.data.user_id === user.data.user_id
-        );
+    // 현재 선택된 사용자의 인덱스 찾기
+    const currentIndex = selectedUsers.value.findIndex((u) => u.data.user_id === user.data.user_id);
 
-        // 이미 첫 번째 항목이면 변경 없음
-        if (currentIndex <= 0) return;
+    const isUp = direction === 'up';
+    const targetIndex = isUp ? currentIndex - 1 : currentIndex + 1;
 
-        // 바로 위 항목이 "receivers" 역할을 가진 경우 이동 불가능
-        if (selectedUsers.value[currentIndex - 1].role === 'receivers') return;
+    // 이동 불가능한 경우
+    if (targetIndex < 0 || targetIndex >= selectedUsers.value.length) return;
 
-        // 배열 복사
-        const newSelectedUsers = [...selectedUsers.value];
+    const currentRole = selectedUsers.value[currentIndex].role;
+    const targetRole = selectedUsers.value[targetIndex].role;
 
-        // 현재 항목을 한 단계 위로 이동 (인덱스 감소)
-        const temp = newSelectedUsers[currentIndex];
-        newSelectedUsers[currentIndex] = newSelectedUsers[currentIndex - 1];
-        newSelectedUsers[currentIndex - 1] = temp;
-
-        // 변경된 배열 저장
-        selectedUsers.value = newSelectedUsers;
-
-        // 순서 재할당
-        reorderUsers();
-    } else {
-        // 현재 선택된 사용자의 인덱스 찾기
-        const currentIndex = selectedUsers.value.findIndex(
-            (u) => u.data.user_id === user.data.user_id
-        );
-
-        // 이미 마지막 항목이면 변경 없음
-        if (currentIndex >= selectedUsers.value.length - 1) return;
-
-        // 만약 현재 항목이 "receivers" 역할이 아닌데 바로 아래 항목이 "receivers" 역할이면 이동 불가능
-        if (user.role !== 'receivers' && selectedUsers.value[currentIndex + 1].role === 'receivers')
-            return;
-
-        // 배열 복사
-        const newSelectedUsers = [...selectedUsers.value];
-
-        // 현재 항목을 한 단계 아래로 이동 (인덱스 증가)
-        const temp = newSelectedUsers[currentIndex];
-        newSelectedUsers[currentIndex] = newSelectedUsers[currentIndex + 1];
-        newSelectedUsers[currentIndex + 1] = temp;
-
-        // 변경된 배열 저장
-        selectedUsers.value = newSelectedUsers;
-
-        // 순서 재할당
-        reorderUsers();
+    // 이동 제한 조건
+    if (
+        (isUp && currentRole === 'receivers') || // 위로 이동 시 현재 항목이 receivers인 경우
+        (isUp && targetRole === 'receivers') || // 위로 이동 시 바로 위 항목이 receivers인 경우
+        (!isUp && currentRole !== 'receivers' && targetRole === 'receivers') // 아래로 이동 시 현재 항목이 receivers가 아니고 바로 아래 항목이 receivers인 경우
+    ) {
+        return; // 이동 불가능
     }
+
+    // 배열 복사
+    const newSelectedUsers = [...selectedUsers.value];
+
+    // 현재 항목과 타겟 항목 스왑
+    [newSelectedUsers[currentIndex], newSelectedUsers[targetIndex]] = [
+        newSelectedUsers[targetIndex],
+        newSelectedUsers[currentIndex]
+    ];
+
+    selectedUsers.value = newSelectedUsers; // 변경된 배열 저장
+    reorderUsers(); // 순서 재할당
 };
 
 // 새로운 결재 양식 작성
@@ -1901,95 +1873,51 @@ const openReferModal = async () => {
     if (referDocList.value.length > 0) {
         // 삭제된 문서 반영을 위해 선택 상태를 다시 동기화
         const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
-
         referDocList.value.forEach((doc) => {
             doc.selected = selectedMap.has(doc.record_id);
         });
-
         return;
     }
 
     try {
         const allDocs = [];
         const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
-
         const fetchOptions = { limit: 1000 };
 
-        // 결재 수신함 가져오기
-        try {
-            const receivedDocs = await getAuditList(fetchOptions);
-
-            if (receivedDocs && receivedDocs.list && Array.isArray(receivedDocs.list)) {
-                receivedDocs.list.forEach((doc) => {
-                    if (doc && doc.record_id) {
-                        if (!allDocs.some((d) => d.record_id === doc.record_id)) {
-                            allDocs.push({
-                                ...doc,
-                                docType: '수신함',
-                                selected: selectedMap.has(doc.record_id),
-                                drafter: doc.user_info.name
-                            });
+        const getAllDocs = async (fetchFunction, docType, drafter) => {
+            try {
+                const docs = await fetchFunction(fetchOptions);
+                if (docs && docs?.list && Array.isArray(docs.list)) {
+                    docs.list.forEach((doc) => {
+                        if (doc && doc?.record_id) {
+                            if (!allDocs.some((d) => d.record_id === doc.record_id)) {
+                                allDocs.push({
+                                    ...doc,
+                                    docType,
+                                    selected: selectedMap.has(doc.record_id),
+                                    drafter: drafter(doc)
+                                });
+                            }
                         }
-                    }
-                });
+                    });
+                }
+            } catch (error) {
+                console.error(`${docType} 오류 : `, error);
             }
-        } catch (error) {
-            console.error('수신함 오류 : ', error);
-        }
+        };
 
-        // 결재 발신함 가져오기
-        try {
-            const sentDocs = await getSendAuditList(fetchOptions);
-
-            if (sentDocs && sentDocs.list && Array.isArray(sentDocs.list)) {
-                sentDocs.list.forEach((doc) => {
-                    if (doc && doc.record_id) {
-                        if (!allDocs.some((d) => d.record_id === doc.record_id)) {
-                            allDocs.push({
-                                ...doc,
-                                docType: '발신함',
-                                selected: selectedMap.has(doc.record_id),
-                                drafter: user.name
-                            });
-                        }
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('발신함 오류 : ', error);
-        }
-
-        // 수신참조 가져오기
-        try {
-            const referenceDocs = await getAuditReferenceList(fetchOptions);
-
-            if (referenceDocs && referenceDocs.list && Array.isArray(referenceDocs.list)) {
-                referenceDocs.list.forEach((doc) => {
-                    if (doc && doc.record_id) {
-                        if (!allDocs.some((d) => d.record_id === doc.record_id)) {
-                            allDocs.push({
-                                ...doc,
-                                docType: '수신참조',
-                                selected: selectedMap.has(doc.record_id),
-                                drafter: doc.user_info.name
-                            });
-                        }
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('수신참조 오류 : ', error);
-        }
+        await Promise.all([
+            getAllDocs(getAuditList, '수신함', (doc) => doc.user_info.name),
+            getAllDocs(getSendAuditList, '발신함', () => user.name),
+            getAllDocs(getAuditReferenceList, '수신참조', (doc) => doc.user_info.name)
+        ]);
 
         // 날짜 내림차순 정렬
         allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
 
         referDocList.value = allDocs;
-        console.log('referDocList.value : ', referDocList.value);
     } catch (error) {
         console.error('참조문서 목록 가져오기 중 오류 : ', error);
-    } finally {
-        // loading.value = false;
     }
 };
 
