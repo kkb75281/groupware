@@ -501,7 +501,7 @@ const tempSaveData = ref([]); // 임시 저장된 결재 양식
 const isFormSelected = ref(false); // 양식이 선택되었는지 여부
 const rejectSetting = ref(false); // 반려 설정 관련 체크박스
 
-const prevSelected = ref([]);
+// const prevSelected = ref([]);
 const backupSelected = ref(null); // 선택된 결재자 백업
 let send_auditors_arr = [];
 
@@ -576,8 +576,8 @@ const openModal = () => {
         });
     }
 
-    selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
-    prevSelected.value = selectedUsers.value;
+    // selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
+    // prevSelected.value = selectedUsers.value;
 
     isModalOpen.value = true;
 };
@@ -605,14 +605,29 @@ const closeModal = () => {
     isModalOpen.value = false;
 };
 
-// 작성란 추가 모달 닫기
-const closeRowModal = () => {
+// 작성란 추가
+const addRow = () => {
+    if (!document.getElementById('add_row_title').value) {
+        alert('제목을 입력해주세요.');
+        return;
+    }
+
+    addRows.value.push({
+        title: document.getElementById('add_row_title').value,
+        value: ''
+    });
+
     isRowModalOpen.value = false;
 };
 
 // 작성란 삭제
 const removeRow = (event, index) => {
     addRows.value.splice(index, 1);
+};
+
+// 작성란 모달 닫기
+const closeRowModal = () => {
+    isRowModalOpen.value = false;
 };
 
 // 결재요청 미리보기
@@ -693,21 +708,6 @@ const previewAudit = () => {
     window.print();
 };
 
-// 작성란 추가
-const addRow = () => {
-    if (!document.getElementById('add_row_title').value) {
-        alert('제목을 입력해주세요.');
-        return;
-    }
-
-    addRows.value.push({
-        title: document.getElementById('add_row_title').value,
-        value: ''
-    });
-
-    isRowModalOpen.value = false;
-};
-
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
     // 선택된 유저들을 초기 처리
@@ -757,15 +757,14 @@ const handleOrganigramSelection = (users) => {
     }));
 };
 
-// 수신참조자로 선택되면 선택된 결재자에서 가장 아래로 이동
+// 수신참조자로 선택되면 결재자 순서에서 가장 아래로 이동
 const checkRole = (user) => {
-    // 이전 역할 저장
-    const previousRole = user.role;
+    const previousRole = user.role; // 이전 역할 저장
+    const index = selectedUsers.value.findIndex((u) => u.data.user_id === user.data.user_id);
 
     // 새로운 역할로 변경된 경우
     if (user.role === 'receivers') {
         // receivers로 변경된 경우: 배열에서 제거하고 마지막에 추가
-        const index = selectedUsers.value.findIndex((u) => u.data.user_id === user.data.user_id);
         if (index !== -1) {
             selectedUsers.value.splice(index, 1);
             selectedUsers.value.push(user);
@@ -773,14 +772,13 @@ const checkRole = (user) => {
 
         user.sortable = false;
 
-        // 순서 재할당
+        // 순서 재정렬
         reorderUsers();
     } else if (previousRole === 'receivers') {
         // receivers에서 다른 역할로 변경된 경우
         user.sortable = true;
 
-        // 비-receivers 그룹 중 마지막에 배치
-        const index = selectedUsers.value.findIndex((u) => u.data.user_id === user.data.user_id);
+        // non-receivers 그룹 중 마지막에 배치
         if (index !== -1) {
             // 현재 사용자를 제거
             selectedUsers.value.splice(index, 1);
@@ -792,17 +790,16 @@ const checkRole = (user) => {
             // non-receivers 끝에 현재 사용자 추가 + receivers 추가
             selectedUsers.value = [...nonReceivers, user, ...receivers];
 
-            // 순서 재할당
+            // 순서 재정렬
             reorderUsers();
         }
     } else {
-        // 두 역할 모두 non-receivers인 경우 (approvers <-> agreers)
-        // 순서는 그대로 유지하고 역할만 변경
+        // 두 역할 모두 non-receivers인 경우, 순서는 그대로 유지하고 역할만 변경 (approvers <-> agreers)
         user.sortable = true;
     }
 };
 
-// 모든 사용자의 순서를 재할당하는 유틸리티 함수
+// 모든 사용자의 순서를 재정렬
 const reorderUsers = () => {
     // 결재자와 합의자 순서 번호 재할당
     let orderCounter = 1;
@@ -812,7 +809,7 @@ const reorderUsers = () => {
         }
     });
 
-    // 수신참조자 순서 번호 재할당 (선택적)
+    // 수신참조자 순서 번호 재할당
     let receiverCounter = 1;
     selectedUsers.value.forEach((user) => {
         if (user.role === 'receivers') {
@@ -829,15 +826,15 @@ const reorderUsers = () => {
 };
 
 // 선택된 모든 결재자 ID 목록 가져오기
-const getAllSelectedUserIds = () => {
-    const result = {};
+// const getAllSelectedUserIds = () => {
+//     const result = {};
 
-    Object.keys(selectedAuditors.value).forEach((type) => {
-        result[type] = selectedAuditors.value[type].map((auditor) => auditor.data.user_id);
-    });
+//     Object.keys(selectedAuditors.value).forEach((type) => {
+//         result[type] = selectedAuditors.value[type].map((auditor) => auditor.data.user_id);
+//     });
 
-    return result;
-};
+//     return result;
+// };
 
 // 결재자 저장
 const saveAuditor = () => {
@@ -858,7 +855,6 @@ const saveAuditor = () => {
 // 결재자 제거
 const removeAuditor = (user, type) => {
     const newAuditors = selectedUsers.value.filter((u) => u.data.user_id !== user.data.user_id);
-
     selectedUsers.value = newAuditors;
 };
 
@@ -966,18 +962,18 @@ const importWysiwygData = async () => {
     await myWysiwyg.value.exportData();
 };
 
-// 첨부파일 삭제
-const removeFile = (file, index) => {
-    uploadedFile.value.splice(index, 1);
-    fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
-};
-
-// 파일 추가시 파일명 표시
-let updateFileList = (e) => {
+// 첨부파일 추가시 파일명 표시
+const updateFileList = (e) => {
     const newFiles = Array.from(e.target.files);
     uploadedFile.value.push(...newFiles);
     fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
     e.target.value = ''; // input 초기화 (같은 파일 다시 업로드 가능하게)
+};
+
+// 첨부파일 삭제
+const removeFile = (file, index) => {
+    uploadedFile.value.splice(index, 1);
+    fileNames.value = uploadedFile.value.map((file) => file.name || file.filename);
 };
 
 // 참조문서 권한 부여
@@ -996,6 +992,14 @@ const grantReferDocAccess = async (referId, processRoles) => {
         console.error('참조문서 권한 부여 중 오류 : ', error);
         throw new Error('참조문서 권한 부여 중 오류가 발생했습니다.');
     }
+};
+
+// 결재자에게 권한 부여
+const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
+    return skapi.grantPrivateRecordAccess({
+        record_id: audit_id,
+        user_id: auditor_id
+    });
 };
 
 // 결재 서류 레코드 생성 (결재자 순서 지정)
@@ -1028,7 +1032,6 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
     ];
 
     try {
-        // 첨부파일 업로드
         const additionalFormData = new FormData();
 
         // 참조문서 정보
@@ -1111,14 +1114,6 @@ const postAuditDoc = async ({ docform_title, to_audit, to_audit_content }) => {
         }
         throw error;
     }
-};
-
-// 결재자에게 권한을 부여하는 함수
-const grantAuditorAccess = async ({ audit_id, auditor_id }) => {
-    return skapi.grantPrivateRecordAccess({
-        record_id: audit_id,
-        user_id: auditor_id
-    });
 };
 
 // 결재 요청을 생성하고 알림을 보내는 함수
