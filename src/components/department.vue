@@ -5,7 +5,10 @@ details
         label.checkbox(v-if="useCheckbox && department.total > 0")
             input(
                 type="checkbox" 
-                name="checkbox"
+                name="checkbox" 
+                v-model="department.isChecked" 
+                :checked="department.isChecked" 
+                @change="$emit('update-check', { type: 'department', target: department, isChecked: department.isChecked })" 
                 @click.stop
             )
             span.label-checkbox
@@ -15,7 +18,7 @@ details
     ul
         //- 부서 구성원
         li.member(
-            v-if="!props.onlyDivision"
+            v-if="!props.onlyDivision && (props.excludeCurrentUser ? member.user.user_id !== user.user_id : true)"
             v-for="(member, index) in department.members" 
             :key="index"
         )
@@ -23,6 +26,9 @@ details
                 input(
                     type="checkbox" 
                     name="checkbox" 
+                    v-model="member.isChecked" 
+                    :checked="member.isChecked" 
+                    @change="$emit('update-check', { type: 'member', target: member, isChecked: member.isChecked })" 
                     @click.stop
                 )
                 span.label-checkbox
@@ -30,7 +36,7 @@ details
                 svg
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
             .name
-                | {{ member.index.value + ' / ' + member.index.name.split('.')[1] }}
+                | {{ member.user.name + ' / ' + member.position }}
 
         //- 하위 부서
         li(v-for="(sub, index) in department.subDepartments" :key="index")
@@ -66,6 +72,10 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
+    selectedEmployees: {
+        type: Array,
+        default: () => []
+    }
 });
 
 // // 초기 체크 상태 설정

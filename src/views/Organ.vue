@@ -37,7 +37,7 @@ function toggleAllDetails() {
     });
 }
 
-getOrganigram();
+// getOrganigram();
 </script>
 
 <style lang="less" scoped>

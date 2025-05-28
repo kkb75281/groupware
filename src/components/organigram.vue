@@ -53,9 +53,91 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
+    // 선택된 직원들
+    selectedEmployees: {
+        type: Array,
+        default: () => []
+    }
 });
 
-const checkedUsers = ref([]);
+const checkedEmps = ref([]);
+const refresh = ref(false);
+
+onMounted(() => {
+    excludeCurrentUser.value = props.excludeCurrentUser;
+    onlyMyDivision.value = props.onlyMyDivision;
+});
+
+watch(onlyMyDivision, async (nv, ov) => {
+    if (ov && nv !== ov) {
+        refresh.value = true;
+    } else {
+        refresh.value = false;
+    }
+    await getOrganigram(refresh.value, onlyMyDivision.value);
+    refresh.value = false;
+}, { immediate: true });
+
+watch(() => props.selectedEmployees, async (nv, ov) => {
+    if (!ov) {
+        // 모달 열었을때 체크된 사용자가 있을 경우
+        if (nv && nv.length > 0) {
+            await nextTick();
+
+            // 먼저 모든 체크박스 상태 초기화
+            resetAllCheckStatus();
+
+            // 선택된 사용자들에 대해 체크 상태 설정
+            for (const emp of nv) {
+                console.log('Selected Employee:', emp);
+
+                // 직원 객체 찾기
+                const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
+
+                if (employeeToCheck) {
+                    employeeToCheck.isChecked = true;
+
+                    // 체크된 사용자를 checkedEmps 배열에 추가
+                    if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id)) {
+                        checkedEmps.value.push(employeeToCheck);
+                    }
+                }
+            }
+
+            // 부서 체크박스 상태 재계산
+            recalculateDepartmentCheckStatus();
+        }
+    } else {
+        if (nv.length !== ov.length) {
+            // 삭제된 유저 찾기 (oldValue에는 있지만 newValue에는 없는 항목)
+            const removedEmps = ov.filter(
+                (oldUser) => !nv.some((newUser) => newUser.user.user_id === oldUser.user.user_id)
+            );
+
+            if (removedEmps.length > 0) {
+                await nextTick();
+
+                for (const emp of removedEmps) {
+                    const employeeToUncheck = findEmployeeInOrganigram(emp.user.user_id);
+                    if (employeeToUncheck) {
+                        employeeToUncheck.isChecked = false;
+
+                        // 체크 해제된 멤버를 checkedEmps 배열에서 제거
+                        const index = checkedEmps.value.findIndex(
+                            (u) => u.user.user_id === emp.user.user_id
+                        );
+                        if (index !== -1) {
+                            checkedEmps.value.splice(index, 1);
+                        }
+                    }
+                }
+
+                // 부서 체크박스 상태 재계산
+                recalculateDepartmentCheckStatus();
+            }
+        }
+    }
+}, { immediate: true, deep: true })
 
 // 모든 부서와 멤버의 체크박스 상태를 초기화하는 함수 추가
 function resetAllCheckStatus() {
@@ -113,19 +195,6 @@ function recalculateDepartmentCheckStatus() {
     });
 }
 
-onMounted(() => {
-    excludeCurrentUser.value = props.excludeCurrentUser;
-    onlyMyDivision.value = props.onlyMyDivision;
-});
-
-// watch(excludeCurrentUser, (nv, ov) => {
-//     if (!ov || (ov && nv !== ov)) {
-//         getOrganigram(true, props.onlyMyDivision);
-//     } else {
-//         getOrganigram(false, props.onlyMyDivision);
-//     }
-// });
-
 // 자식(하위 부서 및 멤버) 상태를 업데이트하는 함수
 function updateChildrenCheckStatus(department, isChecked) {
     department.isChecked = isChecked;
@@ -135,18 +204,18 @@ function updateChildrenCheckStatus(department, isChecked) {
         department.members.forEach((member) => {
             member.isChecked = isChecked;
 
-            // 체크된 멤버를 checkedUsers 배열에 추가
+            // 체크된 멤버를 checkedEmps 배열에 추가
             if (isChecked) {
-                if (!checkedUsers.value.some((user) => user.data.user_id === member.data.user_id)) {
-                    checkedUsers.value.push(member);
+                if (!checkedEmps.value.some((emp) => emp.user.user_id === member.user.user_id)) {
+                    checkedEmps.value.push(member);
                 }
             } else {
-                // 체크 해제된 멤버를 checkedUsers 배열에서 제거
-                const index = checkedUsers.value.findIndex(
-                    (user) => user.data.user_id === member.data.user_id
+                // 체크 해제된 멤버를 checkedEmps 배열에서 제거
+                const index = checkedEmps.value.findIndex(
+                    (emp) => emp.user.user_id === member.user.user_id
                 );
                 if (index !== -1) {
-                    checkedUsers.value.splice(index, 1);
+                    checkedEmps.value.splice(index, 1);
                 }
             }
         });
@@ -214,69 +283,6 @@ function findParentDepartmentRecursive(department, item) {
 
     return null;
 }
-
-// watch(
-//     () => props.selectedEmployees,
-//     async (nv, ov) => {
-//         if (!ov) {
-//             // 모달 열었을때 체크된 사용자가 있을 경우
-//             if (nv && nv.length > 0) {
-//                 await nextTick();
-
-//                 // 먼저 모든 체크박스 상태 초기화
-//                 resetAllCheckStatus();
-
-//                 // 선택된 사용자들에 대해 체크 상태 설정
-//                 for (const user of nv) {
-//                     // 직원 객체 찾기
-//                     const employeeToCheck = findEmployeeInOrganigram(user.data?.user_id);
-
-//                     if (employeeToCheck) {
-//                         employeeToCheck.isChecked = true;
-
-//                         // 체크된 사용자를 checkedUsers 배열에 추가
-//                         if (!checkedUsers.value.some((u) => u.data?.user_id === user.data?.user_id)) {
-//                             checkedUsers.value.push(employeeToCheck);
-//                         }
-//                     }
-//                 }
-
-//                 // 부서 체크박스 상태 재계산
-//                 recalculateDepartmentCheckStatus();
-//             }
-//         } else {
-//             if (nv.length !== ov.length) {
-//                 // 삭제된 유저 찾기 (oldValue에는 있지만 newValue에는 없는 항목)
-//                 const removedUsers = ov.filter(
-//                     (oldUser) => !nv.some((newUser) => newUser.data.user_id === oldUser.data.user_id)
-//                 );
-
-//                 if (removedUsers.length > 0) {
-//                     await nextTick();
-
-//                     for (const user of removedUsers) {
-//                         const employeeToUncheck = findEmployeeInOrganigram(user.data.user_id);
-//                         if (employeeToUncheck) {
-//                             employeeToUncheck.isChecked = false;
-
-//                             // 체크 해제된 멤버를 checkedUsers 배열에서 제거
-//                             const index = checkedUsers.value.findIndex(
-//                                 (u) => u.data.user_id === user.data.user_id
-//                             );
-//                             if (index !== -1) {
-//                                 checkedUsers.value.splice(index, 1);
-//                             }
-//                         }
-//                     }
-
-//                     // 부서 체크박스 상태 재계산
-//                     recalculateDepartmentCheckStatus();
-//                 }
-//             }
-//         }
-//     },
-//     { immediate: true, deep: true }
-// );
 
 // 조직도에서 특정 사용자 ID를 가진 직원 객체를 찾는 함수
 function findEmployeeInOrganigram(userId) {

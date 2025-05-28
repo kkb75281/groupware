@@ -71,19 +71,7 @@ export async function getOrganigram(refresh = false, myDepartment = false) {
 
     // 전체 부서 트리의 total 값을 재계산
     recalculateTotals(organigram.value);
-
-    // 빈 부서 제거 옵션 (필요시 주석 해제)
-    // const filterEmptyDepartments = (departments: Organigram[]) => {
-    //   return departments.filter((dept) => {
-    //     // 하위 부서가 있으면 재귀적으로 필터링
-    //     if (dept.subDepartments.length > 0) {
-    //       dept.subDepartments = filterEmptyDepartments(dept.subDepartments);
-    //     }
-    //     // 멤버가 있거나 하위 부서가 있는 경우만 유지
-    //     return dept.members.length > 0 || dept.subDepartments.length > 0;
-    //   });
-    // };
-    // organigram.value = filterEmptyDepartments(organigram.value);
+    console.log({ organigram: organigram.value });
   } catch (error) {
     console.error('=== getOrganigram === error : ', error);
   } finally {
@@ -91,7 +79,7 @@ export async function getOrganigram(refresh = false, myDepartment = false) {
   }
 }
 
-// 전체 부서 트리의 total 값을 상향식으로 재계산하는 함수
+// 하위 부서 인원수를 합한 최상위 부서의 총 인원 수를 계산하는 함수
 function recalculateTotals(departments: Organigram[]): number {
   let totalCount = 0;
 
@@ -173,6 +161,8 @@ async function addDepartment(path: string[], division: string | null, currentLev
   // 현재 레벨에서 해당 이름을 가진 부서 찾기
   let department = currentLevel.find((dept) => dept.name === name);
 
+  console.log({ name, restPath });
+
   if (!department) {
     // 부서가 없으면 새로 추가
     department = {
@@ -225,22 +215,24 @@ async function addDepartment(path: string[], division: string | null, currentLev
     const filteredMembersInfo = await Promise.all(
       filteredMembers.map(async (member) => {
         let uif = await getUserInfo(member.data.user_id);
+        console.log(member);
+        // return {
+        //   ...member,
+        //   index: {
+        //     name: member.index.name,
+        //     value: uif.list[0]?.name || '이름 없음'
+        //   }
+        // };
         return {
-          ...member,
-          index: {
-            name: member.index.name,
-            value: uif.list[0]?.name || '이름 없음'
-          }
+          user: uif.list[0],
+          division: member?.index?.name.split('.')[0] || '부서 없음',
+          position: member?.index?.name.split('.')[1] || '직위 없음',
+          isChecked: false
         };
       })
     );
-    console.log('filteredMembersInfo : ', filteredMembersInfo);
-    console.log('excludeCurrentUser.value : ', excludeCurrentUser.value);
 
-    // excludeCurrentUser가 true일 때만 현재 사용자 제외
-    department.members = excludeCurrentUser.value
-      ? filteredMembersInfo.filter((data) => data.data.user_id !== user.user_id)
-      : filteredMembersInfo;
+    department.members = filteredMembersInfo;
 
     console.log('department.members : ', department.members);
 
