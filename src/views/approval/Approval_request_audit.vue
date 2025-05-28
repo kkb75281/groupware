@@ -1443,7 +1443,7 @@ const saveForm = async ({
     redirectPath = true // 저장 후 리다이렉트 경로
 }) => {
     // 결재 제목이 없을 경우 저장 불가
-    if (!formTitle.value || !auditTitle.value) {
+    if (!formTitle.value && !auditTitle.value) {
         alert('결재 제목을 입력해주세요.');
         return;
     }
@@ -1528,15 +1528,19 @@ const saveForm = async ({
         }
 
         // 마스터 결재 양식 저장일 경우, 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
-        if (isMaster) {
-            await skapi.postRecord(null, {
-                table: {
-                    name: `audit_comment_${auditId}`,
-                    access_group: 'private'
-                },
-                reference: auditId
-            });
-        }
+        // if (isMaster) {
+        //     await skapi
+        //         .postRecord(null, {
+        //             table: {
+        //                 name: `audit_comment_${auditId}`,
+        //                 access_group: 'private'
+        //             },
+        //             reference: auditId
+        //         })
+        //         .then((res) => {
+        //             console.log('res : ', res);
+        //         });
+        // }
 
         const options = {
             table: {
@@ -1589,9 +1593,7 @@ const saveForm = async ({
         return res;
     } catch (error) {
         console.error('결재 양식 저장 중 오류 발생: ', error);
-        alert(
-            '결재 양식 저장 중 오류가 발생했습니다. 제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.'
-        );
+        alert('결재 양식 저장 중 오류가 발생했습니다.');
     }
 };
 
