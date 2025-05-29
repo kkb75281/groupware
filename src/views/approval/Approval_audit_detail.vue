@@ -855,282 +855,266 @@ const getAuditDetail = async () => {
         return;
     }
 
+    let auditDoc;
+
+    // 결재 서류 가져오기
     try {
-        const auditDoc = (
+        auditDoc = (
             await skapi.getRecords({
                 record_id: auditId.value
             })
         ).list[0];
-        console.log('auditDoc : ', auditDoc);
 
-        if (auditDoc) {
-            auditDoContent.value = auditDoc;
+        auditDoContent.value = auditDoc;
+    } catch (error) {
+        throw new Error('결재 서류를 가져오는 중 오류가 발생했습니다');
+    }
 
-            if (auditDoc.data.custom_rows) {
-                try {
-                    customRows.value = JSON.parse(auditDoc.data.custom_rows);
-                } catch (e) {
-                    console.error('Custom rows parsing error:', e);
-                    customRows.value = [];
-                }
-            }
-
-            // 반려 설정 관련 체크박스
-            if (auditDoc.data.reject_setting !== undefined) {
-                rejectSetting.value =
-                    auditDoc.data.reject_setting === 'true' ||
-                    auditDoc.data.reject_setting === true;
-            } else {
-                rejectSetting.value = false;
-            }
+    // 행추가
+    if (auditDoc.data.custom_rows) {
+        try {
+            customRows.value = JSON.parse(auditDoc.data.custom_rows);
+        } catch (e) {
+            console.error('Custom rows parsing error:', e);
+            customRows.value = [];
         }
+    }
 
-        skapi
-            .getRecords({
-                table: {
-                    name: 'audit_canceled:' + auditId.value,
-                    access_group: 'authorized'
-                }
-            })
-            .then((res) => {
-                if (res.list && res.list.length) {
-                    // 수동 회수 또는 자동 회수 중 rejectSetting이 false인 경우만 실제 회수 상태로 설정
-                    const cancelRecord = res.list[0];
-                    const isAutoCancel = cancelRecord.data?.auto_cancel === true;
+    // 반려 설정 관련 체크박스
+    if (auditDoc.data.reject_setting !== undefined) {
+        rejectSetting.value =
+            auditDoc.data.reject_setting === 'true' || auditDoc.data.reject_setting === true;
+    } else {
+        rejectSetting.value = false;
+    }
 
-                    if (!isAutoCancel || (isAutoCancel && !rejectSetting.value)) {
-                        isCanceled.value = true;
-                    } else {
-                        isCanceled.value = false;
-                    }
-                } else {
-                    isCanceled.value = false;
-                }
-            })
-            .catch((err) => {
-                isCanceled.value = false;
-            });
-
-        const auditors = JSON.parse(auditDoc.data.auditors);
-
-        let getAuditorInfo = async (uid) => {
-            let user_id = uid.user_id.replaceAll('_', '-');
-            let userInfo = await getUserInfo(user_id);
-
-            return userInfo.list[0];
-        };
-
-        let processAuditors = async (role) => {
-            if (auditors?.[role]) {
-                for (let uid of auditors[role]) {
-                    let user = await getAuditorInfo(uid);
-                    selectedAuditors.value[role].push(user);
-                }
+    // 결재 회수 여부 확인
+    try {
+        const res = skapi.getRecords({
+            table: {
+                name: 'audit_canceled:' + auditId.value,
+                access_group: 'authorized'
             }
-        };
-
-        await Promise.all([
-            processAuditors('approvers'),
-            processAuditors('agreers'),
-            processAuditors('receivers')
-        ]);
-
-        if (Object.keys(auditDoc.bin).length && auditDoc.bin.form_data.length) {
-            let fileList = [];
-            let form_data = auditDoc.bin.form_data;
-
-            function getFileUserId(str) {
-                if (!str) return '';
-                return str.split('/')[3];
-            }
-
-            const result = form_data.map((el) => ({
-                ...el,
-                user_id: getFileUserId(el.path)
-            }));
-
-            fileList.push(...result);
-
-            uploadedFile.value = fileList;
-        } else {
-            uploadedFile.value = [];
-        }
-
-        // 참조 문서
-        const referDocIds = auditDoc.data?.reference_docs;
-        const parseReferDocId = JSON.parse(auditDoc.data?.reference_docs).referDocId;
-
-        if (referDocIds) {
-            const fetchPromises = parseReferDocId.map((recordId) =>
-                skapi
-                    .getRecords({ record_id: recordId })
-                    .then((res) => res.list?.[0] || null)
-                    .catch((err) => {
-                        console.error(`record_id ${recordId} 호출 실패:`, err);
-                        return null;
-                    })
-            );
-
-            referDoc.value = await Promise.all(fetchPromises);
-        } else {
-            referDoc.value = [];
-        }
-
-        getAuditDetailRunning.value = false;
-
-        const approvals = await approvedAudit();
-
-        // 최종결재자 정보 확인
-        const allApprovers = [
-            ...(auditors.approvers || []).map((a) => ({ ...a, type: 'approvers' })),
-            ...(auditors.agreers || []).map((a) => ({ ...a, type: 'agreers' }))
-        ];
-
-        if (allApprovers.length > 0) {
-            const maxOrder = Math.max(...allApprovers.map((a) => a.order));
-            const finalApproverData = allApprovers.find((a) => a.order === maxOrder);
-
-            if (finalApproverData) {
-                const finalApproverId = finalApproverData.user_id.replaceAll('_', '-');
-
-                // 최종결재자의 결재 정보 확인
-                const finalApproval = approvals.find((a) => a.user_id === finalApproverId);
-
-                // 최종결재자의 결재 상태 확인 (또는 문서 상태 필드가 있는 경우)
-                const statusApproval = approvals.find((a) => a.data.documentStatus);
-
-                if (statusApproval && statusApproval.data.documentStatus) {
-                    // 문서 상태 필드가 있는 경우
-                    auditDoContent.value.documentStatus = statusApproval.data.documentStatus;
-                } else if (finalApproval && finalApproval.data.approved) {
-                    // 최종결재자가 결재했으면 문서 상태 설정
-                    auditDoContent.value.documentStatus =
-                        finalApproval.data.approved === 'approve' ? '완료됨' : '반려됨';
-                }
-            }
-        }
-
-        const approvalUserList = [];
-        const newTags = auditDoc.tags.map((a) => a.replaceAll('_', '-')); // 모든 결재자
-
-        await Promise.all(
-            newTags.map(async (auditor, index) => {
-                if (auditor.includes('receivers')) return;
-
-                const [approvedType, userId] = auditor.split(':');
-                const approval = approvals.find((approval) => approval.user_id === userId);
-
-                const curentOrder =
-                    auditors[approvedType]?.find(
-                        (user) => user.user_id.replaceAll('_', '-') === userId
-                    )?.order || index + 1;
-
-                if (approval) {
-                    const approvedStr = approval.data.approved ? '결재함' : '반려함';
-
-                    let stampFile;
-
-                    // 도장 파일 가져오기
-                    if (approval.data.approved === 'approve') {
-                        stampFile = await skapi.getFile(approval.data.stamp, {
-                            dataType: 'endpoint'
-                        });
-                    } else {
-                        stampFile = null;
-                    }
-
-                    approvalUserList.push({
-                        user_id: userId,
-                        approved_type: approvedType,
-                        approved: approval.data.approved,
-                        stamp: stampFile,
-                        approved_str: approvedStr,
-                        order: curentOrder
-                    });
-                } else {
-                    approvalUserList.push({
-                        user_id: userId,
-                        approved_type: approvedType,
-                        approved: null,
-                        stamp: null,
-                        approved_str: '결재대기중',
-                        order: curentOrder
-                    });
-                }
-            })
-        );
-
-        const userIds = approvalUserList.map((auditor) => auditor.user_id);
-        const userList = await Promise.all(
-            userIds.map(async (auditor) => await getUserInfo(auditor))
-        );
-        const userInfoList = userList.map((user) => (user.list.length ? user.list[0] : null));
-
-        // 결재자 정보와 결재 결과 합치기
-        const newAuditUserList = approvalUserList
-            .map((auditor) => ({
-                ...auditor,
-                user_info: userInfoList.find((user) => user?.user_id === auditor.user_id),
-                comment: approvals.find((user) => user?.user_id === auditor.user_id)?.data.comment,
-                date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date
-            }))
-            .sort((a, b) => a.order - b.order);
-
-        // 전체 결재자 리스트
-        auditorList.value = newAuditUserList;
-
-        // auditorList 결재, 합의 순서대로
-        auditorList.value.sort((a, b) => {
-            if (a.approved_type === 'approvers' && b.approved_type === 'agreers') return -1;
-            if (a.approved_type === 'agreers' && b.approved_type === 'approvers') return 1;
-            return 0;
         });
 
-        // newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
-        approverList.value = newAuditUserList.filter(
-            (auditor) => auditor.approved_type === 'approvers'
-        );
-        agreerList.value = newAuditUserList.filter(
-            (auditor) => auditor.approved_type === 'agreers'
-        );
+        if (res.list && res.list.length) {
+            // 수동 회수 또는 자동 회수 중 rejectSetting이 false인 경우만 실제 회수 상태로 설정
+            const cancelRecord = res.list[0];
+            const isAutoCancel = cancelRecord.data?.auto_cancel === true;
 
-        // 모든 결재자가 결재를 완료했는지 확인
-        const allAudited = auditorList.value.every((auditor) => auditor.approved);
-
-        // 반려자가 있는지 확인
-        const hasRejector = auditorList.value.some((auditor) => auditor.approved === 'reject');
-
-        //마지막 결재자가 반려했는지 확인 (가장 마지막으로 결재한 사람)
-        let isLastRejector = false;
-
-        if (hasRejector && allAudited && auditorList.value.length > 0) {
-            // 결재 시간 기준으로 정렬
-            const sortedAuditors = [...auditorList.value].sort((a, b) => {
-                return (b.date || 0) - (a.date || 0);
-            });
-
-            // 가장 마지막에 결재한 사람 찾기
-            const lastAuditor = sortedAuditors[0];
-
-            // 마지막 결재자가 반려했는지 확인
-            if (lastAuditor && lastAuditor.approved === 'reject') {
-                isLastRejector = true;
+            if (!isAutoCancel || (isAutoCancel && !rejectSetting.value)) {
+                isCanceled.value = true;
             }
         }
-
-        // 자동 회수 관련 로직 업데이트
-        if (hasRejector && !allAudited && !rejectSetting.value) {
-            // rejectSetting이 false이고 반려된 결재가 있는 경우 회수 상태로 설정
-            isCanceled.value = true;
-        } else if (hasRejector && allAudited && !isLastRejector && !rejectSetting.value) {
-            // 마지막 결재자가 아닌 사람이 반려하고 rejectSetting이 false인 경우 회수 처리
-            isCanceled.value = true;
-        } else if (rejectSetting.value) {
-            // rejectSetting이 true이면 반려가 있어도 회수 처리하지 않음 (기존 회수 상태만 유지)
-        }
     } catch (error) {
-        getAuditDetailRunning.value = false;
-        console.error(error);
+        isCanceled.value = false;
+    }
+
+    // 결재자 정보
+    const auditors = JSON.parse(auditDoc.data.auditors);
+
+    let getAuditorInfo = async (uid) => {
+        let user_id = uid.user_id.replaceAll('_', '-');
+        let userInfo = await getUserInfo(user_id);
+
+        return userInfo.list[0];
+    };
+
+    let processAuditors = async (role) => {
+        if (auditors?.[role]) {
+            for (let uid of auditors[role]) {
+                let user = await getAuditorInfo(uid);
+                selectedAuditors.value[role].push(user);
+            }
+        }
+    };
+
+    await Promise.all([
+        processAuditors('approvers'),
+        processAuditors('agreers'),
+        processAuditors('receivers')
+    ]);
+
+    if (Object.keys(auditDoc.bin).length && auditDoc.bin.form_data.length) {
+        let fileList = [];
+        let form_data = auditDoc.bin.form_data;
+
+        const result = form_data.map((el) => ({
+            ...el,
+            user_id: el.path ? el.path.split('/')[3] : ''
+        }));
+
+        fileList.push(...result);
+
+        uploadedFile.value = fileList;
+    } else {
+        uploadedFile.value = [];
+    }
+
+    // 참조 문서
+    const referDocIds = auditDoc.data?.reference_docs;
+    const parseReferDocId = JSON.parse(auditDoc.data?.reference_docs).referDocId;
+
+    if (referDocIds) {
+        const fetchPromises = parseReferDocId.map((recordId) =>
+            skapi
+                .getRecords({ record_id: recordId })
+                .then((res) => res.list?.[0] || null)
+                .catch((err) => {
+                    console.error(`record_id ${recordId} 호출 실패:`, err);
+                    return null;
+                })
+        );
+
+        referDoc.value = await Promise.all(fetchPromises);
+    } else {
+        referDoc.value = [];
+    }
+
+    getAuditDetailRunning.value = false;
+
+    const approvals = await approvedAudit();
+
+    // 최종결재자 정보 확인
+    const allApprovers = [
+        ...(auditors.approvers || []).map((a) => ({ ...a, type: 'approvers' })),
+        ...(auditors.agreers || []).map((a) => ({ ...a, type: 'agreers' }))
+    ];
+
+    if (allApprovers.length > 0) {
+        const maxOrder = Math.max(...allApprovers.map((a) => a.order));
+        const finalApproverData = allApprovers.find((a) => a.order === maxOrder);
+
+        if (finalApproverData) {
+            const finalApproverId = finalApproverData.user_id.replaceAll('_', '-');
+
+            // 최종결재자의 결재 정보 확인
+            const finalApproval = approvals.find((a) => a.user_id === finalApproverId);
+
+            // 최종결재자의 결재 상태 확인 (또는 문서 상태 필드가 있는 경우)
+            const statusApproval = approvals.find((a) => a.data.documentStatus);
+
+            if (statusApproval && statusApproval.data.documentStatus) {
+                // 문서 상태 필드가 있는 경우
+                auditDoContent.value.documentStatus = statusApproval.data.documentStatus;
+            } else if (finalApproval && finalApproval.data.approved) {
+                // 최종결재자가 결재했으면 문서 상태 설정
+                auditDoContent.value.documentStatus =
+                    finalApproval.data.approved === 'approve' ? '완료됨' : '반려됨';
+            }
+        }
+    }
+
+    const approvalUserList = [];
+    const newTags = auditDoc.tags.map((a) => a.replaceAll('_', '-')); // 모든 결재자
+
+    await Promise.all(
+        newTags.map(async (auditor, index) => {
+            if (auditor.includes('receivers')) return;
+
+            const [approvedType, userId] = auditor.split(':');
+            const approval = approvals.find((approval) => approval.user_id === userId);
+
+            const curentOrder =
+                auditors[approvedType]?.find((user) => user.user_id.replaceAll('_', '-') === userId)
+                    ?.order || index + 1;
+
+            if (approval) {
+                const approvedStr = approval.data.approved ? '결재함' : '반려함';
+
+                let stampFile;
+
+                // 도장 파일 가져오기
+                if (approval.data.approved === 'approve') {
+                    stampFile = await skapi.getFile(approval.data.stamp, {
+                        dataType: 'endpoint'
+                    });
+                } else {
+                    stampFile = null;
+                }
+
+                approvalUserList.push({
+                    user_id: userId,
+                    approved_type: approvedType,
+                    approved: approval.data.approved,
+                    stamp: stampFile,
+                    approved_str: approvedStr,
+                    order: curentOrder
+                });
+            } else {
+                approvalUserList.push({
+                    user_id: userId,
+                    approved_type: approvedType,
+                    approved: null,
+                    stamp: null,
+                    approved_str: '결재대기중',
+                    order: curentOrder
+                });
+            }
+        })
+    );
+
+    const userIds = approvalUserList.map((auditor) => auditor.user_id);
+    const userList = await Promise.all(userIds.map(async (auditor) => await getUserInfo(auditor)));
+    const userInfoList = userList.map((user) => (user.list.length ? user.list[0] : null));
+
+    // 결재자 정보와 결재 결과 합치기
+    const newAuditUserList = approvalUserList
+        .map((auditor) => ({
+            ...auditor,
+            user_info: userInfoList.find((user) => user?.user_id === auditor.user_id),
+            comment: approvals.find((user) => user?.user_id === auditor.user_id)?.data.comment,
+            date: approvals.find((user) => user?.user_id === auditor.user_id)?.data.date
+        }))
+        .sort((a, b) => a.order - b.order);
+
+    // 전체 결재자 리스트
+    auditorList.value = newAuditUserList;
+
+    // auditorList 결재, 합의 순서대로
+    auditorList.value.sort((a, b) => {
+        if (a.approved_type === 'approvers' && b.approved_type === 'agreers') return -1;
+        if (a.approved_type === 'agreers' && b.approved_type === 'approvers') return 1;
+        return 0;
+    });
+
+    // newAuditUserList 에 유저 정보중에 approved_type 이 approver 인것만 approverList 에 넣어주기
+    approverList.value = newAuditUserList.filter(
+        (auditor) => auditor.approved_type === 'approvers'
+    );
+    agreerList.value = newAuditUserList.filter((auditor) => auditor.approved_type === 'agreers');
+
+    // 모든 결재자가 결재를 완료했는지 확인
+    const allAudited = auditorList.value.every((auditor) => auditor.approved);
+
+    // 반려자가 있는지 확인
+    const hasRejector = auditorList.value.some((auditor) => auditor.approved === 'reject');
+
+    //마지막 결재자가 반려했는지 확인 (가장 마지막으로 결재한 사람)
+    let isLastRejector = false;
+
+    if (hasRejector && allAudited && auditorList.value.length > 0) {
+        // 결재 시간 기준으로 정렬
+        const sortedAuditors = [...auditorList.value].sort((a, b) => {
+            return (b.date || 0) - (a.date || 0);
+        });
+
+        // 가장 마지막에 결재한 사람 찾기
+        const lastAuditor = sortedAuditors[0];
+
+        // 마지막 결재자가 반려했는지 확인
+        if (lastAuditor && lastAuditor.approved === 'reject') {
+            isLastRejector = true;
+        }
+    }
+
+    // 자동 회수 관련 로직 업데이트
+    if (hasRejector && !allAudited && !rejectSetting.value) {
+        // rejectSetting이 false이고 반려된 결재가 있는 경우 회수 상태로 설정
+        isCanceled.value = true;
+    } else if (hasRejector && allAudited && !isLastRejector && !rejectSetting.value) {
+        // 마지막 결재자가 아닌 사람이 반려하고 rejectSetting이 false인 경우 회수 처리
+        isCanceled.value = true;
     }
 };
 
@@ -1210,13 +1194,6 @@ const postApproval = async () => {
             reference: auditId.value,
             tags: [userId.replaceAll('-', '_')]
         });
-
-        // 기안자에게 결재 알림
-        let postRealtimeBody = {
-            text: `${user.name}님께서 결재를 ${approveAudit.value ? '승인' : '반려'}했습니다.`,
-            type: 'audit',
-            id: auditId.value
-        };
 
         // 실시간 알림 보내기
         skapi.postRealtime(

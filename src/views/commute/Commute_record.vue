@@ -70,26 +70,26 @@ template(v-else)
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, nextTick } from 'vue';
 import { skapi } from '@/main.ts';
 import {
-  getDate,
-  getTime,
-  convertToTimestamp,
-  convertTimeToTimestamp,
-  addTimeToTimestamp,
-  extractTimeFromDateTime,
-  convertMsToTime
+    getDate,
+    getTime,
+    convertToTimestamp,
+    convertTimeToTimestamp,
+    addTimeToTimestamp,
+    extractTimeFromDateTime,
+    convertMsToTime
 } from '@/utils/time.ts';
 import { user, makeSafe } from '@/user.ts';
 import {
-  system_worktime,
-  getSystemWorktime,
-  my_worktime_storage,
-  my_worktime_storage_data,
-  getMyWorktimeStorage,
-  todayWorkStarting,
-  todayWorkEnding
+    system_worktime,
+    getSystemWorktime,
+    my_worktime_storage,
+    my_worktime_storage_data,
+    getMyWorktimeStorage,
+    todayWorkStarting,
+    todayWorkEnding
 } from '@/views/commute/worktime.ts';
 
 import Loading from '@/components/loading.vue';
@@ -99,191 +99,191 @@ const route = useRoute();
 
 // 비고 저장 함수
 const saveDesc = async (record) => {
-  console.log('record : ', record);
-  console.log('my_worktime_storage.value : ', my_worktime_storage.value);
+    console.log('record : ', record);
+    console.log('my_worktime_storage.value : ', my_worktime_storage.value);
 
-  if (!record.remark || record.remark.trim() === '') {
-    alert('비고를 입력해주세요.');
-    return;
-  }
-
-  try {
-    // 해당 날짜의 원본 레코드들을 my_worktime_storage에서 찾기
-    const targetRecords = my_worktime_storage.value.filter(
-      (originalRecord) => originalRecord.data.date === record.date
-    );
-    console.log('targetRecords : ', targetRecords);
-
-    if (!targetRecords || targetRecords.length === 0) {
-      alert('해당 날짜의 기록을 찾을 수 없습니다.');
-      return;
+    if (!record.remark || record.remark.trim() === '') {
+        alert('비고를 입력해주세요.');
+        return;
     }
 
-    // 각 레코드에 remark 업데이트
-    const updatePromises = targetRecords.map(async (targetRecord) => {
-      const config = {
-        table: {
-          name: 'commute_record',
-          access_group: 98
-        },
-        record_id: targetRecord.record_id,
-        tags: ['[emp_id]' + makeSafe(user.user_id)],
-        reference: 'emp_id:' + makeSafe(user.user_id)
-      };
+    try {
+        // 해당 날짜의 원본 레코드들을 my_worktime_storage에서 찾기
+        const targetRecords = my_worktime_storage.value.filter(
+            (originalRecord) => originalRecord.data.date === record.date
+        );
+        console.log('targetRecords : ', targetRecords);
 
-      // 기존 데이터에 remark 추가
-      const updateData = {
-        ...targetRecord.data,
-        remark: record.remark.trim()
-      };
+        if (!targetRecords || targetRecords.length === 0) {
+            alert('해당 날짜의 기록을 찾을 수 없습니다.');
+            return;
+        }
 
-      console.log('config : ', config);
-      console.log('updateData : ', updateData);
+        // 각 레코드에 remark 업데이트
+        const updatePromises = targetRecords.map(async (targetRecord) => {
+            const config = {
+                table: {
+                    name: 'commute_record',
+                    access_group: 98
+                },
+                record_id: targetRecord.record_id,
+                tags: ['[emp_id]' + makeSafe(user.user_id)],
+                reference: 'emp_id:' + makeSafe(user.user_id)
+            };
 
-      return await skapi.postRecord(updateData, config);
-    });
+            // 기존 데이터에 remark 추가
+            const updateData = {
+                ...targetRecord.data,
+                remark: record.remark.trim()
+            };
 
-    await Promise.all(updatePromises).then((res) => {
-      console.log('promise = res : ', res);
-    });
+            console.log('config : ', config);
+            console.log('updateData : ', updateData);
 
-    alert('비고가 저장되었습니다.');
+            return await skapi.postRecord(updateData, config);
+        });
 
-    await getMyWorktimeStorage(true);
-  } catch (error) {
-    console.error('비고 저장 에러:', error);
-    alert('비고 저장에 실패했습니다.');
-  }
+        await Promise.all(updatePromises).then((res) => {
+            console.log('promise = res : ', res);
+        });
+
+        alert('비고가 저장되었습니다.');
+        await nextTick();
+        await getMyWorktimeStorage(true);
+    } catch (error) {
+        console.error('비고 저장 에러:', error);
+        alert('비고 저장에 실패했습니다.');
+    }
 };
 
 onMounted(() => {
-  getSystemWorktime();
-  getMyWorktimeStorage();
+    getSystemWorktime();
+    getMyWorktimeStorage();
 });
 </script>
 
 <style scoped lang="less">
 .table-wrap {
-  position: relative;
+    position: relative;
 
-  #loading {
-    position: absolute;
-    top: 126px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  #searchForm {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .table {
-    min-width: 35rem;
-
-    tbody {
-      tr {
-        &:hover {
-          background-color: transparent;
-        }
-      }
+    #loading {
+        position: absolute;
+        top: 126px;
+        left: 50%;
+        transform: translateX(-50%);
     }
-  }
+
+    #searchForm {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .table {
+        min-width: 35rem;
+
+        tbody {
+            tr {
+                &:hover {
+                    background-color: transparent;
+                }
+            }
+        }
+    }
 }
 
 .itembox-wrap {
-  display: flex;
-  gap: 0 24px;
-  flex-wrap: wrap;
+    display: flex;
+    gap: 0 24px;
+    flex-wrap: wrap;
 }
 
 .itembox {
-  box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.15);
-  border-radius: 16px;
-  padding: 1.5rem;
-  line-height: 1.2;
-  flex: 1;
+    box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.15);
+    border-radius: 16px;
+    padding: 1.5rem;
+    line-height: 1.2;
+    flex: 1;
 
-  .time {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #2c3e50;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 1.5rem;
+    .time {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 1.5rem;
 
-    .value {
-      flex: 1;
-      margin-left: 8px;
+        .value {
+            flex: 1;
+            margin-left: 8px;
+        }
     }
-  }
 
-  .btn-work {
-    width: 100%;
-    margin-top: 1.5rem;
+    .btn-work {
+        width: 100%;
+        margin-top: 1.5rem;
 
-    &.disabled {
-      background-color: var(--primary-color-200);
-      border: 1px solid var(--primary-color-200);
-      cursor: default;
+        &.disabled {
+            background-color: var(--primary-color-200);
+            border: 1px solid var(--primary-color-200);
+            cursor: default;
+        }
     }
-  }
 
-  .title-wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-  }
+    .title-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
 }
 
 .today {
-  font-size: 1rem;
-  color: #777;
-  margin-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+    font-size: 1rem;
+    color: #777;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 
-  .icon {
-    padding: 0;
-  }
+    .icon {
+        padding: 0;
+    }
 }
 
 .remark {
-  .btn-wrap {
-    flex-wrap: nowrap;
+    .btn-wrap {
+        flex-wrap: nowrap;
 
-    button {
-      width: 1.5rem;
-      height: 1.5rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+        button {
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
 
-      &:hover {
-        .icon {
-          svg {
-            fill: var(--primary-color-400);
-          }
+            &:hover {
+                .icon {
+                    svg {
+                        fill: var(--primary-color-400);
+                    }
+                }
+            }
         }
-      }
-    }
 
-    .icon {
-      padding: 0;
+        .icon {
+            padding: 0;
+        }
     }
-  }
 }
 
 @media (max-width: 768px) {
-  .itembox-wrap {
-    flex-direction: column;
-  }
+    .itembox-wrap {
+        flex-direction: column;
+    }
 }
 </style>
