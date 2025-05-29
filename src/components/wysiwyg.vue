@@ -382,6 +382,7 @@ const initWysiwyg = () => {
                 // console.log('currentRange', currentRange);
                 // c.range.insertNode(document.createTextNode('Hi'));
             }
+
             if (c.caratPosition) {
                 // 뷰포트 내에 커서 위치 유지하기 위한 기존 코드 유지
                 let viewPortHeight = Math.min(

@@ -6,12 +6,13 @@
         Department(
             v-for="(department, index) in organigram" 
             :key="index" 
+            :open="department.isOpened" 
             :department="department" 
             :useCheckbox="props.useCheckbox" 
             :onlyDivision="props.onlyDivision" 
             :onlyMyDivision="props.onlyMyDivision" 
             :excludeCurrentUser="props.excludeCurrentUser" 
-            @update-check="updateChildrenCheckStatus" 
+            @update-check="updateCheckStatus" 
             @click.stop
         )
 </template>
@@ -61,88 +62,46 @@ const props = defineProps({
 });
 
 const checkedEmps = ref([]);
-const refresh = ref(false);
 
-onMounted(() => {
+onMounted(async () => {
     excludeCurrentUser.value = props.excludeCurrentUser;
     onlyMyDivision.value = props.onlyMyDivision;
-});
+    await getOrganigram();
 
-watch(onlyMyDivision, async (nv, ov) => {
-    if (ov && nv !== ov) {
-        refresh.value = true;
-    } else {
-        refresh.value = false;
-    }
-    await getOrganigram(refresh.value, onlyMyDivision.value);
-    refresh.value = false;
-}, { immediate: true });
-
-watch(() => props.selectedEmployees, async (nv, ov) => {
-    if (!ov) {
+    if (props.selectedEmployees && props.selectedEmployees.length > 0) {
         // 모달 열었을때 체크된 사용자가 있을 경우
-        if (nv && nv.length > 0) {
-            await nextTick();
+        console.log('Selected Employees onMounted:', props.selectedEmployees);
 
-            // 먼저 모든 체크박스 상태 초기화
-            resetAllCheckStatus();
+        // 먼저 모든 체크박스 상태 초기화
+        resetAllCheckStatus();
 
-            // 선택된 사용자들에 대해 체크 상태 설정
-            for (const emp of nv) {
-                console.log('Selected Employee:', emp);
+        // 선택된 사용자들에 대해 체크 상태 설정
+        for (const emp of props.selectedEmployees) {
+            // 직원 객체 찾기
+            const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
 
-                // 직원 객체 찾기
-                const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
+            if (employeeToCheck) {
+                const department = findDepartmentOfEmployee(emp.user?.user_id);
+                employeeToCheck.isChecked = true;
+                department.isOpened = true;
 
-                if (employeeToCheck) {
-                    employeeToCheck.isChecked = true;
-
-                    // 체크된 사용자를 checkedEmps 배열에 추가
-                    if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id)) {
-                        checkedEmps.value.push(employeeToCheck);
-                    }
+                // 체크된 사용자를 checkedEmps 배열에 추가
+                if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id)) {
+                    checkedEmps.value.push(employeeToCheck);
                 }
             }
-
-            // 부서 체크박스 상태 재계산
-            recalculateDepartmentCheckStatus();
         }
-    } else {
-        if (nv.length !== ov.length) {
-            // 삭제된 유저 찾기 (oldValue에는 있지만 newValue에는 없는 항목)
-            const removedEmps = ov.filter(
-                (oldUser) => !nv.some((newUser) => newUser.user.user_id === oldUser.user.user_id)
-            );
 
-            if (removedEmps.length > 0) {
-                await nextTick();
-
-                for (const emp of removedEmps) {
-                    const employeeToUncheck = findEmployeeInOrganigram(emp.user.user_id);
-                    if (employeeToUncheck) {
-                        employeeToUncheck.isChecked = false;
-
-                        // 체크 해제된 멤버를 checkedEmps 배열에서 제거
-                        const index = checkedEmps.value.findIndex(
-                            (u) => u.user.user_id === emp.user.user_id
-                        );
-                        if (index !== -1) {
-                            checkedEmps.value.splice(index, 1);
-                        }
-                    }
-                }
-
-                // 부서 체크박스 상태 재계산
-                recalculateDepartmentCheckStatus();
-            }
-        }
+        // 부서 체크박스 상태 재계산
+        recalculateDepartmentCheckStatus();
     }
-}, { immediate: true, deep: true })
+});
 
 // 모든 부서와 멤버의 체크박스 상태를 초기화하는 함수 추가
 function resetAllCheckStatus() {
     const resetDepartment = (department) => {
         department.isChecked = false;
+        department.isOpened = false;
 
         // 멤버 상태 초기화
         if (department.members && department.members.length > 0) {
@@ -196,92 +155,73 @@ function recalculateDepartmentCheckStatus() {
 }
 
 // 자식(하위 부서 및 멤버) 상태를 업데이트하는 함수
-function updateChildrenCheckStatus(department, isChecked) {
-    department.isChecked = isChecked;
+function updateCheckStatus(update) {
+    const type = update.type;
+    const target = update.target;
+    const isChecked = update.isChecked;
 
-    // 멤버 상태 동기화
-    if (department.members && department.members.length > 0) {
-        department.members.forEach((member) => {
-            member.isChecked = isChecked;
+    if (type === 'department') {
+        target.isChecked = isChecked;
 
-            // 체크된 멤버를 checkedEmps 배열에 추가
-            if (isChecked) {
-                if (!checkedEmps.value.some((emp) => emp.user.user_id === member.user.user_id)) {
-                    checkedEmps.value.push(member);
+        if (isChecked) target.isOpened = true;
+
+        // 멤버 상태 동기화
+        if (target.members && target.members.length > 0) {
+            target.members.forEach((member) => {
+                member.isChecked = isChecked;
+
+                // 체크된 멤버를 checkedEmps 배열에 추가
+                if (isChecked) {
+                    if (!checkedEmps.value.some((emp) => emp.user.user_id === member.user.user_id)) {
+                        checkedEmps.value.push(member);
+                    }
+                } else {
+                    // 체크 해제된 멤버를 checkedEmps 배열에서 제거
+                    const index = checkedEmps.value.findIndex(
+                        (emp) => emp.user.user_id === member.user.user_id
+                    );
+                    if (index !== -1) {
+                        checkedEmps.value.splice(index, 1);
+                    }
                 }
-            } else {
-                // 체크 해제된 멤버를 checkedEmps 배열에서 제거
-                const index = checkedEmps.value.findIndex(
-                    (emp) => emp.user.user_id === member.user.user_id
-                );
-                if (index !== -1) {
-                    checkedEmps.value.splice(index, 1);
-                }
+            });
+        }
+
+        // 하위 부서 상태 동기화
+        if (target.subDepartments && target.subDepartments.length > 0) {
+            target.subDepartments.forEach((sub) => {
+                updateCheckStatus(update);
+            });
+        }
+    } else if (type === 'member') {
+        target.isChecked = isChecked;
+
+        // 체크된 멤버를 checkedEmps 배열에 추가
+        if (isChecked) {
+            if (!checkedEmps.value.some((emp) => emp.user.user_id === target.user.user_id)) {
+                checkedEmps.value.push(target);
             }
-        });
-    }
-
-    // 하위 부서 상태 동기화
-    if (department.subDepartments && department.subDepartments.length > 0) {
-        department.subDepartments.forEach((sub) => {
-            updateChildrenCheckStatus(sub, isChecked);
-        });
-    }
-}
-
-// 부모 부서 상태를 업데이트하는 함수
-function updateParentCheckStatus(item) {
-    const parentDepartment = findParentDepartment(item); // 부모 부서를 찾는 함수
-    if (!parentDepartment) return;
-
-    // 모든 멤버가 체크되었는지 확인
-    const allMembersChecked =
-        parentDepartment.members.length === 0 ||
-        parentDepartment.members.every((member) => member.isChecked);
-
-    // 모든 하위 부서가 체크되었는지 확인
-    const allSubDepartmentsChecked =
-        parentDepartment.subDepartments.length === 0 ||
-        parentDepartment.subDepartments.every((sub) => sub.isChecked);
-
-    // 부모 부서의 체크 상태 업데이트
-    parentDepartment.isChecked = allMembersChecked && allSubDepartmentsChecked;
-
-    // 멤버가 체크 안되어있으면 부모 부서도 체크 해제
-    if (!item.isChecked) {
-        parentDepartment.isChecked = false;
-    }
-
-    // 부모 부서의 부모 상태도 동기화
-    updateParentCheckStatus(parentDepartment);
-}
-
-// 부모 부서를 찾는 함수
-function findParentDepartment(item) {
-    for (const department of organigram.value) {
-        if (department.members.includes(item) || department.subDepartments.includes(item)) {
-            return department;
+        } else {
+            // 체크 해제된 멤버를 checkedEmps 배열에서 제거
+            const index = checkedEmps.value.findIndex(
+                (emp) => emp.user.user_id === target.user.user_id
+            );
+            if (index !== -1) {
+                checkedEmps.value.splice(index, 1);
+            }
         }
 
-        for (const sub of department.subDepartments) {
-            const parent = findParentDepartmentRecursive(sub, item);
-            if (parent) return parent;
-        }
-    }
-    return null;
-}
-
-function findParentDepartmentRecursive(department, item) {
-    if (department.members.includes(item) || department.subDepartments.includes(item)) {
-        return department;
+        // 부서 체크 상태 재계산
+        recalculateDepartmentCheckStatus();
     }
 
-    for (const sub of department.subDepartments) {
-        const parent = findParentDepartmentRecursive(sub, item);
-        if (parent) return parent;
-    }
+    // 조직도에 관련된 변수는 빼고 checkedEmps 배열을 emit 이벤트로 전달
+    let sendCheckedEmps = checkedEmps.value.map(emp => {
+        const { isChecked, ...rest } = emp;
+        return rest;
+    });
 
-    return null;
+    emit('selection-change', sendCheckedEmps);
 }
 
 // 조직도에서 특정 사용자 ID를 가진 직원 객체를 찾는 함수
@@ -289,7 +229,7 @@ function findEmployeeInOrganigram(userId) {
     // 재귀적으로 모든 부서를 검색하는 내부 함수
     function searchInDepartment(department) {
         // 현재 부서의 멤버 중에서 찾기
-        const foundMember = department.members.find((member) => member.data.user_id === userId);
+        const foundMember = department.members.find((member) => member.user.user_id === userId);
         if (foundMember) return foundMember;
 
         // 하위 부서에서 찾기
@@ -307,6 +247,24 @@ function findEmployeeInOrganigram(userId) {
         if (found) return found;
     }
 
+    return null;
+}
+
+function findDepartmentOfEmployee(userId) {
+    function search(department) {
+        if (department.members.some(m => m.user.user_id === userId)) {
+            return department;
+        }
+        for (const sub of department.subDepartments) {
+            const found = search(sub);
+            if (found) return found;
+        }
+        return null;
+    }
+    for (const dept of organigram.value) {
+        const found = search(dept);
+        if (found) return found;
+    }
     return null;
 }
 </script>

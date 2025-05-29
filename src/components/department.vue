@@ -17,39 +17,42 @@ details
         span.total(v-if="!props.onlyDivision") {{ department.total }}
     ul
         //- 부서 구성원
-        li.member(
-            v-if="!props.onlyDivision && (props.excludeCurrentUser ? member.user.user_id !== user.user_id : true)"
-            v-for="(member, index) in department.members" 
-            :key="index"
-        )
-            label.checkbox(v-if="useCheckbox")
-                input(
-                    type="checkbox" 
-                    name="checkbox" 
-                    v-model="member.isChecked" 
-                    :checked="member.isChecked" 
-                    @change="$emit('update-check', { type: 'member', target: member, isChecked: member.isChecked })" 
-                    @click.stop
-                )
-                span.label-checkbox
-            .icon
-                svg
-                    use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
-            .name
-                | {{ member.user.name + ' / ' + member.position }}
+        template(v-for="(member, index) in department.members")
+            li.member(
+                v-if="!props.onlyDivision && (props.excludeCurrentUser ? member.user.user_id !== user.user_id : true)"
+                :key="index"
+            )
+                label.checkbox(v-if="useCheckbox")
+                    input(
+                        type="checkbox" 
+                        name="checkbox" 
+                        v-model="member.isChecked" 
+                        :checked="member.isChecked" 
+                        @change="$emit('update-check', { type: 'member', target: member, isChecked: member.isChecked })" 
+                        @click.stop
+                    )
+                    span.label-checkbox
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-account-circle-fill")
+                .name
+                    | {{ member.user.name + ' / ' + member.position }}
 
         //- 하위 부서
         li(v-for="(sub, index) in department.subDepartments" :key="index")
             Department(
+                :open="sub.isOpened"
                 :department="sub"
                 :useCheckbox="props.useCheckbox"
                 :onlyDivision="props.onlyDivision"
+                @update-check="$emit('update-check', $event)"
                 @click.stop
             )
 </template>
 
 <script setup>
 import { computed, onMounted } from 'vue';
+import { user } from '@/user.ts';
 
 const props = defineProps({
     department: {

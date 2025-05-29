@@ -36,8 +36,6 @@ function toggleAllDetails() {
         }
     });
 }
-
-// getOrganigram();
 </script>
 
 <style lang="less" scoped>

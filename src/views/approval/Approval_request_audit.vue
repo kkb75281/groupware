@@ -11,11 +11,11 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode 
             
         .selected-wrap
             p.label 결재 양식 선택
-            select(v-if="formCategory === 'master'" name="masterForms" :disabled="!masterForms.length" @change="(e) => selDocForm(e)")
+            select#sel_masterForms(v-if="formCategory === 'master'" name="masterForms" :disabled="!masterForms.length" @change="(e) => selDocForm(e)")
                 option(value="" disabled selected) {{ masterForms.length ? "기본 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
                 option(v-for="form of masterForms" :key="form.record_id" :value="form.record_id") {{ form.data.docform_title }}
 
-            select(v-else-if="formCategory === 'mine'" name="myForms" :disabled="!myForms.length" @change="(e) => selDocForm(e)")
+            select#sel_myForms(v-else-if="formCategory === 'mine'" name="myForms" :disabled="!myForms.length" @change="(e) => selDocForm(e)")
                 option(value="" disabled selected) {{ myForms.length ? "나의 결재 양식을 선택해주세요." : "등록된 결재 양식이 없습니다." }}
                 option(v-for="form in myForms" :key="form.record_id" :value="form.record_id") {{ form.data.form_title }}
 
@@ -34,8 +34,8 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode 
                 span.label-radio(style="font-size: 0.8rem") 결재 도중 반려시 결재 중단
 
     .button-wrap
-        button.btn.outline.btn-new(type="button" @click="newWriteAudit") 새 양식 생성
-        button.btn.btn-next(type="button" :disabled="!isFormSelected" @click="step = 2") 다음
+        button.btn.outline.btn-new(type="button" @click="step++; reset()") 새 양식 생성
+        button.btn.btn-next(type="button" :disabled="!isFormSelected" @click="step++") 다음
 
 template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) || (isReRequestMode && temploading)")
     .form-wrap
@@ -205,7 +205,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
                     template(v-if="isTempSaveMode")
                         button.btn.bg-gray.btn-cancel(type="button" @click="cancelTempSave") 취소
                     template(v-else)
-                        button.btn.bg-gray.btn-cancel(type="button" @click="router.back(); formCategory = 'master'; rejectSetting = false") 취소
+                        button.btn.bg-gray.btn-cancel(type="button" @click="step--; reset(); formCategory = 'master'; rejectSetting = false") 취소
                     button.btn.outline.bg-gray.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
                     button.btn.outline.btn-tempsave(type="button" @click="tempSaveMyDoc") 임시저장
                     button.btn(type="submit") 결재요청
@@ -277,9 +277,9 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
                                                 option(value="approvers" selected) 결재
                                                 option(value="agreers") 합의
                                                 option(value="receivers") 수신참조
-                                    td {{ user.index.name.split('.')[1] }}
-                                    td {{ user.index.value }}
-                                    td {{ divisionNameList[user.index.name.split('.')[0]] }}
+                                    td {{ user.position }}
+                                    td {{ user.user.name }}
+                                    td {{ divisionNameList[user.division] }}
                                     td
                                         .btn-wrap.btn-sort
                                             button.btn-sort-up.icon(type="button" @click="moveUser(user, 'up')" :disabled="user.sortable === false")
@@ -711,51 +711,55 @@ const previewAudit = () => {
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
-    // 선택된 유저들을 초기 처리
-    users.forEach((user) => {
-        // 선택된 유저들에게 role 정보가 없으면 추가
-        if (!user.role) {
-            user.role = 'approvers';
-        }
+    console.log('request audit:', users);
+    console.log('selectedAuditors:', selectedAuditors.value);
+    console.log('selectedUsers:', selectedUsers.value);
 
-        // 결재자 순서 정렬 설정
-        if (user.sortable === undefined) {
-            // receivers 역할이면 정렬 불가능으로 설정
-            user.sortable = user.role !== 'receivers';
-        }
-    });
+    // // 선택된 유저들을 초기 처리
+    // users.forEach((user) => {
+    //     // 선택된 유저들에게 role 정보가 없으면 추가
+    //     if (!user.role) {
+    //         user.role = 'approvers';
+    //     }
 
-    // 수신참조자와 그 외(결재자/합의자)로 분리
-    const receiversUsers = users.filter((user) => user.role === 'receivers');
-    const nonReceiversUsers = users.filter((user) => user.role !== 'receivers');
+    //     // 결재자 순서 정렬 설정
+    //     if (user.sortable === undefined) {
+    //         // receivers 역할이면 정렬 불가능으로 설정
+    //         user.sortable = user.role !== 'receivers';
+    //     }
+    // });
 
-    // 비-receivers 사용자들을 먼저 배치하고, 그 뒤에 receivers 사용자들을 배치
-    selectedUsers.value = [...nonReceiversUsers, ...receiversUsers];
+    // // 수신참조자와 그 외(결재자/합의자)로 분리
+    // const receiversUsers = users.filter((user) => user.role === 'receivers');
+    // const nonReceiversUsers = users.filter((user) => user.role !== 'receivers');
 
-    // 순서(order) 할당
-    // 결재자와 합의자는 현재 배열 순서대로 번호 부여
-    let orderCounter = 1;
+    // // 비-receivers 사용자들을 먼저 배치하고, 그 뒤에 receivers 사용자들을 배치
+    // selectedUsers.value = [...nonReceiversUsers, ...receiversUsers];
 
-    selectedUsers.value.forEach((user) => {
-        if (user.role !== 'receivers') {
-            user.order = orderCounter++;
-        }
-    });
+    // // 순서(order) 할당
+    // // 결재자와 합의자는 현재 배열 순서대로 번호 부여
+    // let orderCounter = 1;
 
-    // 수신참조자는 별도의 카운터로 순서 부여 (선택적)
-    let receiverCounter = 1;
-    selectedUsers.value.forEach((user) => {
-        if (user.role === 'receivers') {
-            user.order = receiverCounter++;
-        }
-    });
+    // selectedUsers.value.forEach((user) => {
+    //     if (user.role !== 'receivers') {
+    //         user.order = orderCounter++;
+    //     }
+    // });
 
-    // 선택된 유저들의 순서 저장
-    selectedUsersOrder.value = selectedUsers.value.map((user) => ({
-        user_id: user.user.user_id,
-        order: user.order,
-        type: user.role
-    }));
+    // // 수신참조자는 별도의 카운터로 순서 부여 (선택적)
+    // let receiverCounter = 1;
+    // selectedUsers.value.forEach((user) => {
+    //     if (user.role === 'receivers') {
+    //         user.order = receiverCounter++;
+    //     }
+    // });
+
+    // // 선택된 유저들의 순서 저장
+    // selectedUsersOrder.value = selectedUsers.value.map((user) => ({
+    //     user_id: user.user.user_id,
+    //     order: user.order,
+    //     type: user.role
+    // }));
 };
 
 // 수신참조자로 선택되면 결재자 순서에서 가장 아래로 이동
@@ -1717,21 +1721,21 @@ const applyFormData = async (formData) => {
 
     // 참조문서
     if (formData.data.reference_docs) {
-        try {
-            const referDocId = JSON.parse(formData.data.reference_docs).referDocId;
-            const fetchPromises = referDocId.map((recordId) =>
-                skapi
-                    .getRecords({ record_id: recordId })
-                    .then((res) => res.list?.[0] || null)
-                    .catch((err) => {
-                        console.error(`record_id ${recordId} 호출 실패:`, err);
-                        return null;
-                    })
-            );
-            referDoc.value = await Promise.all(fetchPromises);
-        } catch (error) {
-            console.error('참조문서 정보 처리 중 오류:', error);
-        }
+        const referDocId = JSON.parse(formData.data.reference_docs).referDocId;
+        const fetchPromises = referDocId.map((recordId) =>
+            skapi
+                .getRecords({ record_id: recordId })
+                .then((res) => res.list?.[0] || null)
+                .catch((err) => {
+                    console.error(`record_id ${recordId} 호출 실패:`, err);
+                    alert('양식을 불러오는데 실패하였습니다. 다른 결재 양식을 선택해주세요.');
+                    document.getElementById('sel_masterForms').value = '';
+                    document.getElementById('sel_myForms').value = '';
+                    reset();
+                    return;
+                })
+        );
+        referDoc.value = await Promise.all(fetchPromises);
     }
 };
 
@@ -1816,21 +1820,14 @@ const moveUser = (user, direction) => {
 };
 
 // 새로운 결재 양식 작성
-const newWriteAudit = () => {
-    step.value = 2;
-
+const reset = () => {
     formTitle.value = '';
     auditTitle.value = '';
     editorContent.value = '';
     selectedForm.value = [];
-    selectedAuditors.value = {
-        approvers: [],
-        agreers: [],
-        receivers: []
-    };
+    isFormSelected.value = false;
     addRows.value = [];
     uploadedFile.value = [];
-    fileNames.value = [];
     rejectSetting.value = false;
 
     // 결재라인 select option '결재'로 초기화
@@ -1843,6 +1840,11 @@ const newWriteAudit = () => {
     selectedAuditors.value.approvers = [];
     selectedAuditors.value.agreers = [];
     selectedAuditors.value.receivers = [];
+
+    // 참조문서 초기화
+    referDoc.value = [];
+    referDocList.value = [];
+    referDocFilter.value = 'all';
 };
 
 // isTempSaveMode에서 취소버튼 클릭시
