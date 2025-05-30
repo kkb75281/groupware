@@ -237,7 +237,6 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
         .modal-body
             .select-approver-wrap
                 .organigram-wrap
-                    //- Organigram(:selectedEmployees="selectedUsers" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedAuditors" :onlyMyDepartment="true" @selection-change="handleOrganigramSelection")
                     Organigram(:useCheckbox="true" :onlyMyDivision="true" :excludeCurrentUser="true" :selectedEmployees="selectedUsers" @selection-change="handleOrganigramSelection")
 
                 br
