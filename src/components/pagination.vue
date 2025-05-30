@@ -1,55 +1,52 @@
 <template lang="pug">
 .pagination
-    button.btn-prev.icon(
-        type="button"
-        @click="goPrev"
-        :class="{ nonClickable: fetching || currentPage <= 1 }"
-    )
+    button.btn-prev.icon(type="button" @click="currentPage--;" :class="{'nonClickable': fetching || currentPage <= 1 }")
         svg
             use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
         | Prev
 
-    button.btn-next.icon(
-        type="button"
-        @click="goNext"
-        :class="{ nonClickable: fetching || (endOfList && currentPage >= maxPage) }"
-    )
-        | Next
+    button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': fetching || endOfList && currentPage >= maxPage }") Next
         svg
             use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue';
+import Pager from '@/components/pager';
 
 defineProps({
-    fetchFunction: Function,
-    ascending: Boolean
+    fetchFunction: {
+        type: Function,
+        required: true
+    },
+    ascending: {
+        type: Boolean,
+        default: false
+    }
 });
 
 const emit = defineEmits(['update:pageData']);
+console.log('emit', emit);
 
-const fetching = ref(false);
-const maxPage = ref(0);
-const currentPage = ref(1);
-const endOfList = ref(false);
 let pager = null;
+const fetching = ref(false); // 데이터를 가져오는 중인지 여부
+const maxPage = ref(0); // 최대 페이지 수
+const currentPage = ref(1); // 현재 페이지
+const endOfList = ref(false); // 리스트의 끝에 도달했는지 여부
 
-const getPage = async (refresh = false) => {
+const loadPage = async (refresh = false) => {
     if (refresh) {
         endOfList.value = false;
         currentPage.value = 1;
-    }
-
-    if (refresh) {
         pager = await Pager.init({
             id: 'record_id',
             resultsPerPage: 10,
             sortBy: 'uploaded',
-            order: ascending ? 'asc' : 'desc'
+            order: props.ascending ? 'asc' : 'desc'
         });
     }
 
+    // 이미 로드된 페이지 범위 내거나 endOfList면 그대로 반환
     if ((!refresh && maxPage.value >= currentPage.value) || endOfList.value) {
         emit('update:pageData', pager.getPage(currentPage.value).list);
         return;
@@ -57,10 +54,10 @@ const getPage = async (refresh = false) => {
         fetching.value = true;
 
         try {
-            const fetchedData = await fetchFunction({
+            const fetchedData = await props.fetchFunction({
                 fetchMore: !refresh,
                 limit: 10,
-                ascending
+                ascending: props.ascending
             });
 
             endOfList.value = fetchedData.endOfList;
@@ -82,15 +79,14 @@ const getPage = async (refresh = false) => {
     }
 };
 
+// 페이지 변경 시 데이터 가져오기
 watch(currentPage, (n, o) => {
     if (n !== o && n > 0 && (n <= maxPage.value || (n > maxPage.value && !endOfList.value))) {
-        getPage();
+        loadPage();
     } else {
-        currentPage.value = o;
+        currentPage.value = o; // 페이지가 유효하지 않으면 이전 페이지로 되돌리기
     }
 });
 
-const goPrev = () => currentPage.value--;
-const goNext = () => currentPage.value++;
-onMounted(() => getPage(true));
+onMounted(async () => await loadPage(true));
 </script>

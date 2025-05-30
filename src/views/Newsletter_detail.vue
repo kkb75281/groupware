@@ -82,7 +82,7 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { skapi } from '@/main.ts';
 import { user } from '@/user.ts';
 import { newsletterList, getNewsletterList } from '@/notifications.ts';
@@ -99,294 +99,277 @@ const editModeData = ref({}); // 수정 모드 데이터
 
 // 작성일 날짜
 function formatTimestampToDate(timestamp) {
-  const date = new Date(timestamp); // timestamp를 Date 객체로 변환
-  const year = date.getFullYear(); // 연도 가져오기
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // 월 가져오기 (0부터 시작하므로 +1)
-  const day = String(date.getDate()).padStart(2, '0'); // 일 가져오기
+    const date = new Date(timestamp); // timestamp를 Date 객체로 변환
+    const year = date.getFullYear(); // 연도 가져오기
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // 월 가져오기 (0부터 시작하므로 +1)
+    const day = String(date.getDate()).padStart(2, '0'); // 일 가져오기
 
-  return `${year}-${month}-${day}`; // 형식화된 문자열 반환
+    return `${year}-${month}-${day}`; // 형식화된 문자열 반환
 }
 
 // 내용 가져오기
 function disableContentEditable(htmlString) {
-  // 임시 div 생성
-  const tempDiv = document.createElement('div');
+    // 임시 div 생성
+    const tempDiv = document.createElement('div');
 
-  // HTML 문자열 삽입
-  tempDiv.innerHTML = htmlString;
+    // HTML 문자열 삽입
+    tempDiv.innerHTML = htmlString;
 
-  // 모든 contenteditable="true" 태그 찾아 false로 변경
-  tempDiv.querySelectorAll('[contenteditable="true"]').forEach((el) => {
-    el.setAttribute('contenteditable', 'false');
-  });
+    // 모든 contenteditable="true" 태그 찾아 false로 변경
+    tempDiv.querySelectorAll('[contenteditable="true"]').forEach((el) => {
+        el.setAttribute('contenteditable', 'false');
+    });
 
-  // 변경된 HTML 문자열 반환
-  return tempDiv.innerHTML;
+    // 변경된 HTML 문자열 반환
+    return tempDiv.innerHTML;
 }
 
 // 게시글 수정
 const editNews = () => {
-  editModeData.value = newsCont.value;
+    editModeData.value = newsCont.value;
 
-  router.push({
-    path: '/newsletter-add',
-    query: {
-      mode: 'edit',
-      news: newsId.value,
-      category: cateId.value
-    }
-  });
+    router.push({
+        path: '/newsletter-add',
+        query: {
+            mode: 'edit',
+            news: newsId.value,
+            category: cateId.value
+        }
+    });
 };
 
 // 게시글 삭제
 const deleteNews = async () => {
-  const res = await skapi.deleteRecords({
-    record_id: newsId.value
-  });
+    const res = await skapi.deleteRecords({
+        record_id: newsId.value
+    });
 
-  if (res) {
-    alert('삭제되었습니다.');
-    router.back();
-  } else {
-    alert('삭제에 실패했습니다.');
-  }
+    if (res) {
+        alert('삭제되었습니다.');
+        router.back();
+    } else {
+        alert('삭제에 실패했습니다.');
+    }
 };
 
 onMounted(async () => {
-  const res = await getNewsletterList(cateId.value);
-
-  if (res) {
-    newsCont.value = res.find((el) => el.record_id === newsId.value);
-
-    if (newsCont.value === 'undefined' || !newsCont.value) {
-      alert('게시글이 삭제되었습니다.');
-      router.back();
-      return;
-    }
+    newsCont.value = newsletterList.value.find((item) => item.record_id === newsId.value);
 
     // 첨부파일 리스트
-    if (Object.keys(newsCont.value.bin).length && newsCont.value.bin.form_data.length) {
-      let fileList = [];
-      let form_data = newsCont.value.bin.form_data;
+    if (newsCont.value.bin.form_data.length) {
+        let fileList = [];
+        let form_data = newsCont.value.bin.form_data;
 
-      function getFileUserId(str) {
-        if (!str) return '';
-        return str.split('/')[3];
-      }
+        const result = form_data.map((el) => ({
+            ...el,
+            user_id: el.path.split('/')[3] || ''
+        }));
 
-      const result = form_data.map((el) => ({
-        ...el,
-        user_id: getFileUserId(el.path)
-      }));
+        fileList.push(...result);
 
-      fileList.push(...result);
-
-      uploadedFile.value = fileList;
+        uploadedFile.value = fileList;
     } else {
-      uploadedFile.value = [];
+        uploadedFile.value = [];
     }
-  } else {
-    newsCont.value = [];
-  }
 });
 </script>
 
 <style scoped lang="less">
 .inner {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
 }
 
 .title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 1rem;
 
-  span {
-    color: var(--gray-color-400);
-    line-height: 1.4;
-  }
+    span {
+        color: var(--gray-color-400);
+        line-height: 1.4;
+    }
 }
 
 .wrap {
-  padding: 3rem 2.4rem;
+    padding: 3rem 2.4rem;
 }
 
 .form-wrap {
-  position: relative;
-  max-width: 900px;
-
-  .title {
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    gap: 4px;
-    flex-wrap: wrap;
-    margin-bottom: 2rem;
+    max-width: 900px;
 
-    h2 {
-      font-size: 2rem;
-      line-height: 1.2;
-    }
+    .title {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
 
-    .icon {
-      padding: 0;
-      cursor: pointer;
+        h2 {
+            font-size: 2rem;
+            line-height: 1.2;
+        }
+
+        .icon {
+            padding: 0;
+            cursor: pointer;
+        }
     }
-  }
 }
 
 .table {
-  tr {
-    td {
-      padding: 0.75rem;
-    }
-  }
-
-  tbody {
-    th {
-      position: relative;
-
-      .add-btn {
-        position: absolute;
-        left: 50%;
-        bottom: -12px;
-        background-color: #fff;
-        border: 1px solid var(--primary-color-300);
-        border-radius: 50%;
-        transform: translateX(-50%);
-        z-index: 10;
-        cursor: pointer;
-
-        .icon {
-          padding: 0;
-
-          svg {
-            width: 18px;
-            height: 18px;
-            fill: var(--primary-color-400);
-          }
-        }
-
-        &:hover {
-          background-color: var(--primary-color-50);
-        }
-      }
-    }
     tr {
-      &:hover {
-        background-color: transparent;
-      }
-
-      &:first-of-type {
-        border-top: 1px solid var(--gray-color-300);
-      }
+        td {
+            padding: 0.75rem;
+        }
     }
-  }
+
+    tbody {
+        th {
+            position: relative;
+
+            .add-btn {
+                position: absolute;
+                left: 50%;
+                bottom: -12px;
+                background-color: #fff;
+                border: 1px solid var(--primary-color-300);
+                border-radius: 50%;
+                transform: translateX(-50%);
+                z-index: 10;
+                cursor: pointer;
+
+                .icon {
+                    padding: 0;
+
+                    svg {
+                        width: 18px;
+                        height: 18px;
+                        fill: var(--primary-color-400);
+                    }
+                }
+
+                &:hover {
+                    background-color: var(--primary-color-50);
+                }
+            }
+        }
+        tr {
+            &:hover {
+                background-color: transparent;
+            }
+
+            &:first-of-type {
+                border-top: 1px solid var(--gray-color-300);
+            }
+        }
+    }
 }
 
 .dvs-wrap {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  text-align: center;
-
-  .dvs-list {
     display: flex;
-    justify-content: center;
-    background-color: var(--gray-color-50);
-    border: 1px solid var(--gray-color-300);
-    border-radius: 8px;
-  }
+    gap: 8px;
+    flex-wrap: wrap;
+    text-align: center;
 
-  .dvs-name {
+    .dvs-list {
+        display: flex;
+        justify-content: center;
+        background-color: var(--gray-color-50);
+        border: 1px solid var(--gray-color-300);
+        border-radius: 8px;
+    }
+
+    .dvs-name {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        padding: 0.25rem;
+        gap: 2px;
+
+        .icon {
+            padding: 0;
+
+            &:hover {
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+.empty {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
-    padding: 0.25rem;
-    gap: 2px;
-
-    .icon {
-      padding: 0;
-
-      &:hover {
-        cursor: pointer;
-      }
-    }
-  }
-}
-
-.empty {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  font-size: 0.875rem;
-  line-height: 1.2;
-  color: var(--gray-color-400);
-  // cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    color: var(--gray-color-400);
+    // cursor: pointer;
 }
 
 .button-wrap {
-  margin-top: 3rem;
+    margin-top: 3rem;
 }
 
 .btn {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 ._wysiwyg4all {
-  padding: 0;
+    padding: 0;
 }
 
 .title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 
-  .title {
-    margin-bottom: 0;
-  }
+    .title {
+        margin-bottom: 0;
+    }
 
-  .edit {
-    font-size: 0.625rem;
-    background-color: var(--gray-color-200);
-    border-radius: 6px;
-    padding: 1px 4px;
-    display: inline-block;
-    position: relative;
-    top: 1px;
-  }
+    .edit {
+        font-size: 0.625rem;
+        background-color: var(--gray-color-200);
+        border-radius: 6px;
+        padding: 1px 4px;
+        display: inline-block;
+        position: relative;
+        top: 1px;
+    }
 }
 
 @media (max-width: 768px) {
-  .inner {
-    padding: 1rem;
-  }
+    .inner {
+        padding: 1rem;
+    }
 }
 </style>
 
 <style lang="less">
 ._wysiwyg4all {
-  ul {
-    list-style: disc !important;
-    padding: initial !important;
-    padding-inline-start: 40px !important;
-  }
+    ul {
+        list-style: disc !important;
+        padding: initial !important;
+        padding-inline-start: 40px !important;
+    }
 
-  ol {
-    list-style: decimal !important;
-    padding: initial !important;
-    padding-inline-start: 40px !important;
-  }
+    ol {
+        list-style: decimal !important;
+        padding: initial !important;
+        padding-inline-start: 40px !important;
+    }
 
-  li {
-    list-style: inherit !important;
-    padding: initial !important;
-  }
+    li {
+        list-style: inherit !important;
+        padding: initial !important;
+    }
 }
 </style>

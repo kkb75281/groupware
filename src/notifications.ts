@@ -377,30 +377,35 @@ export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
 // 카테고리 해당 게시글 리스트
-export const getNewsletterList = async (tag, refresh = false) => {
-    const getNews = await skapi.getRecords({
+export const getNewsletterList = async (tag, fetchOptions = {}) => {
+    const query = {
         table: {
             name: 'newsletter',
             access_group: 99
         },
         reference: tag
-    });
+    };
 
-    if (!getNews.list) {
-        newsletterList.value = [];
-    }
+    const options = {
+        ascending: false,
+        limit: 10,
+        ...fetchOptions
+    };
 
-    newsletterList.value = getNews.list.sort((a, b) => b.uploaded - a.uploaded);
+    const getNews = await skapi.getRecords(query, options);
 
     const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
-
-    newsletterList.value = newsletterList.value.map((item, index) => {
+    newsletterList.value = getNews.list.map((item, index) => {
         return {
             ...item,
             writer: writer[index]?.list?.[0]?.name || '-'
         };
     });
-    return newsletterList.value;
+
+    return {
+        list: newsletterList.value,
+        endOfList: getNews.endOfList
+    };
 };
 
 export async function subscribeNotification() {
@@ -621,4 +626,16 @@ watch(
 //     send_user,
 //     ...additionalInfo
 //   };
+// }
+
+// {
+//     noti_id: '', // audit(결재요청record_id), notice(news_id)
+//     noti_type: '', // audit, notice, comment
+//     send_date: new Date().getTime(),
+//     send_user: '',
+//     content: '', // 타이틀이나 내용이나 알람에 떠야하는 내용
+//     etc: { // 추가 정보
+//         news_refer?: '',
+//         audit_type?: '결재요청인지 결재여부인지',
+//         audit_doc_id?: '결재문서 record_id',
 // }

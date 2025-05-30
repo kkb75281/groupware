@@ -48,7 +48,7 @@
               td(colspan="4") 등록된 공지사항이 없습니다.
           template(v-else)
             tr.hover(v-for="(news, index) in newsletterList" :key="news.record_id" @click="router.push({ path: '/newsletter-detail/' + news.record_id, query: { category: route.query.category } })")
-              td {{ newsletterList.length - index }}
+              td {{ index + 1 + (3 * (currentPage - 1)) }}
               td.left
                 .title-wrap
                   p.title {{ news.data?.news_title }}
@@ -56,7 +56,7 @@
               td {{ convertTimestampToDateMillis(news.uploaded) }}
               td {{ news.writer }}
 
-//- .pagination
+.pagination
     button.btn-prev.icon(type="button" @click="currentPage--;" :class="{'nonClickable': fetching || currentPage <= 1 }")
         svg
             use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
@@ -65,6 +65,8 @@
     button.btn-next.icon(type="button" @click="currentPage++;" :class="{'nonClickable': fetching || endOfList && currentPage >= maxPage }") Next
         svg
             use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+
+//- Pagination(:fetchFunction="fetchNewsletter" :ascending="false" @update:pageData="onPageDataUpdate")
 </template>
 
 <script setup>
@@ -74,6 +76,7 @@ import { newsletterList, getNewsletterList } from '@/notifications.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { skapi } from '@/main.ts';
 import Pager from '@/components/pager';
+// import Pagination from '@/components/pagination.vue';
 
 import Loading from '@/components/loading.vue';
 
@@ -186,14 +189,14 @@ const getPage = async (refresh = false) => {
     if (refresh) {
         pager = await Pager.init({
             id: 'record_id',
-            resultsPerPage: 3,
+            resultsPerPage: 10,
             sortBy: 'uploaded',
             order: ascending.value ? 'asc' : 'desc'
         });
     }
 
     if ((!refresh && maxPage.value >= currentPage.value) || endOfList.value) {
-        tempSaveList.value = pager.getPage(currentPage.value).list;
+        newsletterList.value = pager.getPage(currentPage.value).list;
         return;
     } else if (!endOfList.value || refresh) {
         fetching.value = true;
@@ -202,9 +205,9 @@ const getPage = async (refresh = false) => {
             // fetch from server
             let fetchOptions = Object.assign(
                 { fetchMore: !refresh },
-                { limit: 3, ascending: false }
+                { limit: 10, ascending: false }
             );
-            let fetchedData = await getTempSaveMyDoc(fetchOptions);
+            let fetchedData = await getNewsletterList(cateId.value, fetchOptions);
 
             // save endOfList status
             endOfList.value = fetchedData.endOfList;
@@ -221,10 +224,10 @@ const getPage = async (refresh = false) => {
             maxPage.value = disp.maxPage;
 
             // render data
-            tempSaveList.value = disp.list;
+            newsletterList.value = disp.list;
         } catch (error) {
             console.error('Error getting page:', error);
-            tempSaveList.value = [];
+            newsletterList.value = [];
         } finally {
             fetching.value = false;
         }
@@ -240,9 +243,18 @@ watch(currentPage, (n, o) => {
     }
 });
 
+// 페이지 데이터 업데이트 이벤트 핸들러
+// function fetchNewsletter({ fetchMore = false, limit = 10, ascending = false }) {
+//     return getNewsletterList(cateId.value, { fetchMore, limit, ascending });
+// }
+
+// function onPageDataUpdate(pageData) {
+//     newsletterList.value = pageData;
+// }
+
 onMounted(async () => {
     newsletterList.value = [];
-    // await getPage(true);
+    await getPage(true);
     await getNewsletterList(cateId.value).catch((err) => {
         if (
             err.code === 'INVALID_REQUEST' ||
