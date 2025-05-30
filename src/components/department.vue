@@ -14,7 +14,7 @@ details
             span.label-checkbox
         .folder
         span.name {{ department.name }} 
-        span.total(v-if="!props.onlyDivision") {{ department.total }}
+        span.total(v-if="!props.onlyDivision") {{ props.excludeCurrentUser && currentUserDivisions.includes(department.name) ? department.total - 1 : department.total }}
     ul
         //- 부서 구성원
         template(v-for="(member, index) in department.members")
@@ -38,21 +38,23 @@ details
                 .name
                     | {{ member.user.name + ' / ' + member.position }}
 
-        //- 하위 부서
-        li(v-for="(sub, index) in department.subDepartments" :key="index")
-            Department(
-                :open="sub.isOpened"
-                :department="sub"
-                :useCheckbox="props.useCheckbox"
-                :onlyDivision="props.onlyDivision"
-                @update-check="$emit('update-check', $event)"
-                @click.stop
-            )
+    //- 하위 부서
+    Department(
+        v-for="(sub, index) in department.subDepartments"
+        :key="index" 
+        :open="sub.isOpened"
+        :department="sub"
+        :useCheckbox="props.useCheckbox"
+        :onlyDivision="props.onlyDivision"
+        @update-check="$emit('update-check', $event)"
+        @click.stop
+    )
 </template>
 
 <script setup>
 import { computed, onMounted } from 'vue';
 import { user } from '@/user.ts';
+import { currentUserDivisions } from '@/components/organigram';
 
 const props = defineProps({
     department: {
@@ -80,53 +82,6 @@ const props = defineProps({
         default: () => []
     }
 });
-
-// // 초기 체크 상태 설정
-// const initializeCheckState = () => {
-//     // 현재 모달 타입의 선택된 사용자들 가져오기
-//     const selectedUsers = [];
-
-//     for (const key in props.selectedAuditors) {
-//         if (!Array.isArray(props.selectedAuditors[key])) {
-//             props.selectedAuditors[key] = [props.selectedAuditors[key]];
-//         }
-//         selectedUsers.push(...props.selectedAuditors[key]);
-//     }
-
-//     // const selectedUserIds = selectedUsers.map((user) => user.data.user_id);
-
-//     const selectedUserIds = [];
-//     selectedUsers.forEach((user) => {
-//         const key = user.index?.name?.split('.')[0];
-//         const value = user.data?.user_id;
-//         selectedUserIds.push(value); // {부서: 유저아이디}
-//     });
-
-//     // 부서 멤버들의 체크 상태 설정
-//     props.department.members.forEach((member) => {
-//         // member.isChecked = selectedUserIds.includes(member.data.user_id) && (member.index.name.split('.')[0] === );
-
-//         // selectedUserIds의 key와 value와 모두 일치하는 멤버 저장
-//         member.isChecked = selectedUserIds.includes(member.data.user_id);
-//         // console.log('member.isChecked : ', member.isChecked);
-//     });
-
-//     // 모든 멤버가 선택된 경우 부서 체크박스도 체크
-//     if (
-//         props.department.members.length > 0 &&
-//         props.department.members.every((member) => member.isChecked)
-//     ) {
-//         props.department.isChecked = true;
-//     } else {
-//         props.department.isChecked = false;
-//     }
-// };
-
-// // 컴포넌트 마운트 시 초기화
-// onMounted(() => {
-//     // initializeCheckState();
-//     // console.log(props.onlyDvsName);
-// });
 </script>
 
 <style lang="less" scope>
@@ -137,6 +92,12 @@ details {
                 display: none;
             }
         }
+    }
+
+    details {
+        margin-left: 1.8rem;
+        // padding-left: 1.8rem;
+        // border-left: 1px solid var(--gray-color-200);
     }
 }
 
@@ -226,7 +187,8 @@ details {
         }
 
         >ul {
-            padding-left: 1.8rem;
+            margin-left: 2.4rem;
+            border-left: 1px dashed var(--gray-color-200);
         }
     }
 }
@@ -239,7 +201,7 @@ ul {
             align-items: center;
             gap: 0.5rem;
             margin-bottom: 1rem;
-            padding-left: 1.8rem;
+            padding-left: 1.5rem;
             white-space: nowrap;
 
             .icon {

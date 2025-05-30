@@ -23,6 +23,7 @@ export type Organigram = {
 
 export let organigram: Ref<Organigram[]> = ref([]);
 export let getOrganigramRunning: Ref<boolean> = ref(false);
+export let currentUserDivisions: Ref<string[]> = ref([]);
 export let excludeCurrentUser = ref(false);
 export let onlyMyDivision = ref(false);
 
@@ -39,9 +40,9 @@ export async function getOrganigram(refresh = false) {
     organigram.value = []; // 초기화
 
     // 현재 사용자의 부서 정보를 가져오기
-    const currentUserDepartment = await getCurrentUserDepartment();
+    currentUserDivisions.value = await getCurrentUserDepartment();
 
-    if (onlyMyDivision.value && currentUserDepartment) {
+    if (onlyMyDivision.value && currentUserDivisions.value) {
         // 내 부서만 보기가 활성화되어 있고, 사용자의 부서 정보가 있을 때
         // 현재 사용자의 최상위 부서와 관련된 모든 부서를 표시
         for (const division in divisionNameList.value) {
@@ -49,7 +50,7 @@ export async function getOrganigram(refresh = false) {
             if (typeof fullName !== 'string') continue;
 
             // 사용자의 최상위 부서로 시작하는 모든 부서를 표시
-            if (currentUserDepartment.some((dept) => fullName.startsWith(dept))) {
+            if (currentUserDivisions.value.some((dept) => fullName.startsWith(dept))) {
                 const path = fullName.split('/');
                 await addDepartment(path, division, organigram.value);
             }
@@ -102,7 +103,7 @@ async function getCurrentUserDepartment() {
             condition: '>='
         });
 
-        const rootDepartments = [];
+        const rootDepartments: string[] = [];
 
         // 사용자가 속한 부서가 없는 경우
         if (userDvsList.list && userDvsList.list.length > 0) {

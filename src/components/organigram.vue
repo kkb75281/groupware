@@ -64,16 +64,23 @@ const props = defineProps({
 const checkedEmps = ref([]);
 
 onMounted(async () => {
+    let refresh = false;
+
+    if (excludeCurrentUser.value !== props.excludeCurrentUser || onlyMyDivision.value !== props.onlyMyDivision) {
+        refresh = true;
+    }
+
     excludeCurrentUser.value = props.excludeCurrentUser;
     onlyMyDivision.value = props.onlyMyDivision;
-    await getOrganigram();
+
+    await getOrganigram(refresh);
+
+    // 먼저 모든 체크박스 상태 초기화
+    resetAllCheckStatus();
 
     if (props.selectedEmployees && props.selectedEmployees.length > 0) {
         // 모달 열었을때 체크된 사용자가 있을 경우
         console.log('Selected Employees onMounted:', props.selectedEmployees);
-
-        // 먼저 모든 체크박스 상태 초기화
-        resetAllCheckStatus();
 
         // 선택된 사용자들에 대해 체크 상태 설정
         for (const emp of props.selectedEmployees) {
@@ -197,7 +204,11 @@ function updateCheckStatus(update) {
         // 하위 부서 상태 동기화
         if (target.subDepartments && target.subDepartments.length > 0) {
             target.subDepartments.forEach((sub) => {
-                updateCheckStatus(update);
+                updateCheckStatus({
+                    type: 'department',
+                    target: sub,
+                    isChecked: isChecked
+                });
             });
         }
     } else if (type === 'member') {
