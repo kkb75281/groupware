@@ -83,7 +83,14 @@ onMounted(async () => {
             if (employeeToCheck) {
                 const department = findDepartmentOfEmployee(emp.user?.user_id);
                 employeeToCheck.isChecked = true;
-                department.isOpened = true;
+                if (department) department.isOpened = true;
+
+                // selectedEmployees에만 있는 키를 employeeToCheck에 복사
+                Object.keys(emp).forEach(key => {
+                    if (!(key in employeeToCheck)) {
+                        employeeToCheck[key] = emp[key];
+                    }
+                });
 
                 // 체크된 사용자를 checkedEmps 배열에 추가
                 if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id)) {
@@ -218,8 +225,13 @@ function updateCheckStatus(update) {
     // 조직도에 관련된 변수는 빼고 checkedEmps 배열을 emit 이벤트로 전달
     let sendCheckedEmps = checkedEmps.value.map(emp => {
         const { isChecked, ...rest } = emp;
+        if (props.excludeCurrentUser && emp.user.user_id === user.user_id) {
+            return null; // 본인 제외
+        }
         return rest;
     });
+
+    sendCheckedEmps = sendCheckedEmps.filter(emp => emp !== null); // null 값 제거
 
     emit('selection-change', sendCheckedEmps);
 }

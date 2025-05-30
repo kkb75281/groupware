@@ -577,6 +577,10 @@ const openModal = () => {
         });
     }
 
+    selectedUsers.value = [
+        ...selectedUsers.value.filter(u => u.role !== 'receivers'),
+        ...selectedUsers.value.filter(u => u.role === 'receivers')
+    ];
     // selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
     // prevSelected.value = selectedUsers.value;
 
@@ -711,55 +715,52 @@ const previewAudit = () => {
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
-    console.log('request audit:', users);
-    console.log('selectedAuditors:', selectedAuditors.value);
-    console.log('selectedUsers:', selectedUsers.value);
+    selectedUsers.value = selectedUsers.value.filter(selUser =>
+        users.some(user => user.user.user_id === selUser.user.user_id)
+    );
 
-    // // 선택된 유저들을 초기 처리
-    // users.forEach((user) => {
-    //     // 선택된 유저들에게 role 정보가 없으면 추가
-    //     if (!user.role) {
-    //         user.role = 'approvers';
-    //     }
+    let maxOrder = 0;
 
-    //     // 결재자 순서 정렬 설정
-    //     if (user.sortable === undefined) {
-    //         // receivers 역할이면 정렬 불가능으로 설정
-    //         user.sortable = user.role !== 'receivers';
-    //     }
-    // });
+    users.forEach(user => {
+        if (user.role !== 'receivers' && typeof user.order === 'number') {
+            if (user.order > maxOrder) maxOrder = user.order;
+        }
+    });
 
-    // // 수신참조자와 그 외(결재자/합의자)로 분리
-    // const receiversUsers = users.filter((user) => user.role === 'receivers');
-    // const nonReceiversUsers = users.filter((user) => user.role !== 'receivers');
+    let nextOrder = maxOrder + 1;
 
-    // // 비-receivers 사용자들을 먼저 배치하고, 그 뒤에 receivers 사용자들을 배치
-    // selectedUsers.value = [...nonReceiversUsers, ...receiversUsers];
+    // 선택된 유저들을 초기 처리
+    users.forEach((user) => {
+        // 선택된 유저를 selectedUsers에 추가
+        const existingUserIndex = selectedUsers.value.findIndex((u) => u.user.user_id === user.user.user_id);
 
-    // // 순서(order) 할당
-    // // 결재자와 합의자는 현재 배열 순서대로 번호 부여
-    // let orderCounter = 1;
+        if (existingUserIndex !== -1) {
+            // 이미 존재하는 유저는 기존 role을 유지하고, 나머지 정보만 업데이트
+            const existingUser = selectedUsers.value[existingUserIndex];
+            // order, sortable 등은 필요에 따라 업데이트
+            if (!existingUser.order || existingUser.order === undefined) {
+                existingUser.order = user.order;
+            }
+            if (!('sortable' in existingUser)) {
+                existingUser.sortable = user.sortable;
+            }
+            // 필요하다면 다른 필드도 업데이트
+            selectedUsers.value[existingUserIndex] = { ...user, role: existingUser.role, order: existingUser.order, sortable: existingUser.sortable };
+        } else {
+            // 새로운 유저는 추가
+            if (!user.role) user.role = 'approvers';
+            if (!user.order || user.order === undefined) user.order = nextOrder++;
+            if (!('sortable' in user)) user.sortable = user.role !== 'receivers';
+            selectedUsers.value.push(user);
+        }
+    });
 
-    // selectedUsers.value.forEach((user) => {
-    //     if (user.role !== 'receivers') {
-    //         user.order = orderCounter++;
-    //     }
-    // });
+    selectedUsers.value = [
+        ...selectedUsers.value.filter(u => u.role !== 'receivers'),
+        ...selectedUsers.value.filter(u => u.role === 'receivers')
+    ];
 
-    // // 수신참조자는 별도의 카운터로 순서 부여 (선택적)
-    // let receiverCounter = 1;
-    // selectedUsers.value.forEach((user) => {
-    //     if (user.role === 'receivers') {
-    //         user.order = receiverCounter++;
-    //     }
-    // });
-
-    // // 선택된 유저들의 순서 저장
-    // selectedUsersOrder.value = selectedUsers.value.map((user) => ({
-    //     user_id: user.user.user_id,
-    //     order: user.order,
-    //     type: user.role
-    // }));
+    reorderUsers();
 };
 
 // 수신참조자로 선택되면 결재자 순서에서 가장 아래로 이동
@@ -822,12 +823,12 @@ const reorderUsers = () => {
         }
     });
 
-    // 선택된 유저들의 순서 정보 업데이트
-    selectedUsersOrder.value = selectedUsers.value.map((user) => ({
-        user_id: user.user.user_id,
-        order: user.order,
-        type: user.role
-    }));
+    // // 선택된 유저들의 순서 정보 업데이트
+    // selectedUsersOrder.value = selectedUsers.value.map((user) => ({
+    //     user_id: user.user.user_id,
+    //     order: user.order,
+    //     type: user.role
+    // }));
 };
 
 // 선택된 모든 결재자 ID 목록 가져오기
@@ -1717,8 +1718,6 @@ const applyFormData = async (formData) => {
         };
     }
 
-    console.log('selectedAuditors.valueㅏㅏㅏㅏㅏㅏㅏ : ', selectedAuditors.value);
-
     // 참조문서
     if (formData.data.reference_docs) {
         const referDocId = JSON.parse(formData.data.reference_docs).referDocId;
@@ -2115,8 +2114,6 @@ onMounted(async () => {
                 access_group: 1
             }
         });
-
-        console.log('empList : ', empList);
 
         // 직원 정보 맵 생성
         const empMap = {};
