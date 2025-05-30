@@ -576,35 +576,25 @@ function copyTableContent(originalTable, newTable) {
         }
     }
 
-    function getMergedCellRemoveRange(startRow, startCol, endRow, endCol) {
-        for (let r = startRow; r <= endRow; r++) {
-            for (let c = startCol; c <= endCol; c++) {
-                if (!(r === startRow && c === startCol)) {
-                    removeCells.add(`${r},${c}`);
+    // 병합 셀 범위 먼저 모두 수집
+    for (let r = 0; r < originalRows.length; r++) {
+        const originalCells = originalRows[r].cells;
+        let colIndex = 0;
+        for (let c = 0; c < originalCells.length; c++) {
+            const cell = originalCells[c];
+            const rowSpan = cell.rowSpan || 1;
+            const colSpan = cell.colSpan || 1;
+            // 병합 셀의 영역 표시
+            if (rowSpan > 1 || colSpan > 1) {
+                for (let rr = r; rr < r + rowSpan; rr++) {
+                    for (let cc = colIndex; cc < colIndex + colSpan; cc++) {
+                        if (!(rr === r && cc === colIndex)) {
+                            removeCells.add(`${rr},${cc}`);
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    // 병합 셀 범위 먼저 모두 수집
-    for (let r = 0; r < originalRows.length && r < newRows.length; r++) {
-        const originalCells = originalRows[r].cells;
-        for (let c = 0; c < originalCells.length; c++) {
-            const originalCell = originalCells[c];
-            const originalCellRange = {
-                startRow: r,
-                startCol: c,
-                endRow: r + originalCell.rowSpan - 1,
-                endCol: c + originalCell.colSpan - 1
-            };
-            if (originalCellRange.startRow !== originalCellRange.endRow || originalCellRange.startCol !== originalCellRange.endCol) {
-                getMergedCellRemoveRange(
-                    originalCellRange.startRow,
-                    originalCellRange.startCol,
-                    originalCellRange.endRow,
-                    originalCellRange.endCol
-                );
-            }
+            colIndex += colSpan;
         }
     }
 
@@ -637,10 +627,10 @@ function copyTableContent(originalTable, newTable) {
                 }
             });
 
+            const style = window.getComputedStyle(originalCell);
+            newCell.style.width = style.width;
+            newCell.style.height = style.height;
             newCell.innerHTML = originalCell.innerHTML.trim() || '&nbsp;';
-            newCell.style = originalCell.style.cssText || '';
-            newCell.style.width = originalCell.width + 'px' || 'auto';
-            newCell.style.height = originalCell.height + 'px' || 'auto';
 
             addResizer(tableState, newCell);
         }
