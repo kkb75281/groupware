@@ -1556,15 +1556,20 @@ const saveForm = async ({
 
         // 임시 저장일 경우
         if (isTemp) {
-            const res = await skapi.getRecords({
-                table: {
-                    name: tableName,
-                    access_group: accessGroup
-                },
-                record_id: route.query.record_id
-            });
+            let res;
 
-            if (res.list.length > 0 && route.query.record_id === res.list[0].record_id) {
+            if (route.query.record_id) {
+                res = await skapi.getRecords({
+                    table: {
+                        name: tableName,
+                        access_group: accessGroup
+                    },
+                    record_id: route.query.record_id
+                });
+            }
+
+            if (res && res.list.length > 0 && route.query.record_id === res.list[0].record_id) {
+                console.log('임시 저장된 결재 양식이 있습니다. 업데이트합니다.');
                 // 기존 임시 저장된 결재 양식이 있는 경우 업데이트
                 await skapi.deleteRecords({ record_id: res.list[0].record_id });
 
@@ -1575,8 +1580,9 @@ const saveForm = async ({
                     }
                 });
             } else {
+                console.log('임시 저장된 결재 양식이 없습니다. 새로 생성합니다.');
                 // 임시 저장된 결재 양식이 없는 경우 새로 생성
-                await skapi.postRecord(formData, options);
+                // await skapi.postRecord(formData, options);
             }
         }
 
@@ -1589,6 +1595,9 @@ const saveForm = async ({
             router.push('/admin/list-form');
         } else if (isTemp && redirectPath) {
             router.push({ path: '/approval/audit-list-tempsave' });
+        } else {
+            step.value = 1; // 양식 저장 후 1단계로 초기화
+            getMyDocForm(); // 내 결재 양식 목록 새로고침
         }
 
         return res;
