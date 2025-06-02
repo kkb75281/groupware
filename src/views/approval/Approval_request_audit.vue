@@ -1448,7 +1448,7 @@ const saveForm = async ({
     redirectPath = true // 저장 후 리다이렉트 경로
 }) => {
     // 결재 제목이 없을 경우 저장 불가
-    if (!formTitle.value && !auditTitle.value) {
+    if (!formTitle.value || !auditTitle.value) {
         alert('결재 제목을 입력해주세요.');
         return;
     }
@@ -1533,19 +1533,15 @@ const saveForm = async ({
         }
 
         // 마스터 결재 양식 저장일 경우, 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
-        // if (isMaster) {
-        //     await skapi
-        //         .postRecord(null, {
-        //             table: {
-        //                 name: `audit_comment_${auditId}`,
-        //                 access_group: 'private'
-        //             },
-        //             reference: auditId
-        //         })
-        //         .then((res) => {
-        //             console.log('res : ', res);
-        //         });
-        // }
+        if (isMaster) {
+            await skapi.postRecord(null, {
+                table: {
+                    name: `audit_comment_${auditId}`,
+                    access_group: 'private'
+                },
+                reference: auditId
+            });
+        }
 
         const options = {
             table: {
@@ -2474,264 +2470,48 @@ onUnmounted(() => {
 
 .select-approver-wrap {
     >div {
-        >div {
-            border: 1px solid var(--gray-color-300);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            overflow-y: auto;
-        }
-
-        .btn-remove {
-            .icon {
-                padding: 0;
-
-                svg {
-                    width: 16px;
-                    height: 16px;
-                    fill: var(--warning-color-500);
-                }
-            }
-        }
+        border: 1px solid var(--gray-color-300);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        overflow-y: auto;
     }
 
-    .empty {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        font-size: 0.875rem;
-        line-height: 1.3;
-        color: var(--gray-color-400);
-    }
-
-    #selected_auditors {
-        tr {
-            td {
-                padding: 0.25rem;
-            }
-        }
-    }
-
-    .upload-file {
-        .upload-file-list {
-            margin-top: 0;
-
-            .only-text {
-                margin-left: 0;
-                width: 100%;
-                border: 1px dashed var(--gray-color-300);
-                border-radius: 8px;
-                padding: 9px 12px;
-                font-size: 0.75rem;
-                color: var(--gray-color-400);
-                text-align: left;
-            }
-        }
-
-        .file-name {
-            text-align: left;
-            display: inline-block;
-
-            &:first-of-type {
-                margin-top: 16px;
-            }
-        }
-
-        .file-item {
-            .file-name {
-                margin-top: 0;
-            }
-
-            &:first-of-type {
-                margin-top: 16px;
-            }
-        }
-
-        .btn-remove {
-            width: initial;
-            height: initial;
-            border: none;
-        }
-
+    .btn-remove {
         .icon {
             padding: 0;
 
             svg {
+                width: 16px;
+                height: 16px;
                 fill: var(--warning-color-500);
             }
         }
     }
+}
 
-    .wysiwyg-wrap {
-        max-width: calc(100vw - 117px);
-        text-align: left;
-        border: 1px solid var(--gray-color-200);
-        border-radius: 0.5rem;
-        overflow: hidden;
-    }
+.empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    color: var(--gray-color-400);
+}
 
-    .modal {
-        .modal-cont {
-            min-width: 40rem;
-            max-width: 100%;
+#selected_auditors {
+    tr {
+        td {
+            padding: 0.25rem;
         }
     }
+}
 
-    .input-title {
-        input {
-            border: none;
-            border-bottom: 1px solid var(--gray-color-200);
-            border-radius: 0;
-            font-size: 1.75rem;
-            font-weight: 700;
-            line-height: 1.3;
-            text-align: center;
+.upload-file {
+    .upload-file-list {
+        margin-top: 0;
 
-            &::placeholder {
-                font-size: 1.75rem;
-            }
-        }
-
-        .sub-desc {
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
-            text-align: center;
-        }
-    }
-
-    .audit-title {
-        text-align: left;
-    }
-
-    .select-approver {
-        .table {
-            min-width: 27rem;
-        }
-    }
-
-    .item-wrap {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-
-        &:last-child {
-            margin-bottom: 0;
-        }
-
-        .selected-wrap {
-            flex: 1;
-        }
-    }
-
-    .label-wrap {
-        border: 1px solid var(--gray-color-200);
-        padding: 0.6rem 0.8rem;
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .desc {
-        font-size: 1rem;
-        color: var(--warning-color-500);
-        line-height: 1.2;
-        word-break: keep-all;
-
-        &.essential {
-            &::after {
-                content: '*';
-                display: inline-block;
-                width: 0.5rem;
-                height: 0.5rem;
-                font-size: 1rem;
-                font-weight: 700;
-                color: #fb9804;
-                margin-left: 0.25rem;
-            }
-        }
-    }
-
-    .reject-setting {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 2rem;
-
-        .checkbox {
-            text-align: right;
-
-            input[type='checkbox']:checked~.label-checkbox::before {
-                input[type='checkbox']:checked~.label-checkbox::before {
-                    border-color: var(--warning-color-500);
-                    background-color: var(--warning-color-500);
-                }
-
-                .label-checkbox {
-                    display: inline-block;
-                    line-height: 1.4;
-                    color: var(--warning-color-500);
-                    word-break: keep-all;
-
-                    &::before {
-                        position: relative;
-                        top: 3px;
-                        width: 0.9rem;
-                        height: 0.9rem;
-                        border: 1px solid var(--warning-color-500);
-                    }
-                }
-            }
-        }
-
-        .wysiwyg-table {
-
-
-            tr,
-            th,
-            td {
-                height: auto;
-            }
-        }
-
-        // 참조문서
-        .refer-doc-wrap {
-            .btn-open-modal {
-                width: 110px;
-                height: 28px;
-                display: flex;
-            }
-
-            .btn-remove {
-                padding: 0;
-                width: initial;
-                height: initial;
-                border: none;
-
-                svg {
-                    width: 16px;
-                    height: 16px;
-                    fill: var(--warning-color-500);
-                }
-            }
-        }
-
-        .refer-doc-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 8px;
-
-            &:first-of-type {
-                margin-top: 16px;
-            }
-        }
-
-        .refer-doc-name {
+        .only-text {
             margin-left: 0;
             width: 100%;
             border: 1px dashed var(--gray-color-300);
@@ -2740,341 +2520,553 @@ onUnmounted(() => {
             font-size: 0.75rem;
             color: var(--gray-color-400);
             text-align: left;
-            cursor: pointer;
+        }
+    }
 
-            &:hover {
-                text-decoration: underline;
+    .file-name {
+        text-align: left;
+        display: inline-block;
+
+        &:first-of-type {
+            margin-top: 16px;
+        }
+    }
+
+    .file-item {
+        .file-name {
+            margin-top: 0;
+        }
+
+        &:first-of-type {
+            margin-top: 16px;
+        }
+    }
+
+    .btn-remove {
+        width: initial;
+        height: initial;
+        border: none;
+    }
+
+    .icon {
+        padding: 0;
+
+        svg {
+            fill: var(--warning-color-500);
+        }
+    }
+}
+
+.wysiwyg-wrap {
+    max-width: calc(100vw - 117px);
+    text-align: left;
+    border: 1px solid var(--gray-color-200);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.modal {
+    .modal-cont {
+        min-width: 40rem;
+        max-width: 100%;
+    }
+}
+
+.input-title {
+    input {
+        border: none;
+        border-bottom: 1px solid var(--gray-color-200);
+        border-radius: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.3;
+        text-align: center;
+
+        &::placeholder {
+            font-size: 1.75rem;
+        }
+    }
+
+    .sub-desc {
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+}
+
+.audit-title {
+    text-align: left;
+}
+
+.select-approver {
+    .table {
+        min-width: 27rem;
+    }
+}
+
+.item-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    .selected-wrap {
+        flex: 1;
+    }
+}
+
+.label-wrap {
+    border: 1px solid var(--gray-color-200);
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.desc {
+    font-size: 1rem;
+    color: var(--warning-color-500);
+    line-height: 1.2;
+    word-break: keep-all;
+
+    &.essential {
+        &::after {
+            content: '*';
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fb9804;
+            margin-left: 0.25rem;
+        }
+    }
+}
+
+.reject-setting {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 2rem;
+
+    .checkbox {
+        text-align: right;
+
+        input[type='checkbox']:checked~.label-checkbox::before {
+            border-color: var(--warning-color-500);
+            background-color: var(--warning-color-500);
+        }
+
+        .label-checkbox {
+            display: inline-block;
+            line-height: 1.4;
+            color: var(--warning-color-500);
+            word-break: keep-all;
+
+            &::before {
+                position: relative;
+                top: 3px;
+                width: 0.9rem;
+                height: 0.9rem;
+                border: 1px solid var(--warning-color-500);
+            }
+        }
+    }
+}
+
+.wysiwyg-table {
+
+    tr,
+    th,
+    td {
+        height: auto;
+    }
+}
+
+// 참조문서
+.refer-doc-wrap {
+    .btn-open-modal {
+        width: 110px;
+        height: 28px;
+        display: flex;
+    }
+
+    .btn-remove {
+        padding: 0;
+        width: initial;
+        height: initial;
+        border: none;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--warning-color-500);
+        }
+    }
+}
+
+.refer-doc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 8px;
+
+    &:first-of-type {
+        margin-top: 16px;
+    }
+}
+
+.refer-doc-name {
+    margin-left: 0;
+    width: 100%;
+    border: 1px dashed var(--gray-color-300);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 0.75rem;
+    color: var(--gray-color-400);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+// 참조문서 추가 모달
+.modal-refer-list {
+    .modal-cont {
+        overflow-y: hidden;
+    }
+
+    .modal-header {
+        margin-bottom: 0;
+    }
+
+    .modal-body {
+        max-height: calc(100vh - 10rem);
+        overflow-y: hidden;
+    }
+
+    .refer-list-wrap {
+        overflow-y: auto;
+        max-height: calc(100vh - 15rem);
+
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            /* 스크롤 핸들 색상 */
+            border-radius: 10px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+            /* 스크롤 트랙 배경 */
+            border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+            background-color: #999;
+            /* 마우스 호버 시 색상 */
+        }
+    }
+
+    .top-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .sub-title {
+        font-size: 1rem;
+        flex-wrap: 500;
+    }
+
+    .sel-filter {
+        width: 10.4rem;
+        cursor: pointer;
+    }
+
+    .doc-title {
+        color: var(--primary-color-500);
+        text-decoration: none;
+        cursor: pointer;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .doc-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    .status {
+        border: 1px solid var(--gray-color-400);
+        border-radius: 6px;
+        padding: 1px 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--gray-color-500);
+
+        &.approve {
+            color: var(--primary-color-400);
+            border-color: var(--primary-color-400);
+        }
+
+        &.reject {
+            color: var(--warning-color-500);
+            border-color: var(--warning-color-500);
+        }
+    }
+}
+
+// 참조문서 상세 모달
+.modal-refer-detail {
+    .table {
+        tr {
+            border-top: 1px solid var(--gray-color-300);
+            font-weight: 400;
+
+            td {
+                background-color: #fff;
+                padding: 0.5rem;
+            }
+        }
+    }
+
+    .approver-wrap {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        text-align: center;
+        height: 100%;
+
+        .approver-list {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            min-width: 100px;
+            min-height: 8rem;
+            border-right: 1px solid var(--gray-color-300);
+            border-bottom: 1px solid var(--gray-color-300);
+            margin-bottom: -1px;
+            position: relative;
+
+            &.noexist {
+                background-color: var(--gray-color-50);
+
+                span {
+                    color: var(--gray-color-300);
+                }
             }
         }
 
-        // 참조문서 추가 모달
-        .modal-refer-list {
-            .modal-cont {
-                overflow-y: hidden;
-            }
+        .num {
+            border-bottom: 1px solid var(--gray-color-200);
+            padding: 0.25rem;
+        }
 
-            .modal-header {
-                margin-bottom: 0;
-            }
+        .sign {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            border-bottom: 1px solid var(--gray-color-200);
+        }
 
-            .modal-body {
-                max-height: calc(100vh - 10rem);
-                overflow-y: hidden;
-            }
+        .approver {
+            height: initial;
+        }
 
-            .refer-list-wrap {
-                overflow-y: auto;
-                max-height: calc(100vh - 15rem);
+        .approved {
+            color: var(--primary-color-400);
+        }
 
-                &::-webkit-scrollbar {
-                    width: 8px;
-                }
+        .rejected {
+            color: var(--warning-color-400);
+        }
 
-                &::-webkit-scrollbar-thumb {
-                    background-color: #ccc;
-                    /* 스크롤 핸들 색상 */
-                    border-radius: 10px;
-                }
+        .waitting {
+            color: var(--gray-color-500);
+        }
+    }
 
-                &::-webkit-scrollbar-track {
-                    background: transparent;
-                    /* 스크롤 트랙 배경 */
-                    border-radius: 4px;
-                }
+    .reference-wrap {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        text-align: center;
 
-                &::-webkit-scrollbar-thumb:hover {
-                    background-color: #999;
-                    /* 마우스 호버 시 색상 */
-                }
-            }
+        .reference-list {
+            display: flex;
+            justify-content: center;
+            background-color: var(--gray-color-50);
+            border: 1px solid var(--gray-color-300);
+            border-radius: 8px;
+        }
 
-            .top-wrap {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 1rem;
-                margin-bottom: 1rem;
-            }
+        .referencer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 0.25rem;
+            gap: 2px;
 
-            .sub-title {
-                font-size: 1rem;
-                flex-wrap: 500;
-            }
-
-            .sel-filter {
-                width: 10.4rem;
-                cursor: pointer;
-            }
-
-            .doc-title {
-                color: var(--primary-color-500);
-                text-decoration: none;
-                cursor: pointer;
+            .icon {
+                padding: 0;
 
                 &:hover {
-                    text-decoration: underline;
-                }
-            }
-
-            .doc-name {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                display: -webkit-box;
-                -webkit-line-clamp: 1;
-                -webkit-box-orient: vertical;
-            }
-
-            .status {
-                border: 1px solid var(--gray-color-400);
-                border-radius: 6px;
-                padding: 1px 0.4rem;
-                font-size: 0.75rem;
-                font-weight: 500;
-                color: var(--gray-color-500);
-
-                &.approve {
-                    color: var(--primary-color-400);
-                    border-color: var(--primary-color-400);
-                }
-
-                &.reject {
-                    color: var(--warning-color-500);
-                    border-color: var(--warning-color-500);
+                    cursor: pointer;
                 }
             }
         }
+    }
 
-        // 참조문서 상세 모달
-        .modal-refer-detail {
-            .table {
-                tr {
-                    border-top: 1px solid var(--gray-color-300);
-                    font-weight: 400;
+    .upload-file {
+        .file-list {
+            margin-top: 0;
+        }
 
-                    td {
-                        background-color: #fff;
-                        padding: 0.5rem;
-                    }
+        .file-item {
+            &:first-of-type {
+                margin-top: 0;
+            }
+        }
+    }
+
+    .refer-doc-item {
+        &:first-of-type {
+            margin-top: 0;
+        }
+    }
+
+    .refer-doc-name {
+        cursor: default;
+        color: var(--gray-color-500);
+
+        &:hover {
+            text-decoration: none;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .approver-wrap {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    .table {
+        tbody {
+            th {
+                text-align: left;
+            }
+        }
+    }
+
+    .input-title {
+        input {
+            font-size: 1.5rem;
+
+            &::placeholder {
+                font-size: 1.5rem;
+            }
+        }
+    }
+
+    .top-wrap {
+        margin-bottom: 2rem;
+
+        .btn-new {
+            margin-left: auto;
+        }
+    }
+
+    .reject-setting {
+        .checkbox {
+            .label-checkbox {
+                font-size: 0.875rem;
+
+                &::before {
+                    width: 0.875rem;
+                    height: 0.875rem;
+                    top: 2px;
+                }
+            }
+        }
+    }
+
+    .item-wrap {
+        display: block;
+        margin-bottom: 1rem;
+
+        .selected-wrap {
+            margin-bottom: 1rem;
+        }
+    }
+
+    .modal {
+        .modal-cont {
+            min-width: calc(100% - 16px);
+        }
+    }
+
+    // 참조문서 추가 모달
+    .modal-refer-list {
+        .refer-list-wrap {
+            &::-webkit-scrollbar {
+                display: none;
+            }
+        }
+    }
+}
+
+@media (max-width: 682px) {
+    .input-wrap {
+        &.upload-file {
+            .btn-upload-file {
+
+                input,
+                button {
+                    flex-grow: 1;
                 }
             }
 
-            .approver-wrap {
-                display: grid;
-                grid-template-columns: repeat(8, 1fr);
-                text-align: center;
-                height: 100%;
-
-                .approver-list {
-                    display: flex;
-                    flex-direction: column;
-                    width: 100%;
-                    min-width: 100px;
-                    min-height: 8rem;
-                    border-right: 1px solid var(--gray-color-300);
-                    border-bottom: 1px solid var(--gray-color-300);
-                    margin-bottom: -1px;
-                    position: relative;
-
-                    &.noexist {
-                        background-color: var(--gray-color-50);
-
-                        span {
-                            color: var(--gray-color-300);
-                        }
-                    }
-                }
-
-                .num {
-                    border-bottom: 1px solid var(--gray-color-200);
-                    padding: 0.25rem;
-                }
-
-                .sign {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100%;
-                    border-bottom: 1px solid var(--gray-color-200);
-                }
-
-                .approver {
-                    height: initial;
-                }
-
-                .approved {
-                    color: var(--primary-color-400);
-                }
-
-                .rejected {
-                    color: var(--warning-color-400);
-                }
-
-                .waitting {
-                    color: var(--gray-color-500);
-                }
-            }
-
-            .reference-wrap {
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-                text-align: center;
-
-                .reference-list {
-                    display: flex;
-                    justify-content: center;
-                    background-color: var(--gray-color-50);
-                    border: 1px solid var(--gray-color-300);
-                    border-radius: 8px;
-                }
-
-                .referencer {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100%;
-                    padding: 0.25rem;
-                    gap: 2px;
-
-                    .icon {
-                        padding: 0;
-
-                        &:hover {
-                            cursor: pointer;
-                        }
-                    }
-                }
-            }
-
-            .upload-file {
-                .file-list {
-                    margin-top: 0;
-                }
-
+            .btn-upload-file+.file-list {
                 .file-item {
-                    &:first-of-type {
-                        margin-top: 0;
-                    }
+                    width: 100%;
                 }
             }
 
-            .refer-doc-item {
-                &:first-of-type {
-                    margin-top: 0;
-                }
-            }
-
-            .refer-doc-name {
-                cursor: default;
-                color: var(--gray-color-500);
-
-                &:hover {
-                    text-decoration: none;
-                }
+            .file-item {
+                width: 100%;
             }
         }
+    }
+}
 
-        @media (max-width: 768px) {
-            .approver-wrap {
-                grid-template-columns: repeat(5, 1fr);
-            }
-
-            .table {
-                tbody {
-                    th {
-                        text-align: left;
-                    }
-                }
-            }
-
-            .input-title {
-                input {
-                    font-size: 1.5rem;
-
-                    &::placeholder {
-                        font-size: 1.5rem;
-                    }
-                }
-            }
-
-            .top-wrap {
-                margin-bottom: 2rem;
-
-                .btn-new {
-                    margin-left: auto;
-                }
-            }
-
-            .reject-setting {
-                .checkbox {
-                    .label-checkbox {
-                        font-size: 0.875rem;
-
-                        &::before {
-                            width: 0.875rem;
-                            height: 0.875rem;
-                            top: 2px;
-                        }
-                    }
-                }
-            }
-
-            .item-wrap {
-                display: block;
-                margin-bottom: 1rem;
-
-                .selected-wrap {
-                    margin-bottom: 1rem;
-                }
-            }
-
-            .modal {
-                .modal-cont {
-                    min-width: calc(100% - 16px);
-                }
-            }
-
-            // 참조문서 추가 모달
-            .modal-refer-list {
-                .refer-list-wrap {
-                    &::-webkit-scrollbar {
-                        display: none;
-                    }
-                }
-            }
+@media (max-width: 400px) {
+    .refer-doc-wrap {
+        .btn-open-modal {
+            width: 100%;
         }
-
-        @media (max-width: 682px) {
-            .input-wrap {
-                &.upload-file {
-                    .btn-upload-file {
-
-
-                        input,
-                        button {
-                            flex-grow: 1;
-                        }
-                    }
-
-                    .btn-upload-file+.file-list {
-                        .btn-upload-file+.file-list {
-                            .file-item {
-                                width: 100%;
-                            }
-                        }
-
-                        .file-item {
-                            width: 100%;
-                        }
-                    }
-                }
-            }
-
-            @media (max-width: 400px) {
-                .refer-doc-wrap {
-                    .btn-open-modal {
-                        width: 100%;
-                    }
-                }
-            }</style>
+    }
+}
+</style>
