@@ -408,6 +408,7 @@ import {
     onlyStampFile,
     handleStampBlobComplete
 } from '@/components/make_stamp';
+import { formatTimestampToDate } from '@/utils/time.ts';
 
 import Loading from '@/components/loading.vue';
 import MakeStamp from '@/components/make_stamp.vue';
@@ -456,9 +457,18 @@ const referDoc = ref([]); // 참조 문서
 const referDetail = ref({}); // 참조 문서 상세 내용
 const modalReferDoc = ref([]);
 
-// 에디터 상태 관리
-const editorContent = ref('');
-const editorIsReady = ref(false);
+// 결재자 정보 저장
+const selectedAuditors = ref({
+    approvers: [], // 결재
+    agreers: [], // 합의
+    receivers: [] // 수신참조
+});
+
+// 도장 생성 관련
+let gettingStampList = ref(false);
+let makeStampRunning = ref(false);
+let selectedStamp = ref(null);
+let selectedStampComplete = ref(false);
 
 // 반려됨 상태 확인
 const isRejected = computed(() => {
@@ -521,13 +531,6 @@ const isCancelPossible = computed(() => {
     }
 });
 
-// 결재자 정보 저장
-const selectedAuditors = ref({
-    approvers: [], // 결재
-    agreers: [], // 합의
-    receivers: [] // 수신참조
-});
-
 watch(
     () => route.params.auditId,
     async (nv, ov) => {
@@ -557,6 +560,7 @@ watch(auditDoContent, () => {
 
 let isPosting = false;
 
+// 결재모달 열기
 const openModal = (target) => {
     // 초기화
     approveAudit.value = false;
@@ -570,38 +574,27 @@ const openModal = (target) => {
     document.body.classList.add('modal-open');
 };
 
+// 결재모달 닫기
 const closeModal = () => {
     isModalOpen.value = false;
     isStampModalOpen.value = false;
     document.body.classList.remove('modal-open');
 };
 
+// 결재내용 변환
 function disableContentEditable(htmlString) {
-    // 임시 div 생성
     const tempDiv = document.createElement('div');
-
-    // HTML 문자열 삽입
-    tempDiv.innerHTML = htmlString;
+    tempDiv.innerHTML = htmlString; // HTML 문자열 삽입
 
     // 모든 contenteditable="true" 태그 찾아 false로 변경
     tempDiv.querySelectorAll('[contenteditable="true"]').forEach((el) => {
         el.setAttribute('contenteditable', 'false');
     });
 
-    // 변경된 HTML 문자열 반환
     return tempDiv.innerHTML;
 }
 
-// 에디터 준비
-const handleEditorReady = (status) => {
-    editorIsReady.value = status;
-};
-
-// 에디터 내보내기
-const exportWysiwygData = (content) => {
-    editorContent.value = content;
-};
-
+// 목록버튼 클릭시
 const goToPrev = () => {
     // 결재 발신함
     if (senderUser.value.user_id === user.user_id) {
@@ -621,25 +614,12 @@ const goToPrev = () => {
     }
 };
 
-function formatTimestampToDate(timestamp) {
-    const date = new Date(timestamp); // timestamp를 Date 객체로 변환
-    const year = date.getFullYear(); // 연도 가져오기
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // 월 가져오기 (0부터 시작하므로 +1)
-    const day = String(date.getDate()).padStart(2, '0'); // 일 가져오기
-
-    return `${year}-${month}-${day}`; // 형식화된 문자열 반환
-}
-
-let rejectAudit = () => {
+// 반려하기
+const rejectAudit = () => {
     isModalOpen.value = false;
     approveAudit.value = false;
     postApproval();
 };
-
-let gettingStampList = ref(false);
-let makeStampRunning = ref(false);
-let selectedStamp = ref(null);
-let selectedStampComplete = ref(false);
 
 let uploadCreatedStamp = async (file) => {
     let stamp_postParams = {
@@ -705,6 +685,7 @@ let uploadStampImage = async (imageUrl) => {
     makeSignComplete.value = true;
 };
 
+// 임시도장 생성
 let createStamp = () => {
     makeStampRunning.value = true;
 
@@ -805,7 +786,6 @@ const getMainStamp = async () => {
                 access_group: 1
             }
         });
-        console.log('= getMainStamp = res : ', res);
 
         if (res.list && res.list.length) {
             const stampUrl = await skapi.getFile(res.list[0].data, {
@@ -824,6 +804,7 @@ const getMainStamp = async () => {
     }
 };
 
+// 도장 선택
 let selectStamp = (url) => {
     if (url.includes('?')) {
         selectedStamp.value = url.split('?')[0];
@@ -1238,39 +1219,9 @@ const postApproval = async () => {
         };
 
         // 실시간 알림 보내기
-        skapi
-            .postRealtime(
-                {
-                    audit_approval: {
-                        noti_id: res.record_id,
-                        noti_type: 'audit',
-                        send_date: approvedDate,
-                        send_user: user.user_id,
-                        audit_info: {
-                            audit_type: 'approved',
-                            to_audit: auditDoContent.value?.data?.to_audit,
-                            audit_doc_id: auditId.value,
-                            approval: res.data.approved
-                        }
-                    }
-                },
-                auditDoContent.value.user_id,
-                {
-                    title: '알림',
-                    body: `${user.name}님께서 결재를 완료했습니다.`,
-                    config: {
-                        always: true // 무조건 알림 받기
-                    }
-                }
-            )
-            .then((res) => {
-                // console.log('결재알림 === postRealtime === res : ', res);
-            });
-
-        // 실시간 못 받을 경우 알림 기록 저장
-        skapi
-            .postRecord(
-                {
+        skapi.postRealtime(
+            {
+                audit_approval: {
                     noti_id: res.record_id,
                     noti_type: 'audit',
                     send_date: approvedDate,
@@ -1281,18 +1232,40 @@ const postApproval = async () => {
                         audit_doc_id: auditId.value,
                         approval: res.data.approved
                     }
-                },
-                {
-                    readonly: true,
-                    table: {
-                        name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
-                        access_group: 'authorized'
-                    }
                 }
-            )
-            .then((res) => {
-                // console.log('결재알림기록 === postRecord === res : ', res);
-            });
+            },
+            auditDoContent.value.user_id,
+            {
+                title: '알림',
+                body: `${user.name}님께서 결재를 완료했습니다.`,
+                config: {
+                    always: true // 무조건 알림 받기
+                }
+            }
+        );
+
+        // 실시간 못 받을 경우 알림 기록 저장
+        skapi.postRecord(
+            {
+                noti_id: res.record_id,
+                noti_type: 'audit',
+                send_date: approvedDate,
+                send_user: user.user_id,
+                audit_info: {
+                    audit_type: 'approved',
+                    to_audit: auditDoContent.value?.data?.to_audit,
+                    audit_doc_id: auditId.value,
+                    approval: res.data.approved
+                }
+            },
+            {
+                readonly: true,
+                table: {
+                    name: `realtime:${senderUser.value.user_id.replaceAll('-', '_')}`,
+                    access_group: 'authorized'
+                }
+            }
+        );
 
         // 결재 완료 후 다음 결재자 알림 처리
         if (approved === 'approve' && !isCanceled.value) {
