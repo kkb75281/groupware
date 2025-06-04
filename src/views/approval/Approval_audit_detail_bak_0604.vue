@@ -801,9 +801,6 @@ const getMainStamp = async () => {
         }
     } catch (err) {
         console.error(err);
-        previewStamp.value = null;
-        selectedStamp.value = null;
-        gettingStampList.value = false;
     }
 };
 
@@ -911,7 +908,6 @@ const getAuditDetail = async () => {
         }
     } catch (error) {
         isCanceled.value = false;
-        console.error('결재 회수 여부 확인 중 오류 발생:', error);
     }
 
     // 결재자 정보
@@ -957,9 +953,9 @@ const getAuditDetail = async () => {
 
     // 참조 문서
     const referDocIds = auditDoc.data?.reference_docs;
+    const parseReferDocId = JSON.parse(auditDoc.data?.reference_docs).referDocId;
 
     if (referDocIds) {
-        const parseReferDocId = JSON.parse(auditDoc.data?.reference_docs).referDocId;
         const fetchPromises = parseReferDocId.map((recordId) =>
             skapi
                 .getRecords({ record_id: recordId })
@@ -1143,8 +1139,6 @@ const postApproval = async () => {
                     await canceledAudit('반려', true);
                 } catch (error) {
                     console.error('자동 회수 처리 중 오류:', error);
-                    alert('자동 회수 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-                    throw error;
                 }
             }
             // 체크된 경우(rejectSetting이 true)에는 회수하지 않고 계속 진행

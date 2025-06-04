@@ -8,6 +8,7 @@ template(v-if="step === 1 && showBackStep && !isTemplateMode && !isTempSaveMode 
                 //- option(value="bookmark") 즐겨찾기
                 option(value="master") 일반 결재 양식
                 option(value="mine") 나의 결재 양식
+            p.desc 나의 결재 양식은 임시저장된 양식과 동일합니다.
             
         .selected-wrap
             p.label 결재 양식 선택
@@ -206,7 +207,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
                         button.btn.bg-gray.btn-cancel(type="button" @click="cancelTempSave") 취소
                     template(v-else)
                         button.btn.bg-gray.btn-cancel(type="button" @click="step--; reset(); formCategory = 'master'; rejectSetting = false") 취소
-                    button.btn.outline.bg-gray.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
+                    //- button.btn.outline.bg-gray.btn-save-myform(type="button" @click="saveMyDocForm") 양식저장
                     button.btn.outline.btn-tempsave(type="button" @click="tempSaveMyDoc") 임시저장
                     button.btn(type="submit") 결재요청
 
@@ -577,8 +578,8 @@ const openModal = () => {
     }
 
     selectedUsers.value = [
-        ...selectedUsers.value.filter(u => u.role !== 'receivers'),
-        ...selectedUsers.value.filter(u => u.role === 'receivers')
+        ...selectedUsers.value.filter((u) => u.role !== 'receivers'),
+        ...selectedUsers.value.filter((u) => u.role === 'receivers')
     ];
     // selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
     // prevSelected.value = selectedUsers.value;
@@ -714,13 +715,13 @@ const previewAudit = () => {
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
-    selectedUsers.value = selectedUsers.value.filter(selUser =>
-        users.some(user => user.user.user_id === selUser.user.user_id)
+    selectedUsers.value = selectedUsers.value.filter((selUser) =>
+        users.some((user) => user.user.user_id === selUser.user.user_id)
     );
 
     let maxOrder = 0;
 
-    users.forEach(user => {
+    users.forEach((user) => {
         if (user.role !== 'receivers' && typeof user.order === 'number') {
             if (user.order > maxOrder) maxOrder = user.order;
         }
@@ -731,7 +732,9 @@ const handleOrganigramSelection = (users) => {
     // 선택된 유저들을 초기 처리
     users.forEach((user) => {
         // 선택된 유저를 selectedUsers에 추가
-        const existingUserIndex = selectedUsers.value.findIndex((u) => u.user.user_id === user.user.user_id);
+        const existingUserIndex = selectedUsers.value.findIndex(
+            (u) => u.user.user_id === user.user.user_id
+        );
 
         if (existingUserIndex !== -1) {
             // 이미 존재하는 유저는 기존 role을 유지하고, 나머지 정보만 업데이트
@@ -744,7 +747,12 @@ const handleOrganigramSelection = (users) => {
                 existingUser.sortable = user.sortable;
             }
             // 필요하다면 다른 필드도 업데이트
-            selectedUsers.value[existingUserIndex] = { ...user, role: existingUser.role, order: existingUser.order, sortable: existingUser.sortable };
+            selectedUsers.value[existingUserIndex] = {
+                ...user,
+                role: existingUser.role,
+                order: existingUser.order,
+                sortable: existingUser.sortable
+            };
         } else {
             // 새로운 유저는 추가
             if (!user.role) user.role = 'approvers';
@@ -755,8 +763,8 @@ const handleOrganigramSelection = (users) => {
     });
 
     selectedUsers.value = [
-        ...selectedUsers.value.filter(u => u.role !== 'receivers'),
-        ...selectedUsers.value.filter(u => u.role === 'receivers')
+        ...selectedUsers.value.filter((u) => u.role !== 'receivers'),
+        ...selectedUsers.value.filter((u) => u.role === 'receivers')
     ];
 
     reorderUsers();
@@ -1579,10 +1587,6 @@ const saveForm = async ({
                         access_group: accessGroup
                     }
                 });
-            } else {
-                console.log('임시 저장된 결재 양식이 없습니다. 새로 생성합니다.');
-                // 임시 저장된 결재 양식이 없는 경우 새로 생성
-                // await skapi.postRecord(formData, options);
             }
         }
 
@@ -1603,9 +1607,10 @@ const saveForm = async ({
         return res;
     } catch (error) {
         console.error('결재 양식 저장 중 오류 발생: ', error);
-        alert(
-            '결재 양식 저장 중 오류가 발생했습니다. 제목은 특수 문자 [ ] ^ _ ` : ; < = > ? @ 만 사용 가능합니다.'
-        );
+        alert('결재 양식 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+        throw error;
+    } finally {
+        mainPageLoading.value = false; // 로딩 상태 해제
     }
 };
 
@@ -1652,23 +1657,25 @@ const getDocForm = async () => {
         return res;
     } catch (error) {
         console.error('결재 양식 가져오기 중 오류 발생: ', error);
+        masterForms.value = [];
     }
 };
 
-// 내 결재 양식 가져오기
+// 임시 저장 리스트 가져오기 (내 결재 양식 선택시 사용)
 const getMyDocForm = async () => {
     try {
         const res = await skapi.getRecords({
             table: {
-                name: 'my_audit_form',
-                access_group: 1
+                name: 'my_tempsave_audit',
+                access_group: 'private'
             }
         });
 
-        myForms.value = res.list || [];
+        myForms.value = res.list;
         return res;
     } catch (error) {
         console.error('결재 양식 가져오기 중 오류 발생: ', error);
+        myForms.value = [];
     }
 };
 
@@ -1717,7 +1724,6 @@ const applyFormData = async (formData) => {
         // 이제 순서대로 정렬 가능
         selectedAuditors.value.approvers.sort((a, b) => (a.order || 0) - (b.order || 0));
         selectedAuditors.value.agreers.sort((a, b) => (a.order || 0) - (b.order || 0));
-
     } else {
         selectedAuditors.value = {
             approvers: [],
@@ -1786,6 +1792,8 @@ const getTempSaveMyDocCont = async () => {
             return res;
         } catch (error) {
             console.error('임시 저장 내용 불러오기 중 오류 발생:', error);
+            alert('임시 저장 내용을 불러오는 중 오류가 발생했습니다.');
+            router.push({ path: '/approval/audit-list-tempsave' });
         }
     }
 };
@@ -1916,6 +1924,8 @@ const openReferModal = async () => {
                 }
             } catch (error) {
                 console.error(`${docType} 오류 : `, error);
+                alert(`${docType} 목록을 가져오는 중 오류가 발생했습니다.`);
+                throw error;
             }
         };
 
@@ -1931,6 +1941,10 @@ const openReferModal = async () => {
         referDocList.value = allDocs;
     } catch (error) {
         console.error('참조문서 목록 가져오기 중 오류 : ', error);
+        alert('참조문서 목록을 가져오는 중 오류가 발생했습니다.');
+        referDocList.value = [];
+    } finally {
+        loading.value = false;
     }
 };
 
@@ -1979,8 +1993,6 @@ const showDocDetail = async (doc) => {
             },
             reference: doc.record_id // 문서의 record_id로 결재 정보 조회
         });
-
-        console.log('참조문서 결재 현황:', docApprovals.list);
 
         // 결재자 이름 가져오기
         const approverIds = auditors.approvers?.map((a) => a.user_id.replaceAll('_', '-')) || [];
@@ -2059,6 +2071,10 @@ const showDocDetail = async (doc) => {
         }
     } catch (error) {
         console.error('문서 상세정보 처리 오류:', error);
+        alert('문서 상세정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.');
+        isReferDetailModal.value = false;
+        currentDetailDoc.value = null;
+        return;
     } finally {
         loading.value = false;
     }
@@ -2122,23 +2138,6 @@ onMounted(async () => {
                 access_group: 1
             }
         });
-
-        // 직원 정보 맵 생성
-        const empMap = {};
-
-        // if (empList?.list) {
-        //     empList.list.forEach((emp) => {
-        //         if (emp.data && emp.user?.user_id) {
-        //             // 전체 직원 정보를 저장
-        //             empMap[emp.user.user_id] = {
-        //                 division: emp.index.name.split('.')[0],
-        //                 name: emp.index.value,
-        //                 user_id: emp.user.user_id,
-        //                 position: emp.index.name.split('.')[1]
-        //             };
-        //         }
-        //     });
-        // }
 
         await applyFormData(reRequestData.value);
         isFormSelected.value = true;
@@ -2469,7 +2468,7 @@ onUnmounted(() => {
 }
 
 .select-approver-wrap {
-    >div {
+    > div {
         border: 1px solid var(--gray-color-300);
         border-radius: 0.5rem;
         padding: 1rem;
@@ -2607,7 +2606,7 @@ onUnmounted(() => {
 .item-wrap {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
     margin-bottom: 1.5rem;
     flex-wrap: wrap;
@@ -2632,23 +2631,10 @@ onUnmounted(() => {
 }
 
 .desc {
-    font-size: 1rem;
+    font-size: 0.75rem;
     color: var(--warning-color-500);
     line-height: 1.2;
     word-break: keep-all;
-
-    &.essential {
-        &::after {
-            content: '*';
-            display: inline-block;
-            width: 0.5rem;
-            height: 0.5rem;
-            font-size: 1rem;
-            font-weight: 700;
-            color: #fb9804;
-            margin-left: 0.25rem;
-        }
-    }
 }
 
 .reject-setting {
@@ -2659,7 +2645,7 @@ onUnmounted(() => {
     .checkbox {
         text-align: right;
 
-        input[type='checkbox']:checked~.label-checkbox::before {
+        input[type='checkbox']:checked ~ .label-checkbox::before {
             border-color: var(--warning-color-500);
             background-color: var(--warning-color-500);
         }
@@ -2682,7 +2668,6 @@ onUnmounted(() => {
 }
 
 .wysiwyg-table {
-
     tr,
     th,
     td {
@@ -3042,14 +3027,13 @@ onUnmounted(() => {
     .input-wrap {
         &.upload-file {
             .btn-upload-file {
-
                 input,
                 button {
                     flex-grow: 1;
                 }
             }
 
-            .btn-upload-file+.file-list {
+            .btn-upload-file + .file-list {
                 .file-item {
                     width: 100%;
                 }
