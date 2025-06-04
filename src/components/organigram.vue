@@ -58,6 +58,11 @@ const props = defineProps({
     selectedEmployees: {
         type: Array,
         default: () => []
+    },
+    // 선택된 부서들
+    selectedDivisions: {
+        type: Array,
+        default: () => []
     }
 });
 
@@ -102,6 +107,32 @@ onMounted(async () => {
                 // 체크된 사용자를 checkedEmps 배열에 추가
                 if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id)) {
                     checkedEmps.value.push(employeeToCheck);
+                }
+            }
+        }
+
+        // 부서 체크박스 상태 재계산
+        recalculateDepartmentCheckStatus();
+    }
+
+    if (props.selectedDivisions && props.selectedDivisions.length > 0) {
+        console.log('Selected Divisions onMounted:', props.selectedDivisions);
+        // 선택된 부서들에 대해 체크 상태 설정
+        for (const divisionName of props.selectedDivisions) {
+            const department = findDepartmentByDivisionName(divisionName);
+            if (department) {
+                department.isChecked = true;
+                department.isOpened = true;
+
+                // 하위 부서와 멤버들도 체크 상태 설정
+                if (department.members && department.members.length > 0) {
+                    department.members.forEach((member) => {
+                        member.isChecked = true;
+                        // 체크된 멤버를 checkedEmps 배열에 추가
+                        if (!checkedEmps.value.some((emp) => emp.user.user_id === member.user.user_id)) {
+                            checkedEmps.value.push(member);
+                        }
+                    });
                 }
             }
         }
@@ -286,6 +317,28 @@ function findDepartmentOfEmployee(userId) {
     }
     for (const dept of organigram.value) {
         const found = search(dept);
+        if (found) return found;
+    }
+    return null;
+}
+
+// 부서명(division)으로 조직도에서 부서 객체를 찾는 재귀 함수
+function findDepartmentByDivisionName(divisionName) {
+    // 부모 경로를 추적하며 찾기
+    function search(department, parents = []) {
+        if (department.division === divisionName) {
+            // 부모 부서들의 isOpened를 true로 설정
+            parents.forEach(parent => parent.isOpened = true);
+            return department;
+        }
+        for (const sub of department.subDepartments) {
+            const found = search(sub, [...parents, department]);
+            if (found) return found;
+        }
+        return null;
+    }
+    for (const dept of organigram.value) {
+        const found = search(dept, []);
         if (found) return found;
     }
     return null;

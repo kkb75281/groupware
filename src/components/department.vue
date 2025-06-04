@@ -1,5 +1,5 @@
 <template lang="pug">
-details
+details(:class="{hideSummary: props.onlyDivision && department.subDepartments.length === 0}")
     //- 상위 부서
     summary
         label.checkbox(v-if="useCheckbox && department.total > 0")
@@ -86,7 +86,7 @@ const props = defineProps({
 
 <style lang="less" scope>
 details {
-    &.hideMembers {
+    &.hideSummary {
         >summary {
             &::before {
                 display: none;
