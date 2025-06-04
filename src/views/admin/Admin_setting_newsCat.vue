@@ -121,10 +121,10 @@ const recordId = ref(route.query.record_id || null);
 const disabled = ref(false);
 const isDesktop = ref(window.innerWidth > 768); // 반응형
 const isModalOpen = ref(false); // 공개범위 설정 모달
-const accessDivisions = ref({}); // 조직도에서 선택된 부서
-const accessEmps = ref([]); // 권한을 가지고 있는 직원
-const selectedEmps = ref([]); // 공개범위 직원 정보 저장
-const selectedDivisions = ref([]); // 선택된 부서 정보
+const accessDivisions = ref({}); // 권한을 가지고 있는 부서
+const accessEmps = ref([]); // 권한을 가지고 있는 user_id
+const selectedDivisions = ref([]); // 업데이트 할 선택된 부서
+const selectedEmps = ref([]); // 업데이트 할 user_id 저장
 const notiSetting = ref(true); // 알림 설정 관련 체크박스
 const backupSelected = ref(null); // 선택된 공개범위 직원 백업
 const checkedUsers = ref([]); // 체크된 직원
@@ -173,18 +173,6 @@ const getEditModeCat = async () => {
                     if (!selectedDivisions.value.includes(division)) {
                         selectedDivisions.value.push(division);
                     }
-                    // const departmentUsers = accessDivisions.value[division];
-                    // departmentUsers.forEach(async (user) => {
-                    //     let parseUser = JSON.parse(JSON.stringify(user));
-                    //     let uif = await getUserInfo(parseUser.user_id);
-                    //     let pushUser = {
-                    //         user: uif.list[0],
-                    //         division: parseUser.dvs.split('.')[0],
-                    //         position: parseUser.position,
-                    //     };
-                    //     console.log('pushUser : ', pushUser);
-                    //     selectedEmps.value.push(pushUser);
-                    // });
                 });
             }
         }
@@ -196,10 +184,9 @@ const getEditModeCat = async () => {
 
 // 공개범위 모달 열기
 const openModal = () => {
-    // 열렸을 때 selectedEmps 전체를 original로 백업
     backupSelected.value = {
-        // employees: [...selectedEmps.value],
-        divisions: JSON.parse(JSON.stringify(accessDivisions.value))
+        employees: [...accessEmps.value],
+        divisions: JSON.parse(JSON.stringify(Object.keys(accessDivisions.value)))
     };
 
     isModalOpen.value = true;
@@ -208,11 +195,11 @@ const openModal = () => {
 // 공개범위 모달 닫기
 const closeModal = () => {
     if (backupSelected.value) {
-        // selectedEmps.value = [...backupSelected.value.employees];
-        accessDivisions.value = JSON.parse(JSON.stringify(backupSelected.value.divisions));
+        selectedEmps.value = [...backupSelected.value.employees];
+        selectedDivisions.value = JSON.parse(JSON.stringify(backupSelected.value.divisions));
     } else {
-        // selectedEmps.value = [];
-        accessDivisions.value = {};
+        selectedEmps.value = [];
+        selectedDivisions.value = {};
     }
 
     backupSelected.value = null;
