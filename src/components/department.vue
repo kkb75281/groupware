@@ -87,6 +87,14 @@ const props = defineProps({
 <style lang="less" scope>
 details {
     &.hideSummary {
+        &[open] {
+            >summary {
+                .folder {
+                    background: url('@/assets/img/icon_folder.svg') no-repeat center center / contain;
+                }
+            }
+        }
+
         >summary {
             &::before {
                 display: none;

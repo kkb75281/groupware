@@ -103,13 +103,12 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
-import { skapi, mainPageLoading, RealtimeCallback } from '@/main.ts';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { skapi } from '@/main.ts';
 import { divisionNameList } from '@/division.ts';
-import { getUserInfo } from '@/employee.ts';
+import { organigram } from '@/components/organigram';
 
 import Organigram from '@/components/organigram.vue';
-import { organigram } from '@/components/organigram';
 
 const router = useRouter();
 const route = useRoute();
@@ -129,12 +128,7 @@ const notiSetting = ref(true); // 알림 설정 관련 체크박스
 const backupSelected = ref(null); // 선택된 공개범위 직원 백업
 const checkedUsers = ref([]); // 체크된 직원
 
-const uploadedFile = ref([]); // 첨부파일
-const fileNames = ref([]);
-
 const newsCatName = ref(''); // 게시글 제목
-
-const adminId = ref([]);
 
 // 수정 모드일 경우 데이터 가져오기
 const getEditModeCat = async () => {
@@ -213,18 +207,11 @@ const handleOrganigramSelection = (users) => {
         return;
     }
 
-    users.forEach((user) => {
-        const division = user.division;
-        const userId = user.user.user_id;
+    const newDivisions = [...new Set(users.map(user => user.division))];
+    const newUserIds = [...new Set(users.map(user => user.user.user_id))];
 
-        if (!selectedDivisions.value.includes(division)) {
-            selectedDivisions.value.push(division);
-        }
-
-        if (!selectedEmps.value.includes(userId)) {
-            selectedEmps.value.push(userId);
-        }
-    });
+    selectedDivisions.value = newDivisions;
+    selectedEmps.value = newUserIds;
 };
 
 // 공개범위 모달에서 선택된 부서 저장
