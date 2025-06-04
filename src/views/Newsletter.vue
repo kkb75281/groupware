@@ -66,7 +66,6 @@
         svg
             use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
 
-//- Pagination(:fetchFunction="fetchNewsletter" :ascending="false" @update:pageData="onPageDataUpdate")
 </template>
 
 <script setup>
@@ -131,6 +130,7 @@ const searchNewsletter = async () => {
         newsletterList.value = filteredList;
     } catch (error) {
         console.error('Search error:', error);
+        newsletterList.value = [];
     } finally {
         loading.value = false;
     }
@@ -242,15 +242,6 @@ watch(currentPage, (n, o) => {
         currentPage.value = o; // 페이지가 유효하지 않으면 이전 페이지로 되돌리기
     }
 });
-
-// 페이지 데이터 업데이트 이벤트 핸들러
-// function fetchNewsletter({ fetchMore = false, limit = 10, ascending = false }) {
-//     return getNewsletterList(cateId.value, { fetchMore, limit, ascending });
-// }
-
-// function onPageDataUpdate(pageData) {
-//     newsletterList.value = pageData;
-// }
 
 onMounted(async () => {
     newsletterList.value = [];

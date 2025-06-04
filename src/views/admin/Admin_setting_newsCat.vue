@@ -1,110 +1,112 @@
 <template lang="pug">
 //- .title
-	h1 게시글 카테고리명 셋팅
+//- h1 게시글 카테고리명 셋팅
 
 //- hr
 
 .inner
-	.form-wrap
-		form#_write_news_form(@submit.prevent="registerNewsCat")
-			.table-wrap
-				.tb-overflow
-					table.table#tb-write-newsForm
-						colgroup
-							col(style="width: 13%; min-width: 92px")
-							col
-							col(style="width: 15%")
-							col(style="width: 20%")
+    .form-wrap
+        form#_write_news_form(@submit.prevent="registerNewsCat")
+            .table-wrap
+                .tb-overflow
+                    table.table#tb-write-newsForm
+                        colgroup
+                            col(style="width: 13%; min-width: 92px")
+                            col
+                            col(style="width: 15%")
+                            col(style="width: 20%")
 
-						tbody
-							tr
-								th.essential 제목
-								td(colspan="3")
-									.input-wrap
-										input#name_newsCat(type="text" v-model="newsCatName" name="name_newsCat" placeholder="제목을 입력해주세요." required)
+                        tbody
+                            tr
+                                th.essential 제목
+                                td(colspan="3")
+                                    .input-wrap
+                                        input#name_newsCat(type="text" v-model="newsCatName" name="name_newsCat" placeholder="제목을 입력해주세요." required)
 
-							tr(v-if="Object.keys(selectedDivisions).length === 0" style="height: 100px;")
-								th.essential 공개범위
-								td.left(colspan="3")
-									span.empty(@click="openModal" style="cursor: pointer;") 이곳을 눌러 공개범위를 설정해주세요.
+                            tr(v-if="Object.keys(selectedDivisions).length === 0" style="height: 100px;")
+                                th.essential 공개범위
+                                td.left(colspan="3")
+                                    span.empty(@click="openModal" style="cursor: pointer;") 이곳을 눌러 공개범위를 설정해주세요.
 
-							tr.selected-dvs(v-if="Object.keys(selectedDivisions).length > 0")
-								th.essential 공개 범위
-								td.left(colspan="3")
-									ul.dvs-wrap
-										li.dvs-list(v-for="(division, index) in Object.values(selectedDivisions)" :key="division")
-											span.dvs-name {{ divisionNameList[division] }}
+                            tr.selected-dvs(v-if="Object.keys(selectedDivisions).length > 0")
+                                th.essential 공개 범위
+                                td.left(colspan="3")
+                                    ul.dvs-wrap
+                                        li.dvs-list(v-for="(division, index) in Object.values(selectedDivisions)" :key="division")
+                                            span.dvs-name {{ divisionNameList[division] }}
 
-										li.dvs-list(@click="openModal" style="min-width: 64px;")
-											span.add-dvs
-												.icon
-													svg
-														use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
+                                        li.dvs-list(@click="openModal" style="min-width: 64px;")
+                                            span.add-dvs
+                                                .icon
+                                                    svg
+                                                        use(xlink:href="@/assets/icon/material-icon.svg#icon-add")
 
-							tr
-								th 알림 설정
-								td.left(colspan="3")
-									label.radio-button
-										input(type="radio" name="noti" value="true" v-model="notiSetting")
-										span.label-radio(style="font-size: 0.8rem") 허용
-									label.radio-button(style="margin-left: 1rem;")
-										input(type="radio" name="noti" value="false" v-model="notiSetting")
-										span.label-radio(style="font-size: 0.8rem") 비허용
+                            tr
+                                th 알림 설정
+                                td.left(colspan="3")
+                                    label.radio-button
+                                        input(type="radio" name="noti" value="true" v-model="notiSetting")
+                                        span.label-radio(style="font-size: 0.8rem") 허용
+                                    label.radio-button(style="margin-left: 1rem;")
+                                        input(type="radio" name="noti" value="false" v-model="notiSetting")
+                                        span.label-radio(style="font-size: 0.8rem") 비허용
 
-			.button-wrap
-				button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/admin/list-newsletter')") 취소
-				button.btn(type="submit") {{ isEditMode ? '수정' : '등록' }}
+            .button-wrap
+                button.btn.bg-gray.btn-cancel(type="button" @click="router.push('/admin/list-newsletter')") {{ isMyRecord ? '취소' : '이전' }}
+                template(v-if="isMyRecord")
+                    button.btn(type="submit") {{ isEditMode ? '수정' : '등록' }}
 
 //- Modal - 공개 범위 선택
 #modal.modal.select-dvs(v-if="isModalOpen" @click="closeModal")
-	.modal-cont(@click.stop)
-		.modal-header
-			h2.title 공개 범위 선택
-			button.btn-close(type="button" @click="closeModal")
-				svg
-					use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
-		.modal-body
-			.select-dvs-wrap
-				.organigram-wrap
-					//- Organigram(:selectedEmployees="selectedEmps" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedEmpsArr" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
-					Organigram(:useCheckbox="true" :onlyDivision="true" :selectedDivisions="selectedDivisions" @selection-change="handleOrganigramSelection")
+    .modal-cont(@click.stop)
+        .modal-header
+            h2.title 공개 범위 선택
+            button.btn-close(type="button" @click="closeModal")
+                svg
+                    use(xlink:href="@/assets/icon/material-icon.svg#icon-close")
+        .modal-body
+            .select-dvs-wrap
+                .organigram-wrap
+                    //- Organigram(:selectedEmployees="selectedEmps" :excludeCurrentUser="true" :useCheckbox="true" :selectedAuditors="selectedEmpsArr" :onlyDvsName="true" @selection-change="handleOrganigramSelection")
+                    Organigram(:useCheckbox="true" :onlyDivision="true" :selectedDivisions="selectedDivisions" @selection-change="handleOrganigramSelection")
 
-				br
+                br
 
-				.table-wrap
-					.tb-overflow(v-if="Object.keys(selectedDivisions).length > 0")
-						table.table#tb-selectEmps
-							colgroup
-								col(style="width: 8%")
-								col(style="width: 8%")
-								col
+                .table-wrap
+                    .tb-overflow(v-if="Object.keys(selectedDivisions).length > 0")
+                        table.table#tb-selectEmps
+                            colgroup
+                                col(style="width: 8%")
+                                col(style="width: 8%")
+                                col
 
-							thead
-								tr
-									th 
-									th NO
-									th 부서
-									
-							tbody
-								tr(v-for="(division, index) in Object.values(selectedDivisions)" :key="division")
-									td(style="padding: 0")
-										button.btn-remove(@click="removeDvs(division)")
-											.icon
-												svg
-													use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
-									td {{ index + 1 }}
-									td {{ divisionNameList[division] }}
+                            thead
+                                tr
+                                    th 
+                                    th NO
+                                    th 부서
+                                    
+                            tbody
+                                tr(v-for="(division, index) in Object.values(selectedDivisions)" :key="division")
+                                    td(style="padding: 0")
+                                        button.btn-remove(@click="removeDvs(division)")
+                                            .icon
+                                                svg
+                                                    use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+                                    td {{ index + 1 }}
+                                    td {{ divisionNameList[division] }}
 
-					span.empty(v-else) 선택된 결재자가 없습니다.
-		.modal-footer
-			button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
-			button.btn.btn-save(type="submit" @click="saveAuditor") 저장
+                    span.empty(v-else) 선택된 결재자가 없습니다.
+        .modal-footer
+            button.btn.bg-gray.btn-cancel(type="button" @click="closeModal") 취소
+            button.btn.btn-save(type="submit" @click="saveAuditor") 저장
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { skapi } from '@/main.ts';
+import { user } from '@/user.ts';
 import { divisionNameList } from '@/division.ts';
 import { organigram } from '@/components/organigram';
 
@@ -116,6 +118,7 @@ const route = useRoute();
 // 수정 모드 확인: URL에 record_id가 있으면 수정 모드
 const isEditMode = computed(() => !!route.query.record_id);
 const recordId = ref(route.query.record_id || null);
+const isMyRecord = ref(false); // 내가 저장한 카테고리인지 여부
 
 const disabled = ref(false);
 const isDesktop = ref(window.innerWidth > 768); // 반응형
@@ -151,10 +154,11 @@ const getEditModeCat = async () => {
             newsCatName.value = categoryData.data.news_category || '';
             accessDivisions.value = categoryData.data.access_division || {};
             notiSetting.value = String(categoryData.data.notiSetting);
+            isMyRecord.value = categoryData.user_id === user.user_id || false;
 
             const selectedUserIds = Object.values(accessDivisions.value)
                 .flat()
-                .map(user => user.user_id)
+                .map((user) => user.user_id)
                 .filter(Boolean); // 빈 값 제거
 
             // 중복 제거 (필요하다면)
@@ -207,8 +211,8 @@ const handleOrganigramSelection = (users) => {
         return;
     }
 
-    const newDivisions = [...new Set(users.map(user => user.division))];
-    const newUserIds = [...new Set(users.map(user => user.user.user_id))];
+    const newDivisions = [...new Set(users.map((user) => user.division))];
+    const newUserIds = [...new Set(users.map((user) => user.user.user_id))];
 
     selectedDivisions.value = newDivisions;
     selectedEmps.value = newUserIds;
@@ -300,9 +304,7 @@ const registerNewsCat = async () => {
         return;
     }
 
-    const accessUserId = selectedEmps.value.filter(
-        userId => !accessEmps.value.includes(userId)
-    );
+    const accessUserId = selectedEmps.value.filter((userId) => !accessEmps.value.includes(userId));
 
     if (accessUserId.length === 0) {
         alert('권한 부여 대상 사용자가 없습니다.');
@@ -642,7 +644,7 @@ onUnmounted(() => {
 }
 
 .select-dvs-wrap {
-    >div {
+    > div {
         border: 1px solid var(--gray-color-300);
         border-radius: 0.5rem;
         padding: 1rem;
@@ -822,7 +824,7 @@ onUnmounted(() => {
     .checkbox {
         text-align: right;
 
-        input[type='checkbox']:checked~.label-checkbox::before {
+        input[type='checkbox']:checked ~ .label-checkbox::before {
             border-color: var(--warning-color-500);
             background-color: var(--warning-color-500);
         }
@@ -845,7 +847,6 @@ onUnmounted(() => {
 }
 
 .wysiwyg-table {
-
     tr,
     th,
     td {
@@ -918,7 +919,6 @@ onUnmounted(() => {
     .input-wrap {
         &.upload-file {
             .btn-upload-file {
-
                 input,
                 label,
                 button {
@@ -926,7 +926,7 @@ onUnmounted(() => {
                 }
             }
 
-            .btn-upload-file+.file-list {
+            .btn-upload-file + .file-list {
                 .file-item {
                     width: 100%;
                 }

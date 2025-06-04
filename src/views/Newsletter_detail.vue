@@ -156,7 +156,7 @@ onMounted(async () => {
     newsCont.value = newsletterList.value.find((item) => item.record_id === newsId.value);
 
     // 첨부파일 리스트
-    if (newsCont.value.bin.form_data.length) {
+    if (newsCont.value.bin?.form_data?.length) {
         let fileList = [];
         let form_data = newsCont.value.bin.form_data;
 
