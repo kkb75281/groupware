@@ -536,7 +536,17 @@ watch(
     async (nv, ov) => {
         if (nv !== ov) {
             auditId.value = nv;
+
+            // 댓글 관련 데이터 초기화
+            commentList.value = [];
+            replyList.value = {};
+            cmtRecord.value = {};
+
+            // 결재 상세 정보 및 댓글 데이터 새로 로드
             await getAuditDetail();
+            await getCmtRecord();
+            await getComment();
+            await getReply();
         }
     }
 );
@@ -939,7 +949,7 @@ const getAuditDetail = async () => {
         processAuditors('receivers')
     ]);
 
-    if (Object.keys(auditDoc.bin).length && auditDoc.bin.form_data.length) {
+    if (Object.keys(auditDoc.bin).length && auditDoc.bin?.form_data?.length) {
         let fileList = [];
         let form_data = auditDoc.bin.form_data;
 
