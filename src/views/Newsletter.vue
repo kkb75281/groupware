@@ -227,7 +227,20 @@ const getPage = async (refresh = false) => {
             newsletterList.value = disp.list;
         } catch (error) {
             console.error('Error getting page:', error);
-            newsletterList.value = [];
+
+            if (
+                error.message === 'User has no private access.' ||
+                error.code === 'INVALID_REQUEST' ||
+                error.message.includes(
+                    `User's private access for reference: \"${cateId.value}\" does not exist.`
+                )
+            ) {
+                newsletterList.value = [];
+                alert('해당 게시글에 대한 권한이 없습니다.');
+                router.push('/newsletter-category/');
+            } else {
+                newsletterList.value = [];
+            }
         } finally {
             fetching.value = false;
         }
@@ -246,19 +259,6 @@ watch(currentPage, (n, o) => {
 onMounted(async () => {
     newsletterList.value = [];
     await getPage(true);
-    await getNewsletterList(cateId.value).catch((err) => {
-        if (
-            err.code === 'INVALID_REQUEST' ||
-            err.message.includes(
-                `User's private access for reference: \"${cateId.value}\" does not exist.`
-            ) ||
-            err.message === 'User has no private access.'
-        ) {
-            newsletterList.value = [];
-            alert('해당 게시글에 대한 권한이 없습니다.');
-            router.push('/newsletter-category/');
-        }
-    });
 });
 </script>
 

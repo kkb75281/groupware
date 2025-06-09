@@ -392,20 +392,27 @@ export const getNewsletterList = async (tag, fetchOptions = {}) => {
         ...fetchOptions
     };
 
-    const getNews = await skapi.getRecords(query, options);
+    try {
+        const getNews = await skapi.getRecords(query, options);
 
-    const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
-    newsletterList.value = getNews.list.map((item, index) => {
+        const writer = await Promise.all(
+            newsletterList.value.map((item) => getUserInfo(item.user_id))
+        );
+        newsletterList.value = getNews.list.map((item, index) => {
+            return {
+                ...item,
+                writer: writer[index]?.list?.[0]?.name || '-'
+            };
+        });
+
         return {
-            ...item,
-            writer: writer[index]?.list?.[0]?.name || '-'
+            list: newsletterList.value,
+            endOfList: getNews.endOfList
         };
-    });
-
-    return {
-        list: newsletterList.value,
-        endOfList: getNews.endOfList
-    };
+    } catch (err) {
+        console.error('Error fetching newsletter list:', err);
+        throw err;
+    }
 };
 
 export async function subscribeNotification() {

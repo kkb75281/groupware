@@ -153,6 +153,18 @@ const deleteNews = async () => {
 };
 
 onMounted(async () => {
+    // 데이터가 없다면 API 호출로 직접 가져오기
+    if (!newsletterList.value || newsletterList.value.length === 0) {
+        try {
+            await getNewsletterList(cateId.value);
+        } catch (error) {
+            console.error('데이터 로드 실패:', error);
+            alert('해당 게시글을 찾을 수 없습니다.');
+            newsletterList.value = [];
+            router.push({ path: '/newsletter', query: { category: cateId.value } });
+        }
+    }
+
     newsCont.value = newsletterList.value.find((item) => item.record_id === newsId.value);
 
     // 첨부파일 리스트

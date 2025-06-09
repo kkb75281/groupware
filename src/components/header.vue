@@ -302,7 +302,7 @@ onUnmounted(() => {
     document.removeEventListener('click', closePopupOutside);
 });
 
-let showRealtimeNoti = (e, type, rt) => {
+let showRealtimeNoti = async (e, type, rt) => {
     console.log('rt : ', rt);
 
     if (type === 'gmail') {
@@ -317,6 +317,16 @@ let showRealtimeNoti = (e, type, rt) => {
         }
     } else if (type === 'realtime' && rt.news_info) {
         if (rt.news_info.news_id && rt.news_info.news_refer) {
+            // 공지사항 데이터가 없다면 먼저 로드
+            if (!rt.news_info.news_id || !rt.news_info.news_refer) {
+                try {
+                    await getNewsletterList(rt.news_info.news_refer);
+                } catch (error) {
+                    console.error('공지사항 정보를 가져오는 데 실패했습니다:', error);
+                    return;
+                }
+            }
+
             router.push({
                 path: `/newsletter-detail/${rt.news_info.news_id}`,
                 query: {
