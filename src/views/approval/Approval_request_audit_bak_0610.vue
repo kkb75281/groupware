@@ -1905,10 +1905,8 @@ const openReferModal = async () => {
         const allDocs = [];
         const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
         const fetchOptions = { limit: 1000 };
-        // const fetchOptions = { fetchMore: !refresh, limit: 10, ascending: false };
 
         const getAllDocs = async (fetchFunction, docType, drafter) => {
-            // console.log('fetchOptions : ', fetchOptions);
             try {
                 const docs = await fetchFunction(fetchOptions);
                 if (docs && docs?.list && Array.isArray(docs.list)) {
