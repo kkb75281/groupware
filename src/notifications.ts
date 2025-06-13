@@ -460,7 +460,7 @@ export async function subscribeNotification() {
 
         if (hasSub === user?.user_id) {
             console.error('Already subscribed');
-            // return;
+            return;
         }
     }
 
