@@ -488,6 +488,8 @@ export async function subscribeNotification() {
     // window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
     const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
 
+    console.log('!!!Subscription response:', response); // Debugging
+
     let user_local_data = {
         user_id: user.user_id,
         subscribeNotification: false

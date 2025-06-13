@@ -13,10 +13,10 @@
                     use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
             p {{ notificationNotWorkingMsg }}
     
-        //- template(v-if="onlyUserGesture")
-        button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
+        template(v-if="onlyUserGesture")
+            button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
 
-        br
+            br
     
         .profComp-wrap
             .box-shadow-card.profile-wrap
