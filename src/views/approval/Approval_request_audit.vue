@@ -521,7 +521,6 @@ const tempSaveData = ref([]); // 임시 저장된 결재 양식
 const isFormSelected = ref(false); // 양식이 선택되었는지 여부
 const rejectSetting = ref(false); // 반려 설정 관련 체크박스
 
-// const prevSelected = ref([]);
 const backupSelected = ref(null); // 선택된 결재자 백업
 let send_auditors_arr = [];
 
@@ -610,8 +609,7 @@ const openModal = () => {
         ...selectedUsers.value.filter((u) => u.role !== 'receivers'),
         ...selectedUsers.value.filter((u) => u.role === 'receivers')
     ];
-    // selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
-    // prevSelected.value = selectedUsers.value;
+    selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
 
     isModalOpen.value = true;
 };
@@ -632,9 +630,26 @@ const closeModal = () => {
         };
     }
 
+    // selectedUsers를 백업된 상태로 복원
     selectedUsers.value = [];
-    selectedUsersOrder.value = [];
+    for (const role in selectedAuditors.value) {
+        selectedAuditors.value[role].forEach((user) => {
+            const userCopy = JSON.parse(JSON.stringify(user));
+            console.log('userCopy : ', userCopy);
 
+            userCopy.role = role;
+            userCopy.sortable = role !== 'receivers';
+            selectedUsers.value.push(userCopy);
+        });
+    }
+
+    selectedUsers.value = [
+        ...selectedUsers.value.filter((u) => u.role !== 'receivers'),
+        ...selectedUsers.value.filter((u) => u.role === 'receivers')
+    ];
+    selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
+
+    selectedUsersOrder.value = [];
     backupSelected.value = null;
     isModalOpen.value = false;
 
@@ -746,8 +761,13 @@ const previewAudit = () => {
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
+    console.log('확인 = user : ', users);
+
     selectedUsers.value = selectedUsers.value.filter((selUser) =>
-        users.some((user) => user.user.user_id === selUser.user.user_id)
+        users.some(
+            (user) =>
+                user.user.user_id === selUser.user.user_id && user.division === selUser.division
+        )
     );
 
     let maxOrder = 0;
@@ -764,7 +784,7 @@ const handleOrganigramSelection = (users) => {
     users.forEach((user) => {
         // 선택된 유저를 selectedUsers에 추가
         const existingUserIndex = selectedUsers.value.findIndex(
-            (u) => u.user.user_id === user.user.user_id
+            (u) => u.user.user_id === user.user.user_id && u.division === user.division
         );
 
         if (existingUserIndex !== -1) {
@@ -902,6 +922,9 @@ const saveAuditor = () => {
 const removeAuditor = (user, type) => {
     const newAuditors = selectedUsers.value.filter((u) => u.user.user_id !== user.user.user_id);
     selectedUsers.value = newAuditors;
+    console.log('== removeAuditor == selectedUsers.value : ', selectedUsers.value);
+
+    reorderUsers();
 };
 
 // 에디터 준비 후 테이블 편집 기능 활성화

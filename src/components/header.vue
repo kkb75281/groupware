@@ -106,7 +106,7 @@ header#header
 
                         template(v-else-if="rt.audit_info && rt.audit_info?.audit_type === 'canceled'")
                             h4.noti-type [결재회수]
-                            h5.noti-title {{ rt.send_name + '님이 [' + rt.audit_info?.to_audit + '] 문서를 회수하였습니다.' }}
+                            h5.noti-title {{ '[' + rt.audit_info?.to_audit + '] 문서를 회수하였습니다.' }}
                             p.upload-time {{ formatTimeAgo(rt.send_date) }}
 
                         template(v-else-if="rt?.noti_type === 'notice'")
