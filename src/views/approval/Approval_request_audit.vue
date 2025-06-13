@@ -583,6 +583,8 @@ const convertAuditorFormat = (auditors, role) => {
 
 // 결재라인 모달 열기
 const openModal = () => {
+    document.body.style.overflow = 'hidden';
+
     // 열렸을 때 selectedAuditors 전체를 original로 백업
     backupSelected.value = {
         approvers: [...selectedAuditors.value.approvers],
@@ -635,6 +637,8 @@ const closeModal = () => {
 
     backupSelected.value = null;
     isModalOpen.value = false;
+
+    document.body.style.overflow = '';
 };
 
 // 작성란 추가
@@ -890,6 +894,8 @@ const saveAuditor = () => {
 
     backupSelected.value = null;
     isModalOpen.value = false;
+
+    document.body.style.overflow = '';
 };
 
 // 결재자 제거
@@ -1504,24 +1510,24 @@ const saveForm = async ({
         const auditorData = {
             approvers: selectedAuditors.value.approvers.map((user) => ({
                 user_id: user.user.user_id,
-                name: user.index.value,
-                position: user.index.name.split('.')[1],
-                division: user.index.name.split('.')[0],
-                order: user.order // 순서 정보 추가
+                name: user.name,
+                position: user.position,
+                division: user.division,
+                order: user.order
             })),
             agreers: selectedAuditors.value.agreers.map((user) => ({
                 user_id: user.user.user_id,
-                name: user.index.value,
-                position: user.index.name.split('.')[1],
-                division: user.index.name.split('.')[0],
-                order: user.order // 순서 정보 추가
+                name: user.name,
+                position: user.position,
+                division: user.division,
+                order: user.order
             })),
             receivers: selectedAuditors.value.receivers.map((user) => ({
                 user_id: user.user.user_id,
-                name: user.index.value,
-                position: user.index.name.split('.')[1],
-                division: user.index.name.split('.')[0],
-                order: user.order // 순서 정보 추가
+                name: user.name,
+                position: user.position,
+                division: user.division,
+                order: user.order
             }))
         };
 
@@ -1651,13 +1657,13 @@ const saveDocForm = () => {
 };
 
 // 내 결재 양식 저장
-const saveMyDocForm = async () => {
-    saveForm({
-        isMaster: false,
-        tableName: 'my_audit_form',
-        optionsIdx: auditTitle.value.replaceAll('.', '_')
-    });
-};
+// const saveMyDocForm = async () => {
+//     saveForm({
+//         isMaster: false,
+//         tableName: 'my_audit_form',
+//         optionsIdx: auditTitle.value.replaceAll('.', '_')
+//     });
+// };
 
 // 임시 저장
 const tempSaveMyDoc = async () => {
@@ -1719,13 +1725,17 @@ const applyFormData = async (formData) => {
     uploadedFile.value = formData.bin?.form_data ?? [];
     fileNames.value = [];
 
+    console.log('formData : ', formData);
+
     // 결재자
     if (formData.data.auditors) {
         const auditors = JSON.parse(formData.data.auditors);
 
         const convert = async (auditorsList, role) => {
+            console.log('auditorsList : ', auditorsList);
             const result = await Promise.all(
                 auditorsList.map(async (auditor) => {
+                    console.log('auditor : ', auditor);
                     let uif = await getUserInfo(auditor.user_id);
 
                     return {
@@ -1987,7 +1997,6 @@ const openReferModal = async () => {
         allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
 
         referDocList.value = allDocs;
-        console.log('allDocs : ', allDocs);
     } catch (error) {
         console.error('참조문서 목록 가져오기 중 오류 : ', error);
         alert('참조문서 목록을 가져오는 중 오류가 발생했습니다.');

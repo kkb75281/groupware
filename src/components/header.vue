@@ -1142,6 +1142,11 @@ watch(
                 display: none;
             }
 
+            .btn-noti {
+                display: block;
+                margin-right: 0.5rem;
+            }
+
             .btn-mo-logout {
                 display: block;
             }
@@ -1189,8 +1194,9 @@ watch(
         right: 16px;
 
         &.notification {
-            right: 50%;
-            transform: translateX(50%);
+            // right: 50%;
+            // transform: translateX(50%);
+            right: 3rem;
 
             .popup-header {
                 padding: 30px 20px 18px;
@@ -1225,16 +1231,26 @@ watch(
     }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 500px) {
     #popup {
         right: 8px;
         width: calc(100% - 16px);
 
-        &.profile {
+        &.notification {
             right: 50%;
             transform: translateX(50%);
             width: calc(100% - 16px);
         }
     }
 }
+
+// @media (max-width: 400px) {
+//     #popup {
+//         &.profile {
+//             right: 50%;
+//             transform: translateX(50%);
+//             width: calc(100% - 16px);
+//         }
+//     }
+// }
 </style>

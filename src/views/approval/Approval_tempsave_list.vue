@@ -119,14 +119,11 @@ const getTempSaveMyDoc = async (fetchOptions = {}) => {
 
     const options = {
         ascending: false, // 최신순
-        limit: 10,
         ...fetchOptions
     };
 
     const res = await skapi.getRecords(query, options);
     tempSaveList.value = res.list;
-    console.log('tempSaveList : ', tempSaveList.value);
-
     loading.value = false;
     return {
         list: res.list,
@@ -243,14 +240,12 @@ watch(currentPage, (n, o) => {
 
 onMounted(async () => {
     await getPage(true);
-    getTempSaveMyDoc();
 });
 </script>
 
 <style scoped lang="less">
 .table-wrap {
     position: relative;
-    //   margin-top: 3rem;
 }
 
 .go-detail {
