@@ -26,7 +26,9 @@ import {
     getOrganigram,
     getOrganigramRunning,
     excludeCurrentUser,
-    onlyMyDivision
+    onlyMyDivision,
+    checkedEmps,
+    findDepartmentByDivisionName
 } from '@/components/organigram';
 
 import Loading from '@/components/loading.vue';
@@ -65,8 +67,6 @@ const props = defineProps({
         default: () => []
     }
 });
-
-const checkedEmps = ref([]);
 
 onMounted(async () => {
     let refresh = false;
@@ -322,25 +322,5 @@ function findDepartmentOfEmployee(userId) {
     return null;
 }
 
-// 부서명(division)으로 조직도에서 부서 객체를 찾는 재귀 함수
-function findDepartmentByDivisionName(divisionName) {
-    // 부모 경로를 추적하며 찾기
-    function search(department, parents = []) {
-        if (department.division === divisionName) {
-            // 부모 부서들의 isOpened를 true로 설정
-            parents.forEach(parent => parent.isOpened = true);
-            return department;
-        }
-        for (const sub of department.subDepartments) {
-            const found = search(sub, [...parents, department]);
-            if (found) return found;
-        }
-        return null;
-    }
-    for (const dept of organigram.value) {
-        const found = search(dept, []);
-        if (found) return found;
-    }
-    return null;
-}
+
 </script>

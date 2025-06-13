@@ -1230,7 +1230,7 @@ const createAuditRequest = async (
                 }
             )
             .then((res) => {
-                // console.log('실시간 알림 == res : ', res);
+                console.log('실시간 알림!!!!!! == res : ', res);
             })
             .catch(async (err) => {
                 console.error(err);

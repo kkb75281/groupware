@@ -7,7 +7,7 @@ div(v-if="!system_worktime" style="text-align: center;line-height: 1.9;")
 		p
 		| 지정된 근무 시간이 없습니다. 
 		br
-		| 출퇴근 사용을 원하시면 FGWORKS 관리자에게 문의하시기 바랍니다.
+		| 출퇴근 사용을 원하시는 경우 FGWORKS 관리자에게 문의 바랍니다.
 
 template(v-else)
 	.itembox

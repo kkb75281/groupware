@@ -26,6 +26,7 @@ export let getOrganigramRunning: Ref<boolean> = ref(false);
 export let currentUserDivisions: Ref<string[]> = ref([]);
 export let excludeCurrentUser = ref(false);
 export let onlyMyDivision = ref(false);
+export const checkedEmps = ref([]);
 
 export async function getOrganigram(refresh = false) {
     if (getDivisionNamesRunning instanceof Promise) {
@@ -71,6 +72,28 @@ export async function getOrganigram(refresh = false) {
     recalculateTotals(organigram.value);
     getOrganigramRunning.value = false;
     console.log({ organigram: organigram.value });
+}
+
+// 부서명(division)으로 조직도에서 부서 객체를 찾는 재귀 함수
+export function findDepartmentByDivisionName(divisionName: string) {
+    // 부모 경로를 추적하며 찾기
+    function search(department: Organigram, parents: Organigram[] = []): Organigram | null {
+        if (department.division === divisionName) {
+            // 부모 부서들의 isOpened를 true로 설정
+            parents.forEach((parent) => (parent.isOpened = true));
+            return department;
+        }
+        for (const sub of department.subDepartments) {
+            const found = search(sub, [...parents, department]);
+            if (found) return found;
+        }
+        return null;
+    }
+    for (const dept of organigram.value) {
+        const found = search(dept, []);
+        if (found) return found;
+    }
+    return null;
 }
 
 // 하위 부서 인원수를 합한 최상위 부서의 총 인원 수를 계산하는 함수
@@ -168,6 +191,14 @@ async function addDepartment(path: string[], division: string | null, currentLev
         };
 
         currentLevel.push(department);
+    } else {
+        if (divisionNameList.value[division]) {
+            const nameList = divisionNameList.value[division].split('/');
+
+            if (nameList[nameList.length - 1] === department.name) {
+                department.division = division; // 이미 존재하는 부서의 경우 division 업데이트
+            }
+        }
     }
 
     // 하위 경로가 있으면 재귀적으로 처리
@@ -207,13 +238,6 @@ async function addDepartment(path: string[], division: string | null, currentLev
         const filteredMembersInfo = await Promise.all(
             filteredMembers.map(async (member) => {
                 let uif = await getUserInfo(member.data.user_id);
-                // return {
-                //   ...member,
-                //   index: {
-                //     name: member.index.name,
-                //     value: uif.list[0]?.name || '이름 없음'
-                //   }
-                // };
                 return {
                     user: uif.list[0],
                     division: member.index.name.split('.')[0] || '부서 없음',

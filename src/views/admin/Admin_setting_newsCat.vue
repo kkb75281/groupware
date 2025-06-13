@@ -108,7 +108,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { skapi } from '@/main.ts';
 import { user } from '@/user.ts';
 import { divisionNameList } from '@/division.ts';
-import { organigram } from '@/components/organigram';
+import { organigram, checkedEmps, findDepartmentByDivisionName } from '@/components/organigram';
 
 import Organigram from '@/components/organigram.vue';
 
@@ -123,14 +123,11 @@ const isMyRecord = ref(false); // 내가 저장한 카테고리인지 여부
 const disabled = ref(false);
 const isDesktop = ref(window.innerWidth > 768); // 반응형
 const isModalOpen = ref(false); // 공개범위 설정 모달
-const accessDivisions = ref({}); // 권한을 가지고 있는 부서
-const accessEmps = ref([]); // 권한을 가지고 있는 user_id
+const currentCategory = ref(null); // 현재 선택된 카테고리
 const selectedDivisions = ref([]); // 업데이트 할 선택된 부서
 const selectedEmps = ref([]); // 업데이트 할 user_id 저장
 const notiSetting = ref(true); // 알림 설정 관련 체크박스
 const backupSelected = ref(null); // 선택된 공개범위 직원 백업
-const checkedUsers = ref([]); // 체크된 직원
-
 const newsCatName = ref(''); // 게시글 제목
 
 // 수정 모드일 경우 데이터 가져오기
@@ -147,14 +144,14 @@ const getEditModeCat = async () => {
         });
 
         if (res.list && res.list.length > 0) {
-            const categoryData = res.list[0];
-            console.log('카테고리 데이터: ', categoryData);
+            currentCategory.value = res.list[0];
+            console.log('카테고리 데이터: ', currentCategory.value);
 
             // 데이터 설정
-            newsCatName.value = categoryData.data.news_category || '';
-            accessDivisions.value = categoryData.data.access_division || {};
-            notiSetting.value = String(categoryData.data.notiSetting);
-            isMyRecord.value = categoryData.user_id === user.user_id || false;
+            newsCatName.value = currentCategory.value.data.news_category || '';
+            selectedDivisions.value = currentCategory.value.data.access_division || [];
+            notiSetting.value = String(currentCategory.value.data.notiSetting);
+            isMyRecord.value = currentCategory.value.user_id === user.user_id || false;
 
             const selectedUserIds = Object.values(accessDivisions.value)
                 .flat()
@@ -182,9 +179,18 @@ const getEditModeCat = async () => {
 
 // 공개범위 모달 열기
 const openModal = () => {
+    // 선택된 부서들의 모든 멤버 user_id를 백업
+    let backupEmployees = [];
+    selectedDivisions.value.forEach(divisionName => {
+        const dept = findDepartmentByDivisionName(divisionName);
+        if (dept && dept.members && dept.members.length > 0) {
+            backupEmployees.push(...dept.members.map(member => member.user.user_id));
+        }
+    });
+
     backupSelected.value = {
-        employees: [...accessEmps.value],
-        divisions: JSON.parse(JSON.stringify(Object.keys(accessDivisions.value)))
+        employees: [...new Set(backupEmployees)], // 중복 제거
+        divisions: JSON.parse(JSON.stringify(selectedDivisions.value))
     };
 
     isModalOpen.value = true;
@@ -206,6 +212,7 @@ const closeModal = () => {
 
 // 공개범위 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
+    console.log('handleOrganigramSelection called with users:', users);
     if (!users || users.length === 0) {
         selectedDivisions.value = [];
         return;
@@ -223,65 +230,24 @@ const saveAuditor = () => {
     backupSelected.value = null;
     isModalOpen.value = false;
 
-    console.log('권한 가진 부서 :', accessDivisions.value);
     console.log('권한 업데이트 부서 :', selectedDivisions.value);
-    console.log('권한 가진 직원 : ', accessEmps.value);
     console.log('권한 업데이트 직원 : ', selectedEmps.value);
-};
-
-const undoChecked = (divisionName) => {
-    // 재귀적으로 부서 찾기
-    const findUncheckDepartment = (departments) => {
-        for (const dept of departments) {
-            // 현재 부서가 찾는 부서인지 확인
-            if (dept.division === divisionName) {
-                // 부서 체크박스 해제
-                dept.isChecked = false;
-
-                // 부서 멤버들도 체크 해제
-                if (dept.members && dept.members.length > 0) {
-                    dept.members.forEach((member) => {
-                        member.isChecked = false;
-
-                        // checkedUsers에서도 제거
-                        const index = checkedUsers.value.findIndex(
-                            (user) => user.user?.user_id === member.user?.user_id
-                        );
-                        if (index !== -1) {
-                            checkedUsers.value.splice(index, 1);
-                            console.log('checkedUsers.value : ', checkedUsers.value);
-                        }
-                    });
-                }
-
-                return true; // 찾았으면 종료
-            }
-
-            // 하위 부서에서 찾기
-            if (dept.subDepartments && dept.subDepartments.length > 0) {
-                if (findUncheckDepartment(dept.subDepartments)) {
-                    return true;
-                }
-            }
-        }
-
-        return false; // 못 찾았으면 계속 진행
-    };
-
-    // 최상위 부서부터 검색 시작
-    findUncheckDepartment(organigram.value);
 };
 
 // 공개범위 모달에서 선택된 부서 삭제
 const removeDvs = (divisionName) => {
-    if (accessDivisions.value[divisionName]) {
-        // 조직도에서 해당 부서 찾아 체크 해제하는 함수 호출
-        undoChecked(divisionName);
+    selectedDivisions.value = selectedDivisions.value.filter(
+        (division) => division !== divisionName
+    );
 
-        delete accessDivisions.value[divisionName];
-        accessDivisions.value = JSON.parse(JSON.stringify(accessDivisions.value));
-        console.log('accessDivisions.value : ', accessDivisions.value);
-    }
+    let removedDivision = findDepartmentByDivisionName(divisionName);
+    let removedUserIds = removedDivision.members.map(member => member.user.user_id);
+
+    removedDivision.isChecked = false;
+
+    checkedEmps.value = checkedEmps.value.filter(
+        emp => !removedUserIds.includes(emp.user.user_id)
+    );
 };
 
 // 게시글 공개범위에게 권한을 부여하는 함수
@@ -299,14 +265,12 @@ const registerNewsCat = async () => {
         return;
     }
 
-    if (!accessDivisions.value || accessDivisions.value.length === 0) {
+    if (!selectedDivisions.value || selectedDivisions.value.length === 0) {
         alert('공개범위를 설정해주세요.');
         return;
     }
 
-    const accessUserId = selectedEmps.value.filter((userId) => !accessEmps.value.includes(userId));
-
-    if (accessUserId.length === 0) {
+    if (selectedEmps.value.length === 0) {
         alert('권한 부여 대상 사용자가 없습니다.');
         router.push('/admin/list-newsletter');
         return;
@@ -315,7 +279,7 @@ const registerNewsCat = async () => {
     try {
         const data = {
             news_category: newsCatName.value,
-            access_division: JSON.parse(JSON.stringify(accessDivisions.value)),
+            access_division: selectedDivisions.value,
             notiSetting: notiSetting.value
         };
 
@@ -348,7 +312,7 @@ const registerNewsCat = async () => {
         console.log('categoryId : ', categoryId);
 
         await Promise.all(
-            accessUserId.map((userId) =>
+            selectedEmps.value.map((userId) =>
                 grantNewsUserAccess({ news_id: categoryId, newsUser_id: userId })
             )
         ).then((promise) => {
@@ -644,7 +608,7 @@ onUnmounted(() => {
 }
 
 .select-dvs-wrap {
-    > div {
+    >div {
         border: 1px solid var(--gray-color-300);
         border-radius: 0.5rem;
         padding: 1rem;
@@ -824,7 +788,7 @@ onUnmounted(() => {
     .checkbox {
         text-align: right;
 
-        input[type='checkbox']:checked ~ .label-checkbox::before {
+        input[type='checkbox']:checked~.label-checkbox::before {
             border-color: var(--warning-color-500);
             background-color: var(--warning-color-500);
         }
@@ -847,6 +811,7 @@ onUnmounted(() => {
 }
 
 .wysiwyg-table {
+
     tr,
     th,
     td {
@@ -919,6 +884,7 @@ onUnmounted(() => {
     .input-wrap {
         &.upload-file {
             .btn-upload-file {
+
                 input,
                 label,
                 button {
@@ -926,7 +892,7 @@ onUnmounted(() => {
                 }
             }
 
-            .btn-upload-file + .file-list {
+            .btn-upload-file+.file-list {
                 .file-item {
                     width: 100%;
                 }
