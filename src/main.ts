@@ -13,8 +13,7 @@ import {
     updateEmails,
     subscribeNotification,
     unsubscribeNotification,
-    unreadEmailNotiMsg,
-    checkNotificationPermission
+    unreadEmailNotiMsg
 } from './notifications.ts';
 import { getUserInfo, employeeDict, getEmpDivisionPosition } from './employee.ts';
 import { getAuditList } from './audit.ts';
@@ -517,7 +516,6 @@ export async function loginCheck(profile: any) {
 
         refreshAccessToken();
         getSystemBanner(); // 대시보드 배너 사진
-        checkNotificationPermission();
 
         // console.log('메인 페이지 onMounted');
 
