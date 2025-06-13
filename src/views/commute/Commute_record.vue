@@ -70,7 +70,7 @@ template(v-else)
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, nextTick } from 'vue';
 import { skapi } from '@/main.ts';
 import {
     getDate,
@@ -148,7 +148,7 @@ const saveDesc = async (record) => {
         });
 
         alert('비고가 저장되었습니다.');
-
+        await nextTick();
         await getMyWorktimeStorage(true);
     } catch (error) {
         console.error('비고 저장 에러:', error);
