@@ -442,6 +442,7 @@ export async function subscribeNotification() {
     } else {
         serviceWorkerRegistMsg.value = '';
         navigator.serviceWorker.getRegistrations().then((registrations) => {
+            console.log('!!!Service Worker Registrations:', registrations);
             registrations.forEach((registration) => {
                 console.log('Service Worker Script URL:', registration.active?.scriptURL);
             });
@@ -459,7 +460,7 @@ export async function subscribeNotification() {
 
         if (hasSub === user?.user_id) {
             console.error('Already subscribed');
-            return;
+            // return;
         }
     }
 
