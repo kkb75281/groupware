@@ -416,11 +416,11 @@ export const getNewsletterList = async (tag, fetchOptions = {}) => {
 };
 
 export async function subscribeNotification() {
-    let vapid = localStorage.getItem(skapi.service + '-vapid');
+    // let vapid = localStorage.getItem(skapi.service + '-vapid');
 
     // if (!vapid) {
     const vapidResponse = await skapi.vapidPublicKey();
-    vapid = vapidResponse.VAPIDPublicKey;
+    let vapid = vapidResponse.VAPIDPublicKey;
     localStorage.setItem(skapi.service + '-vapid', vapid);
     // }
 
