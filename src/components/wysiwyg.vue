@@ -33,30 +33,27 @@
             .btn-custom.input-color
                 input#colorInput(
                     type="color"
-                    ref="colorInputRef"
-                    @mousedown="onColorInputMouseDown('textColor', $event)"
-                    @mouseup="stopColorDrag"
-                    @input="handleColorInput('textColor', $event.target.value)"
+                    :value="textColor"
+                    @change="wysiwyg.command($event.target.value)"
+                    @blur="wysiwyg.restoreLastSelection()"
                 )
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-color-text")
 
-            // 셀 배경색 변경
             .btn-custom.input-color.line
-                input#bgColorInput(
+                input#colorInput(
                     type="color"
-                    ref="bgColorInputRef"
-                    @mousedown="onColorInputMouseDown('bgColor', $event)"
-                    @mouseup="stopColorDrag"
-                    @input="handleColorInput('bgColor', $event.target.value)"
+                    :value="textColor"
+                    @change="wysiwyg.command({backgroundColor: $event.target.value})"
+                    @blur="wysiwyg.restoreLastSelection()"
                 )
                 .icon
                     svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-highlighter")
 
             button.btn-custom(type="button" @click.stop="handleCommand('divider')")
-                .icon
+                .icons
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-divider")
             button.btn-custom.line(type="button" @click.stop="handleCommand('quote')")
@@ -69,6 +66,18 @@
                 .icon
                     svg
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-table")
+            // 셀 배경색 변경
+            .btn-custom.input-color
+                input#bgColorInput(
+                    type="color"
+                    ref="bgColorInputRef"
+                    :value="bgColor"
+                    @mousedown="onColorInputMouseDown"
+                    @input="(e) => {handleColorInput(e, 'bgColor')}"
+                )
+                .icon
+                    svg
+                        use(xlink:href="@/assets/icon/material-icon.svg#icon-color-bg")
             button.btn-custom(type="button" @click.stop="handleCommand('unorderedList')")
                 .icon
                     svg
@@ -115,7 +124,12 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, nextTick, ref, computed, onUnmounted } from 'vue';
-import { insertTableToWysiwyg, addResizer, bindCellEvents, resetTableCellData } from '@/components/wysiwygTable.js';
+import {
+    insertTableToWysiwyg,
+    addResizer,
+    bindCellEvents,
+    resetTableCellData
+} from '@/components/wysiwygTable.js';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
 import wysiwygTable from '@/components/wysiwygTable.vue';
@@ -127,8 +141,12 @@ const props = defineProps(['savedContent', 'showBtn']);
 let wysiwyg = null; // wysiwyg4all 인스턴스
 let wysiwygRef = ref(null); // .wysiwyg
 let wysiwygTool = ref(null); // .btns-wrap
-let colorInput = ref(null);
-let bgColorInput = ref(null);
+let showTableDialog = ref(false);
+let tableRows = ref(5);
+let tableCols = ref(5);
+let bgColorInputRef = ref(null);
+let textColor = ref('#000000'); // 기본 텍스트 색상
+let bgColor = ref('#ffffff'); // 기본 배경 색상
 let fontSize = ref(12);
 let minFontSize = 10;
 let maxFontSize = 20;
@@ -139,7 +157,7 @@ let fontVariables = {
     h4: 14,
     h5: 12,
     h6: 10
-}
+};
 let commandTracker = ref({
     bold: false,
     color: false,
@@ -154,11 +172,7 @@ let commandTracker = ref({
     strike: false,
     underline: false
 });
-
-// 테이블 행, 열 크기 설정
-const showTableDialog = ref(false);
-const tableRows = ref(5);
-const tableCols = ref(5);
+let currentRange = null;
 
 // showBtn이 true일 경우, Create 페이지 / false일 경우, Detail 페이지
 const isDetail = computed(() => {
@@ -170,11 +184,7 @@ let isFixed = ref(false);
 const insertTable = () => {
     if (!wysiwyg) return;
 
-    insertTableToWysiwyg(
-        wysiwyg,
-        tableRows.value,
-        tableCols.value
-    );
+    insertTableToWysiwyg(wysiwyg, tableRows.value, tableCols.value);
 
     showTableDialog.value = false;
 };
@@ -206,80 +216,45 @@ const handleFontSize = (action) => {
         fontSize.value -= 2;
     }
 
-    const fontSizeValue = Object.keys(fontVariables).find(key => fontVariables[key] === fontSize.value);
+    const fontSizeValue = Object.keys(fontVariables).find(
+        (key) => fontVariables[key] === fontSize.value
+    );
 
     wysiwyg.restoreLastSelection();
     handleCommand(fontSizeValue);
+};
+
+// RGB → HEX 변환 함수
+function rgbToHex(rgb) {
+    const matches = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!matches) return '#000000';
+    const r = parseInt(matches[1]);
+    const g = parseInt(matches[2]);
+    const b = parseInt(matches[3]);
+    return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
-let colorDragInterval = null;
-
-const onColorInputMouseDown = (type, event) => {
+const onColorInputMouseDown = (event) => {
     event.preventDefault(); // 기본 동작 방지
-    updateColorPickerToSelectedCells(type); // 선택된 셀 색상으로 초기값 설정
+
+    const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
+    const firstCell = selectedCells[0];
+
+    if (!firstCell) return;
+
+    const currentBgColor = window.getComputedStyle(firstCell).backgroundColor;
+    bgColor.value = rgbToHex(currentBgColor);
+
     setTimeout(() => {
-        if (type === 'textColor' && colorInput.value) {
-            colorInput.value.click(); // 강제로 팔레트 열기
-        } else if (type === 'bgColor' && bgColorInput.value) {
-            bgColorInput.value.click(); // 강제로 팔레트 열기
-        }
+        bgColorInputRef.value.click(); // 강제로 팔레트 열기
     }, 50);
 };
 
-// 선택된 셀의 색상을 팔레트에 적용
-const updateColorPickerToSelectedCells = (type) => {
+const handleColorInput = (e, type) => {
+    const colorValue = e.target.value;
     const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
 
-    // RGB → HEX 변환 함수
-    function rgbToHex(rgb) {
-        const matches = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-        if (!matches) return '#000000';
-        const r = parseInt(matches[1]);
-        const g = parseInt(matches[2]);
-        const b = parseInt(matches[3]);
-        return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
-    }
-
-    if (selectedCells.length > 1) {
-        console.log('여러 셀 선택됨');
-        const firstCell = selectedCells[0];
-
-        // 텍스트 색상
-        if (type === 'textColor' && colorInput.value) {
-            const currentTextColor = window.getComputedStyle(firstCell).color;
-            colorInput.value.value = rgbToHex(currentTextColor);
-        }
-
-        // 배경 색상
-        if (type === 'bgColor' && bgColorInput.value) {
-            const currentBgColor = window.getComputedStyle(firstCell).backgroundColor;
-            bgColorInput.value.value = rgbToHex(currentBgColor);
-        }
-    } else {
-        // 일반 텍스트를 선택한 경우
-        const selection = window.getSelection();
-
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const fragment = range.cloneContents(); // #document-fragment 반환
-
-            console.log(fragment); // 여기서는 #document-fragment 형태로 출력됨
-        }
-    }
-
-};
-
-const stopColorDrag = () => {
-    if (colorDragInterval) {
-        clearInterval(colorDragInterval);
-        colorDragInterval = null;
-    }
-};
-
-const handleColorInput = (type, colorValue) => {
-    const selectedCells = document.querySelectorAll('td.selected-cell, td.dragged-cell');
-
-    if (selectedCells.length > 1) {
+    if (selectedCells.length > 0) {
         // 테이블 셀에 색상 적용
         selectedCells.forEach((cell) => {
             if (type === 'textColor') {
@@ -288,13 +263,6 @@ const handleColorInput = (type, colorValue) => {
                 cell.style.backgroundColor = colorValue;
             }
         });
-    } else {
-        const selection = window.getSelection();
-
-        if (selection.rangeCount > 0) {
-            wysiwyg.restoreLastSelection();
-            wysiwyg.command(colorValue);
-        }
     }
 };
 
@@ -409,12 +377,15 @@ const initWysiwyg = () => {
             h6: '13px'
         },
         callback: (c) => {
+            console.log('wysiwyg callback', c);
             checkToolBar();
-            // console.log('wysiwyg4all callback', c);
+
             if (c.range) {
-                // console.log('range', c.range);
+                currentRange = c.range;
+                // console.log('currentRange', currentRange);
                 // c.range.insertNode(document.createTextNode('Hi'));
             }
+
             if (c.caratPosition) {
                 // 뷰포트 내에 커서 위치 유지하기 위한 기존 코드 유지
                 let viewPortHeight = Math.min(
@@ -439,8 +410,17 @@ const initWysiwyg = () => {
                 commandTracker.value.strike = c.commandTracker.strike;
                 commandTracker.value.underline = c.commandTracker.underline;
 
+                if (
+                    typeof c.commandTracker.color === 'string' &&
+                    c.commandTracker.color.startsWith('#')
+                ) {
+                    textColor.value = c.commandTracker.color;
+                } else {
+                    textColor.value = '#000000'; // 기본 색상
+                }
+
                 const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-                let selectedHeadings = headings.filter(h => commandTracker.value[h]);
+                let selectedHeadings = headings.filter((h) => commandTracker.value[h]);
 
                 if (selectedHeadings.length === 0) {
                     fontSize.value = 12;
@@ -508,7 +488,20 @@ function handleEditorKeyDown(e) {
                 table.classList.add('selected-all');
             });
         }, 0); // 기본 동작 이후 실행되도록 딜레이 추가
-    } else if (e.key === 'Delete' || e.key === 'Backspace') { // e.code vs e.key
+    } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        let startLine = currentRange.startLine;
+        let endLine = currentRange.endLine;
+
+        if (
+            startLine?.classList.contains('wysiwyg-table-wrap') ||
+            endLine?.classList.contains('wysiwyg-table-wrap')
+        ) {
+            // 테이블 선택 해제
+            // clearTableSelection();
+            console.log('테이블 선택 되어 있었음');
+        }
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        // e.code vs e.key
         if (allSelectPrevious) {
             e.preventDefault(); // 기본 동작 방지
 
@@ -517,8 +510,7 @@ function handleEditorKeyDown(e) {
                 editorEl.focus();
             });
         }
-    }
-    else {
+    } else {
         allSelectPrevious = false;
     }
 }
@@ -568,7 +560,7 @@ let checkToolBar = () => {
     } else {
         isFixed.value = false;
     }
-}
+};
 
 function copyTableContent(originalTable, newTable) {
     const originalRows = originalTable.rows;
@@ -592,37 +584,27 @@ function copyTableContent(originalTable, newTable) {
             width: 0,
             height: 0
         }
-    }
-
-    function getMergedCellRemoveRange(startRow, startCol, endRow, endCol) {
-        for (let r = startRow; r <= endRow; r++) {
-            for (let c = startCol; c <= endCol; c++) {
-                if (!(r === startRow && c === startCol)) {
-                    removeCells.add(`${r},${c}`);
-                }
-            }
-        }
-    }
+    };
 
     // 병합 셀 범위 먼저 모두 수집
-    for (let r = 0; r < originalRows.length && r < newRows.length; r++) {
+    for (let r = 0; r < originalRows.length; r++) {
         const originalCells = originalRows[r].cells;
+        let colIndex = 0;
         for (let c = 0; c < originalCells.length; c++) {
-            const originalCell = originalCells[c];
-            const originalCellRange = {
-                startRow: r,
-                startCol: c,
-                endRow: r + originalCell.rowSpan - 1,
-                endCol: c + originalCell.colSpan - 1
-            };
-            if (originalCellRange.startRow !== originalCellRange.endRow || originalCellRange.startCol !== originalCellRange.endCol) {
-                getMergedCellRemoveRange(
-                    originalCellRange.startRow,
-                    originalCellRange.startCol,
-                    originalCellRange.endRow,
-                    originalCellRange.endCol
-                );
+            const cell = originalCells[c];
+            const rowSpan = cell.rowSpan || 1;
+            const colSpan = cell.colSpan || 1;
+            // 병합 셀의 영역 표시
+            if (rowSpan > 1 || colSpan > 1) {
+                for (let rr = r; rr < r + rowSpan; rr++) {
+                    for (let cc = colIndex; cc < colIndex + colSpan; cc++) {
+                        if (!(rr === r && cc === colIndex)) {
+                            removeCells.add(`${rr},${cc}`);
+                        }
+                    }
+                }
             }
+            colIndex += colSpan;
         }
     }
 
@@ -655,40 +637,16 @@ function copyTableContent(originalTable, newTable) {
                 }
             });
 
+            const style = window.getComputedStyle(originalCell);
+            newCell.style.width = style.width;
+            newCell.style.height = style.height;
             newCell.innerHTML = originalCell.innerHTML.trim() || '&nbsp;';
-            newCell.style = originalCell.style.cssText || '';
-            newCell.style.width = originalCell.width + 'px' || 'auto';
-            newCell.style.height = originalCell.height + 'px' || 'auto';
 
             addResizer(tableState, newCell);
         }
     }
 
     resetTableCellData(newTable);
-}
-
-function insertHtmlAtCursor(html) {
-    let sel = window.getSelection();
-    if (!sel.rangeCount) return;
-
-    let range = sel.getRangeAt(0);
-    range.deleteContents();
-
-    // HTML을 파싱해서 fragment로 변환
-    let temp = document.createElement('div');
-    temp.innerHTML = html;
-    let frag = document.createDocumentFragment();
-    let node;
-    while ((node = temp.firstChild)) {
-        frag.appendChild(node);
-    }
-
-    range.insertNode(frag);
-
-    // 커서를 마지막에 위치시키기
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
 }
 
 const insertHtmlToWysiwyg = (html) => {
@@ -717,18 +675,42 @@ const insertHtmlToWysiwyg = (html) => {
             if (newTable) {
                 copyTableContent(originalTable, newTable); // 테이블 내용 복사
                 originalTable.replaceWith(newTableWrap);
+                newTableWrap.remove();
             }
         });
     }
 
     const editorEl = document.getElementById('myeditor');
     if (editorEl) {
-        console.log(body.innerHTML)
+        console.log(body.innerHTML);
         insertHtmlAtCursor(body.innerHTML);
         // // 커서 위치에 삽입하려면 execCommand 사용, 아니면 그냥 innerHTML로 대체
         // document.execCommand('insertHTML', false, body.innerHTML);
-        // // 또는 editorEl.innerHTML = body.innerHTML; (전체 교체)
     }
+};
+
+function insertHtmlAtCursor(html) {
+    let sel = window.getSelection();
+    if (!sel.rangeCount) return;
+
+    let range = sel.getRangeAt(0);
+    range.deleteContents();
+
+    // HTML을 파싱해서 fragment로 변환
+    let temp = document.createElement('div');
+    temp.innerHTML = html;
+    let frag = document.createDocumentFragment();
+    let node;
+    while ((node = temp.firstChild)) {
+        frag.appendChild(node);
+    }
+
+    range.insertNode(frag);
+
+    // 커서를 마지막에 위치시키기
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
 }
 
 onMounted(() => {
@@ -794,14 +776,6 @@ defineExpose({
     height: 100%;
     // min-height: 18rem;
     // max-height: calc(100vh - var(--header-height) - 32px);
-}
-
-p {
-
-    .wysiwyg-table-wrap,
-    table {
-        display: none !important;
-    }
 }
 
 ._wysiwyg4all {
@@ -1092,7 +1066,6 @@ p {
     /* overflow-x: auto; */
     /* overflow-y: unset !important; */
     white-space: nowrap;
-    padding-bottom: 30px;
 
     &::-webkit-scrollbar {
         display: none;
@@ -1242,7 +1215,6 @@ p {
         }
 
         &.dragged-cell {
-
             /* background-color: #d0ebff !important; */
             &::after {
                 display: block;
@@ -1339,13 +1311,15 @@ p {
     }
 }
 
-@media (max-width: 1017px) {
+// @media (max-width: 1017px) {
+@media (max-width: 1050px) {
     ._wysiwyg4all {
         padding-top: 5rem;
     }
 }
 
-@media (max-width: 522px) {
+// @media (max-width: 522px) {
+@media (max-width: 580px) {
     ._wysiwyg4all {
         padding-top: 7rem;
     }

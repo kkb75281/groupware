@@ -330,7 +330,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
                                     th 결재 현황
                                     th 기안자
                             tbody
-                                tr(v-for="(doc, index) in filteredReferDocList" :key="doc.record_id")
+                                tr(v-for="(doc, index) in referDocDisplayList" :key="doc.record_id")
                                     td
                                         label.checkbox
                                             input(type="checkbox" v-model="doc.selected")
@@ -341,27 +341,20 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
                                     td
                                         span.status(:class="{approve: doc.documentStatus === '완료됨', reject: doc.documentStatus === '회수됨'}") {{ doc.documentStatus }}
                                     td {{ doc.drafter }}
-                                tr(v-if="filteredReferDocList.length === 0")
+                                tr(v-if="referDocDisplayList.length === 0 && !referDocFetching")
                                     td(colspan="4")
                                         span.empty 선택할 참조 문서가 없습니다.
-                                        
-                .pagination
-                    button.btn-prev.icon(
-                        type="button"
-                        @click="currentPage--"
-                        :class="{ 'nonClickable': currentPage <= 1 }"
-                    )
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-back-ios")
-                        | Prev
 
-                    button.btn-next.icon(
-                        type="button"
-                        @click="currentPage++"
-                        :class="{ 'nonClickable': filteredReferDocList.length < pageSize }"
-                    ) Next
-                        svg
-                            use(xlink:href="@/assets/icon/material-icon.svg#icon-arrow-forward-ios")
+                .pagination(v-if="referDocMaxPage > 1")
+                    button.btn-prev.icon(type="button" @click="referDocCurrentPage--" 
+                        :class="{'nonClickable': referDocFetching || referDocCurrentPage <= 1}")
+                        | Prev
+                    
+                    span.page-info {{ referDocCurrentPage }} / {{ referDocMaxPage }}
+                    
+                    button.btn-next.icon(type="button" @click="referDocCurrentPage++" 
+                        :class="{'nonClickable': referDocFetching || referDocEndOfList && referDocCurrentPage >= referDocMaxPage}")
+                        | Next
 
         .modal-footer(style="padding-top: 0; border-top: none;")
             button.btn.bg-gray.btn-cancel(type="button" @click="closeReferModal") 취소
@@ -543,14 +536,13 @@ const referDocFilter = ref('all'); // 참조문서 필터 (전체, 발신, 수�
 const currentDetailDoc = ref(null); // 현재 문서 상세 정보
 const modalUploadedFile = ref(null); // 참조문서 첨부파일
 const modalReferDoc = ref(null); // 참조문서 모달
-
-// 참조문서모달 페이지네이션 관련 변수
-const referPager = ref(null); // Pager 인스턴스
-const referDispList = ref([]); // 화면에 표시할 참조문서
-const referCurrentPage = ref(1);
-const referMaxPage = ref(1);
-const referEndOfList = ref(false);
-const referFetching = ref(false);
+// 참조문서 페이지네이션
+let referDocPager = null;
+const referDocFetching = ref(false);
+const referDocMaxPage = ref(0);
+const referDocCurrentPage = ref(1);
+const referDocEndOfList = ref(false);
+const referDocDisplayList = ref([]);
 
 // 에디터 상태 관리
 const editor = ref(null);
@@ -583,8 +575,6 @@ const convertAuditorFormat = (auditors, role) => {
 
 // 결재라인 모달 열기
 const openModal = () => {
-    document.body.style.overflow = 'hidden';
-
     // 열렸을 때 selectedAuditors 전체를 original로 백업
     backupSelected.value = {
         approvers: [...selectedAuditors.value.approvers],
@@ -637,8 +627,6 @@ const closeModal = () => {
 
     backupSelected.value = null;
     isModalOpen.value = false;
-
-    document.body.style.overflow = '';
 };
 
 // 작성란 추가
@@ -894,8 +882,6 @@ const saveAuditor = () => {
 
     backupSelected.value = null;
     isModalOpen.value = false;
-
-    document.body.style.overflow = '';
 };
 
 // 결재자 제거
@@ -1510,24 +1496,24 @@ const saveForm = async ({
         const auditorData = {
             approvers: selectedAuditors.value.approvers.map((user) => ({
                 user_id: user.user.user_id,
-                name: user.name,
-                position: user.position,
-                division: user.division,
-                order: user.order
+                name: user.index.value,
+                position: user.index.name.split('.')[1],
+                division: user.index.name.split('.')[0],
+                order: user.order // 순서 정보 추가
             })),
             agreers: selectedAuditors.value.agreers.map((user) => ({
                 user_id: user.user.user_id,
-                name: user.name,
-                position: user.position,
-                division: user.division,
-                order: user.order
+                name: user.index.value,
+                position: user.index.name.split('.')[1],
+                division: user.index.name.split('.')[0],
+                order: user.order // 순서 정보 추가
             })),
             receivers: selectedAuditors.value.receivers.map((user) => ({
                 user_id: user.user.user_id,
-                name: user.name,
-                position: user.position,
-                division: user.division,
-                order: user.order
+                name: user.index.value,
+                position: user.index.name.split('.')[1],
+                division: user.index.name.split('.')[0],
+                order: user.order // 순서 정보 추가
             }))
         };
 
@@ -1657,13 +1643,13 @@ const saveDocForm = () => {
 };
 
 // 내 결재 양식 저장
-// const saveMyDocForm = async () => {
-//     saveForm({
-//         isMaster: false,
-//         tableName: 'my_audit_form',
-//         optionsIdx: auditTitle.value.replaceAll('.', '_')
-//     });
-// };
+const saveMyDocForm = async () => {
+    saveForm({
+        isMaster: false,
+        tableName: 'my_audit_form',
+        optionsIdx: auditTitle.value.replaceAll('.', '_')
+    });
+};
 
 // 임시 저장
 const tempSaveMyDoc = async () => {
@@ -1725,17 +1711,13 @@ const applyFormData = async (formData) => {
     uploadedFile.value = formData.bin?.form_data ?? [];
     fileNames.value = [];
 
-    console.log('formData : ', formData);
-
     // 결재자
     if (formData.data.auditors) {
         const auditors = JSON.parse(formData.data.auditors);
 
         const convert = async (auditorsList, role) => {
-            console.log('auditorsList : ', auditorsList);
             const result = await Promise.all(
                 auditorsList.map(async (auditor) => {
-                    console.log('auditor : ', auditor);
                     let uif = await getUserInfo(auditor.user_id);
 
                     return {
@@ -1908,25 +1890,7 @@ const cancelTempSave = () => {
     alert('해당 페이지에서 벗어나면 수정 내용이 저장되지 않습니다.');
 };
 
-const currentPage = ref(1); // ✅ 이 변수만 새로 추가
-const pageSize = 10;
-
 // 참조문서 목록 모달 필터링
-const filteredReferDocList = computed(() => {
-    let filtered = referDocList.value;
-    if (referDocFilter.value === 'inDoc') {
-        filtered = referDocList.value.filter((doc) => doc.docType === '수신함');
-    } else if (referDocFilter.value === 'referDoc') {
-        filtered = referDocList.value.filter((doc) => doc.docType === '수신참조');
-    } else if (referDocFilter.value === 'outDoc') {
-        filtered = referDocList.value.filter((doc) => doc.docType === '발신함');
-    }
-
-    const start = (currentPage.value - 1) * pageSize;
-    const end = start + pageSize;
-    return filtered.slice(start, end);
-});
-
 // const filteredReferDocList = computed(() => {
 //     if (referDocFilter.value === 'all') {
 //         return referDocList.value;
@@ -1945,148 +1909,187 @@ const openReferModal = async () => {
     loading.value = true;
     isReferModal.value = true;
     referDocFilter.value = 'all'; // 필터 초기화
-    document.body.style.overflow = 'hidden'; // 스크롤 방지
+    referDocCurrentPage.value = 1; // 페이지 초기화
+    document.body.style.overflow = 'hidden';
 
-    // getReferDocPage(true); // 참조문서 목록 새로고침
+    // 페이저 초기화
+    await getReferDocPage(true);
+    console.log('referDocFilter.value : ', referDocFilter.value);
+    loading.value = false;
+};
 
-    if (referDocList.value.length > 0) {
-        // 삭제된 문서 반영을 위해 선택 상태를 다시 동기화
-        const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
-        referDocList.value.forEach((doc) => {
-            doc.selected = selectedMap.has(doc.record_id);
+// 참조문서추가 모달 페이지네이션
+const getReferDocPage = async (refresh = false) => {
+    if (refresh) {
+        referDocEndOfList.value = false;
+    }
+
+    // 새로고침 경우에만 페이저 초기화
+    if (refresh || !referDocPager) {
+        referDocPager = await Pager.init({
+            id: 'record_id',
+            resultsPerPage: 10,
+            sortBy: 'uploaded',
+            order: 'desc'
         });
+    }
+
+    // 이미 로드된 페이지이거나 더 이상 데이터가 없으면 페이저에서 가겨오기
+    if (
+        (!refresh && referDocMaxPage.value >= referDocCurrentPage.value) ||
+        referDocEndOfList.value
+    ) {
+        const pageData = referDocPager.getPage(referDocCurrentPage.value);
+        referDocDisplayList.value = pageData.list;
+        referDocMaxPage.value = pageData.maxPage;
         return;
     }
 
-    try {
-        const allDocs = [];
-        const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
-        const fetchOptions = { limit: 1000 };
+    // 서버에서 새 데이터 가져오기
+    if (!referDocEndOfList.value || refresh) {
+        referDocFetching.value = true;
 
-        const getAllDocs = async (fetchFunction, docType, drafter) => {
-            try {
-                const docs = await fetchFunction(fetchOptions);
-                if (docs && docs?.list && Array.isArray(docs.list)) {
-                    docs.list.forEach((doc) => {
-                        if (doc && doc?.record_id) {
-                            if (!allDocs.some((d) => d.record_id === doc.record_id)) {
-                                allDocs.push({
-                                    ...doc,
-                                    docType,
-                                    selected: selectedMap.has(doc.record_id),
-                                    drafter: drafter(doc)
-                                });
+        try {
+            const allDocs = [];
+            const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
+            const fetchOptions = {
+                fetchMore: !refresh,
+                limit: 30, // 한 번에 더 많이 가져와서 성능 향상
+                ascending: false
+            };
+
+            const getAllDocs = async (fetchFunction, docType, drafter) => {
+                try {
+                    const docs = await fetchFunction(fetchOptions);
+                    if (docs && docs?.list && Array.isArray(docs.list)) {
+                        docs.list.forEach((doc) => {
+                            if (doc && doc?.record_id) {
+                                if (!allDocs.some((d) => d.record_id === doc.record_id)) {
+                                    allDocs.push({
+                                        ...doc,
+                                        docType,
+                                        selected: selectedMap.has(doc.record_id),
+                                        drafter: drafter(doc)
+                                    });
+                                }
                             }
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error(`${docType} 오류 : `, error);
-                alert(`${docType} 목록을 가져오는 중 오류가 발생했습니다.`);
-                throw error;
-            }
-        };
-
-        await Promise.all([
-            getAllDocs(getAuditList, '수신함', (doc) => doc.user_info.name),
-            getAllDocs(getSendAuditList, '발신함', () => user.name),
-            getAllDocs(getAuditReferenceList, '수신참조', (doc) => doc.user_info.name)
-        ]);
-
-        // 날짜 내림차순 정렬
-        allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
-
-        referDocList.value = allDocs;
-    } catch (error) {
-        console.error('참조문서 목록 가져오기 중 오류 : ', error);
-        alert('참조문서 목록을 가져오는 중 오류가 발생했습니다.');
-        referDocList.value = [];
-    } finally {
-        loading.value = false;
-    }
-};
-
-// 참조문서 모달 페이지네이션
-const getReferDocPage = async (refresh = false) => {
-    console.log('== page ==');
-
-    fetching.value = true;
-
-    if (refresh) {
-        endOfList.value = false;
-    }
-
-    try {
-        const allDocs = [];
-        const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
-        const fetchOptions = { limit: 1000 }; // 전체 로딩 후 페이지 나누기
-
-        const getAllDocs = async (fetchFunction, docType, drafter) => {
-            const docs = await fetchFunction(fetchOptions);
-            if (docs?.list?.length) {
-                docs.list.forEach((doc) => {
-                    if (
-                        doc &&
-                        doc.record_id &&
-                        !allDocs.some((d) => d.record_id === doc.record_id)
-                    ) {
-                        allDocs.push({
-                            ...doc,
-                            docType,
-                            selected: selectedMap.has(doc.record_id),
-                            drafter: drafter(doc)
                         });
                     }
-                });
+                } catch (error) {
+                    console.error(`${docType} 오류 : `, error);
+                    alert(`${docType} 목록을 가져오는 중 오류가 발생했습니다.`);
+                    throw error;
+                }
+            };
+
+            // 기존 getAllDocs 함수 사용
+            await Promise.all([
+                getAllDocs(getAuditList, '수신함', (doc) => doc.user_info.name),
+                getAllDocs(getSendAuditList, '발신함', () => user.name),
+                getAllDocs(getAuditReferenceList, '수신참조', (doc) => doc.user_info.name)
+            ]);
+
+            // 데이터 정렬
+            allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
+
+            // 더 이상 새 데이터가 없으면 endOfList 설정
+            referDocEndOfList.value = allDocs.length < fetchOptions.limit;
+
+            // 페이저에 데이터 삽입
+            if (allDocs.length > 0) {
+                await referDocPager.value.insertItems(allDocs);
             }
-        };
 
-        await Promise.all([
-            getAllDocs(getAuditList, '수신함', (doc) => doc.user_info.name),
-            getAllDocs(getSendAuditList, '발신함', () => user.name),
-            getAllDocs(getAuditReferenceList, '수신참조', (doc) => doc.user_info.name)
-        ]);
-
-        allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
-        referDocList.value = allDocs;
-
-        // 페이지네이터 초기화
-        if (!referPager.value || refresh) {
-            referPager.value = await Pager.init({
-                id: 'record_id',
-                resultsPerPage: 10,
-                sortBy: 'uploaded',
-                order: 'desc'
-            });
-            await referPager.value.insertItems(allDocs);
+            // 현재 페이지 데이터 가져오기
+            const pageData = referDocPager.value.getPage(referDocCurrentPage.value);
+            referDocDisplayList.value = pageData.list;
+            referDocMaxPage.value = pageData.maxPage;
+        } catch (error) {
+            console.error('참조문서 목록 가져오기 중 오류:', error);
+            referDocDisplayList.value = [];
+        } finally {
+            referDocFetching.value = false;
         }
-
-        // 현재 페이지 데이터 할당
-        referDispList.value = referPager.value.getPage(referCurrentPage.value);
-        referMaxPage.value = referDispList.value.maxPage;
-    } catch (err) {
-        console.error('참조문서 페이지네이션 오류', err);
-        alert('참조문서를 불러오는 중 오류가 발생했습니다.');
-        referDocList.value = [];
-    } finally {
-        referFetching.value = false;
     }
+
+    // if (referDocList.value.length > 0) {
+    //     // 삭제된 문서 반영을 위해 선택 상태를 다시 동기화
+    //     const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
+    //     referDocList.value.forEach((doc) => {
+    //         doc.selected = selectedMap.has(doc.record_id);
+    //     });
+    //     return;
+    // }
+
+    // try {
+    //     const allDocs = [];
+    //     const selectedMap = new Map(referDoc.value.map((doc) => [doc.record_id, true]));
+    //     // const fetchOptions = { limit: 1000 };
+    //     const fetchOptions = { fetchMore: !refresh, limit: 10, ascending: false };
+
+    //     const getAllDocs = async (fetchFunction, docType, drafter) => {
+    //         console.log('fetchOptions : ', fetchOptions);
+    //         try {
+    //             const docs = await fetchFunction(fetchOptions);
+    //             if (docs && docs?.list && Array.isArray(docs.list)) {
+    //                 docs.list.forEach((doc) => {
+    //                     if (doc && doc?.record_id) {
+    //                         if (!allDocs.some((d) => d.record_id === doc.record_id)) {
+    //                             allDocs.push({
+    //                                 ...doc,
+    //                                 docType,
+    //                                 selected: selectedMap.has(doc.record_id),
+    //                                 drafter: drafter(doc)
+    //                             });
+    //                         }
+    //                     }
+    //                 });
+    //             }
+    //         } catch (error) {
+    //             console.error(`${docType} 오류 : `, error);
+    //             alert(`${docType} 목록을 가져오는 중 오류가 발생했습니다.`);
+    //             throw error;
+    //         }
+    //     };
+
+    //     await Promise.all([
+    //         getAllDocs(getAuditList, '수신함', (doc) => doc.user_info.name),
+    //         getAllDocs(getSendAuditList, '발신함', () => user.name),
+    //         getAllDocs(getAuditReferenceList, '수신참조', (doc) => doc.user_info.name)
+    //     ]);
+
+    //     // 날짜 내림차순 정렬
+    //     allDocs.sort((a, b) => (b.uploaded || 0) - (a.uploaded || 0));
+
+    //     referDocList.value = allDocs;
+    //     console.log('allDocs : ', allDocs);
+    // } catch (error) {
+    //     console.error('참조문서 목록 가져오기 중 오류 : ', error);
+    //     alert('참조문서 목록을 가져오는 중 오류가 발생했습니다.');
+    //     referDocList.value = [];
+    // } finally {
+    //     loading.value = false;
+    // }
 };
 
-watch(referCurrentPage, (newPage, oldPage) => {
+// 페이지 변경 감지
+watch(referDocCurrentPage, (newPage, oldPage) => {
     if (
         newPage !== oldPage &&
         newPage > 0 &&
-        (newPage <= referMaxPage.value || (newPage > referMaxPage.value && !referEndOfList.value))
+        (newPage <= referDocMaxPage.value ||
+            (newPage > referDocMaxPage.value && !referDocEndOfList.value))
     ) {
-        referDispList.value = referPager.value.getPage(newPage);
+        getReferDocPage();
     } else {
-        referCurrentPage.value = oldPage;
+        referDocCurrentPage.value = oldPage;
     }
 });
 
 watch(referDocFilter, () => {
-    currentPage.value = 1;
+    // 필터 변경 시 페이지 리셋하고 다시 로드
+    referDocCurrentPage.value = 1;
+    getReferDocPage(true);
 });
 
 // 선택한 참조문서를 추가
