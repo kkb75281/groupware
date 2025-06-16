@@ -192,12 +192,14 @@ onMounted(async () => {
             if (access_token) {
                 // 로그인
                 await skapi.openIdLogin({ id: import.meta.env.VITE_OPENID_LOGGER_ID, token: access_token });
-                // window.location.href = '/';
                 router.push('/');
             }
         }
         catch (err) {
             console.error(err);
+            if (err.message === "Signup is not allowed for this service.") {
+                alert("유효하지 않은 회원입니다. 다른 계정으로 로그인하세요.");
+            }
             router.replace('/login');
         }
         finally {

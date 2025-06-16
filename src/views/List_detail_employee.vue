@@ -114,7 +114,7 @@
                                             svg
                                                 use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
                 div(v-else style="margin-top: 0.5rem") 
-                    p(v-if="user.access_group < 99" style="font-size:0.9rem; color:var(--gray-color-400)") 자료 업로드를 원하시면 관리자에게 문의 바랍니다.
+                    p(v-if="user.access_group < 99" style="font-size:0.9rem; color:var(--gray-color-400)") 자료 업로드 기능이 필요하신 경우 FGWORKS 관리자에게 문의 바랍니다.
                     button.btn(v-else type="button" :disabled="disabled" @click="makeFileRoom") 업로드 권한 생성
 
             br
