@@ -84,10 +84,13 @@ watch(
         // 새로 선택된 사용자들이 있는 경우에만 처리
         if (n && n.length > 0) {
             for (const emp of n) {
-                const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
+                console.log('= watch = emp : ', emp);
+                const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id, emp.division);
+                console.log('= watch = employeeToCheck : ', employeeToCheck);
 
                 if (employeeToCheck) {
                     const department = findDepartmentOfEmployee(emp.user?.user_id);
+                    console.log('= watch = department : ', department);
                     console.log(`체크됨 = ${emp.user?.name}`);
 
                     employeeToCheck.isChecked = true;
@@ -133,16 +136,18 @@ onMounted(async () => {
 
     if (props.selectedEmployees && props.selectedEmployees.length > 0) {
         // 모달 열었을때 체크된 사용자가 있을 경우
-        console.log('Selected Employees onMounted:', props.selectedEmployees);
+        console.log('= onMounted = props.selectedEmployees : ', props.selectedEmployees);
 
         // 선택된 사용자들에 대해 체크 상태 설정
         for (const emp of props.selectedEmployees) {
             // 직원 객체 찾기
-            const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
+            const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id, emp.division);
+            console.log('= onMounted = employeeToCheck : ', employeeToCheck);
 
             if (employeeToCheck) {
                 const department = findDepartmentOfEmployee(emp.user?.user_id);
-                console.log('department : ', department);
+                console.log('= onMounted = department : ', department);
+
                 employeeToCheck.isChecked = true;
                 if (department) department.isOpened = true;
 
@@ -334,13 +339,22 @@ function updateCheckStatus(update) {
     emit('selection-change', sendCheckedEmps);
 }
 
-// 조직도에서 특정 사용자 ID를 가진 직원 객체를 찾는 함수
-function findEmployeeInOrganigram(userId) {
+// 조직도에서 특정 사용자 ID와 부서명을 가진 직원 객체를 찾는 함수 (다중 부서 직원 포함)
+function findEmployeeInOrganigram(userId, division) {
+    console.log('userId : ', userId);
+    console.log('division : ', division);
+
     // 재귀적으로 모든 부서를 검색하는 내부 함수
     function searchInDepartment(department) {
-        // 현재 부서의 멤버 중에서 찾기
-        const foundMember = department.members.find((member) => member.user.user_id === userId);
-        if (foundMember) return foundMember;
+        console.log('= findEmployeeInOrganigram = department : ', department);
+
+        // 현재 부서가 지정된 division과 일치할 경우만 멤버 탐색
+        if (!division || department.division === division) {
+            const foundMember = department.members.find((member) => {
+                return member.user.user_id === userId;
+            });
+            if (foundMember) return foundMember;
+        }
 
         // 하위 부서에서 찾기
         for (const subDept of department.subDepartments) {
@@ -360,6 +374,7 @@ function findEmployeeInOrganigram(userId) {
     return null;
 }
 
+// 특정 사용자 ID를 가진 직원이 속한 부서를 찾는 함수
 function findDepartmentOfEmployee(userId) {
     function search(department) {
         if (department.members.some((m) => m.user.user_id === userId)) {
