@@ -76,7 +76,7 @@ export function createTable(rows, cols) {
     const tableWrap = document.createElement('div');
 
     tableWrap.className = 'wysiwyg-table-wrap';
-    // tableWrap.setAttribute('contenteditable', 'false');
+    tableWrap.setAttribute('contenteditable', 'false');
     tableWrap.style.setProperty(
         '--wysiwyg-table-max-width',
         `calc(${wyswrapWidth}px - 2rem + 30px)`
