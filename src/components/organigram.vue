@@ -85,7 +85,7 @@ watch(
         if (n && n.length > 0) {
             for (const emp of n) {
                 console.log('= watch = emp : ', emp);
-                const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id, emp.division);
+                const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
                 console.log('= watch = employeeToCheck : ', employeeToCheck);
 
                 if (employeeToCheck) {
@@ -141,7 +141,7 @@ onMounted(async () => {
         // 선택된 사용자들에 대해 체크 상태 설정
         for (const emp of props.selectedEmployees) {
             // 직원 객체 찾기
-            const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id, emp.division);
+            const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
             console.log('= onMounted = employeeToCheck : ', employeeToCheck);
 
             if (employeeToCheck) {
@@ -339,44 +339,49 @@ function updateCheckStatus(update) {
     emit('selection-change', sendCheckedEmps);
 }
 
-// 조직도에서 특정 사용자 ID와 부서명을 가진 직원 객체를 찾는 함수 (다중 부서 직원 포함)
-function findEmployeeInOrganigram(userId, division) {
-    console.log('userId : ', userId);
-    console.log('division : ', division);
+// 조직도에서 특정 사용자 ID와 부서명을 가진 직원 객체를 찾는 함수 (다중 부서 직원은 모두 체크)
+function findEmployeeInOrganigram(userId) {
+    console.log('= findEmployeeInOrganigram = userId : ', userId);
 
     // 재귀적으로 모든 부서를 검색하는 내부 함수
     function searchInDepartment(department) {
-        console.log('= findEmployeeInOrganigram = department : ', department);
+        console.log('= searchInDepartment = department : ', department);
 
-        // 현재 부서가 지정된 division과 일치할 경우만 멤버 탐색
-        if (!division || department.division === division) {
-            const foundMember = department.members.find((member) => {
-                return member.user.user_id === userId;
-            });
-            if (foundMember) return foundMember;
+        // 현재 부서에서 해당 user_id를 가진 멤버 모두 체크
+        department.members.forEach((member) => {
+            console.log('= searchInDepartment = member : ', member);
+
+            if (member.user.user_id === userId) {
+                member.isChecked = true; // 체크박스 체크
+            }
+
+            // 체크된 멤버를 checkedEmps 배열에 추가
+            if (
+                member.isChecked &&
+                !checkedEmps.value.some((emp) => emp.user.user_id === member.user.user_id)
+            ) {
+                checkedEmps.value.push(member);
+            }
+        });
+
+        // 하위 부서도 재귀 탐색
+        for (const subDept of department.subDepartments || []) {
+            searchInDepartment(subDept);
         }
-
-        // 하위 부서에서 찾기
-        for (const subDept of department.subDepartments) {
-            const found = searchInDepartment(subDept);
-            if (found) return found;
-        }
-
-        return null;
     }
 
-    // 최상위 부서부터 검색 시작
+    // 최상위 부서부터 탐색 시작
     for (const topDept of organigram.value) {
-        const found = searchInDepartment(topDept);
-        if (found) return found;
+        searchInDepartment(topDept);
     }
-
-    return null;
 }
 
-// 특정 사용자 ID를 가진 직원이 속한 부서를 찾는 함수
+// 특정 사용자 ID를 가진 직원이 속한 부서를 찾는 함수 (다중 부서 직원은 모두 체크)
 function findDepartmentOfEmployee(userId) {
+    console.log('= findDepartmentOfEmployee = userId : ', userId);
+
     function search(department) {
+        console.log('= search = department : ', department);
         if (department.members.some((m) => m.user.user_id === userId)) {
             return department;
         }
