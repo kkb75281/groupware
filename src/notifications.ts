@@ -377,40 +377,52 @@ export const newsletterList = ref([]);
 export let getNewsletterListRunning: Promise<any> | null = null;
 
 // 카테고리 해당 게시글 리스트
-export const getNewsletterList = async (tag, refresh = false) => {
-    const getNews = await skapi.getRecords({
+export const getNewsletterList = async (tag, fetchOptions = {}) => {
+    const query = {
         table: {
             name: 'newsletter',
             access_group: 99
         },
         reference: tag
-    });
+    };
 
-    if (!getNews.list) {
-        newsletterList.value = [];
-    }
+    const options = {
+        ascending: false,
+        limit: 10,
+        ...fetchOptions
+    };
 
-    newsletterList.value = getNews.list.sort((a, b) => b.uploaded - a.uploaded);
+    try {
+        const getNews = await skapi.getRecords(query, options);
 
-    const writer = await Promise.all(newsletterList.value.map((item) => getUserInfo(item.user_id)));
+        const writer = await Promise.all(
+            newsletterList.value.map((item) => getUserInfo(item.user_id))
+        );
+        newsletterList.value = getNews.list.map((item, index) => {
+            return {
+                ...item,
+                writer: writer[index]?.list?.[0]?.name || '-'
+            };
+        });
 
-    newsletterList.value = newsletterList.value.map((item, index) => {
         return {
-            ...item,
-            writer: writer[index]?.list?.[0]?.name || '-'
+            list: newsletterList.value,
+            endOfList: getNews.endOfList
         };
-    });
-    return newsletterList.value;
+    } catch (err) {
+        console.error('Error fetching newsletter list:', err);
+        throw err;
+    }
 };
 
 export async function subscribeNotification() {
-    let vapid = localStorage.getItem(skapi.service + '-vapid');
+    // let vapid = localStorage.getItem(skapi.service + '-vapid');
 
-    if (!vapid) {
-        const vapidResponse = await skapi.vapidPublicKey();
-        vapid = vapidResponse.VAPIDPublicKey;
-        localStorage.setItem(skapi.service + '-vapid', vapid);
-    }
+    // if (!vapid) {
+    const vapidResponse = await skapi.vapidPublicKey();
+    let vapid = vapidResponse.VAPIDPublicKey;
+    localStorage.setItem(skapi.service + '-vapid', vapid);
+    // }
 
     function urlBase64ToUint8Array(base64String: any) {
         const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -430,6 +442,7 @@ export async function subscribeNotification() {
     } else {
         serviceWorkerRegistMsg.value = '';
         navigator.serviceWorker.getRegistrations().then((registrations) => {
+            console.log('!!!Service Worker Registrations:', registrations);
             registrations.forEach((registration) => {
                 console.log('Service Worker Script URL:', registration.active?.scriptURL);
             });
@@ -475,6 +488,8 @@ export async function subscribeNotification() {
 
     // window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
     const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
+
+    console.log('!!!Subscription response:', response); // Debugging
 
     let user_local_data = {
         user_id: user.user_id,
@@ -621,4 +636,16 @@ watch(
 //     send_user,
 //     ...additionalInfo
 //   };
+// }
+
+// {
+//     noti_id: '', // audit(결재요청record_id), notice(news_id)
+//     noti_type: '', // audit, notice, comment
+//     send_date: new Date().getTime(),
+//     send_user: '',
+//     content: '', // 타이틀이나 내용이나 알람에 떠야하는 내용
+//     etc: { // 추가 정보
+//         news_refer?: '',
+//         audit_type?: '결재요청인지 결재여부인지',
+//         audit_doc_id?: '결재문서 record_id',
 // }

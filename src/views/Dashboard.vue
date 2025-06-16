@@ -15,7 +15,7 @@
     
         template(v-if="onlyUserGesture")
             button.btn(@click="setNotificationPermission") 그룹웨어 알림 허용하기
-    
+
             br
     
         .profComp-wrap
@@ -142,45 +142,45 @@ import { useRoute, useRouter } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
 import { user, profileImage, getUserPositionCurrent, userPositionCurrent } from '@/user.ts';
 import {
-  skapi,
-  newVersionAvailable,
-  newVersion,
-  applyUpdate,
-  getSystemBanner,
-  system_banner,
-  isUpdateLoading,
-  getSystemBannerId,
-  system_banner_style
+    skapi,
+    newVersionAvailable,
+    newVersion,
+    applyUpdate,
+    getSystemBanner,
+    system_banner,
+    isUpdateLoading,
+    getSystemBannerId,
+    system_banner_style
 } from '@/main.ts';
 import { convertTimestampToDateMillis } from '@/utils/time.ts';
 import { openGmailAppOrWeb } from '@/utils/mail.ts';
 import { divisionNameList } from '@/division.ts';
 import {
-  mailList,
-  serviceWorkerRegistMsg,
-  notificationNotWorkingMsg,
-  onlyUserGesture,
-  setNotificationPermission
+    mailList,
+    serviceWorkerRegistMsg,
+    notificationNotWorkingMsg,
+    onlyUserGesture,
+    setNotificationPermission
 } from '@/notifications.ts';
 import {
-  openCropModal,
-  croppedImages,
-  uploadSrc,
-  currentImageSrc,
-  resetCropImage,
-  openCropImageDialog,
-  closeCropImageDialog,
-  setCroppedImage,
-  currentTargetId
+    openCropModal,
+    croppedImages,
+    uploadSrc,
+    currentImageSrc,
+    resetCropImage,
+    openCropImageDialog,
+    closeCropImageDialog,
+    setCroppedImage,
+    currentTargetId
 } from '@/components/crop_image.ts';
 import {
-  system_worktime,
-  getSystemWorktime,
-  getMyWorktimeStorage,
-  todayWorkStarting,
-  todayWorkEnding,
-  startWork,
-  endWork
+    system_worktime,
+    getSystemWorktime,
+    getMyWorktimeStorage,
+    todayWorkStarting,
+    todayWorkEnding,
+    startWork,
+    endWork
 } from '@/views/commute/worktime.ts';
 
 import Loading from '@/components/loading.vue';
@@ -201,536 +201,536 @@ let googleAccountCheck = localStorage.getItem('accessToken') ? true : false;
 const encodedEmail = encodeURIComponent(user.email);
 
 let uploadFile = () => {
-  banner_pic_input.value.click();
+    banner_pic_input.value.click();
 };
 
 let cancelBanner = () => {
-  resetCropImage();
-  bannerStyle.value = system_banner_style.value || 'contain';
-  isModalOpen.value = false;
+    resetCropImage();
+    bannerStyle.value = system_banner_style.value || 'contain';
+    isModalOpen.value = false;
 };
 
 let uploadBanner = async () => {
-  if (!getSystemBannerId.value && !croppedImages.value['banner_pic']) {
-    alert('배너 이미지를 등록해주세요.');
-    return;
-  }
-
-  if (
-    bannerStyle.value !== system_banner_style.value &&
-    system_banner.value.url &&
-    !croppedImages.value['banner_pic']
-  ) {
-    currentTargetId.value = 'banner_pic';
-    await setCroppedImage(system_banner.value.url);
-  }
-
-  bannerUploading.value = true;
-
-  if (getSystemBannerId.value) {
-    await skapi
-      .deleteRecords({
-        record_id: getSystemBannerId.value,
-        table: {
-          name: 'system_banner',
-          access_group: 1
-        }
-      })
-      .catch((err) => {
-        alert('배너 업로드 중 오류 발생');
+    if (!getSystemBannerId.value && !croppedImages.value['banner_pic']) {
+        alert('배너 이미지를 등록해주세요.');
         return;
-      });
-  }
+    }
 
-  const croppedFile = new File([croppedImages.value['banner_pic']], 'banner_pic.png', {
-    type: croppedImages.value['banner_pic'].type
-  });
+    if (
+        bannerStyle.value !== system_banner_style.value &&
+        system_banner.value.url &&
+        !croppedImages.value['banner_pic']
+    ) {
+        currentTargetId.value = 'banner_pic';
+        await setCroppedImage(system_banner.value.url);
+    }
 
-  const imgFormData = new FormData();
-  imgFormData.append('banner_pic', croppedFile);
-  imgFormData.append('banner_style', bannerStyle.value);
+    bannerUploading.value = true;
 
-  await skapi
-    .postRecord(imgFormData, {
-      table: {
-        name: 'system_banner',
-        access_group: 1
-      }
-    })
-    .then((res) => {
-      alert('배너 업로드 성공');
-      getSystemBanner(true);
-    })
-    .catch((err) => {
-      alert('배너 업로드 중 오류 발생');
-    })
-    .finally(() => {
-      bannerUploading.value = false;
-      cancelBanner();
+    if (getSystemBannerId.value) {
+        await skapi
+            .deleteRecords({
+                record_id: getSystemBannerId.value,
+                table: {
+                    name: 'system_banner',
+                    access_group: 1
+                }
+            })
+            .catch((err) => {
+                alert('배너 업로드 중 오류 발생');
+                return;
+            });
+    }
+
+    const croppedFile = new File([croppedImages.value['banner_pic']], 'banner_pic.png', {
+        type: croppedImages.value['banner_pic'].type
     });
+
+    const imgFormData = new FormData();
+    imgFormData.append('banner_pic', croppedFile);
+    imgFormData.append('banner_style', bannerStyle.value);
+
+    await skapi
+        .postRecord(imgFormData, {
+            table: {
+                name: 'system_banner',
+                access_group: 1
+            }
+        })
+        .then((res) => {
+            alert('배너 업로드 성공');
+            getSystemBanner(true);
+        })
+        .catch((err) => {
+            alert('배너 업로드 중 오류 발생');
+        })
+        .finally(() => {
+            bannerUploading.value = false;
+            cancelBanner();
+        });
 };
 
 let openModal = (e) => {
-  let parentElement = document.querySelector('.company-wrap');
+    let parentElement = document.querySelector('.company-wrap');
 
-  // parentNode의 width 값을 가져와서 모달 안에 .image-wrap의 width을 설정
-  modalWidth.value = parentElement.offsetWidth;
+    // parentNode의 width 값을 가져와서 모달 안에 .image-wrap의 width을 설정
+    modalWidth.value = parentElement.offsetWidth;
 
-  if (system_banner.value?.url) {
-    uploadSrc.value.banner_pic = system_banner.value?.url;
-    bannerStyle.value = system_banner_style.value || 'contain';
-  }
+    if (system_banner.value?.url) {
+        uploadSrc.value.banner_pic = system_banner.value?.url;
+        bannerStyle.value = system_banner_style.value || 'contain';
+    }
 
-  isModalOpen.value = true;
+    isModalOpen.value = true;
 };
 
 let showMailDoc = (e, rt) => {
-  openGmailAppOrWeb(rt.link, rt.id);
+    openGmailAppOrWeb(rt.link, rt.id);
 };
 
 let checkCommuteRecord = async () => {
-  if (todayWorkStarting.value) {
-    await endWork(router);
-  } else {
-    await startWork(router);
-  }
+    if (todayWorkStarting.value) {
+        await endWork(router);
+    } else {
+        await startWork(router);
+    }
 };
 
 onMounted(async () => {
-  await Promise.all([getUserPositionCurrent(), getSystemWorktime(), getMyWorktimeStorage()]);
+    await Promise.all([getUserPositionCurrent(), getSystemWorktime(), getMyWorktimeStorage()]);
 });
 </script>
 
 <style scoped lang="less">
 #dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
 }
 
 #modal {
-  .image-wrap {
-    position: relative;
-    width: 100%;
-    height: 250px;
-    border-radius: 16px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-
-    &.opacity {
-      &::after {
-        position: absolute;
+    .image-wrap {
+        position: relative;
         width: 100%;
-        height: 100%;
-        left: 0;
-        top: 0;
-        content: '';
-        background-color: rgba(255, 255, 255, 0.7);
-        transition: all 0.3s;
-      }
-    }
+        height: 250px;
+        border-radius: 16px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
 
-    #banner_img {
-      width: 100%;
-      height: 100%;
-      border-radius: 16px;
-    }
-
-    .upload {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 1;
-    }
-  }
-
-  .style-wrap {
-    margin-bottom: 0.5rem;
-
-    &.disabled {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-
-    .style {
-      display: inline-block;
-      padding: 0 8px;
-      cursor: pointer;
-
-      svg {
-        width: 24px;
-        height: 24px;
-        fill: var(--gray-color-300);
-      }
-
-      &.selected {
-        svg {
-          fill: var(--primary-color-400);
+        &.opacity {
+            &::after {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                left: 0;
+                top: 0;
+                content: '';
+                background-color: rgba(255, 255, 255, 0.7);
+                transition: all 0.3s;
+            }
         }
-      }
+
+        #banner_img {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+        }
+
+        .upload {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
     }
-  }
+
+    .style-wrap {
+        margin-bottom: 0.5rem;
+
+        &.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .style {
+            display: inline-block;
+            padding: 0 8px;
+            cursor: pointer;
+
+            svg {
+                width: 24px;
+                height: 24px;
+                fill: var(--gray-color-300);
+            }
+
+            &.selected {
+                svg {
+                    fill: var(--primary-color-400);
+                }
+            }
+        }
+    }
 }
 
 .updateLink {
-  color: var(--primary-color-400);
-  text-decoration: underline;
-  cursor: pointer;
+    color: var(--primary-color-400);
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 .box-shadow-card {
-  min-height: 250px;
-  background-color: #fff;
-  border: 1px solid var(--gray-color-300);
-  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-  border-radius: 16px;
-  padding: 1.5rem;
+    min-height: 250px;
+    background-color: #fff;
+    border: 1px solid var(--gray-color-300);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem;
 
-  .title-with-icon {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+    .title-with-icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
 
-    .icon {
-      padding: 0;
-    }
-
-    &.alink {
-      cursor: pointer;
-
-      .icon {
-        svg {
-          fill: var(--gray-color-300);
-        }
-      }
-
-      &:hover {
         .icon {
-          svg {
-            fill: var(--primary-color-400);
-          }
+            padding: 0;
         }
-      }
+
+        &.alink {
+            cursor: pointer;
+
+            .icon {
+                svg {
+                    fill: var(--gray-color-300);
+                }
+            }
+
+            &:hover {
+                .icon {
+                    svg {
+                        fill: var(--primary-color-400);
+                    }
+                }
+            }
+        }
     }
-  }
 }
 
 .gmail {
-  padding: 0;
+    padding: 0;
 
-  .title-with-icon {
-    padding: 1.5rem;
-    background-color: unset;
-  }
+    .title-with-icon {
+        padding: 1.5rem;
+        background-color: unset;
+    }
 }
 
 .profComp-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1rem;
-
-  > div {
-    padding: 1.5rem;
-    text-align: center;
-  }
-
-  .profile-wrap {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    .thumbnail {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1rem;
-      background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
-      overflow: hidden;
-
-      img {
-        width: 100%;
-        height: 100%;
-        // object-fit: contain;
-        object-fit: cover;
-        z-index: 1;
-        position: relative;
-      }
-
-      svg {
-        fill: var(--gray-color-400);
-      }
-    }
-
-    .division {
-      font-size: 0.8rem;
-      color: var(--gray-color-500);
-      margin-top: 0.5rem;
-    }
-  }
-
-  .company-wrap {
-    position: relative;
-    height: 250px;
-    flex-grow: 3;
-    overflow: hidden;
-    padding: 0;
-
-    &::before {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      left: 0;
-      top: 0;
-      content: '';
-      background-color: rgba(0, 0, 0, 0.2);
-      transition: all 0.3s;
-      opacity: 0;
-    }
-
-    .desc {
-      margin-top: 95px;
-      line-height: 1.5;
-      color: var(--gray-color-400);
-      font-size: 0.9rem;
-    }
-
-    .banner-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 16px;
-      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .btn,
-    .upload-icon {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: max-content;
-    }
-
-    .master {
-      display: none;
-    }
-
-    .edit-icon-wrap {
-      position: absolute;
-      width: 100%;
-      left: 0;
-      top: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    &.master {
-      &:hover {
-        &::before {
-          opacity: 1;
-        }
-
-        .btn.master {
-          display: block;
-        }
-      }
-    }
-
-    &.edit {
-      &:hover {
-        &::before {
-          opacity: 0;
-        }
-      }
-    }
-  }
-}
-
-.mo-btn-wrap {
-  display: none;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  justify-content: center;
-
-  .icon {
-    width: 140px;
-    height: 140px;
-    min-width: 140px;
-    flex-grow: 1;
     display: flex;
     flex-wrap: wrap;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--gray-color-300);
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-    border-radius: 1rem;
-    background-color: #fff;
-    cursor: pointer;
-    gap: 8px;
+    gap: 1rem;
+    margin-bottom: 1rem;
 
-    &.master {
-      // width: 100%;
+    >div {
+        padding: 1.5rem;
+        text-align: center;
     }
-  }
-}
 
-.warning-msg {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  line-height: 1.2;
-  margin-bottom: 1rem;
-
-  .icon {
-    padding: 0;
-    flex: none;
-    position: relative;
-    top: 2px;
-
-    svg {
-      width: 16px;
-      height: 16px;
-      fill: var(--warning-color-400);
-    }
-  }
-
-  p {
-    font-size: 0.8rem;
-    color: var(--warning-color-500);
-  }
-}
-
-.list-wrap {
-  .list {
-    border-bottom: 1px solid var(--gray-color-100);
-
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-}
-
-.mail {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
-  line-height: 1.2;
-  color: var(--gray-color-500);
-
-  > * {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-  }
-
-  &:hover {
-    background-color: var(--primary-color-25);
-  }
-
-  .from {
-    font-weight: 600;
-    color: var(--gray-color-900);
-    flex: none;
-    width: 100px;
-  }
-
-  .title {
-    font-weight: 600;
-    color: var(--gray-color-900);
-  }
-
-  .cont {
-    font-size: 0.75rem;
-    color: var(--gray-color-400);
-    margin-right: 1rem;
-    flex: 1;
-  }
-
-  .attachment {
-    .icon {
-      svg {
-        width: 1rem;
-        height: 1rem;
-        fill: var(--gray-color-400);
-      }
-    }
-  }
-
-  .date {
-    font-size: 0.75rem;
-    margin-left: auto;
-    flex: none;
-  }
-}
-
-.empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1.5rem;
-  font-size: 0.9rem;
-  line-height: 1.2;
-  color: var(--gray-color-400);
-
-  .icon {
-    padding: 0;
-
-    svg {
-      width: 20px;
-      height: 20px;
-      fill: var(--gray-color-400);
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .box-shadow-card {
-    min-height: unset;
-  }
-
-  .profComp-wrap {
     .profile-wrap {
-      position: relative;
-      border: 0;
-      box-shadow: none;
-      height: unset;
-      align-items: end;
-      padding-right: 4rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
 
-      .thumbnail {
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
-      }
+        .thumbnail {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: #f4f4f5 url(../images/header/thumb_profile_default.png) center/cover no-repeat;
+            overflow: hidden;
+
+            img {
+                width: 100%;
+                height: 100%;
+                // object-fit: contain;
+                object-fit: cover;
+                z-index: 1;
+                position: relative;
+            }
+
+            svg {
+                fill: var(--gray-color-400);
+            }
+        }
+
+        .division {
+            font-size: 0.8rem;
+            color: var(--gray-color-500);
+            margin-top: 0.5rem;
+        }
     }
 
     .company-wrap {
-      display: none;
+        position: relative;
+        height: 250px;
+        flex-grow: 3;
+        overflow: hidden;
+        padding: 0;
+
+        &::before {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            content: '';
+            background-color: rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            opacity: 0;
+        }
+
+        .desc {
+            margin-top: 95px;
+            line-height: 1.5;
+            color: var(--gray-color-400);
+            font-size: 0.9rem;
+        }
+
+        .banner-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn,
+        .upload-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: max-content;
+        }
+
+        .master {
+            display: none;
+        }
+
+        .edit-icon-wrap {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        &.master {
+            &:hover {
+                &::before {
+                    opacity: 1;
+                }
+
+                .btn.master {
+                    display: block;
+                }
+            }
+        }
+
+        &.edit {
+            &:hover {
+                &::before {
+                    opacity: 0;
+                }
+            }
+        }
     }
-  }
+}
 
-  .mo-btn-wrap {
+.mo-btn-wrap {
+    display: none;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+
+    .icon {
+        width: 140px;
+        height: 140px;
+        min-width: 140px;
+        flex-grow: 1;
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--gray-color-300);
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+        border-radius: 1rem;
+        background-color: #fff;
+        cursor: pointer;
+        gap: 8px;
+
+        &.master {
+            // width: 100%;
+        }
+    }
+}
+
+.warning-msg {
     display: flex;
-    gap: 0.5rem;
-  }
+    align-items: flex-start;
+    gap: 4px;
+    line-height: 1.2;
+    margin-bottom: 1rem;
 
-  .gmail {
-    display: none !important;
-  }
+    .icon {
+        padding: 0;
+        flex: none;
+        position: relative;
+        top: 2px;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--warning-color-400);
+        }
+    }
+
+    p {
+        font-size: 0.8rem;
+        color: var(--warning-color-500);
+    }
+}
+
+.list-wrap {
+    .list {
+        border-bottom: 1px solid var(--gray-color-100);
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+}
+
+.mail {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    color: var(--gray-color-500);
+
+    >* {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    &:hover {
+        background-color: var(--primary-color-25);
+    }
+
+    .from {
+        font-weight: 600;
+        color: var(--gray-color-900);
+        flex: none;
+        width: 100px;
+    }
+
+    .title {
+        font-weight: 600;
+        color: var(--gray-color-900);
+    }
+
+    .cont {
+        font-size: 0.75rem;
+        color: var(--gray-color-400);
+        margin-right: 1rem;
+        flex: 1;
+    }
+
+    .attachment {
+        .icon {
+            svg {
+                width: 1rem;
+                height: 1rem;
+                fill: var(--gray-color-400);
+            }
+        }
+    }
+
+    .date {
+        font-size: 0.75rem;
+        margin-left: auto;
+        flex: none;
+    }
+}
+
+.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    color: var(--gray-color-400);
+
+    .icon {
+        padding: 0;
+
+        svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--gray-color-400);
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .box-shadow-card {
+        min-height: unset;
+    }
+
+    .profComp-wrap {
+        .profile-wrap {
+            position: relative;
+            border: 0;
+            box-shadow: none;
+            height: unset;
+            align-items: end;
+            padding-right: 4rem;
+
+            .thumbnail {
+                position: absolute;
+                top: 50%;
+                right: 0;
+                transform: translateY(-50%);
+            }
+        }
+
+        .company-wrap {
+            display: none;
+        }
+    }
+
+    .mo-btn-wrap {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .gmail {
+        display: none !important;
+    }
 }
 </style>

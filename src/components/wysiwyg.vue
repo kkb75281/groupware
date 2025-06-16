@@ -124,7 +124,12 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, nextTick, ref, computed, onUnmounted } from 'vue';
-import { insertTableToWysiwyg, addResizer, bindCellEvents, resetTableCellData } from '@/components/wysiwygTable.js';
+import {
+    insertTableToWysiwyg,
+    addResizer,
+    bindCellEvents,
+    resetTableCellData
+} from '@/components/wysiwygTable.js';
 import { Wysiwyg4All } from 'wysiwyg4all';
 import 'wysiwyg4all/css';
 import wysiwygTable from '@/components/wysiwygTable.vue';
@@ -152,7 +157,7 @@ let fontVariables = {
     h4: 14,
     h5: 12,
     h6: 10
-}
+};
 let commandTracker = ref({
     bold: false,
     color: false,
@@ -179,11 +184,7 @@ let isFixed = ref(false);
 const insertTable = () => {
     if (!wysiwyg) return;
 
-    insertTableToWysiwyg(
-        wysiwyg,
-        tableRows.value,
-        tableCols.value
-    );
+    insertTableToWysiwyg(wysiwyg, tableRows.value, tableCols.value);
 
     showTableDialog.value = false;
 };
@@ -215,11 +216,13 @@ const handleFontSize = (action) => {
         fontSize.value -= 2;
     }
 
-    const fontSizeValue = Object.keys(fontVariables).find(key => fontVariables[key] === fontSize.value);
+    const fontSizeValue = Object.keys(fontVariables).find(
+        (key) => fontVariables[key] === fontSize.value
+    );
 
     wysiwyg.restoreLastSelection();
     handleCommand(fontSizeValue);
-}
+};
 
 // RGB → HEX 변환 함수
 function rgbToHex(rgb) {
@@ -407,14 +410,17 @@ const initWysiwyg = () => {
                 commandTracker.value.strike = c.commandTracker.strike;
                 commandTracker.value.underline = c.commandTracker.underline;
 
-                if (typeof (c.commandTracker.color) === 'string' && c.commandTracker.color.startsWith('#')) {
+                if (
+                    typeof c.commandTracker.color === 'string' &&
+                    c.commandTracker.color.startsWith('#')
+                ) {
                     textColor.value = c.commandTracker.color;
                 } else {
                     textColor.value = '#000000'; // 기본 색상
                 }
 
                 const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-                let selectedHeadings = headings.filter(h => commandTracker.value[h]);
+                let selectedHeadings = headings.filter((h) => commandTracker.value[h]);
 
                 if (selectedHeadings.length === 0) {
                     fontSize.value = 12;
@@ -486,12 +492,16 @@ function handleEditorKeyDown(e) {
         let startLine = currentRange.startLine;
         let endLine = currentRange.endLine;
 
-        if (startLine?.classList.contains('wysiwyg-table-wrap') || endLine?.classList.contains('wysiwyg-table-wrap')) {
+        if (
+            startLine?.classList.contains('wysiwyg-table-wrap') ||
+            endLine?.classList.contains('wysiwyg-table-wrap')
+        ) {
             // 테이블 선택 해제
             // clearTableSelection();
             console.log('테이블 선택 되어 있었음');
         }
-    } else if (e.key === 'Delete' || e.key === 'Backspace') { // e.code vs e.key
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        // e.code vs e.key
         if (allSelectPrevious) {
             e.preventDefault(); // 기본 동작 방지
 
@@ -500,8 +510,7 @@ function handleEditorKeyDown(e) {
                 editorEl.focus();
             });
         }
-    }
-    else {
+    } else {
         allSelectPrevious = false;
     }
 }
@@ -551,7 +560,7 @@ let checkToolBar = () => {
     } else {
         isFixed.value = false;
     }
-}
+};
 
 function copyTableContent(originalTable, newTable) {
     const originalRows = originalTable.rows;
@@ -575,7 +584,7 @@ function copyTableContent(originalTable, newTable) {
             width: 0,
             height: 0
         }
-    }
+    };
 
     // 병합 셀 범위 먼저 모두 수집
     for (let r = 0; r < originalRows.length; r++) {
@@ -678,7 +687,7 @@ const insertHtmlToWysiwyg = (html) => {
         // // 커서 위치에 삽입하려면 execCommand 사용, 아니면 그냥 innerHTML로 대체
         // document.execCommand('insertHTML', false, body.innerHTML);
     }
-}
+};
 
 function insertHtmlAtCursor(html) {
     let sel = window.getSelection();
@@ -1206,7 +1215,6 @@ defineExpose({
         }
 
         &.dragged-cell {
-
             /* background-color: #d0ebff !important; */
             &::after {
                 display: block;
@@ -1303,13 +1311,15 @@ defineExpose({
     }
 }
 
-@media (max-width: 1017px) {
+// @media (max-width: 1017px) {
+@media (max-width: 1050px) {
     ._wysiwyg4all {
         padding-top: 5rem;
     }
 }
 
-@media (max-width: 522px) {
+// @media (max-width: 522px) {
+@media (max-width: 580px) {
     ._wysiwyg4all {
         padding-top: 7rem;
     }

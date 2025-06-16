@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fg-works-cache-v94'; // 버전 번호를 포함한 캐시 이름
+const CACHE_NAME = 'fg-works-cache-v100'; // 버전 번호를 포함한 캐시 이름
 
 // 설치 이벤트: 캐시 초기화
 self.addEventListener('install', (event) => {
