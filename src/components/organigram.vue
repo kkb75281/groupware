@@ -341,16 +341,10 @@ function updateCheckStatus(update) {
 
 // 조직도에서 특정 사용자 ID와 부서명을 가진 직원 객체를 찾는 함수 (다중 부서 직원은 모두 체크)
 function findEmployeeInOrganigram(userId) {
-    console.log('= findEmployeeInOrganigram = userId : ', userId);
-
     // 재귀적으로 모든 부서를 검색하는 내부 함수
     function searchInDepartment(department) {
-        console.log('= searchInDepartment = department : ', department);
-
         // 현재 부서에서 해당 user_id를 가진 멤버 모두 체크
         department.members.forEach((member) => {
-            console.log('= searchInDepartment = member : ', member);
-
             if (member.user.user_id === userId) {
                 member.isChecked = true; // 체크박스 체크
             }
@@ -376,12 +370,9 @@ function findEmployeeInOrganigram(userId) {
     }
 }
 
-// 특정 사용자 ID를 가진 직원이 속한 부서를 찾는 함수 (다중 부서 직원은 모두 체크)
+// 특정 사용자 ID를 가진 직원이 속한 부서를 찾는 함수
 function findDepartmentOfEmployee(userId) {
-    console.log('= findDepartmentOfEmployee = userId : ', userId);
-
     function search(department) {
-        console.log('= search = department : ', department);
         if (department.members.some((m) => m.user.user_id === userId)) {
             return department;
         }

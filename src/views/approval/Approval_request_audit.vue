@@ -586,9 +586,9 @@ const openModal = () => {
 
     // 열렸을 때 selectedAuditors 전체를 original로 백업
     backupSelected.value = {
-        approvers: [...selectedAuditors.value.approvers],
-        agreers: [...selectedAuditors.value.agreers],
-        receivers: [...selectedAuditors.value.receivers]
+        approvers: JSON.parse(JSON.stringify(selectedAuditors.value.approvers)),
+        agreers: JSON.parse(JSON.stringify(selectedAuditors.value.agreers)),
+        receivers: JSON.parse(JSON.stringify(selectedAuditors.value.receivers))
     };
 
     // selectedAuditors에 있는 모든 유저를 selectedUsers에 추가
@@ -608,8 +608,7 @@ const openModal = () => {
     selectedUsers.value = [
         ...selectedUsers.value.filter((u) => u.role !== 'receivers'),
         ...selectedUsers.value.filter((u) => u.role === 'receivers')
-    ];
-    selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
+    ].sort((a, b) => a.order - b.order);
 
     isModalOpen.value = true;
 };
@@ -618,9 +617,9 @@ const openModal = () => {
 const closeModal = () => {
     if (backupSelected.value) {
         selectedAuditors.value = {
-            approvers: [...backupSelected.value.approvers],
-            agreers: [...backupSelected.value.agreers],
-            receivers: [...backupSelected.value.receivers]
+            approvers: JSON.parse(JSON.stringify(backupSelected.value.approvers)),
+            agreers: JSON.parse(JSON.stringify(backupSelected.value.agreers)),
+            receivers: JSON.parse(JSON.stringify(backupSelected.value.receivers))
         };
     } else {
         selectedAuditors.value = {
@@ -635,7 +634,6 @@ const closeModal = () => {
     for (const role in selectedAuditors.value) {
         selectedAuditors.value[role].forEach((user) => {
             const userCopy = JSON.parse(JSON.stringify(user));
-            console.log('userCopy : ', userCopy);
 
             userCopy.role = role;
             userCopy.sortable = role !== 'receivers';
@@ -646,13 +644,11 @@ const closeModal = () => {
     selectedUsers.value = [
         ...selectedUsers.value.filter((u) => u.role !== 'receivers'),
         ...selectedUsers.value.filter((u) => u.role === 'receivers')
-    ];
-    selectedUsers.value = selectedUsers.value.sort((a, b) => a.order - b.order);
+    ].sort((a, b) => a.order - b.order);
 
-    selectedUsersOrder.value = [];
+    // selectedUsersOrder.value = [];
     backupSelected.value = null;
     isModalOpen.value = false;
-
     document.body.style.overflow = '';
 };
 
@@ -761,13 +757,8 @@ const previewAudit = () => {
 
 // 결재라인 모달에서 조직도 선택시
 const handleOrganigramSelection = (users) => {
-    console.log('확인 = user : ', users);
-
     selectedUsers.value = selectedUsers.value.filter((selUser) =>
-        users.some(
-            (user) =>
-                user.user.user_id === selUser.user.user_id && user.division === selUser.division
-        )
+        users.some((user) => user.user.user_id === selUser.user.user_id)
     );
 
     let maxOrder = 0;
@@ -784,7 +775,7 @@ const handleOrganigramSelection = (users) => {
     users.forEach((user) => {
         // 선택된 유저를 selectedUsers에 추가
         const existingUserIndex = selectedUsers.value.findIndex(
-            (u) => u.user.user_id === user.user.user_id && u.division === user.division
+            (u) => u.user.user_id === user.user.user_id
         );
 
         if (existingUserIndex !== -1) {
@@ -800,6 +791,7 @@ const handleOrganigramSelection = (users) => {
             // 필요하다면 다른 필드도 업데이트
             selectedUsers.value[existingUserIndex] = {
                 ...user,
+                division: existingUser.division,
                 role: existingUser.role,
                 order: existingUser.order,
                 sortable: existingUser.sortable
