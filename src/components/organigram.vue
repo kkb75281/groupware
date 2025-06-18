@@ -78,12 +78,13 @@ watch(
         }
 
         // 먼저 모든 체크박스 상태와 checkedEmps 초기화
-        resetAllCheckStatus();
-        checkedEmps.value = [];
+        // resetAllCheckStatus();
+        // checkedEmps.value = [];
 
         // 새로 선택된 사용자들이 있는 경우에만 처리
         if (n && n.length > 0) {
             for (const emp of n) {
+                console.log('= watch = emp(체크해야함) : ', emp);
                 const employeeToCheck = findEmployeeInOrganigram(emp.division, emp.user?.user_id);
                 const member = employeeToCheck?.member;
                 const department = employeeToCheck?.department;
@@ -160,7 +161,7 @@ onMounted(async () => {
                 });
 
                 // 체크된 사용자를 checkedEmps 배열에 추가
-                if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id)) {
+                if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id && u.division === emp.division)) {
                     checkedEmps.value.push(member);
                 }
             }
@@ -199,6 +200,8 @@ onMounted(async () => {
         // 부서 체크박스 상태 재계산
         recalculateDepartmentCheckStatus();
     }
+
+    console.log('= onMounted = checkedEmps (초기화 후) : ', checkedEmps.value);
 });
 
 onUnmounted(() => {
@@ -291,7 +294,8 @@ function updateCheckStatus(update) {
                 // 체크된 멤버를 checkedEmps 배열에 추가
                 if (isChecked) {
                     if (
-                        !checkedEmps.value.some((emp) => emp.user.user_id === member.user.user_id)
+                        !checkedEmps.value.some((emp) => emp.user.user_id === member.user.user_id &&
+                            emp.division === target.division)
                     ) {
                         checkedEmps.value.push(member);
                     }
@@ -322,14 +326,17 @@ function updateCheckStatus(update) {
 
         // 체크된 멤버를 checkedEmps 배열에 추가
         if (isChecked) {
-            if (!checkedEmps.value.some((emp) => emp.user.user_id === target.user.user_id)) {
+            console.log('체크 true')
+            if (!checkedEmps.value.some((emp) => emp.user.user_id === target.user.user_id && emp.division === target.division)) {
                 checkedEmps.value.push(target);
             }
         } else {
+            console.log('체크 false')
             // 체크 해제된 멤버를 checkedEmps 배열에서 제거
             const index = checkedEmps.value.findIndex(
-                (emp) => emp.user.user_id === target.user.user_id
+                (emp) => emp.user.user_id === target.user.user_id && emp.division === target.division
             );
+            console.log('index : ', index);
             if (index !== -1) {
                 checkedEmps.value.splice(index, 1);
             }
@@ -349,6 +356,8 @@ function updateCheckStatus(update) {
     });
 
     sendCheckedEmps = sendCheckedEmps.filter((emp) => emp !== null); // null 값 제거
+
+    console.log('= updateCheckStatus = sendCheckedEmps : ', sendCheckedEmps);
 
     emit('selection-change', sendCheckedEmps);
 }
