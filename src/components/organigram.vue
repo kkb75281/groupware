@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { skapi } from '@/main.ts';
 import { user } from '@/user.ts';
 import {
@@ -84,14 +84,14 @@ watch(
         // 새로 선택된 사용자들이 있는 경우에만 처리
         if (n && n.length > 0) {
             for (const emp of n) {
-                console.log('= watch = emp : ', emp);
+                // console.log('= watch = emp : ', emp);
                 const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
-                console.log('= watch = employeeToCheck : ', employeeToCheck);
+                // console.log('= watch = employeeToCheck : ', employeeToCheck);
 
                 if (employeeToCheck) {
                     const department = findDepartmentOfEmployee(emp.user?.user_id);
-                    console.log('= watch = department : ', department);
-                    console.log(`체크됨 = ${emp.user?.name}`);
+                    // console.log('= watch = department : ', department);
+                    // console.log(`체크됨 = ${emp.user?.name}`);
 
                     employeeToCheck.isChecked = true;
                     if (department) department.isOpened = true;
@@ -110,6 +110,8 @@ watch(
                 }
             }
 
+            console.log('= watch = checkedEmps (새로 체크 됨) : ', checkedEmps.value);
+
             // 부서 체크박스 상태 재계산
             recalculateDepartmentCheckStatus();
         }
@@ -118,6 +120,8 @@ watch(
 
 onMounted(async () => {
     let refresh = false;
+
+    console.log('= onMounted = props.selectedEmployees (열렸을때 체크된 유저 확인) : ', props.selectedEmployees);
 
     if (
         excludeCurrentUser.value !== props.excludeCurrentUser ||
@@ -136,7 +140,7 @@ onMounted(async () => {
 
     if (props.selectedEmployees && props.selectedEmployees.length > 0) {
         // 모달 열었을때 체크된 사용자가 있을 경우
-        console.log('= onMounted = props.selectedEmployees : ', props.selectedEmployees);
+        console.log('= onMounted = props.selectedEmployees (체크된 사용자가 있음) : ', props.selectedEmployees);
 
         // 선택된 사용자들에 대해 체크 상태 설정
         for (const emp of props.selectedEmployees) {
@@ -200,6 +204,10 @@ onMounted(async () => {
     }
 });
 
+onUnmounted(() => {
+    checkedEmps.value = [];
+});
+
 // 모든 부서와 멤버의 체크박스 상태를 초기화하는 함수 추가
 function resetAllCheckStatus() {
     const resetDepartment = (department) => {
@@ -260,6 +268,7 @@ function recalculateDepartmentCheckStatus() {
 
 // 자식(하위 부서 및 멤버) 상태를 업데이트하는 함수
 function updateCheckStatus(update) {
+    console.log('= updateCheckStatus = update : ', update);
     const type = update.type;
     const target = update.target;
     const isChecked = update.isChecked;
