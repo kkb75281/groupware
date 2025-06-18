@@ -107,6 +107,17 @@ watch(
                 }
             }
 
+            // 있었는데 체크 해제된 사용자들은 checkedEmps에서 제거 + isChecked = false 처리
+            checkedEmps.value = checkedEmps.value.filter((emp) => {
+                const stillChecked = n.some(
+                    (newEmp) => newEmp.user?.user_id === emp.user.user_id && newEmp.division === emp.division
+                );
+                if (!stillChecked) {
+                    emp.isChecked = false; // 체크 해제된 사용자는 isChecked도 false로
+                }
+                return stillChecked;
+            });
+
             console.log('= watch = checkedEmps (새로 체크 됨) : ', checkedEmps.value);
 
             // 부서 체크박스 상태 재계산

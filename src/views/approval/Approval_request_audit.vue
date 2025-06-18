@@ -967,7 +967,9 @@ const saveAuditor = () => {
 
 // 결재자 제거
 const removeAuditor = (user, type) => {
-    const newAuditors = selectedUsers.value.filter((u) => u.user.user_id !== user.user.user_id);
+    const newAuditors = selectedUsers.value.filter(
+        (u) => !(u.user.user_id === user.user.user_id && u.division === user.division)
+    );
     selectedUsers.value = newAuditors;
     console.log('== removeAuditor == selectedUsers.value : ', selectedUsers.value);
 
