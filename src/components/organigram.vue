@@ -115,6 +115,20 @@ watch(
 
                 if (!stillChecked) {
                     emp.isChecked = false; // 체크 해제된 사용자는 isChecked도 false로
+
+                    const otherDvs = findAllDepartmentsOfUser(emp.user.user_id);
+
+                    for (const dvs of otherDvs) {
+                        if (dvs.division === emp.division) continue; // 현재 부서와 동일한 부서는 건너뜀
+
+                        const otherMember = dvs.members.find((m) => m.user.user_id === emp.user.user_id);
+
+                        if (emp.isChecked) {
+                            otherMember.isDisabled = true;
+                        } else {
+                            otherMember.isDisabled = false;
+                        }
+                    }
                 }
                 return stillChecked;
             });
@@ -319,6 +333,7 @@ function updateCheckStatus(update) {
         // 멤버 상태 동기화
         if (target.members && target.members.length > 0) {
             target.members.forEach((member) => {
+                if (member.isDisabled) return; // 비활성화된 멤버는 건너뜀
                 member.isChecked = isChecked;
 
                 // 체크된 멤버를 checkedEmps 배열에 추가
@@ -336,6 +351,20 @@ function updateCheckStatus(update) {
                     );
                     if (index !== -1) {
                         checkedEmps.value.splice(index, 1);
+                    }
+                }
+
+                const otherDvs = findAllDepartmentsOfUser(member.user.user_id);
+
+                for (const dvs of otherDvs) {
+                    if (dvs.division === member.division) continue; // 현재 부서와 동일한 부서는 건너뜀
+
+                    const otherMember = dvs.members.find((m) => m.user.user_id === member.user.user_id);
+
+                    if (member.isChecked) {
+                        otherMember.isDisabled = true;
+                    } else {
+                        otherMember.isDisabled = false;
                     }
                 }
             });
