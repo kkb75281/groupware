@@ -84,10 +84,10 @@ watch(
         // 새로 선택된 사용자들이 있는 경우에만 처리
         if (n && n.length > 0) {
             for (const emp of n) {
-                const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id, emp.division);
+                const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
 
                 if (employeeToCheck) {
-                    const department = findDepartmentOfEmployee(emp.user?.user_id, emp.division);
+                    const department = findDepartmentOfEmployee(emp.user?.user_id);
                     console.log(`체크됨 = ${emp.user?.name}`);
 
                     employeeToCheck.isChecked = true;
@@ -101,12 +101,7 @@ watch(
                     });
 
                     // 체크된 사용자를 checkedEmps 배열에 추가
-                    if (
-                        !checkedEmps.value.some(
-                            (u) =>
-                                u.user?.user_id === emp.user?.user_id && u.division === emp.division
-                        )
-                    ) {
+                    if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id)) {
                         checkedEmps.value.push(employeeToCheck);
                     }
                 }
@@ -138,16 +133,15 @@ onMounted(async () => {
 
     if (props.selectedEmployees && props.selectedEmployees.length > 0) {
         // 모달 열었을때 체크된 사용자가 있을 경우
-        console.log('= onMounted = 선택된 직원 : ', props.selectedEmployees);
+        console.log('Selected Employees onMounted:', props.selectedEmployees);
 
         // 선택된 사용자들에 대해 체크 상태 설정
         for (const emp of props.selectedEmployees) {
-            console.log(`체크됨 = ${emp.user?.name} / ${emp.division}`);
             // 직원 객체 찾기
-            const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id, emp.division);
+            const employeeToCheck = findEmployeeInOrganigram(emp.user?.user_id);
 
             if (employeeToCheck) {
-                const department = findDepartmentOfEmployee(emp.user?.user_id, emp.division);
+                const department = findDepartmentOfEmployee(emp.user?.user_id);
                 console.log('department : ', department);
                 employeeToCheck.isChecked = true;
                 if (department) department.isOpened = true;
@@ -160,11 +154,7 @@ onMounted(async () => {
                 });
 
                 // 체크된 사용자를 checkedEmps 배열에 추가
-                if (
-                    !checkedEmps.value.some(
-                        (u) => u.user?.user_id === emp.user?.user_id && u.division === emp.division
-                    )
-                ) {
+                if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id)) {
                     checkedEmps.value.push(employeeToCheck);
                 }
             }
@@ -279,23 +269,17 @@ function updateCheckStatus(update) {
             target.members.forEach((member) => {
                 member.isChecked = isChecked;
 
-                // 체크된 멤버를 checkedEmps 배열에 추가 (다중 부서일 경우도 고려)
+                // 체크된 멤버를 checkedEmps 배열에 추가
                 if (isChecked) {
                     if (
-                        !checkedEmps.value.some(
-                            (emp) =>
-                                emp.user.user_id === member.user.user_id &&
-                                emp.division === member.division
-                        )
+                        !checkedEmps.value.some((emp) => emp.user.user_id === member.user.user_id)
                     ) {
                         checkedEmps.value.push(member);
                     }
                 } else {
                     // 체크 해제된 멤버를 checkedEmps 배열에서 제거
                     const index = checkedEmps.value.findIndex(
-                        (emp) =>
-                            emp.user.user_id === member.user.user_id &&
-                            emp.division === member.division
+                        (emp) => emp.user.user_id === member.user.user_id
                     );
                     if (index !== -1) {
                         checkedEmps.value.splice(index, 1);
@@ -317,21 +301,15 @@ function updateCheckStatus(update) {
     } else if (type === 'member') {
         target.isChecked = isChecked;
 
-        // 체크된 멤버를 checkedEmps 배열에 추가 (다중 부서일 경우도 고려)
+        // 체크된 멤버를 checkedEmps 배열에 추가
         if (isChecked) {
-            if (
-                !checkedEmps.value.some(
-                    (emp) =>
-                        emp.user.user_id === target.user.user_id && emp.division === target.division
-                )
-            ) {
+            if (!checkedEmps.value.some((emp) => emp.user.user_id === target.user.user_id)) {
                 checkedEmps.value.push(target);
             }
         } else {
             // 체크 해제된 멤버를 checkedEmps 배열에서 제거
             const index = checkedEmps.value.findIndex(
-                (emp) =>
-                    emp.user.user_id === target.user.user_id && emp.division === target.division
+                (emp) => emp.user.user_id === target.user.user_id
             );
             if (index !== -1) {
                 checkedEmps.value.splice(index, 1);
@@ -345,11 +323,7 @@ function updateCheckStatus(update) {
     // 조직도에 관련된 변수는 빼고 checkedEmps 배열을 emit 이벤트로 전달
     let sendCheckedEmps = checkedEmps.value.map((emp) => {
         const { isChecked, ...rest } = emp;
-        if (
-            props.excludeCurrentUser &&
-            emp.user.user_id === user.user_id &&
-            emp.division === user.division
-        ) {
+        if (props.excludeCurrentUser && emp.user.user_id === user.user_id) {
             return null; // 본인 제외
         }
         return rest;
@@ -360,16 +334,12 @@ function updateCheckStatus(update) {
     emit('selection-change', sendCheckedEmps);
 }
 
-// 조직도에서 특정 사용자 ID를 가진 직원 객체를 찾는 함수 (다중부서 직원 고려)
-function findEmployeeInOrganigram(userId, divisionName = null) {
-    console.log('divisionName : ', divisionName);
+// 조직도에서 특정 사용자 ID를 가진 직원 객체를 찾는 함수
+function findEmployeeInOrganigram(userId) {
     // 재귀적으로 모든 부서를 검색하는 내부 함수
     function searchInDepartment(department) {
         // 현재 부서의 멤버 중에서 찾기
-        const foundMember = department.members.find((member) => {
-            console.log('member : ', member);
-            member.user.user_id === userId && (!divisionName || member.division === divisionName);
-        });
+        const foundMember = department.members.find((member) => member.user.user_id === userId);
         if (foundMember) return foundMember;
 
         // 하위 부서에서 찾기
@@ -390,14 +360,9 @@ function findEmployeeInOrganigram(userId, divisionName = null) {
     return null;
 }
 
-function findDepartmentOfEmployee(userId, divisionName = null) {
-    console.log('divisionName : ', divisionName);
+function findDepartmentOfEmployee(userId) {
     function search(department) {
-        if (
-            department.members.some(
-                (m) => m.user.user_id === userId && (!divisionName || m.division === divisionName)
-            )
-        ) {
+        if (department.members.some((m) => m.user.user_id === userId)) {
             return department;
         }
         for (const sub of department.subDepartments) {
