@@ -46,6 +46,7 @@ details(:class="{hideSummary: props.onlyDivision && department.subDepartments.le
         :department="sub"
         :useCheckbox="props.useCheckbox"
         :onlyDivision="props.onlyDivision"
+        :excludeCurrentUser="props.excludeCurrentUser"
         @update-check="$emit('update-check', $event)"
         @click.stop
     )
