@@ -112,6 +112,7 @@ watch(
                 const stillChecked = n.some(
                     (newEmp) => newEmp.user?.user_id === emp.user.user_id && newEmp.division === emp.division
                 );
+
                 if (!stillChecked) {
                     emp.isChecked = false; // 체크 해제된 사용자는 isChecked도 false로
                 }
@@ -122,6 +123,9 @@ watch(
 
             // 부서 체크박스 상태 재계산
             recalculateDepartmentCheckStatus();
+        } else if (n !== o && n.length === 0) {
+            checkedEmps.value = [];
+            resetAllCheckStatus();
         }
     }
 );
@@ -174,6 +178,20 @@ onMounted(async () => {
                 // 체크된 사용자를 checkedEmps 배열에 추가
                 if (!checkedEmps.value.some((u) => u.user?.user_id === emp.user?.user_id && u.division === emp.division)) {
                     checkedEmps.value.push(member);
+                }
+
+                const otherDvs = findAllDepartmentsOfUser(member.user.user_id);
+
+                for (const dvs of otherDvs) {
+                    if (dvs.division === member.division) continue; // 현재 부서와 동일한 부서는 건너뜀
+
+                    const otherMember = dvs.members.find((m) => m.user.user_id === member.user.user_id);
+
+                    if (member.isChecked) {
+                        otherMember.isDisabled = true;
+                    } else {
+                        otherMember.isDisabled = false;
+                    }
                 }
             }
         }
@@ -229,6 +247,7 @@ function resetAllCheckStatus() {
         if (department.members && department.members.length > 0) {
             department.members.forEach((member) => {
                 member.isChecked = false;
+                member.isDisabled = false;
             });
         }
 
@@ -353,6 +372,20 @@ function updateCheckStatus(update) {
             }
         }
 
+        const otherDvs = findAllDepartmentsOfUser(target.user.user_id);
+
+        for (const dvs of otherDvs) {
+            if (dvs.division === target.division) continue; // 현재 부서와 동일한 부서는 건너뜀
+
+            const otherMember = dvs.members.find((m) => m.user.user_id === target.user.user_id);
+
+            if (isChecked) {
+                otherMember.isDisabled = true;
+            } else {
+                otherMember.isDisabled = false;
+            }
+        }
+
         // 부서 체크 상태 재계산
         recalculateDepartmentCheckStatus();
     }
@@ -409,5 +442,24 @@ function findEmployeeInOrganigram(dvs, userId) {
     }
 
     return null;
+}
+
+// 특정 userId가 속한 모든 부서(division)를 배열로 반환하는 함수
+function findAllDepartmentsOfUser(userId) {
+    const result = [];
+
+    function search(department) {
+        // 해당 부서에 userId가 있는지 확인
+        if (department.members && department.members.some(m => m.user.user_id === userId)) {
+            result.push(department);
+        }
+        // 하위 부서도 재귀 탐색
+        if (department.subDepartments && department.subDepartments.length > 0) {
+            department.subDepartments.forEach(sub => search(sub));
+        }
+    }
+
+    organigram.value.forEach(dept => search(dept));
+    return result;
 }
 </script>

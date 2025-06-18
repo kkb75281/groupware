@@ -253,7 +253,8 @@ async function addDepartment(path: string[], division: string | null, currentLev
                     user: uif.list[0],
                     division: member.index.name.split('.')[0] || '부서 없음',
                     position: member.index.name.split('.')[1] || '직위 없음',
-                    isChecked: false
+                    isChecked: false,
+                    isDisabled: false
                 };
             })
         );
