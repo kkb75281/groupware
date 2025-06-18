@@ -416,13 +416,13 @@ export const getNewsletterList = async (tag, fetchOptions = {}) => {
 };
 
 export async function subscribeNotification() {
-    let vapid = localStorage.getItem(skapi.service + '-vapid');
+    // let vapid = localStorage.getItem(skapi.service + '-vapid');
 
-    if (!vapid) {
-        const vapidResponse = await skapi.vapidPublicKey();
-        vapid = vapidResponse.VAPIDPublicKey;
-        localStorage.setItem(skapi.service + '-vapid', vapid);
-    }
+    // if (!vapid) {
+    const vapidResponse = await skapi.vapidPublicKey();
+    let vapid = vapidResponse.VAPIDPublicKey;
+    localStorage.setItem(skapi.service + '-vapid', vapid);
+    // }
 
     function urlBase64ToUint8Array(base64String: any) {
         const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -442,6 +442,7 @@ export async function subscribeNotification() {
     } else {
         serviceWorkerRegistMsg.value = '';
         navigator.serviceWorker.getRegistrations().then((registrations) => {
+            console.log('!!!Service Worker Registrations:', registrations);
             registrations.forEach((registration) => {
                 console.log('Service Worker Script URL:', registration.active?.scriptURL);
             });
@@ -487,6 +488,8 @@ export async function subscribeNotification() {
 
     // window.localStorage.setItem("skapi_subscription_obj", JSON.stringify(subscription));
     const response = await skapi.subscribeNotification(subscription.endpoint, subscription.keys);
+
+    console.log('!!!Subscription response:', response); // Debugging
 
     let user_local_data = {
         user_id: user.user_id,

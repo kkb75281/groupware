@@ -439,6 +439,7 @@ export let RealtimeCallback = async (rt: any) => {
             unreadCount.value = realtimes.value.filter(
                 (audit) => !Object.keys(readList.value).includes(audit.noti_id)
             ).length;
+            console.log('unreadCount.value', unreadCount.value);
         }
     }
 };

@@ -19,6 +19,7 @@ export type Organigram = {
     total: number;
     isChecked: boolean;
     isOpened: boolean;
+    _parent?: Organigram | null; // 부모 부서 참조
 };
 
 export let organigram: Ref<Organigram[]> = ref([]);
@@ -70,6 +71,16 @@ export async function getOrganigram(refresh = false) {
 
     // 전체 부서 트리의 total 값을 재계산
     recalculateTotals(organigram.value);
+
+    function setParentReferences(department: Organigram, parent = null) {
+        department._parent = parent;
+        if (department.subDepartments && department.subDepartments.length > 0) {
+            department.subDepartments.forEach((sub) => setParentReferences(sub, department));
+        }
+    }
+    // 조직도 데이터 로드 후
+    organigram.value.forEach((dept) => setParentReferences(dept));
+
     getOrganigramRunning.value = false;
     console.log({ organigram: organigram.value });
 }
