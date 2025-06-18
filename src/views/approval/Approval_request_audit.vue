@@ -819,7 +819,7 @@ const previewAudit = () => {
 
 const handleOrganigramSelection = (users) => {
     selectedUsers.value = selectedUsers.value.filter(selUser =>
-        users.some(user => user.user.user_id === selUser.user.user_id)
+        users.some(user => user.user.user_id === selUser.user.user_id && user.division === selUser.division)
     );
 
     let maxOrder = 0;
@@ -835,7 +835,7 @@ const handleOrganigramSelection = (users) => {
     // 선택된 유저들을 초기 처리
     users.forEach((user) => {
         // 선택된 유저를 selectedUsers에 추가
-        const existingUserIndex = selectedUsers.value.findIndex((u) => u.user.user_id === user.user.user_id);
+        const existingUserIndex = selectedUsers.value.findIndex((u) => u.user.user_id === user.user.user_id && u.division === user.division);
 
         if (existingUserIndex !== -1) {
             // 이미 존재하는 유저는 기존 role을 유지하고, 나머지 정보만 업데이트
@@ -862,6 +862,8 @@ const handleOrganigramSelection = (users) => {
         ...selectedUsers.value.filter(u => u.role !== 'receivers'),
         ...selectedUsers.value.filter(u => u.role === 'receivers')
     ];
+
+    console.log('선택된 결재자들: ', selectedUsers.value);
 
     reorderUsers();
 };
