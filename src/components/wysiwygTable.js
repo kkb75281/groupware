@@ -103,7 +103,8 @@ export function createTable(rows, cols) {
         for (let c = 0; c < cols; c++) {
             const cell = document.createElement('td');
             //   cell.contentEditable = 'true';
-            cell.innerHTML = '&nbsp;';
+            // cell.innerHTML = '&nbsp;';
+            cell.textContent = '\u00A0'; // &nbsp;
             cell.dataset.row = r;
             cell.dataset.col = c;
             cell.setAttribute('contenteditable', 'true');
@@ -660,7 +661,8 @@ function unmergeCell(tableState, mergedCell) {
                 if (r === startRow && c === startCol) {
                     newCell.innerHTML = content;
                 } else {
-                    newCell.innerHTML = '&nbsp;';
+                    // newCell.innerHTML = '&nbsp;';
+                    newCell.textContent = '\u00A0'; // &nbsp;
                 }
 
                 // 동일한 행의 병합되지 않은 셀의 너비를 기준으로 설정
@@ -766,23 +768,30 @@ export function initButtons(tableState) {
     addRowBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const rows = tableState.table.rows.length;
-        const cols = tableState.table.rows[0]?.cells.length || 0;
+
+        const rows = tableState.tbody.rows.length;
+        const cols = tableState.tbody.rows[0]?.cells.length || 0;
         const newRow = document.createElement('tr');
+        console.log('newRow', newRow);
         for (let c = 0; c < cols; c++) {
             const newCell = document.createElement('td');
             newCell.dataset.row = rows;
             newCell.dataset.col = c;
             newCell.setAttribute('contenteditable', 'true');
-            newCell.innerHTML = '&nbsp;';
+            // newCell.innerHTML = '&nbsp;';
+            newCell.textContent = '\u00A0'; // &nbsp;
+
             addResizer(tableState, newCell);
             bindCellEvents(tableState, newCell);
+
             newRow.appendChild(newCell);
         }
         tableState.tbody.appendChild(newRow);
         refreshAllResizers(tableState);
 
-        setTimeout(() => updateButtonPositions(tableState), 0); // ✅ 딜레이 주어 DOM 갱신 대기
+        setTimeout(() => {
+            updateButtonPositions(tableState);
+        }, 0);
     });
 
     // 행 삭제 버튼
@@ -792,7 +801,7 @@ export function initButtons(tableState) {
     removeRowBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const rows = tableState.table.rows.length;
+        const rows = tableState.tbody.rows.length;
         if (rows <= 1) return alert('최소 한 개의 행은 남아야 합니다.');
         const lastRow = tableState.tbody.lastElementChild;
         if (lastRow && lastRow.tagName === 'TR') {
@@ -800,12 +809,13 @@ export function initButtons(tableState) {
         }
         refreshAllResizers(tableState);
 
-        setTimeout(() => updateButtonPositions(tableState), 0); // ✅ 딜레이 주어 DOM 갱신 대기
+        setTimeout(() => updateButtonPositions(tableState), 0);
     });
 
     rowBtns.appendChild(addRowBtn);
     rowBtns.appendChild(removeRowBtn);
     tableState.table.appendChild(rowBtns);
+    // tableState.tableWrap.appendChild(rowBtns);
 
     const colBtns = document.createElement('div');
     colBtns.className = 'wysiwyg-table-col-btns';
@@ -817,14 +827,16 @@ export function initButtons(tableState) {
     addColBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const rows = tableState.table.rows.length;
-        const existingCols = tableState.table.rows[0]?.cells.length || 0;
+        const rows = tableState.tbody.rows.length;
+        const existingCols = tableState.tbody.rows[0]?.cells.length || 0;
         for (let r = 0; r < rows; r++) {
             const newCell = document.createElement('td');
             newCell.dataset.row = r;
             newCell.dataset.col = existingCols;
             newCell.setAttribute('contenteditable', 'true');
-            newCell.innerHTML = '&nbsp;';
+            // newCell.innerHTML = '&nbsp;';
+            newCell.textContent = '\u00A0'; // &nbsp;
+            console.log('newColl', newCell);
             addResizer(tableState, newCell);
             bindCellEvents(tableState, newCell);
             tableState.tbody.rows[r].appendChild(newCell);
@@ -848,7 +860,7 @@ export function initButtons(tableState) {
     removeColBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const cols = tableState.table.rows[0]?.cells.length || 0;
+        const cols = tableState.tbody.rows[0]?.cells.length || 0;
         if (cols <= 1) return alert('최소 한 개의 열은 남아야 합니다.');
         const cells = document.querySelectorAll(`td[data-col='${cols - 1}']`);
         cells.forEach((cell) => cell.remove());
@@ -872,6 +884,7 @@ export function initButtons(tableState) {
     colBtns.appendChild(addColBtn);
     colBtns.appendChild(removeColBtn);
     tableState.table.appendChild(colBtns);
+    // tableState.tableWrap.appendChild(colBtns);
 
     // 테이블에 마우스 오버/아웃 이벤트 추가
     function showButtons() {

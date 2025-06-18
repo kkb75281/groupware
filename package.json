@@ -19,7 +19,7 @@
         "skapi-js": "^1.0.246",
         "vue": "^3.5.12",
         "vue-router": "^4.4.5",
-        "wysiwyg4all": "^1.0.70"
+        "wysiwyg4all": "^1.0.72"
     },
     "devDependencies": {
         "@tsconfig/node20": "^20.1.4",
