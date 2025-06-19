@@ -53,14 +53,16 @@
 
             .input-wrap
                 p.label 권한
-                template(v-if="disabled")
-                    input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
-                template(v-else)
-                    select(name="access_group" v-model="currentEmp.access_group")
-                        option(value="" disabled selected) 권한선택
-                        option(value="1") 직원
-                        option(value="98") 관리자
-                        option(value="99") 마스터
+                //- 마스터 권한은 스카피 홈페이지에서 마스터로 직원 생성하도록 한다.
+                input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " disabled)
+                //- template(v-if="disabled")
+                //-     input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
+                //- template(v-else)
+                //-     select(name="access_group" v-model="currentEmp.access_group")
+                //-         option(value="" disabled selected) 권한선택
+                //-         option(value="1") 직원
+                //-         option(value="98") 관리자
+                //-         option(value="99") 마스터
                 
             .input-wrap
                 p.label 이름
