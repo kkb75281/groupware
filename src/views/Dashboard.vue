@@ -102,7 +102,7 @@
                         use(xlink:href="@/assets/icon/material-icon.svg#icon-error-outline")
                 | 현재 메일이 없습니다.
 
-        button.btn(@click="router.push('/test')") 테스트 페이지로 이동
+        //- button.btn(@click="router.push('/test')") 테스트 페이지로 이동
 
     #modal.modal(v-if="isModalOpen" @click="cancelBanner")
         .modal-cont(@click.stop style="min-width:unset; max-width:unset;")
