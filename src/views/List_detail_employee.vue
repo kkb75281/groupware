@@ -25,38 +25,44 @@
 
             .input-wrap
                 .top-area
-                  p.label 부서/직책
-                  button.btn.outline.sm.btn-add(type="button" @click="addDvsInput" v-show="!disabled") + 부서 추가
+                    p.label 부서/직책
+                    button.btn.outline.sm.btn-add(type="button" @click="addDvsInput" v-show="!disabled") + 부서 추가
                 .list-area(v-for="(dvs, index) in employeeDivisions" :key="index")
-                  .list-item
-                    .item.division
-                      template(v-if="disabled")
-                          input(type="text" name="division" readonly :disabled="disabled" :value="divisionNameList[dvs.division] || '-' ")
-                      template(v-else)
-                          select(:name="'division-' + index" required v-model="dvs.division")
-                              option(value="" disabled) 부서 선택
-                              option(v-for="(name, key) in divisionNameList" :key="key" :value="key") {{ name }}
-                      p.desc(v-if="user.access_group > 98 && !dvs.division") 부서를 등록해주세요.
+                    .list-item
+                        .item.division
+                            template(v-if="disabled")
+                                input(type="text" name="division" readonly :disabled="disabled" :value="divisionNameList[dvs.division] || '-' ")
+                            template(v-else)
+                                select(:name="'division-' + index" required v-model="dvs.division")
+                                    option(value="" disabled) 부서 선택
+                                    option(
+                                        v-for="(name, key) in filteredDivisionList"
+                                        :key="key"
+                                        :value="key"
+                                    ) {{ name }}
+                            p.desc(v-if="user.access_group > 98 && !dvs.division") 부서를 등록해주세요.
 
-                    .item.position
-                      input(type="text" :name="'position-' + index" v-model="dvs.position" :disabled="disabled" :readonly="disabled")
-                      p.desc(v-if="user.access_group > 98 && !dvs.position") 직책을 등록해주세요.
+                        .item.position
+                            input(type="text" :name="'position-' + index" v-model="dvs.position" :disabled="disabled" :readonly="disabled")
+                            p.desc(v-if="user.access_group > 98 && !dvs.position") 직책을 등록해주세요.
 
-                  button.btn-delete(type="button" @click="removeDivision(index)" v-show="!disabled && employeeDivisions.length > 1")
-                    .icon
-                      svg
-                        use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
+                    button.btn-delete(type="button" @click="removeDivision(index)" v-show="!disabled && employeeDivisions.length > 1")
+                        .icon
+                            svg
+                                use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
 
             .input-wrap
                 p.label 권한
-                template(v-if="disabled")
-                    input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
-                template(v-else)
-                    select(name="access_group" v-model="currentEmp.access_group")
-                        option(value="" disabled selected) 권한선택
-                        option(value="1") 직원
-                        option(value="98") 관리자
-                        option(value="99") 마스터
+                //- 마스터 권한은 스카피 홈페이지에서 마스터로 직원 생성하도록 한다.
+                input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " disabled)
+                //- template(v-if="disabled")
+                //-     input(type="text" name="access_group" :value="access_group[currentEmp?.access_group] || '-' " readonly)
+                //- template(v-else)
+                //-     select(name="access_group" v-model="currentEmp.access_group")
+                //-         option(value="" disabled selected) 권한선택
+                //-         option(value="1") 직원
+                //-         option(value="98") 관리자
+                //-         option(value="99") 마스터
                 
             .input-wrap
                 p.label 이름
@@ -140,7 +146,7 @@ br
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import { skapi, mainPageLoading } from '@/main.ts';
 import { user, makeSafe } from '@/user.ts';
 import { divisionNameList, getDivisionNames } from '@/division.ts';
@@ -167,6 +173,15 @@ let access_group = {
     99: '마스터'
 };
 let mainStamp = ref({}); // 대표 도장 정보
+let filteredDivisionList = computed(() => {
+    const list = {};
+    for (const [key, name] of Object.entries(divisionNameList.value)) {
+        if (name !== '') {
+            list[key] = name;
+        }
+    }
+    return list;
+})
 
 const userId = route.params.userId;
 

@@ -20,6 +20,10 @@ template(v-else)
 					| 오늘도 수고 많으셨습니다.
 				template(v-else-if="!todayWorkStarting && !todayWorkEnding") 출근을 기록해주세요.
 				template(v-else-if="!todayWorkEnding") 퇴근을 기록해주세요.
+			.button(v-if="system_worktime")
+				button.btn.bg-gray(v-if="todayWorkStarting && todayWorkEnding" type="button" :disabled="todayWorkStarting && todayWorkEnding") 내일 봬요 :)
+				button.btn(v-else-if="!todayWorkStarting" type="button" :disabled="todayWorkStarting && todayWorkEnding" @click="checkCommuteRecord") 출근 기록하기
+				button.btn.bg-gray(v-else type="button" @click="checkCommuteRecord") 퇴근 기록하기
 		br
 		span.today 
 			.icon
@@ -73,23 +77,25 @@ import { useRoute, useRouter } from 'vue-router';
 import { ref, onMounted, watch, nextTick } from 'vue';
 import { skapi } from '@/main.ts';
 import {
-    getDate,
-    getTime,
-    convertToTimestamp,
-    convertTimeToTimestamp,
-    addTimeToTimestamp,
-    extractTimeFromDateTime,
-    convertMsToTime
+	getDate,
+	getTime,
+	convertToTimestamp,
+	convertTimeToTimestamp,
+	addTimeToTimestamp,
+	extractTimeFromDateTime,
+	convertMsToTime
 } from '@/utils/time.ts';
 import { user, makeSafe } from '@/user.ts';
 import {
-    system_worktime,
-    getSystemWorktime,
-    my_worktime_storage,
-    my_worktime_storage_data,
-    getMyWorktimeStorage,
-    todayWorkStarting,
-    todayWorkEnding
+	system_worktime,
+	getSystemWorktime,
+	my_worktime_storage,
+	my_worktime_storage_data,
+	getMyWorktimeStorage,
+	todayWorkStarting,
+	todayWorkEnding,
+	startWork,
+	endWork
 } from '@/views/commute/worktime.ts';
 
 import Loading from '@/components/loading.vue';
@@ -97,193 +103,201 @@ import Loading from '@/components/loading.vue';
 const router = useRouter();
 const route = useRoute();
 
+const checkCommuteRecord = async () => {
+	if (todayWorkStarting.value) {
+		await endWork(router);
+	} else {
+		await startWork(router);
+	}
+};
+
 // 비고 저장 함수
 const saveDesc = async (record) => {
-    console.log('record : ', record);
-    console.log('my_worktime_storage.value : ', my_worktime_storage.value);
+	console.log('record : ', record);
+	console.log('my_worktime_storage.value : ', my_worktime_storage.value);
 
-    if (!record.remark || record.remark.trim() === '') {
-        alert('비고를 입력해주세요.');
-        return;
-    }
+	if (!record.remark || record.remark.trim() === '') {
+		alert('비고를 입력해주세요.');
+		return;
+	}
 
-    try {
-        // 해당 날짜의 원본 레코드들을 my_worktime_storage에서 찾기
-        const targetRecords = my_worktime_storage.value.filter(
-            (originalRecord) => originalRecord.data.date === record.date
-        );
-        console.log('targetRecords : ', targetRecords);
+	try {
+		// 해당 날짜의 원본 레코드들을 my_worktime_storage에서 찾기
+		const targetRecords = my_worktime_storage.value.filter(
+			(originalRecord) => originalRecord.data.date === record.date
+		);
+		console.log('targetRecords : ', targetRecords);
 
-        if (!targetRecords || targetRecords.length === 0) {
-            alert('해당 날짜의 기록을 찾을 수 없습니다.');
-            return;
-        }
+		if (!targetRecords || targetRecords.length === 0) {
+			alert('해당 날짜의 기록을 찾을 수 없습니다.');
+			return;
+		}
 
-        // 각 레코드에 remark 업데이트
-        const updatePromises = targetRecords.map(async (targetRecord) => {
-            const config = {
-                table: {
-                    name: 'commute_record',
-                    access_group: 98
-                },
-                record_id: targetRecord.record_id,
-                tags: ['[emp_id]' + makeSafe(user.user_id)],
-                reference: 'emp_id:' + makeSafe(user.user_id)
-            };
+		// 각 레코드에 remark 업데이트
+		const updatePromises = targetRecords.map(async (targetRecord) => {
+			const config = {
+				table: {
+					name: 'commute_record',
+					access_group: 98
+				},
+				record_id: targetRecord.record_id,
+				tags: ['[emp_id]' + makeSafe(user.user_id)],
+				reference: 'emp_id:' + makeSafe(user.user_id)
+			};
 
-            // 기존 데이터에 remark 추가
-            const updateData = {
-                ...targetRecord.data,
-                remark: record.remark.trim()
-            };
+			// 기존 데이터에 remark 추가
+			const updateData = {
+				...targetRecord.data,
+				remark: record.remark.trim()
+			};
 
-            console.log('config : ', config);
-            console.log('updateData : ', updateData);
+			console.log('config : ', config);
+			console.log('updateData : ', updateData);
 
-            return await skapi.postRecord(updateData, config);
-        });
+			return await skapi.postRecord(updateData, config);
+		});
 
-        await Promise.all(updatePromises).then((res) => {
-            console.log('promise = res : ', res);
-        });
+		await Promise.all(updatePromises).then((res) => {
+			console.log('promise = res : ', res);
+		});
 
-        alert('비고가 저장되었습니다.');
-        await nextTick();
-        await getMyWorktimeStorage(true);
-    } catch (error) {
-        console.error('비고 저장 에러:', error);
-        alert('비고 저장에 실패했습니다.');
-    }
+		alert('비고가 저장되었습니다.');
+		await nextTick();
+		await getMyWorktimeStorage(true);
+	} catch (error) {
+		console.error('비고 저장 에러:', error);
+		alert('비고 저장에 실패했습니다.');
+	}
 };
 
 onMounted(() => {
-    getSystemWorktime();
-    getMyWorktimeStorage();
+	getSystemWorktime();
+	getMyWorktimeStorage();
 });
 </script>
 
 <style scoped lang="less">
 .table-wrap {
-    position: relative;
+	position: relative;
 
-    #loading {
-        position: absolute;
-        top: 126px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
+	#loading {
+		position: absolute;
+		top: 126px;
+		left: 50%;
+		transform: translateX(-50%);
+	}
 
-    #searchForm {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
+	#searchForm {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
 
-    .table {
-        min-width: 35rem;
+	.table {
+		min-width: 35rem;
 
-        tbody {
-            tr {
-                &:hover {
-                    background-color: transparent;
-                }
-            }
-        }
-    }
+		tbody {
+			tr {
+				&:hover {
+					background-color: transparent;
+				}
+			}
+		}
+	}
 }
 
 .itembox-wrap {
-    display: flex;
-    gap: 0 24px;
-    flex-wrap: wrap;
+	display: flex;
+	gap: 0 24px;
+	flex-wrap: wrap;
 }
 
 .itembox {
-    box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.15);
-    border-radius: 16px;
-    padding: 1.5rem;
-    line-height: 1.2;
-    flex: 1;
+	box-shadow: 1px 1px 10px 0px rgba(0, 0, 0, 0.15);
+	border-radius: 16px;
+	padding: 1.5rem;
+	line-height: 1.2;
+	flex: 1;
 
-    .time {
-        display: flex;
-        flex-wrap: wrap;
-        width: 100%;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #2c3e50;
-        border-bottom: 1px solid #ccc;
-        padding-bottom: 1.5rem;
+	.time {
+		display: flex;
+		flex-wrap: wrap;
+		width: 100%;
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: #2c3e50;
+		border-bottom: 1px solid #ccc;
+		padding-bottom: 1.5rem;
 
-        .value {
-            flex: 1;
-            margin-left: 8px;
-        }
-    }
+		.value {
+			flex: 1;
+			margin-left: 8px;
+		}
+	}
 
-    .btn-work {
-        width: 100%;
-        margin-top: 1.5rem;
+	.btn-work {
+		width: 100%;
+		margin-top: 1.5rem;
 
-        &.disabled {
-            background-color: var(--primary-color-200);
-            border: 1px solid var(--primary-color-200);
-            cursor: default;
-        }
-    }
+		&.disabled {
+			background-color: var(--primary-color-200);
+			border: 1px solid var(--primary-color-200);
+			cursor: default;
+		}
+	}
 
-    .title-wrap {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-    }
+	.title-wrap {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		margin-bottom: 20px;
+	}
 }
 
 .today {
-    font-size: 1rem;
-    color: #777;
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
+	font-size: 1rem;
+	color: #777;
+	margin-top: 0.5rem;
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
 
-    .icon {
-        padding: 0;
-    }
+	.icon {
+		padding: 0;
+	}
 }
 
 .remark {
-    .btn-wrap {
-        flex-wrap: nowrap;
+	.btn-wrap {
+		flex-wrap: nowrap;
 
-        button {
-            width: 1.5rem;
-            height: 1.5rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+		button {
+			width: 1.5rem;
+			height: 1.5rem;
+			display: flex;
+			justify-content: center;
+			align-items: center;
 
-            &:hover {
-                .icon {
-                    svg {
-                        fill: var(--primary-color-400);
-                    }
-                }
-            }
-        }
+			&:hover {
+				.icon {
+					svg {
+						fill: var(--primary-color-400);
+					}
+				}
+			}
+		}
 
-        .icon {
-            padding: 0;
-        }
-    }
+		.icon {
+			padding: 0;
+		}
+	}
 }
 
 @media (max-width: 768px) {
-    .itembox-wrap {
-        flex-direction: column;
-    }
+	.itembox-wrap {
+		flex-direction: column;
+	}
 }
 </style>

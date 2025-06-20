@@ -27,7 +27,8 @@ details(:class="{hideSummary: props.onlyDivision && department.subDepartments.le
                         type="checkbox" 
                         name="checkbox" 
                         v-model="member.isChecked" 
-                        :checked="member.isChecked" 
+                        :checked="!member.isDisabled && member.isChecked" 
+                        :disabled="member.isDisabled"
                         @change="$emit('update-check', { type: 'member', target: member, isChecked: member.isChecked })" 
                         @click.stop
                     )
@@ -46,6 +47,7 @@ details(:class="{hideSummary: props.onlyDivision && department.subDepartments.le
         :department="sub"
         :useCheckbox="props.useCheckbox"
         :onlyDivision="props.onlyDivision"
+        :excludeCurrentUser="props.excludeCurrentUser"
         @update-check="$emit('update-check', $event)"
         @click.stop
     )
@@ -179,6 +181,11 @@ summary {
 
 input[type='checkbox']:disabled+.label-checkbox {
     cursor: default;
+
+    &::before {
+        background: #eee url('/src/assets/img/icon_checked.svg') center / cover no-repeat;
+        border-color: #eee;
+    }
 }
 
 // 나머지 기존 스타일 유지
