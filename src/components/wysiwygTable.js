@@ -216,7 +216,7 @@ export function addResizer(tableState, cell) {
     if (existingResizerBottom) existingResizerBottom.remove();
 
     const resizer = document.createElement('div');
-    resizer.className = 'resizer';
+    resizer.className = 'resizer _static_';
     //   resizer.setAttribute('contenteditable', 'false');
 
     // 리사이징 시작
@@ -248,7 +248,7 @@ export function addResizer(tableState, cell) {
 
     // 하단 리사이저도 동일하게 처리 가능
     const resizerBottom = document.createElement('div');
-    resizerBottom.className = 'resizer-bottom';
+    resizerBottom.className = 'resizer-bottom _static_';
     //   resizerBottom.setAttribute('contenteditable', 'false');
 
     resizerBottom.onmousedown = (e) => {
