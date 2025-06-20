@@ -300,14 +300,13 @@ const handleCommand = (command) => {
     }
     // 정렬 명령 처리
     else if (command === 'alignLeft' || command === 'alignCenter' || command === 'alignRight') {
-        const selection = window.getSelection();
         const selectedCells = [];
 
         const allTables = document.querySelectorAll('#myeditor table');
         allTables.forEach((table) => {
             const cells = table.querySelectorAll('td');
             cells.forEach((cell) => {
-                if (selection.containsNode(cell, true)) {
+                if (cell.classList.contains('selected-cell') || cell.classList.contains('dragged-cell')) {
                     selectedCells.push(cell);
                 }
             });
@@ -1215,6 +1214,7 @@ defineExpose({
         }
 
         &.dragged-cell {
+
             /* background-color: #d0ebff !important; */
             &::after {
                 display: block;
