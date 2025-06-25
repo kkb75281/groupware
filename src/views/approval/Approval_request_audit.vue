@@ -139,7 +139,7 @@ template(v-if="step === 2 || isTemplateMode || (isTempSaveMode && temploading) |
                                                         use(xlink:href="@/assets/icon/material-icon.svg#icon-delete")
                                         
 
-                                tr(v-if="!isTemplateMode")
+                                tr
                                     th.essential 제목
                                         .add-btn(@click="isRowModalOpen = true")
                                             .icon
@@ -818,13 +818,16 @@ const previewAudit = () => {
 // };
 
 const handleOrganigramSelection = (users) => {
-    selectedUsers.value = selectedUsers.value.filter(selUser =>
-        users.some(user => user.user.user_id === selUser.user.user_id && user.division === selUser.division)
+    selectedUsers.value = selectedUsers.value.filter((selUser) =>
+        users.some(
+            (user) =>
+                user.user.user_id === selUser.user.user_id && user.division === selUser.division
+        )
     );
 
     let maxOrder = 0;
 
-    users.forEach(user => {
+    users.forEach((user) => {
         if (user.role !== 'receivers' && typeof user.order === 'number') {
             if (user.order > maxOrder) maxOrder = user.order;
         }
@@ -835,7 +838,9 @@ const handleOrganigramSelection = (users) => {
     // 선택된 유저들을 초기 처리
     users.forEach((user) => {
         // 선택된 유저를 selectedUsers에 추가
-        const existingUserIndex = selectedUsers.value.findIndex((u) => u.user.user_id === user.user.user_id && u.division === user.division);
+        const existingUserIndex = selectedUsers.value.findIndex(
+            (u) => u.user.user_id === user.user.user_id && u.division === user.division
+        );
 
         if (existingUserIndex !== -1) {
             // 이미 존재하는 유저는 기존 role을 유지하고, 나머지 정보만 업데이트
@@ -848,7 +853,12 @@ const handleOrganigramSelection = (users) => {
                 existingUser.sortable = user.sortable;
             }
             // 필요하다면 다른 필드도 업데이트
-            selectedUsers.value[existingUserIndex] = { ...user, role: existingUser.role, order: existingUser.order, sortable: existingUser.sortable };
+            selectedUsers.value[existingUserIndex] = {
+                ...user,
+                role: existingUser.role,
+                order: existingUser.order,
+                sortable: existingUser.sortable
+            };
         } else {
             // 새로운 유저는 추가
             if (!user.role) user.role = 'approvers';
@@ -859,8 +869,8 @@ const handleOrganigramSelection = (users) => {
     });
 
     selectedUsers.value = [
-        ...selectedUsers.value.filter(u => u.role !== 'receivers'),
-        ...selectedUsers.value.filter(u => u.role === 'receivers')
+        ...selectedUsers.value.filter((u) => u.role !== 'receivers'),
+        ...selectedUsers.value.filter((u) => u.role === 'receivers')
     ];
 
     console.log('선택된 결재자들: ', selectedUsers.value);
@@ -1645,17 +1655,6 @@ const saveForm = async ({
                 });
         }
 
-        // 마스터 결재 양식 저장일 경우, 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
-        if (isMaster) {
-            await skapi.postRecord(null, {
-                table: {
-                    name: `audit_comment_${auditId}`,
-                    access_group: 'private'
-                },
-                reference: auditId
-            });
-        }
-
         const options = {
             table: {
                 name: tableName,
@@ -1697,6 +1696,17 @@ const saveForm = async ({
 
         const res = await skapi.postRecord(formData, options);
         console.log('결재 양식 저장 == res : ', res);
+
+        // 마스터 결재 양식 저장일 경우, 결재의견 관련 레코드 생성 (결재자가 의견 작성시 중복 레퍼런스 안돼서)
+        if (isMaster && res.record_id) {
+            await skapi.postRecord(null, {
+                table: {
+                    name: `audit_comment_${res.record_id}`,
+                    access_group: 'private'
+                },
+                reference: res.record_id
+            });
+        }
 
         alert(isTemp ? '임시 저장되었습니다.' : '결재 양식이 저장되었습니다.');
 
@@ -2682,7 +2692,7 @@ onUnmounted(() => {
 }
 
 .select-approver-wrap {
-    >div {
+    > div {
         border: 1px solid var(--gray-color-300);
         border-radius: 0.5rem;
         padding: 1rem;
@@ -2859,7 +2869,7 @@ onUnmounted(() => {
     .checkbox {
         text-align: right;
 
-        input[type='checkbox']:checked~.label-checkbox::before {
+        input[type='checkbox']:checked ~ .label-checkbox::before {
             border-color: var(--warning-color-500);
             background-color: var(--warning-color-500);
         }
@@ -2882,7 +2892,6 @@ onUnmounted(() => {
 }
 
 .wysiwyg-table {
-
     tr,
     th,
     td {
@@ -3246,14 +3255,13 @@ onUnmounted(() => {
     .input-wrap {
         &.upload-file {
             .btn-upload-file {
-
                 input,
                 button {
                     flex-grow: 1;
                 }
             }
 
-            .btn-upload-file+.file-list {
+            .btn-upload-file + .file-list {
                 .file-item {
                     width: 100%;
                 }
