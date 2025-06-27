@@ -780,7 +780,7 @@ defineExpose({
 ._wysiwyg4all {
     padding: 1rem;
     padding-top: 3rem;
-    height: 100%;
+    // height: 100%;
     min-height: 20rem !important;
     // min-height: calc(18rem - 2rem) !important;
     // height: calc(100% - 2rem) !important;
